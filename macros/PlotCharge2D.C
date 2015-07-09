@@ -131,7 +131,7 @@ void PlotCharge2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom
     if(!pData->Is3D())
       hDen2D[i] = pData->GetCharge(i,opt);
     else
-      hDen2D[i] = pData->GetCharge2DSliceZY(i,-1,Nbins,opt+"avg");
+      hDen2D[i] = pData->GetCharge2DSliceZX(i,-1,Nbins,opt+"avg");
     
   
     hDen2D[i]->SetName(hName);
@@ -139,7 +139,7 @@ void PlotCharge2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom
     hDen2D[i]->GetYaxis()->CenterTitle();
     hDen2D[i]->GetZaxis()->CenterTitle();
     hDen2D[i]->GetXaxis()->SetTitle("k_{p} z");
-    hDen2D[i]->GetYaxis()->SetTitle("k_{p} y");
+    hDen2D[i]->GetYaxis()->SetTitle("k_{p} x");
     if(i==0)
       hDen2D[i]->GetZaxis()->SetTitle("n_{e} / n_{0}");
     else
@@ -227,7 +227,7 @@ void PlotCharge2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom
     if(!hDen2D[i]) continue;
     
     Max[i] = hDen2D[i]->GetMaximum();
-    Min[i] = 1.01E-2 * Max[i];
+    Min[i] = 1.01E-1 * Base;
     if(pData->GetSpeciesName(i).find("plasma") != string::npos) {
       if(Max[i]<1) {
 	Max[i] = 1.1*Base;
@@ -244,6 +244,7 @@ void PlotCharge2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom
   // Dynamic plasma palette
   PPalette * plasmaPalette = NULL;
   if(pData->GetSpeciesName(index).find("plasma") != string::npos) {
+
     const Int_t plasmaDNRGBs = 3;
     const Int_t plasmaDNCont = 64;
     Double_t basePos = 0.5;
