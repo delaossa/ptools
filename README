@@ -1,0 +1,8 @@
+// **************************************************************************** //
+
+   PTOOLS is a software package written in C++ that allows for a direct handling,
+   analysis and plotting of the output data from Osiris simulations.
+   In addition to the standard C++ libraries, pPlasma uses HDF5 to read Osiris
+   files and ROOT for data analysis and plotting.
+
+// **************************************************************************** //

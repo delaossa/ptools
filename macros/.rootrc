@@ -1,0 +1,9 @@
+# Path used by dynamic loader to find shared libraries
+Unix.*.Root.DynamicPath:  .:$(PPLASMA)/lib:~/rootlibs:$(ROOTSYS)/lib
+Unix.*.Root.MacroPath:    .:$(PPLASMA)/macros:~/rootmacros:$(ROOTSYS)/macros
+
+Rint.Logon:              PPlasmalogon.C
+
+# Path where to look for TrueType fonts
+Unix.*.Root.UseTTFonts:    true
+Unix.*.Root.TTFontPath:    $(ROOTSYS)/fonts

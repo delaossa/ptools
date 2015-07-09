@@ -1,0 +1,7 @@
+# Path used by dynamic loader to find shared libraries
+Unix.*.Root.DynamicPath:  .:$(PTOOLS)/lib:~/rootlibs:$(ROOTSYS)/lib
+Unix.*.Root.MacroPath:    .:$(PTOOLS)/macros:$(PTOOLS)/test:~/rootmacros:$(ROOTSYS)/macros
+
+# Path where to look for TrueType fonts
+Unix.*.Root.UseTTFonts:    true
+Unix.*.Root.TTFontPath:    $(ROOTSYS)/fonts

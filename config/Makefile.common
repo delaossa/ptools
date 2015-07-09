@@ -1,0 +1,15 @@
+BASEDIR       = $(PTOOLS)
+SRCDIR        = $(BASEDIR)/src
+INCDIR        = $(BASEDIR)/inc
+LIBDIR        = $(BASEDIR)/lib
+BINDIR        = $(BASEDIR)/bin
+EXESDIR       = $(BASEDIR)/exe
+MACRODIR      = $(BASEDIR)/macros
+
+# ROOT flags
+include $(BASEDIR)/config/Makefile.arch
+
+ROOTCFLAGS   := $(shell root-config --cflags)
+ROOTLIBDIR   := $(shell root-config --libdir)
+ROOTLIBS     := -L$(ROOTLIBDIR) -lCore -lCint -lRIO -lHist -lTree -lPhysics -lMathCore 
+
