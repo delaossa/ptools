@@ -140,7 +140,7 @@ void PlotField2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom=
     if(pData->IsCyl()) 
       hE2D[i]->GetYaxis()->SetTitle("k_{p} r");
     else
-      hE2D[i]->GetYaxis()->SetTitle("k_{p} y");
+      hE2D[i]->GetYaxis()->SetTitle("k_{p} x");
     
     if(i==0)
       hE2D[i]->GetZaxis()->SetTitle("E_{z} / E_{0}");
@@ -179,7 +179,7 @@ void PlotField2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom=
       if(pData->IsCyl())
 	hE2D[i]->GetYaxis()->SetTitle("r [#mum]");      
       else
-	hE2D[i]->GetYaxis()->SetTitle("y [#mum]");      
+	hE2D[i]->GetYaxis()->SetTitle("x [#mum]");      
 
       if(opt.Contains("comov"))
 	hE2D[i]->GetXaxis()->SetTitle("#zeta [#mum]");

@@ -34,7 +34,7 @@ int main(int argc,char *argv[]) {
     printf("\n Usage: %s <simulation name> <-t(time)>\n",argv[0]);
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
     printf("      <-z(zoom factor)> <-non(# on-axis)> <-nof(# off-axis)>\n");
-    printf("      <--png> <--pdf> <--eps> <-m(mask)>\n");
+    printf("      <--png> <--pdf> <--eps> <-msk(mask)>\n");
     printf("      <--center> <--comov>\n");
     printf("      <--units> <--logz>\n");
     return 0;
@@ -69,8 +69,8 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("--png")) {
       opt += "png";
     } else if(arg.Contains("-msk")) {
-      char ss[2];
-      sscanf(arg,"%2s%i",ss,&mask);
+      char ss[4];
+      sscanf(arg,"%4s%i",ss,&mask);
     } else if(arg.Contains("--comov")){
       opt += "comov";
     } else if(arg.Contains("--units")){

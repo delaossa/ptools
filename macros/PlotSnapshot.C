@@ -609,7 +609,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 					     potPRed, potPGreen, potPBlue, potPNCont);
   
   // Extract contours from 2D histos
-  TCanvas* c = new TCanvas("c","Contour List",0,0,600,600);
+  TCanvas* c = new TCanvas("contours","Contour List",0,0,600,600);
   c->cd();
   
   // Potential 
@@ -620,7 +620,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     contours[i] = i*(trapPotential/5.0);// - trapPotential; 
   }
   hV2Dc->SetContour(Ncontours, contours);
-  hV2Dc->Draw("cont list");
+  hV2Dc->Draw("cont list 0");
   
   c->Update();
   TObjArray *contsV2D = (TObjArray*) gROOT->GetListOfSpecials()->FindObject("contours");
@@ -689,7 +689,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   //const Int_t NcontI = 1;
   //Float_t contI[NcontI] = {0.1};
   hIonProb2Dc->SetContour(NcontI, contI);
-  hIonProb2Dc->Draw("cont list");
+  hIonProb2Dc->Draw("cont list 0");
   
   c->Update();
   TObjArray *contsI2D = (TObjArray*) gROOT->GetListOfSpecials()->FindObject("contours");
@@ -734,7 +734,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
   }
 
-
+  delete c;
+  
   // Plotting
   // ------------------------------------------------------------
   
@@ -2572,7 +2573,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   PGlobals::imgconv(C,fOutName,opt);
   // ---------------------------------------------------------
 
-  PGlobals::DestroyCanvases();
+  //  PGlobals::DestroyCanvases();
 }
  
  

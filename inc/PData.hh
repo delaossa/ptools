@@ -443,7 +443,7 @@ void PData::ResetParameters() {
   pParam.bMass = 0.511;    // In MeV.
 
   // Default beam gamma
-  pParam.bGamma = 1.0;
+  pParam.bGamma = 10000.0;
 }
 
 //______________________________________________________________________________________

@@ -227,7 +227,7 @@ void PlotCharge2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom
     if(!hDen2D[i]) continue;
     
     Max[i] = hDen2D[i]->GetMaximum();
-    Min[i] = 1.01E-1 * Base;
+    Min[i] = 1.01E-2 * Base;
     if(pData->GetSpeciesName(i).find("plasma") != string::npos) {
       if(Max[i]<1) {
 	Max[i] = 1.1*Base;

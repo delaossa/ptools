@@ -275,9 +275,10 @@ int main(int argc,char *argv[]) {
 
   x1Min = varMin[0] - 0.3*(varMax[0]-varMin[0]);
   x1Max = varMax[0] + 0.3*(varMax[0]-varMin[0]);
-  // x1Min = -72390512;
-  // x1Max = -72390232;
-  
+  //x1Min = -72390512;
+  //x1Max = -72390232;
+  x1Min = -25846100;
+
   x2Min = varMin[1] - 0.3*(varMax[1]-varMin[1]);
   x2Max = varMax[1] + 0.3*(varMax[1]-varMin[1]);
   x3Min = varMin[2] - 0.3*(varMax[2]-varMin[2]);
