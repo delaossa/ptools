@@ -47,6 +47,9 @@ int main(int argc,char *argv[]) {
   Int_t   iStep = 1;
   TString   opt = "";
   Int_t   index = 1;
+
+  // Option for raw fraction correction
+  Float_t rawf = 1;
   
   // Options for Spectrum
   Float_t Pmin =  99999.;
@@ -105,6 +108,9 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-s")) {
       char ss[2];
       sscanf(arg,"%2s%i",ss,&iStep);
+    } else if(arg.Contains("-rawf")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&rawf);
     } else if(arg.Contains("-pmin")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmin);
@@ -197,7 +203,7 @@ int main(int argc,char *argv[]) {
     Int_t p2Nbin = 200;
     
     // Slices
-    Int_t SNbin = 50;
+    Int_t SNbin = 100;
     Float_t x1BinMin = -4.5;
     Float_t x1BinMax = -4.0;
 
@@ -260,11 +266,16 @@ int main(int argc,char *argv[]) {
       }
     
      if(sim.Contains("v2.5kA.G.JG.DDR")) {
+
+       x1Nbin = 400;
+       p1Nbin = 200;
+       x2Nbin = 200;
+       p2Nbin = 200;
        
        x1Min = -5.2;
        x1Max = -3.2; 
        
-       SNbin = 50;
+       SNbin = 100;
        x1BinMin = -4.70;
        x1BinMax = -3.70;
       
@@ -313,8 +324,9 @@ int main(int argc,char *argv[]) {
       x1Min = -6.4;
       x1Max = -5.9; 
       
-      SNbin = 40;
-      x1BinMin = -6.24;
+      //      SNbin = 76;
+      SNbin = 38;
+      x1BinMin = -6.23;
       x1BinMax = -6.05;
       
     } else if (sim.Contains("FACET_5x1016_PP20140415_webBeam")) {
@@ -795,13 +807,14 @@ int main(int argc,char *argv[]) {
       hX1->Scale(TMath::Abs(n0 * dV * (PConst::ElectronCharge/PUnits::picocoulomb) * (lightspeed/binSize)));
 
 
-      Float_t peakCurr = hX1->GetMaximum() * PUnits::kA;
-      Float_t curscal = 1;
+      Float_t curscal = rawf;
       curUnit = "kA"; 
+
       //PUnits::UnitsTable::Get();
       stringstream stream;      
+      // Float_t peakCurr = hX1->GetMaximum() * PUnits::kA;
       // stream << PUnits::BestUnit(peakCurr,"Current") << endl;
-      Float_t best;
+      // Float_t best;
       // stream >> best >> curUnit;
       // curscal = best/(peakCurr/PUnits::kA);      
       // cout << Form(" Peak current = %.2f %s  --> scale = %f",best,curUnit.c_str(),curscal) << endl;
@@ -865,12 +878,14 @@ int main(int argc,char *argv[]) {
 
       Float_t emiscal = 1;
       emitUnit = "#mum";
-      stream << PUnits::BestUnit(emitx,"Length") << endl;
-      stream >> best >> emitUnit >> auxUnit;
-      emitUnit += " ";
-      emitUnit += auxUnit;
-      emiscal = best/(emitx/PUnits::um);
-      // cout << Form(" Emittance = %.2f %s  --> scale = %f",best,emitUnit.c_str(),emiscal) << endl;
+      // stream << PUnits::BestUnit(emitx,"Length") << endl;
+      // stream >> best >> emitUnit >> auxUnit;
+      // if(!auxUnit.empty()) {
+      // 	emitUnit += " ";
+      // 	emitUnit += auxUnit;
+      // }
+      // emiscal = best/(emitx/PUnits::um);
+      // // cout << Form(" Emittance = %.2f %s  --> scale = %f",best,emitUnit.c_str(),emiscal) << endl;
       emitx *= emiscal/PUnits::um;
 
       Float_t erelMax = -999.;
@@ -910,8 +925,10 @@ int main(int argc,char *argv[]) {
 	
       }
 
-      Float_t erelrmsscal = 5;
-      ermsUnit = "0.5 %";
+      Float_t erelrmsscal = 1;
+      ermsUnit = "%";
+      // Float_t erelrmsscal = 1;
+      // ermsUnit = "%";
       // stream << PUnits::BestUnit(erelMax,"Percentage") << endl;
       // stream >> best >> ermsUnit;
       // Float_t erelrmsscal = best/erelMax;
@@ -1563,7 +1580,7 @@ int main(int argc,char *argv[]) {
       // }
 
       TLegend *Leg;
-      Leg=new TLegend(0.55,0.75,1 - gPad->GetRightMargin() - 0.02,0.95);
+      Leg=new TLegend(0.50,0.75,1 - gPad->GetRightMargin() - 0.02,0.95);
 
       PGlobals::SetPaveStyle(Leg);
       Leg->SetTextAlign(12);
@@ -1602,7 +1619,7 @@ int main(int argc,char *argv[]) {
       lZmean2.SetLineStyle(2);
       lZmean2.Draw();
 
-      Size_t markerSize = 1.2; 
+      Size_t markerSize = 1.0; 
       Width_t lineWidth  = 2.0;   
 
       gXrms->SetMarkerStyle(20);

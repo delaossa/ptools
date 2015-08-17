@@ -231,8 +231,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TH2F *hV2D = (TH2F*) ifile->Get(hName);
   sprintf(hName,"hV1D"); 
   TH1F *hV1D = (TH1F*) ifile->Get(hName);
-
-
+  
+  
   // Ionization probability rates (ADK)
   // Calculates from the total E the ionization prob. rate for a given species.
   const Int_t NAtoms = 7;
@@ -411,13 +411,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   hETotal2D->GetYaxis()->SetRangeUser(yMin,yMax);
   hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
-
-
+      
   // ------------- z Zoom --------------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
   // using a dynamic palette that adjusts the base value to a certain color.
   
-  Float_t density = 1; //hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX());
+  //  Float_t density = 1; 
+  Float_t density = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX());
   Float_t Base  = 1*density;
   
   Float_t *Max = new Float_t[Nspecies];
@@ -437,8 +437,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       } else if(Max[i]<2*Base) {
 	Min[i] = 2*Base - Max[i];
       } else {
-	//	Max[i] = 0.4*hDen2D[i]->GetMaximum(); // enhance plasma contrast.
-	Max[i] = hDen2D[i]->GetMaximum(); // enhance plasma contrast.
+	Max[i] = 0.4*hDen2D[i]->GetMaximum(); // enhance plasma contrast.
+	//Max[i] = hDen2D[i]->GetMaximum(); 
 	if(Max[i]<Base) Min[i] = 1.01 * Base;
       }
     } 
@@ -462,6 +462,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
   }
+  
   
   // Dynamic plasma palette
   const Int_t plasmaDNRGBs = 3;
@@ -735,6 +736,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   }
 
   delete c;
+
   
   // Plotting
   // ------------------------------------------------------------
@@ -1090,7 +1092,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     ip--;  
     C->cd(0);
   }
-  
+
   if(mask & 0x1) {
     
     pad[ip]->Draw();
@@ -1217,7 +1219,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(zEndNeutral>xMin && zEndNeutral<xMax)
 	lineEndNeutral->Draw();
     }
-
+    
     // Palettes re-arrangement
     pad[ip]->Update();
     y1 = pad[ip]->GetBottomMargin();
@@ -1229,6 +1231,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     for(Int_t i=0;i<Nspecies;i++) {
       if(i==noIndex) continue;
+      if(!hDen2D[i]) continue;
       palette = (TPaletteAxis*)hDen2D[i]->GetListOfFunctions()->FindObject("palette");
       if(palette) {
 	palette->SetY1NDC(y1 + i*pvsize + gap);
@@ -1444,8 +1447,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     ip--;  
     C->cd(0);
-  }
-
+  }    
 
 
   if(mask & 0x2) {

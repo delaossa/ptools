@@ -277,7 +277,7 @@ int main(int argc,char *argv[]) {
   x1Max = varMax[0] + 0.3*(varMax[0]-varMin[0]);
   //x1Min = -72390512;
   //x1Max = -72390232;
-  x1Min = -25846100;
+  //x1Min = -25846100;
 
   x2Min = varMin[1] - 0.3*(varMax[1]-varMin[1]);
   x2Max = varMax[1] + 0.3*(varMax[1]-varMin[1]);
@@ -885,14 +885,20 @@ int main(int argc,char *argv[]) {
   if(opt.Contains("zmean")) {
     hX1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean);
     hP1X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,p1Nbin,p1Min,p1Max);
-    hX2X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,x2Nbin,x2Min,x2Max);
-    hX3X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,x3Nbin,x3Min,x3Max);
+    hX2X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,x2Nbin,x2Min-x_mean,x2Max-x_mean);
+    hP2X2->SetBins(x2Nbin,x2Min-x_mean,x2Max-x_mean,p2Nbin,p2Min,p2Max);
+    hP3X3->SetBins(x3Nbin,x3Min-y_mean,x3Max-y_mean,p3Nbin,p3Min,p3Max);
+    hX3X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,x3Nbin,x3Min-y_mean,x3Max-y_mean);
+    hX3X2->SetBins(x2Nbin,x2Min-x_mean,x2Max-x_mean,x3Nbin,x3Min-y_mean,x3Max-y_mean);
+    
     for(Int_t k=0;k<SNbin;k++) {
       xbin[k] -= zmean;
       sBinLim[k] -= zmean;
     }
     sBinLim[SNbin] -= zmean;
     zmean = 0.0;
+    x_mean = 0;
+    y_mean = 0;
   }
   // ------
 
@@ -985,11 +991,17 @@ int main(int argc,char *argv[]) {
     Double_t yMax =  -999.9;
 
     for(Int_t k=0;k<SNbin;k++) {
-      if(semit[k]<yMin)
-	yMin = semit[k];
+      if(semitx[k]<yMin)
+	yMin = semitx[k];
 
-      if(semit[k]>yMax)
-	yMax = semit[k];
+      if(semitx[k]>yMax)
+	yMax = semitx[k];
+
+      if(semity[k]<yMin)
+	yMin = semity[k];
+
+      if(semity[k]>yMax)
+	yMax = semity[k];
 
       if(sErms[k]<yMin)
 	yMin = sErms[k];
@@ -1625,7 +1637,7 @@ int main(int argc,char *argv[]) {
 
     // Transverse phasespace
 
-    // x3-x3
+    // x3-x2
     sprintf(cName,"CX3X2");     
     TCanvas *CX3X2 = (TCanvas*) gROOT->FindObject(cName);
     if(CX3X2==NULL) CX3X2 = new TCanvas("CX3X2","Transverse space x3-x2",sizex,sizey);
@@ -2288,7 +2300,9 @@ int main(int argc,char *argv[]) {
     hP3X3->Write("hP3X3",TObject::kOverwrite);
     hX2X1->Write("hX2X1",TObject::kOverwrite);
     hX3X1->Write("hX3X1",TObject::kOverwrite);
+    hX3X2->Write("hX3X1",TObject::kOverwrite);
 
+    
     gErms->Write("gErms",TObject::kOverwrite);
     gXrms->Write("gXrms",TObject::kOverwrite);
     gemitX->Write("gemitX",TObject::kOverwrite);

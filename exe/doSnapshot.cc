@@ -110,7 +110,7 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-nof")) {
       char ss[2];
       sscanf(arg,"%4s%i",ss,&NofBin);
-    } else if( !(arg.Contains("pitz") || arg.Contains("flash") || arg.Contains("regae") || arg.Contains("Gauss") || arg.Contains("pwfa") || arg.Contains("vacuum") || arg.Contains("seed") || arg.Contains("dchirp") || arg.Contains("facet") || arg.Contains("FACET") || arg.Contains("rake") || arg.Contains("LWFA")|| arg.Contains("BOND")) ) {
+    } else if( !(arg.Contains("pitz") || arg.Contains("flash") || arg.Contains("regae") || arg.Contains("Gauss") || arg.Contains("pwfa") || arg.Contains("vacuum") || arg.Contains("seed") || arg.Contains("dchirp") || arg.Contains("facet") || arg.Contains("FACET") || arg.Contains("rake") || arg.Contains("LWFA")|| arg.Contains("BOND") || arg.Contains("FLFP")) ) {
       cout << Form("\t Invalid argument (%i): exiting...\n",l) << endl;
       return 0;
     } else {

@@ -304,6 +304,12 @@ void PData::LoadFileNames(Int_t t) {
 	species[1] = species[i];
 	species[i] = temp;
       }
+    if(species[i].find("high") != string::npos)
+      if(i>0) {
+	string temp = species[2];
+	species[2] = species[i];
+	species[i] = temp;
+      }
   }
   
   // Get the list of different phase spaces
