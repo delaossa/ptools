@@ -34,7 +34,9 @@ int main(int argc,char *argv[]) {
     printf("\n Usage: %s <simulation name> <-t(time)>\n",argv[0]);
     printf("      <-index(species index)>\n");
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
-    printf("      <--png> <--pdf> <--eps> <--units> <--comov>\n");
+    printf("      <--png> <--pdf> <--eps>\n");
+    printf("      <--center> <--comov>\n");
+    printf("      <--units> <--logz>\n");
     printf("      <--file> <--loop>\n");
     return 0;
   }
@@ -154,7 +156,7 @@ int main(int argc,char *argv[]) {
   // z start of the beam in normalized units.
   Float_t zStartBeam = pData->GetBeamStart()*kp;
 
-  opt += "comovcenter";
+  //  opt += "comovcenter";
   
   // Time looper
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
@@ -189,8 +191,7 @@ int main(int argc,char *argv[]) {
     Float_t dx1, dx2, dx3;
     
     dx1 = pData->GetDX(0);
-    dx2 = pData->GetDX(1);
-    
+    dx2 = pData->GetDX(1);    
     if(pData->Is3D())
       dx3 = pData->GetDX(2);
     else
@@ -201,6 +202,8 @@ int main(int argc,char *argv[]) {
     Int_t p1Nbin = 200;
     Int_t x2Nbin = 200;
     Int_t p2Nbin = 200;
+    Int_t x3Nbin = 200;
+    Int_t p3Nbin = 200;
     
     // Slices
     Int_t SNbin = 100;
@@ -225,6 +228,8 @@ int main(int argc,char *argv[]) {
     Float_t p3Max =  15.0;
 
     // Specific initializations:
+    // The ranges in x1 are defined in the comoving frame, centered at the driver's position.
+    // We setup a dummy shift to make them consitent with the plotting options.
     if(sim.Contains("flash")) {
     
       x1Min = -5.5;
@@ -319,6 +324,7 @@ int main(int argc,char *argv[]) {
 	x1BinMax = -5.1;
 	
       }
+      
     } else if (sim.Contains("rake-v10kA.G.SR2.RI.3D")) {
       
       x1Min = -6.4;
@@ -338,8 +344,15 @@ int main(int argc,char *argv[]) {
       x1BinMin = -6.2;
       x1BinMax = -4.9;
       
-    } 
-    
+    }
+
+    // dummy shift
+    Float_t dshiftz = pData->Shift("centercomov");
+    x1Min += dshiftz;
+    x1Max += dshiftz;
+    x1BinMin += dshiftz;
+    x1BinMax += dshiftz;
+
     // --------------------------------------------------
     
     cout << Form("\n 1. Reading file : ") << pData->GetRawFileName(index)->c_str() << endl;
@@ -350,10 +363,21 @@ int main(int argc,char *argv[]) {
     
     Float_t **var;
     var = new Float_t*[Nvar];
-    UInt_t Np = pData->GetRawArray(pData->GetRawFileName(index)->c_str(),var);  
+    UInt_t Np = pData->GetRawArray(pData->GetRawFileName(index)->c_str(),var);
+
+    // Scan histogram
+    TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
+    if(hScanX1) delete hScanX1;
+    hScanX1 = new TH1F("hScanX1","",pData->GetX1N(),pData->GetX1Min(),pData->GetX1Max());
+    // hScanX1->GetYaxis()->SetTitle("I [kA]");
+    // hScanX1->GetXaxis()->SetTitle("#zeta [#mum]");
 
     // -------------------------------------------------------------------------------
 
+
+    // auto ranges factor
+    Float_t rfactor = 0.3;
+    
     if(opt.Contains("autop")) {
 
       Float_t MinP1 = 999999;
@@ -371,7 +395,8 @@ int main(int argc,char *argv[]) {
       for(UInt_t i=0;i<Np;i++) {
 
 	// if(var[5][i]-shiftz<x1BinMin || var[5][i]-shiftz>x1BinMax ) continue; 
-	if(var[5][i]-shiftz<x1Min || var[5][i]-shiftz>x1Max ) continue; 
+	// if(var[5][i]-shiftz<x1Min || var[5][i]-shiftz>x1Max ) continue; 
+	if(var[5][i]<x1Min || var[5][i]>x1Max ) continue; 
 
 	if(var[1][i]<MinP1) MinP1 = var[1][i];
 	if(var[1][i]>MaxP1) MaxP1 = var[1][i];
@@ -387,24 +412,20 @@ int main(int argc,char *argv[]) {
 	}
       }
       
-      p1Min = MinP1 - 0.3*(MaxP1-MinP1);
-      p1Max = MaxP1 + 0.3*(MaxP1-MinP1);
-      p2Min = MinP2 - 0.3*(MaxP2-MinP2);
-      p2Max = MaxP2 + 0.3*(MaxP2-MinP2);
-      p3Min = MinP3 - 0.3*(MaxP3-MinP3);
-      p3Max = MaxP3 + 0.3*(MaxP3-MinP3);
+      p1Min = MinP1 - rfactor*(MaxP1-MinP1);
+      p1Max = MaxP1 + rfactor*(MaxP1-MinP1);
+      p2Min = MinP2 - rfactor*(MaxP2-MinP2);
+      p2Max = MaxP2 + rfactor*(MaxP2-MinP2);
+      p3Min = MinP3 - rfactor*(MaxP3-MinP3);
+      p3Max = MaxP3 + rfactor*(MaxP3-MinP3);
 
-      x2Min = MinX2 - 0.3*(MaxX2-MinX2);
-      x2Max = MaxX2 + 0.3*(MaxX2-MinX2);
+      x2Min = MinX2 - rfactor*(MaxX2-MinX2);
+      x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
       if(Nvar==8) {
-	x3Min = MinX3 - 0.3*(MaxX3-MinX3);
-	x3Max = MaxX3 + 0.3*(MaxX3-MinX3);
+	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
+	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
       }
 
-      // p1Nbin = x1Nbin;
-      // x2Nbin = ceil ((x2Max - x2Min)/(1.0*dx2));
-      // p2Nbin = x2Nbin;
-      
     } else if(opt.Contains("auto")) {
 
       Float_t MinP1 = 999999;
@@ -428,30 +449,32 @@ int main(int argc,char *argv[]) {
 	if(var[2][i]>MaxP2) MaxP2 = var[2][i];
 	if(var[3][i]<MinP3) MinP3 = var[3][i];
 	if(var[3][i]>MaxP3) MaxP3 = var[3][i];
-	if(var[5][i]-shiftz<MinX1) MinX1 = var[5][i]-shiftz;
-	if(var[5][i]-shiftz>MaxX1) MaxX1 = var[5][i]-shiftz;
+	if(var[5][i]<MinX1) MinX1 = var[5][i];
+	if(var[5][i]>MaxX1) MaxX1 = var[5][i];
 	if(var[6][i]<MinX2) MinX2 = var[6][i];
 	if(var[6][i]>MaxX2) MaxX2 = var[6][i];
 	if(Nvar==8) {
 	  if(var[7][i]<MinX3) MinX3 = var[7][i];
 	  if(var[7][i]>MaxX3) MaxX3 = var[7][i];
 	}
+
+	hScanX1->Fill(var[5][i],TMath::Abs(var[4][i]));
       }
       
-      p1Min = MinP1 - 0.3*(MaxP1-MinP1);
-      p1Max = MaxP1 + 0.3*(MaxP1-MinP1);
-      p2Min = MinP2 - 0.3*(MaxP2-MinP2);
-      p2Max = MaxP2 + 0.3*(MaxP2-MinP2);
-      p3Min = MinP3 - 0.3*(MaxP3-MinP3);
-      p3Max = MaxP3 + 0.3*(MaxP3-MinP3);
+      p1Min = MinP1 - rfactor*(MaxP1-MinP1);
+      p1Max = MaxP1 + rfactor*(MaxP1-MinP1);
+      p2Min = MinP2 - rfactor*(MaxP2-MinP2);
+      p2Max = MaxP2 + rfactor*(MaxP2-MinP2);
+      p3Min = MinP3 - rfactor*(MaxP3-MinP3);
+      p3Max = MaxP3 + rfactor*(MaxP3-MinP3);
 
-      x1Min = MinX1 - 0.3*(MaxX1-MinX1);
-      x1Max = MaxX1 + 0.3*(MaxX1-MinX1);
-      x2Min = MinX2 - 0.3*(MaxX2-MinX2);
-      x2Max = MaxX2 + 0.3*(MaxX2-MinX2);
+      x1Min = MinX1 - rfactor*(MaxX1-MinX1);
+      x1Max = MaxX1 + rfactor*(MaxX1-MinX1);
+      x2Min = MinX2 - rfactor*(MaxX2-MinX2);
+      x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
       if(Nvar==8) {
-	x3Min = MinX3 - 0.3*(MaxX3-MinX3);
-	x3Max = MaxX3 + 0.3*(MaxX3-MinX3);
+	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
+	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
       }
 
       x1BinMin = MinX1;
@@ -462,26 +485,75 @@ int main(int argc,char *argv[]) {
       x1Nbin = ceil ((x1Max - x1Min)/(dx1));
       // p1Nbin = x1Nbin;
       
-      x2Min = floor((x2Min-pData->GetXMin(0))/dx2) * dx2 + pData->GetXMin(0);  
-      x2Max = floor((x2Max-pData->GetXMin(0))/dx2) * dx2 + pData->GetXMin(0);  
+      x2Min = floor((x2Min-pData->GetXMin(1))/dx2) * dx2 + pData->GetXMin(1);  
+      x2Max = floor((x2Max-pData->GetXMin(1))/dx2) * dx2 + pData->GetXMin(1);  
       x2Nbin = ceil ((x2Max - x2Min)/(dx2));
-      // x2Nbin = ceil ((x2Max - x2Min)/(1.0*dx2));
       // p2Nbin = x2Nbin;
+
+      if(pData->Is3D()) {
+	x3Min = floor((x3Min-pData->GetXMin(2))/dx3) * dx3 + pData->GetXMin(2);  
+	x3Max = floor((x3Max-pData->GetXMin(2))/dx3) * dx3 + pData->GetXMin(2);  
+	x3Nbin = ceil ((x3Max - x3Min)/(dx3));
+      }
+      // p3Nbin = x3Nbin;
       
       // SNbin = ceil ((x1BinMax - x1BinMin)/(2.0*dx1));
-    } 
+
+      // Set X1 limits using hScanX1
+      Float_t peakFactor = 0.2;
+      Float_t x1min = -999;
+      Float_t x1max = -999;
+      {
+	Float_t maxValue = hScanX1->GetBinContent(hScanX1->GetMaximumBin());
+	Int_t   lBin = -1;
+	for(Int_t i=1;i<=hScanX1->GetNbinsX();i++) {
+	  Float_t binValue = hScanX1->GetBinContent(i);
+	  if(binValue>maxValue*peakFactor) {
+	    lBin = i;
+	    x1min = hScanX1->GetBinCenter(i);
+	    break;
+	  }
+	}
+	
+	Int_t rBin = -1;
+	
+	for(Int_t i=hScanX1->GetNbinsX();i>0;i--) {
+	  Float_t binValue = hScanX1->GetBinContent(i);
+	  if(binValue>maxValue*peakFactor) {
+	    rBin = i;
+	    x1max = hScanX1->GetBinCenter(i);
+	    break;
+	  }
+	}
+      }
+
+      x1BinMin = x1min;
+      x1BinMax = x1max;
+
+      // x1Min = x1min - 2*rfactor*(x1max-x1min);
+      // x1Max = x1max + 2*rfactor*(x1max-x1min);
+    }
+    
+
+    x1Min -= shiftz;
+    x1Max -= shiftz;
+    x1BinMin -= shiftz;
+    x1BinMax -= shiftz;
 
     if(p1Min < 0.0) p1Min = 0.01;
     if(x1Nbin < 100) x1Nbin = 100;
     if(x2Nbin < 100) x2Nbin = 100;
+    if(x3Nbin < 100) x3Nbin = 100;
 
-    cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f ", x1Nbin, x1Min, x1Max) << endl;
-    cout << Form(" p1 range (N = %i):  p1Min = %f  p1Max = %f ", p1Nbin, p1Min, p1Max) << endl;
-    cout << Form(" x2 range (N = %i):  x2Min = %f  x2Max = %f ", x2Nbin, x2Min, x2Max) << endl;
-    cout << Form(" p2 range (N = %i):  p2Min = %f  p2Max = %f ", p2Nbin, p2Min, p2Max) << endl;
-    
+    cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
+    cout << Form(" p1 range (N = %i):  p1Min = %f  p1Max = %f  dp1 = %f", p1Nbin, p1Min, p1Max, (p1Max - p1Min)/p1Nbin) << endl;
+    cout << Form(" x2 range (N = %i):  x2Min = %f  x2Max = %f  dx2 = %f", x2Nbin, x2Min, x2Max, (x2Max - x2Min)/x2Nbin) << endl;
+    cout << Form(" p2 range (N = %i):  p2Min = %f  p2Max = %f  dp2 = %f", p2Nbin, p2Min, p2Max, (p2Max - p2Min)/p2Nbin) << endl;
+    cout << Form(" x3 range (N = %i):  x3Min = %f  x3Max = %f  dx3 = %f", x3Nbin, x3Min, x3Max, (x3Max - x3Min)/x3Nbin) << endl;
+    cout << Form(" p3 range (N = %i):  p3Min = %f  p3Max = %f  dp3 = %f", p3Nbin, p3Min, p3Max, (p3Max - p3Min)/p3Nbin) << endl;
 
-    cout << Form(" Number of bins = %i . resolution = %.4f", x1Nbin,(x1Max - x1Min)/x1Nbin) << endl;    
+    cout << Form("\n x1-slices (N = %i):  x1Min = %f  x1Max = %f  Dx1 = %f", SNbin, x1BinMin, x1BinMax, (x1BinMax-x1BinMin)/SNbin) << endl;
+
     // Histograms
     char hName[16];
 
@@ -555,9 +627,10 @@ int main(int argc,char *argv[]) {
 
     // Filling histos
     cout << Form("\n 2. Filling histograms from file ... ") ;
+    
     for(UInt_t i=0;i<Np;i++) {
 
-      var[5][i] = var[5][i] - shiftz;
+      var[5][i] -= shiftz;
 
       if(var[5][i]<x1Min || var[5][i]>x1Max ) continue; 
       if(var[6][i]<x2Min || var[6][i]>x2Max ) continue; 
@@ -565,6 +638,7 @@ int main(int argc,char *argv[]) {
       if(var[1][i]<p1Min || var[1][i]>p1Max ) continue; 
       if(var[2][i]<p2Min || var[2][i]>p2Max ) continue; 
       if(var[3][i]<p3Min || var[3][i]>p3Max ) continue; 
+
 
       hX1->Fill(var[5][i],TMath::Abs(var[4][i]));
       hP1->Fill(var[1][i],TMath::Abs(var[4][i]));
@@ -600,7 +674,7 @@ int main(int argc,char *argv[]) {
     // --
 
     Double_t stats[7];  // { sumw, sumw2, sumwx, sumwx2, sumwy, sumwy2, sumwxy }
-    Float_t xmean,xrms2,xrms,ymean,yrms2,yrms,xyrms2,xyrms,emit2,emit;
+    Double_t xmean,xrms2,xrms,ymean,yrms2,yrms,xyrms2,xyrms,emit2,emit;
 
     // P1X1 Phasespace
     hP1X1->GetStats(stats);
@@ -616,11 +690,11 @@ int main(int argc,char *argv[]) {
     emit2 = xrms2*yrms2 - xyrms2*xyrms2;
     emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ;
     
-    Float_t emitz = emit;
-    Float_t zmean = xmean;
-    Float_t zrms = xrms;
-    Float_t pzmean = ymean;
-    Float_t pzrms = yrms;
+    Double_t emitz = emit;
+    Double_t zmean = xmean;
+    Double_t zrms = xrms;
+    Double_t pzmean = ymean;
+    Double_t pzrms = yrms;
 
 
     // Total relative energy spread within FWHM:
@@ -781,7 +855,12 @@ int main(int argc,char *argv[]) {
       x1Max *= skindepth / PUnits::um;
       p1Min *= PConst::ElectronMassE / PUnits::GeV;
       p1Max *= PConst::ElectronMassE / PUnits::GeV;
-
+      
+      x1BinMin *= skindepth / PUnits::um;
+      x1BinMax *= skindepth / PUnits::um;
+      for(Int_t k=0;k<=SNbin;k++) 
+	sBinLim[k] *= skindepth / PUnits::um;
+      
       hP1X1->SetBins(x1Nbin,x1Min,x1Max,p1Nbin,p1Min,p1Max);
 
       // Converting electron density
@@ -855,6 +934,7 @@ int main(int argc,char *argv[]) {
       x2Max *= skindepth/PUnits::um;
       p2Min *= PConst::ElectronMassE / PUnits::MeV;
       p2Max *= PConst::ElectronMassE / PUnits::MeV;
+      
       hP2X2->SetBins(x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
       for(Int_t j=0;j<hP2X2->GetNbinsX();j++) {
 	for(Int_t k=0;k<hP2X2->GetNbinsY();k++) {
@@ -1715,6 +1795,13 @@ int main(int argc,char *argv[]) {
 
 
       CA4->cd(1);
+
+      if(opt.Contains("logz")) {
+	gPad->SetLogz(1);
+      } else {
+	gPad->SetLogz(0);
+      }
+            
       hP2X2->Draw("colz");
 
       y1 = gPad->GetBottomMargin();
@@ -1732,7 +1819,7 @@ int main(int argc,char *argv[]) {
       textStatInt->AddText(text);
       sprintf(text,"#LTp_{y}#GT_{rms} = %5.2f",yrms);
       textStatInt->AddText(text);
-      sprintf(text,"#epsilon_{n} = %5.2f",emitx);
+      sprintf(text,"#varepsilon_{n} = %5.2f",emitx);
       textStatInt->AddText(text);
       textStatInt->Draw();
 
@@ -1765,23 +1852,32 @@ int main(int argc,char *argv[]) {
 	hP2X2sl[k]->GetZaxis()->SetTitleOffset(0.8);
 	hP2X2sl[k]->GetZaxis()->CenterTitle();
 
+	if(opt.Contains("logz")) {
+	  gPad->SetLogz(1);
+	} else {
+	  gPad->SetLogz(0);
+	}
+
+	
 	hP2X2sl[k]->Draw("colz");
 
 	// Float_t y1 = gPad->GetBottomMargin();
 	Float_t y2 = 1 - gPad->GetTopMargin();
 	Float_t x1 = gPad->GetLeftMargin();
 	// Float_t x2 = 1 - gPad->GetRightMargin();
-	textStat[k] = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+	textStat[k] = new TPaveText(x1+0.02,y2-0.50,x1+0.20,y2-0.05,"NDC");
 	PGlobals::SetPaveTextStyle(textStat[k],12); 
 	textStat[k]->SetTextColor(kGray+3);
 	textStat[k]->SetTextFont(42);
 
 	char text[64];
+	sprintf(text,"%5.2f #LT #zeta #LT %5.2f",sBinLim[k],sBinLim[k+1]);
+	textStat[k]->AddText(text);
 	sprintf(text,"#LTx#GT_{rms} = %5.2f",sxrms[k]);
 	textStat[k]->AddText(text);
 	sprintf(text,"#LTp_{x}#GT_{rms} = %5.2f",syrms[k]);
 	textStat[k]->AddText(text);
-	sprintf(text,"#epsilon_{n} = %5.2f",semit[k]);
+	sprintf(text,"#varepsilon_{n} = %5.2f",semit[k]);
 	textStat[k]->AddText(text);
 	textStat[k]->Draw();
 

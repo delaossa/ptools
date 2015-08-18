@@ -269,27 +269,30 @@ int main(int argc,char *argv[]) {
   
   
   // ----------------------------------------------------------------------------------------------
-    
+
+  // Ranges
+  Float_t rangefactor = 0.3;
+  
   x1BinMin = varMin[0];
   x1BinMax = varMax[0];
 
-  x1Min = varMin[0] - 0.3*(varMax[0]-varMin[0]);
-  x1Max = varMax[0] + 0.3*(varMax[0]-varMin[0]);
+  x1Min = varMin[0] - rangefactor*(varMax[0]-varMin[0]);
+  x1Max = varMax[0] + rangefactor*(varMax[0]-varMin[0]);
   //x1Min = -72390512;
   //x1Max = -72390232;
   //x1Min = -25846100;
 
-  x2Min = varMin[1] - 0.3*(varMax[1]-varMin[1]);
-  x2Max = varMax[1] + 0.3*(varMax[1]-varMin[1]);
-  x3Min = varMin[2] - 0.3*(varMax[2]-varMin[2]);
-  x3Max = varMax[2] + 0.3*(varMax[2]-varMin[2]);
+  x2Min = varMin[1] - rangefactor*(varMax[1]-varMin[1]);
+  x2Max = varMax[1] + rangefactor*(varMax[1]-varMin[1]);
+  x3Min = varMin[2] - rangefactor*(varMax[2]-varMin[2]);
+  x3Max = varMax[2] + rangefactor*(varMax[2]-varMin[2]);
 
-  p1Min = varMin[3] - 0.3*(varMax[3]-varMin[3]);
-  p1Max = varMax[3] + 0.3*(varMax[3]-varMin[3]);
-  p2Min = varMin[4] - 0.3*(varMax[4]-varMin[4]);
-  p2Max = varMax[4] + 0.3*(varMax[4]-varMin[4]);
-  p3Min = varMin[5] - 0.3*(varMax[5]-varMin[5]);
-  p3Max = varMax[5] + 0.3*(varMax[5]-varMin[5]);
+  p1Min = varMin[3] - rangefactor*(varMax[3]-varMin[3]);
+  p1Max = varMax[3] + rangefactor*(varMax[3]-varMin[3]);
+  p2Min = varMin[4] - rangefactor*(varMax[4]-varMin[4]);
+  p2Max = varMax[4] + rangefactor*(varMax[4]-varMin[4]);
+  p3Min = varMin[5] - rangefactor*(varMax[5]-varMin[5]);
+  p3Max = varMax[5] + rangefactor*(varMax[5]-varMin[5]);
   
   cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f ", x1Nbin, x1Min, x1Max) << endl;
   cout << Form(" p1 range (N = %i):  p1Min = %f  p1Max = %f ", p1Nbin, p1Min, p1Max) << endl;
