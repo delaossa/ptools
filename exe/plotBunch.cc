@@ -34,7 +34,7 @@ int main(int argc,char *argv[]) {
     printf("\n Usage: %s <simulation name> <-t(time)>\n",argv[0]);
     printf("      <-index(species index)>\n");
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
-    printf("      <--png> <--pdf> <--eps>\n");
+    printf("      <--png> <--pdf> <--eps> <--slcs>\n");
     printf("      <--center> <--comov>\n");
     printf("      <--units> <--logz>\n");
     printf("      <--file> <--loop>\n");
@@ -69,6 +69,8 @@ int main(int argc,char *argv[]) {
       opt += "png";
     } else if(arg.Contains("--tiff")) {
       opt += "tiff";
+    } else if(arg.Contains("--slcs")) {
+      opt += "slcs";
     } else if(arg.Contains("--comov")){
       opt += "comov";
     } else if(arg.Contains("--units")){
@@ -1762,137 +1764,142 @@ int main(int argc,char *argv[]) {
       PGlobals::imgconv(C,fOutName,opt);
       // ---------------------------------------------------------
 
-      //    gStyle->SetOptStat(1);
-      gStyle->cd();
+      // A pdf document containing all p2-x2 slices:
+      
+      if(opt.Contains("slcs")) {
+      
+	gStyle->cd();
 
-      sprintf(cName,"CA4");     
-      TCanvas *CA4 = (TCanvas*) gROOT->FindObject(cName);
-      if(CA4==NULL) CA4 = new TCanvas("CA4","Sliced p2-x2",600,800);
-      CA4->cd();
-      CA4->Clear();
-
-      Int_t ndiv = 4;
-      CA4->Divide(1,ndiv);
-
-      TString fOutName2 = Form("./%s/Plots/Bunch/%s/Bunch-%s-p2x2_%i",sim.Data(),pData->GetSpeciesName(index).c_str(),sim.Data(),time);
-
-      CA4->Print(fOutName2 + ".ps[","Portrait");
-
-      hP2X2->GetXaxis()->SetLabelSize(0.08);
-      hP2X2->GetXaxis()->SetTitleSize(0.08);
-      hP2X2->GetXaxis()->SetTitleOffset(1.0);
-      hP2X2->GetXaxis()->CenterTitle();
-
-      hP2X2->GetYaxis()->SetLabelSize(0.08);
-      hP2X2->GetYaxis()->SetTitleSize(0.08);
-      hP2X2->GetYaxis()->SetTitleOffset(0.8);
-      hP2X2->GetYaxis()->CenterTitle();
-
-      hP2X2->GetZaxis()->SetLabelSize(0.08);
-      hP2X2->GetZaxis()->SetTitleSize(0.08);
-      hP2X2->GetZaxis()->SetTitleOffset(0.8);
-      hP2X2->GetZaxis()->CenterTitle();
-
-
-      CA4->cd(1);
-
-      if(opt.Contains("logz")) {
-	gPad->SetLogz(1);
-      } else {
-	gPad->SetLogz(0);
-      }
-            
-      hP2X2->Draw("colz");
-
-      y1 = gPad->GetBottomMargin();
-      y2 = 1 - gPad->GetTopMargin();
-      x1 = gPad->GetLeftMargin();
-      x2 = 1 - gPad->GetRightMargin();
-
-      TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
-      PGlobals::SetPaveTextStyle(textStatInt,12); 
-      textStatInt->SetTextColor(kGray+3);
-      textStatInt->SetTextFont(42);
-
-      char text[64];
-      sprintf(text,"#LTy#GT_{rms} = %5.2f",xrms);
-      textStatInt->AddText(text);
-      sprintf(text,"#LTp_{y}#GT_{rms} = %5.2f",yrms);
-      textStatInt->AddText(text);
-      sprintf(text,"#varepsilon_{n} = %5.2f",emitx);
-      textStatInt->AddText(text);
-      textStatInt->Draw();
-
-      TPaveText **textStat = new TPaveText*[SNbin];
-      Int_t pnumber = 0;
-      for(Int_t k=0;k<SNbin;k++) {
-	pnumber++;
-	Int_t ic = pnumber%ndiv;
-
-	// new page
-	if( ic==0 ) {
-	  CA4->cd(0);
-	  CA4->Clear();
-	  CA4->Divide(1,ndiv);
-	}
-	CA4->cd(ic+1);
-
-	hP2X2sl[k]->GetXaxis()->SetLabelSize(0.08);
-	hP2X2sl[k]->GetXaxis()->SetTitleSize(0.08);
-	hP2X2sl[k]->GetXaxis()->SetTitleOffset(1.0);
-	hP2X2sl[k]->GetXaxis()->CenterTitle();
-
-	hP2X2sl[k]->GetYaxis()->SetLabelSize(0.08);
-	hP2X2sl[k]->GetYaxis()->SetTitleSize(0.08);
-	hP2X2sl[k]->GetYaxis()->SetTitleOffset(0.8);
-	hP2X2sl[k]->GetYaxis()->CenterTitle();
-
-	hP2X2sl[k]->GetZaxis()->SetLabelSize(0.08);
-	hP2X2sl[k]->GetZaxis()->SetTitleSize(0.08);
-	hP2X2sl[k]->GetZaxis()->SetTitleOffset(0.8);
-	hP2X2sl[k]->GetZaxis()->CenterTitle();
-
+	sprintf(cName,"CA4");     
+	TCanvas *CA4 = (TCanvas*) gROOT->FindObject(cName);
+	if(CA4==NULL) CA4 = new TCanvas("CA4","Sliced p2-x2",600,800);
+	CA4->cd();
+	CA4->Clear();
+	
+	Int_t ndiv = 4;
+	CA4->Divide(1,ndiv);
+	
+	TString fOutName2 = Form("./%s/Plots/Bunch/%s/Bunch-%s-p2x2_%i",sim.Data(),pData->GetSpeciesName(index).c_str(),sim.Data(),time);
+	
+	CA4->Print(fOutName2 + ".ps[","Portrait");
+	
+	hP2X2->GetXaxis()->SetLabelSize(0.08);
+	hP2X2->GetXaxis()->SetTitleSize(0.08);
+	hP2X2->GetXaxis()->SetTitleOffset(1.0);
+	hP2X2->GetXaxis()->CenterTitle();
+	
+	hP2X2->GetYaxis()->SetLabelSize(0.08);
+	hP2X2->GetYaxis()->SetTitleSize(0.08);
+	hP2X2->GetYaxis()->SetTitleOffset(0.8);
+	hP2X2->GetYaxis()->CenterTitle();
+	
+	hP2X2->GetZaxis()->SetLabelSize(0.08);
+	hP2X2->GetZaxis()->SetTitleSize(0.08);
+	hP2X2->GetZaxis()->SetTitleOffset(0.8);
+	hP2X2->GetZaxis()->CenterTitle();
+	
+	
+	CA4->cd(1);
+	
 	if(opt.Contains("logz")) {
 	  gPad->SetLogz(1);
 	} else {
 	  gPad->SetLogz(0);
 	}
-
 	
-	hP2X2sl[k]->Draw("colz");
-
-	// Float_t y1 = gPad->GetBottomMargin();
-	Float_t y2 = 1 - gPad->GetTopMargin();
-	Float_t x1 = gPad->GetLeftMargin();
-	// Float_t x2 = 1 - gPad->GetRightMargin();
-	textStat[k] = new TPaveText(x1+0.02,y2-0.50,x1+0.20,y2-0.05,"NDC");
-	PGlobals::SetPaveTextStyle(textStat[k],12); 
-	textStat[k]->SetTextColor(kGray+3);
-	textStat[k]->SetTextFont(42);
-
+	hP2X2->Draw("colz");
+	
+	y1 = gPad->GetBottomMargin();
+	y2 = 1 - gPad->GetTopMargin();
+	x1 = gPad->GetLeftMargin();
+	x2 = 1 - gPad->GetRightMargin();
+	
+	TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+	PGlobals::SetPaveTextStyle(textStatInt,12); 
+	textStatInt->SetTextColor(kGray+3);
+	textStatInt->SetTextFont(42);
+	
 	char text[64];
-	sprintf(text,"%5.2f #LT #zeta #LT %5.2f",sBinLim[k],sBinLim[k+1]);
-	textStat[k]->AddText(text);
-	sprintf(text,"#LTx#GT_{rms} = %5.2f",sxrms[k]);
-	textStat[k]->AddText(text);
-	sprintf(text,"#LTp_{x}#GT_{rms} = %5.2f",syrms[k]);
-	textStat[k]->AddText(text);
-	sprintf(text,"#varepsilon_{n} = %5.2f",semit[k]);
-	textStat[k]->AddText(text);
-	textStat[k]->Draw();
+	sprintf(text,"#LTy#GT_{rms} = %5.2f",xrms);
+	textStatInt->AddText(text);
+	sprintf(text,"#LTp_{y}#GT_{rms} = %5.2f",yrms);
+	textStatInt->AddText(text);
+	sprintf(text,"#varepsilon_{n} = %5.2f",emitx);
+	textStatInt->AddText(text);
+	textStatInt->Draw();
+	
+	TPaveText **textStat = new TPaveText*[SNbin];
+	Int_t pnumber = 0;
+	for(Int_t k=0;k<SNbin;k++) {
+	  pnumber++;
+	  Int_t ic = pnumber%ndiv;
+	  
+	  // new page
+	  if( ic==0 ) {
+	    CA4->cd(0);
+	    CA4->Clear();
+	    CA4->Divide(1,ndiv);
+	  }
+	  CA4->cd(ic+1);
+	  
+	  hP2X2sl[k]->GetXaxis()->SetLabelSize(0.08);
+	  hP2X2sl[k]->GetXaxis()->SetTitleSize(0.08);
+	  hP2X2sl[k]->GetXaxis()->SetTitleOffset(1.0);
+	  hP2X2sl[k]->GetXaxis()->CenterTitle();
+	  
+	  hP2X2sl[k]->GetYaxis()->SetLabelSize(0.08);
+	  hP2X2sl[k]->GetYaxis()->SetTitleSize(0.08);
+	  hP2X2sl[k]->GetYaxis()->SetTitleOffset(0.8);
+	  hP2X2sl[k]->GetYaxis()->CenterTitle();
+	  
+	  hP2X2sl[k]->GetZaxis()->SetLabelSize(0.08);
+	  hP2X2sl[k]->GetZaxis()->SetTitleSize(0.08);
+	  hP2X2sl[k]->GetZaxis()->SetTitleOffset(0.8);
+	  hP2X2sl[k]->GetZaxis()->CenterTitle();
 
-	if(ic+1==ndiv) {
-	  CA4->cd(0);
-	  CA4->Print(fOutName2 + ".ps");
+	  if(opt.Contains("logz")) {
+	    gPad->SetLogz(1);
+	  } else {
+	    gPad->SetLogz(0);
+	  }
+	  
+	  
+	  hP2X2sl[k]->Draw("colz");
+	  
+	  // Float_t y1 = gPad->GetBottomMargin();
+	  Float_t y2 = 1 - gPad->GetTopMargin();
+	  Float_t x1 = gPad->GetLeftMargin();
+	  // Float_t x2 = 1 - gPad->GetRightMargin();
+	  textStat[k] = new TPaveText(x1+0.02,y2-0.50,x1+0.20,y2-0.05,"NDC");
+	  PGlobals::SetPaveTextStyle(textStat[k],12); 
+	  textStat[k]->SetTextColor(kGray+3);
+	  textStat[k]->SetTextFont(42);
+	  
+	  char text[64];
+	  sprintf(text,"%5.2f #LT #zeta #LT %5.2f",sBinLim[k],sBinLim[k+1]);
+	  textStat[k]->AddText(text);
+	  sprintf(text,"#LTx#GT_{rms} = %5.2f",sxrms[k]);
+	  textStat[k]->AddText(text);
+	  sprintf(text,"#LTp_{x}#GT_{rms} = %5.2f",syrms[k]);
+	  textStat[k]->AddText(text);
+	  sprintf(text,"#varepsilon_{n} = %5.2f",semit[k]);
+	  textStat[k]->AddText(text);
+	  textStat[k]->Draw();
+	  
+	  if(ic+1==ndiv) {
+	    CA4->cd(0);
+	    CA4->Print(fOutName2 + ".ps");
+	  }
 	}
+	
+	CA4->Print(fOutName2 + ".ps]");
+	
+	gSystem->Exec("ps2pdf " + fOutName2 + ".ps " + fOutName2 + ".pdf");
+	gSystem->Exec("rm -rf " + fOutName2 + ".ps"); 
       }
-
-      CA4->Print(fOutName2 + ".ps]");
-
-      gSystem->Exec("ps2pdf " + fOutName2 + ".ps " + fOutName2 + ".pdf");
-      gSystem->Exec("rm -rf " + fOutName2 + ".ps"); 
-    } 
-
+      
+    }
+    
     if(opt.Contains("file")) {
       TString filename = Form("./%s/Plots/Bunch/%s/Bunch-%s_%i.root",sim.Data(),pData->GetSpeciesName(index).c_str(),sim.Data(),time);
       TFile *ofile = new TFile(filename,"RECREATE");
