@@ -522,7 +522,7 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
       yMin = 0.00001;
 
     hFrame[0]->GetYaxis()->SetRangeUser(yMin,yMax);
-    hFrame[0]->GetYaxis()->SetTitle("#epsilon_{x} [#mum]");
+    hFrame[0]->GetYaxis()->SetTitle("#varepsilon_{x} [#mum]");
 
     hFrame[0]->GetXaxis()->SetTitle("z [#mum]");
     hFrame[0]->Draw("axis");    
@@ -579,7 +579,7 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
   
   // Print to a file
   // Output file
-  TString fOutName = Form("./%s/Plots/Bunch/%s/BunchEvolution-%s",sim.Data(),pData->GetSpeciesName(index).c_str(),sim.Data());
+  TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s",sim.Data(),pData->GetSpeciesName(index).c_str(),sim.Data());
   PGlobals::imgconv(C,fOutName,opt);
   
 }

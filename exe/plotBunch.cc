@@ -346,6 +346,15 @@ int main(int argc,char *argv[]) {
       x1BinMin = -6.2;
       x1BinMax = -4.9;
       
+    } else if (sim.Contains("BOND-24TW")) {
+      
+      x1Min = -8.0;
+      x1Max = -4.30; 
+      
+      SNbin = 100;
+      x1BinMin = -6.8;
+      x1BinMax = -5.7;
+      
     }
 
     // dummy shift
@@ -355,6 +364,8 @@ int main(int argc,char *argv[]) {
     x1BinMin += dshiftz;
     x1BinMax += dshiftz;
 
+    cout << Form(" x1Min = %f x1Max = %f x1BinMin = %f x1BinMax = %f  ", x1Min, x1Max, x1BinMin, x1BinMax) << endl;
+    
     // --------------------------------------------------
     
     cout << Form("\n 1. Reading file : ") << pData->GetRawFileName(index)->c_str() << endl;
@@ -374,13 +385,17 @@ int main(int argc,char *argv[]) {
     // hScanX1->GetYaxis()->SetTitle("I [kA]");
     // hScanX1->GetXaxis()->SetTitle("#zeta [#mum]");
 
+    cout << Form(" BOX (N = %i):  x1Min = %f  x1Max = %f ", pData->GetX1N(), pData->GetX1Min()-shiftz, pData->GetX1Max()-shiftz) << endl;
+    
+    
     // -------------------------------------------------------------------------------
-
 
     // auto ranges factor
     Float_t rfactor = 0.3;
     
     if(opt.Contains("autop")) {
+
+      cout << Form(" Auto ranging just p1...") << endl;
 
       Float_t MinP1 = 999999;
       Float_t MaxP1 = -999999;
@@ -430,6 +445,8 @@ int main(int argc,char *argv[]) {
 
     } else if(opt.Contains("auto")) {
 
+      cout << Form(" Auto ranging...") << endl;
+      
       Float_t MinP1 = 999999;
       Float_t MaxP1 = -999999;
       Float_t MinP2 = 999999;
@@ -474,6 +491,9 @@ int main(int argc,char *argv[]) {
       x1Max = MaxX1 + rfactor*(MaxX1-MinX1);
       x2Min = MinX2 - rfactor*(MaxX2-MinX2);
       x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
+
+      cout << Form(" MinX1 = %f  MaxX1 = %f  ", MinX1,MaxX1) << endl;
+      
       if(Nvar==8) {
 	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
 	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
@@ -517,8 +537,7 @@ int main(int argc,char *argv[]) {
 	  }
 	}
 	
-	Int_t rBin = -1;
-	
+	Int_t rBin = -1;	
 	for(Int_t i=hScanX1->GetNbinsX();i>0;i--) {
 	  Float_t binValue = hScanX1->GetBinContent(i);
 	  if(binValue>maxValue*peakFactor) {
@@ -534,6 +553,7 @@ int main(int argc,char *argv[]) {
 
       // x1Min = x1min - 2*rfactor*(x1max-x1min);
       // x1Max = x1max + 2*rfactor*(x1max-x1min);
+      
     }
     
 
