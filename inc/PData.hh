@@ -402,7 +402,7 @@ Int_t PData::ListDir(string dir, string pattern, vector<string> &files,string op
   while ((dirp = readdir(dp)) != NULL) {
     string filename = string(dirp->d_name);
 
-    if(filename == "." || filename == "..") continue;
+    if(filename == "." || filename == ".." || (filename.find("DS_Store") != string::npos) ) continue;
 
     //    if( (dirp->d_type != isFile) && (option.find("rec") != string::npos) ) {
     if( (filename.find(".h5") == string::npos) && (option.find("rec") != string::npos) ) {
