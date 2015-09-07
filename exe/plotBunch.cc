@@ -19,6 +19,7 @@
 #include <TPaveText.h>
 #include <TPaletteAxis.h>
 #include <TExec.h>
+#include <TEllipse.h>
 
 #include "PData.hh"
 #include "PGlobals.hh"
@@ -615,6 +616,40 @@ int main(int argc,char *argv[]) {
     hP2X2->GetXaxis()->SetTitle("x [#mum]");
     hP2X2->GetYaxis()->SetTitle("p_{x}/mc");
     hP2X2->GetZaxis()->SetTitle("Charge [pC]");
+
+    sprintf(hName,"hP3X3");
+    TH2F *hP3X3 =  (TH2F*) gROOT->FindObject(hName);
+    if(hP3X3) delete hP3X3;
+    hP3X3 = new TH2F(hName,"",x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
+    hP3X3->GetXaxis()->SetTitle("y [#mum]");
+    hP3X3->GetYaxis()->SetTitle("p_{y}/mc");
+    hP3X3->GetZaxis()->SetTitle("Charge [pC]");
+    hP3X3->GetZaxis()->CenterTitle();
+
+    sprintf(hName,"hX2X1");
+    TH2F *hX2X1 = (TH2F*) gROOT->FindObject(hName);
+    if(hX2X1) delete hX2X1;
+    hX2X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,x2Nbin,x2Min,x2Max);
+    hX2X1->GetXaxis()->SetTitle("#zeta [#mum]");
+    hX2X1->GetYaxis()->SetTitle("x [#mum]");
+    hX2X1->GetZaxis()->SetTitle("Charge [pC]");
+
+    sprintf(hName,"hX3X1");
+    TH2F *hX3X1 = (TH2F*) gROOT->FindObject(hName);
+    if(hX3X1) delete hX3X1;
+    hX3X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,x3Nbin,x3Min,x3Max);
+    hX3X1->GetXaxis()->SetTitle("#zeta [#mum]");
+    hX3X1->GetYaxis()->SetTitle("y [#mum]");
+    hX3X1->GetZaxis()->SetTitle("Charge [pC]");
+
+    sprintf(hName,"hX3X2");
+    TH2F *hX3X2 = (TH2F*) gROOT->FindObject(hName);
+    if(hX3X2) delete hX3X2;
+    hX3X2 = new TH2F(hName,"",x2Nbin,x2Min,x2Max,x3Nbin,x3Min,x3Max);
+    hX3X2->GetXaxis()->SetTitle("x [#mum]");
+    hX3X2->GetYaxis()->SetTitle("y [#mum]");
+    hX3X2->GetZaxis()->SetTitle("Charge [pC]");
+
     
     // Sliced quantities:
     // --------------------------------------------------------------------------
@@ -630,6 +665,7 @@ int main(int argc,char *argv[]) {
 
     TH1F **hP1sl = new TH1F*[SNbin];
     TH2F **hP2X2sl = new TH2F*[SNbin];
+    TH2F **hP3X3sl = new TH2F*[SNbin];
     for(Int_t k=0;k<SNbin;k++) {
       sprintf(hName,"hP2X2sl_%2i",k);
       hP2X2sl[k] = (TH2F*) gROOT->FindObject(hName);
@@ -638,8 +674,17 @@ int main(int argc,char *argv[]) {
 
       hP2X2sl[k]->GetXaxis()->SetTitle("k_{p} x");
       hP2X2sl[k]->GetYaxis()->SetTitle("p_{x}/mc");
+      hP2X2sl[k]->GetZaxis()->SetTitle("Charge [a.u.]");
 
-
+      sprintf(hName,"hP3X3sl_%i",k);
+      hP3X3sl[k] = (TH2F*) gROOT->FindObject(hName);
+      if(hP3X3sl[k]) delete hP3X3sl[k];
+      hP3X3sl[k] = new TH2F(hName,"",x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
+      
+      hP3X3sl[k]->GetXaxis()->SetTitle("k_{p} y");
+      hP3X3sl[k]->GetYaxis()->SetTitle("p_{y}/mc");
+      hP3X3sl[k]->GetZaxis()->SetTitle("Charge [a.u.]");      
+      
       sprintf(hName,"hP1sl_%2i",k);
       hP1sl[k] = (TH1F*) gROOT->FindObject(hName);
       if(hP1sl[k]) delete hP1sl[k];
@@ -681,10 +726,22 @@ int main(int argc,char *argv[]) {
 
       // Projected emittance in the bunch range. (skip the tails to "match" the sliced ones)
       hP2X2->Fill(var[6][i],var[2][i],TMath::Abs(var[4][i]));
+      hP2X2sl[iBin]->Fill(var[6][i],var[2][i],TMath::Abs(var[4][i]));
 
+      if(Nvar==8){
+	hP3X3->Fill(var[2][i],var[5][i],TMath::Abs(var[4][i]));
+	hP3X3sl[iBin]->Fill(var[7][i],var[3][i],TMath::Abs(var[4][i]));
+
+	hX3X1->Fill(var[5][i],var[7][i],TMath::Abs(var[4][i]));
+	hX3X1->Fill(var[5][i],var[7][i],TMath::Abs(var[4][i]));
+	hX3X2->Fill(var[6][i],var[7][i],TMath::Abs(var[4][i]));      
+      }
+
+      hX2X1->Fill(var[5][i],var[6][i],TMath::Abs(var[4][i]));
+      
       hP1sl[iBin]->Fill(var[1][i],TMath::Abs(var[4][i]));
       //      cout << Form("  iBin = %i   p1 = %7.3f",iBin,var[1][i]) << endl;
-      hP2X2sl[iBin]->Fill(var[6][i],var[2][i],TMath::Abs(var[4][i]));
+    
       
     }
     cout << " done! " << endl;
@@ -717,8 +774,9 @@ int main(int argc,char *argv[]) {
     Double_t zrms = xrms;
     Double_t pzmean = ymean;
     Double_t pzrms = yrms;
-
-
+    Double_t zpzcorr = xyrms;
+    Double_t zpzcorrrel = xyrms/pzmean;
+    
     // Total relative energy spread within FWHM:
     sprintf(hName,"hP1cut");
     TH1F *hP1cut = (TH1F*) hP1->Clone(hName);
@@ -771,27 +829,83 @@ int main(int argc,char *argv[]) {
     // P2X2 Phasespace
     hP2X2->GetStats(stats);
 
-    xmean  = stats[2]/stats[0];
-    xrms2  = stats[3]/stats[0] - xmean * xmean;
-    xrms   = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
-    ymean  = stats[4]/stats[0];
-    yrms2  = stats[5]/stats[0] - ymean * ymean;
-    yrms   = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+    xrms2  = stats[3]/stats[0] - stats[2]*stats[2]/(stats[0]*stats[0]);
+    yrms2  = stats[5]/stats[0] - stats[4]*stats[4]/(stats[0]*stats[0]);
     xyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
-    xyrms  = (xyrms2>0.0) ? TMath::Sqrt(xyrms2) : 0.0 ;
-    emit2  = xrms2*yrms2 - xyrms2*xyrms2;
-    emit   = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ;
+    emit2 = xrms2*yrms2 - xyrms2*xyrms2;
+    emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ; 
 
-    Float_t emitx = emit;
-    Float_t x_mean = xmean;
-    Float_t x_rms = xrms;
-    Float_t pxmean = ymean;
-    Float_t pxrms = yrms;
+    Double_t emitx = emit;
+    Double_t x_mean = stats[2]/stats[0];
+    Double_t x_rms = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
+    Double_t pxmean = stats[4]/stats[0];
+    Double_t pxrms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+
+    Double_t beta = xrms2 / emit;
+    Double_t gamma = yrms2 / emit;
+    Double_t alpha = -xyrms2 / emit;
+  
+    Double_t grel = hP1->GetMean() * PUnits::GeV/PConst::ElectronMassE;
+    Double_t betax = beta * grel;
+
+    Double_t factor =  beta*beta + 2 * beta * gamma + gamma*gamma - 4 * emit;
+    if(factor<0.0) factor *= -1;
+    factor = TMath::Sqrt(factor);
+  
+    Double_t a2 = 0.5 * (beta + gamma - factor);
+    Double_t b2 = 0.5 * (beta + gamma + factor);
+  
+    Double_t p  = alpha / (a2-b2);
+    Double_t pf = TMath::Sqrt( 1 - 4*p*p ); 
+    Double_t angle = - TMath::ATan( (1+pf) / (2*p) );
+    //  if (angle <0.0) angle += 2*PConst::pi;
+  
+    TEllipse *ellipP2X2 = new TEllipse(x_mean,pxmean,TMath::Sqrt(a2),TMath::Sqrt(b2),0.,360.,angle * 180. / PConst::pi );
+    ellipP2X2->SetFillStyle(0);
+    ellipP2X2->SetLineStyle(2);
+    ellipP2X2->SetLineColor(2);
+    ellipP2X2->SetLineWidth(1);
 
 
-    // Charge  
-    hX1->Scale(dx1*dx2*dx3);
-    Float_t Charge = hX1->Integral();
+    // P3X3 SPACE -----------------------
+    hP3X3->GetStats(stats);
+
+    xrms2  = stats[3]/stats[0] - stats[2]*stats[2]/(stats[0]*stats[0]);
+    yrms2  = stats[5]/stats[0] - stats[4]*stats[4]/(stats[0]*stats[0]);
+    xyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+    emit2 = xrms2*yrms2 - xyrms2*xyrms2;
+    emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ; 
+
+    Double_t emity = emit;
+    Double_t y_mean = stats[2]/stats[0];
+    Double_t y_rms = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
+    Double_t pymean = stats[4]/stats[0];
+    Double_t pyrms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+
+    beta = xrms2 / emit;
+    gamma = yrms2 / emit;
+    alpha = -xyrms2 / emit;
+  
+    Double_t betay = beta * grel;
+
+    factor =  beta*beta + 2 * beta * gamma + gamma*gamma - 4 * emit;
+    if(factor<0.0) factor *= -1;
+    factor = TMath::Sqrt(factor);
+  
+    a2 = 0.5 * (beta + gamma - factor);
+    b2 = 0.5 * (beta + gamma + factor);
+  
+    p  = alpha / (a2-b2);
+    pf = TMath::Sqrt( 1 - 4*p*p ); 
+    angle = - TMath::ATan( (1+pf) / (2*p) );
+    //  if (angle <0.0) angle += 2*PConst::pi;
+
+    TEllipse *ellipP3X3 = new TEllipse(x_mean,pxmean,TMath::Sqrt(a2),TMath::Sqrt(b2),0.,360.,angle * 180. / PConst::pi );
+    ellipP3X3->SetFillStyle(0);
+    ellipP3X3->SetLineStyle(2);
+    ellipP3X3->SetLineColor(2);
+    ellipP3X3->SetLineWidth(1);
+
 
     cout << Form("\n 4. Calculating sliced quantities.. ") << endl ;
 
@@ -862,6 +976,10 @@ int main(int argc,char *argv[]) {
     // Changing to user units: 
     // --------------------------
 
+    // Charge  
+    hX1->Scale(dx1*dx2*dx3);
+    Float_t Charge = hX1->Integral();
+    
     string curUnit;
     string emitUnit;
     string ermsUnit;
