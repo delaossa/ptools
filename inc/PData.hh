@@ -99,6 +99,8 @@ public:
   Bool_t  IsInit() { return Init; }
   Bool_t  Is3D() { return ThreeD; }
   Bool_t  IsCyl() { return Cyl; }
+
+  void    SetNavg(Int_t navg) { Navg = navg; }
   
   UInt_t  NSpecies() { return species.size(); }
   string  GetSpeciesName(UInt_t i) { return species.at(i); }
@@ -378,6 +380,7 @@ protected:
   vector<vector<string*> >   *sPHA;   // vector of files with PHASESPACE info.
 
   pparam                    pParam;   // Struct with simulation parameters (see above).
+  Int_t                       Navg;   // Number of bins to average in z direction.
 
   ClassDef(PData,1) // Singleton class for global configuration settings
 };

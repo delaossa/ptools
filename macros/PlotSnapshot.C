@@ -145,11 +145,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   infotree->GetEntry(0);
 
   cout << Form(" Options from doSnapshot = %s \n", opttree->Data());
-
+  cout << Form(" Options in PlotSnapshot = %s \n", opt.Data());
   opt += *opttree;
-
-  cout << Form(" All options = %s \n", opt.Data());
-
+  
   // Off-axis
   if(opt.Contains("units")) {
     xoff *= skindepth/PUnits::um;
@@ -163,11 +161,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   }
   Float_t shiftz = pData->Shift(opt);
   
+  cout << Form("\n Getting the histograms ... ") ; 
+
   // Skip one of the species
   Int_t noIndex = -1;
     
-  
-  
   char hName[24];
 
   // Get charge density histos
@@ -231,9 +229,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TH2F *hV2D = (TH2F*) ifile->Get(hName);
   sprintf(hName,"hV1D"); 
   TH1F *hV1D = (TH1F*) ifile->Get(hName);
-  
+
+  cout << Form(" done. ") << endl; 
+
   
   // Ionization probability rates (ADK)
+  cout << Form("\n Calculating ionization probability rates (ADK) ... ") ; 
   // Calculates from the total E the ionization prob. rate for a given species.
   const Int_t NAtoms = 7;
   char atNames[NAtoms][8] = {"H","He","He2","Ne","Ne2","Ne5","HIT"};
@@ -339,6 +340,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
     }
 
+    cout << Form(" done. ") << endl; 
+    
+    
     // axis labels
     if(opt.Contains("units")) {
       char axName[24];
@@ -411,14 +415,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   hETotal2D->GetYaxis()->SetRangeUser(yMin,yMax);
   hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
-      
+
+
   // ------------- z Zoom --------------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
   // using a dynamic palette that adjusts the base value to a certain color.
   
-  //  Float_t density = 1; 
-  Float_t density = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX());
-  Float_t Base  = 1*density;
+  Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
+  Float_t Base  = 1;
   
   Float_t *Max = new Float_t[Nspecies];
   Float_t *Min = new Float_t[Nspecies];
@@ -428,41 +432,36 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(!hDen2D[i]) continue;
     
     Max[i] = hDen2D[i]->GetMaximum();
-    // if(i==0) cout << Form("Max. plasma density = %f",Max[i]) << endl;
-    Min[i] = 1.01E-1 * Base; 
+    Min[i] = 1.01E-1 * Base;
+    if(Min[i]>Max[i]) 1.01E-1 * Max[i];
     
     if(i==0) {
-      if(Max[i]<Base) { 
-	Max[i] = 1.1*Base;
-      } else if(Max[i]<2*Base) {
-	Min[i] = 2*Base - Max[i];
+      if(Max[i]<localden) { 
+	Max[i] = 1.1*localden;
+      } else if(Max[i]<2*localden) {
+	Min[i] = 2*localden - Max[i];
       } else {
 	Max[i] = 0.4*hDen2D[i]->GetMaximum(); // enhance plasma contrast.
-	//Max[i] = hDen2D[i]->GetMaximum(); 
-	if(Max[i]<Base) Min[i] = 1.01 * Base;
+        Max[i] = hDen2D[i]->GetMaximum(); 
+	if(Max[i]<localden) Min[i] = 1.01 * Base;
+	if(Min[i]>localden) Min[i] = 0.5 * Base;
       }
+      //  cout << Form("Base = %f, Max = %f, Min = %f",Base,Max[i], Min[i]) << endl;
     } 
     
     if(i==1) {
-      //  Max[i] = 1.0 * Max[i];
       Min[i] = 1.01E-1 * Base;
-      //Min[i] = 5.01E-2 * Base;
-      //Min[i] = 1.01E-2 * Max[i];
-      // if(Base<Max[i])
-      //  	Min[i] = 1.01E-1 * Base;
-      // else
-      //  	Min[i] = 1.01E-1 * Max[i];
     }
-
+    
     if(i==2) {
-      Min[i] = 1.01E-4 * Base;
-      //Min[i] = 5.01E-3 * Base;
-      //Min[i] = 5.01E-2 * Base;
+      Min[i] = 1.01E-3 * Base;
+      //   //Min[i] = 5.01E-3 * Base;
+      //   //Min[i] = 50.01E-2 * Base;
     }
     
     hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
   }
-  
+
   
   // Dynamic plasma palette
   const Int_t plasmaDNRGBs = 3;
@@ -472,10 +471,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(opt.Contains("logz")) {
       Float_t a = 1.0/(TMath::Log10(Max[0])-TMath::Log10(Min[0]));
       Float_t b = TMath::Log10(Min[0]);
-      basePos = a*(TMath::Log10(Base) - b);
+      basePos = a*(TMath::Log10(localden) - b);
       
     } else {
-      basePos = (1.0/(Max[0]-Min[0]))*(Base - Min[0]);
+      basePos = (1.0/(Max[0]-Min[0]))*(localden - Min[0]);
     }
   }
 
@@ -488,6 +487,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   plasmaPalette->CreateGradientColorTable(plasmaDNRGBs, plasmaDStops, 
 					  plasmaDRed, plasmaDGreen, plasmaDBlue, plasmaDNCont,1.0);
 
+  
   // Change the range of z axis for the fields to be symmetric.
   Float_t *Emax = new Float_t[Nfields];
   Float_t *Emin = new Float_t[Nfields];
@@ -516,6 +516,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Fmax = -Fmin;
   hFocus2D->GetZaxis()->SetRangeUser(Fmin,Fmax);
 
+  
+  
   // Find the first point on-axis where Ez changes from positive to negative:
   Int_t MAXCROSS = 2;
   Float_t *EzCross = new Float_t[MAXCROSS];
@@ -532,6 +534,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   //     cout << Form(" %i Ez crossing found at \\zeta = %.2f -> Ez maximum = %.2f E0",i,EzCross[i],EzExtr[i]) << endl;
       
   // }
+
+  
 
   TH1F *hEzclone = (TH1F*) hE1D[0]->Clone("hEzclone");
   hEzclone->GetXaxis()->SetRangeUser(EzCross[0],hEzclone->GetXaxis()->GetXmax());
@@ -737,7 +741,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   delete c;
 
-  
+
   // Plotting
   // ------------------------------------------------------------
   
@@ -931,7 +935,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t ESlopeInjBeam = -999;
 
 
-  if(Nspecies>2) {
+  if(Nspecies>2 && opt.Contains("curInj")) {
     if(hCur1D[2] && noIndex!=2) {
       hCur1D[2]->ResetStats();
       zInjBeam = hCur1D[2]->GetMean();
@@ -975,7 +979,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Double_t RadiusPsiLo;
 
   // Get max current in norm units:
-  if(Nspecies>1) {
+  if(Nspecies>1 && opt.Contains("bopar")) {
     if(hCur1D[1] && noIndex!=1) {  
  
       hCur1D[1]->ResetStats();
@@ -1163,6 +1167,43 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[1]->Draw(drawopt);
       }
       
+    } else if (Nspecies==4) {
+
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	hDen2D[0]->GetZaxis()->SetNdivisions(503);
+	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
+	//plasmaPalette->SetAlpha(1.0);  
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
+      }
+      
+      // Beam driver.
+      if(hDen2D[1] && noIndex!=1) {
+	hDen2D[1]->GetZaxis()->SetNdivisions(503);
+	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
+	exElec->Draw();
+	//exPlasma->Draw();
+	hDen2D[1]->Draw(drawopt);
+      }
+
+      // Injected electrons ?
+      if(hDen2D[3] && noIndex!=2) {
+	exElec->Draw();
+	hDen2D[3]->GetZaxis()->SetNdivisions(503);
+	hDen2D[3]->GetZaxis()->SetTitleFont(fonttype);
+	hDen2D[3]->Draw(drawopt);
+      }
+      
+      // Injected electrons ?
+      if(hDen2D[2] && noIndex!=2) {
+	exHot->Draw();
+	//exElec->Draw();
+	hDen2D[2]->GetZaxis()->SetNdivisions(503);
+	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
+	hDen2D[2]->Draw(drawopt);
+      }
+
     }
     
  

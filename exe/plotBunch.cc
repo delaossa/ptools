@@ -29,6 +29,28 @@
 using namespace std;
 using namespace H5;
 
+void FindLimits(TH1F *h,Float_t &xmin, Float_t &xmax, Float_t factor = 0.11) {
+  Float_t maxValue = h->GetBinContent(h->GetMaximumBin());
+  Int_t   lBin = -1;
+  for(Int_t i=1;i<=h->GetNbinsX();i++) {
+    Float_t binValue = h->GetBinContent(i);
+    if(binValue>maxValue*factor) {
+      lBin = i;
+      xmin = h->GetBinCenter(i);
+      break;
+    }
+  }
+  
+  Int_t rBin = -1;	
+  for(Int_t i=h->GetNbinsX();i>0;i--) {
+    Float_t binValue = h->GetBinContent(i);
+    if(binValue>maxValue*factor) {
+      rBin = i;
+      xmax = h->GetBinCenter(i);
+      break;
+    }
+  } 
+}
 
 int main(int argc,char *argv[]) {
   if(argc<=2) {
@@ -62,6 +84,11 @@ int main(int argc,char *argv[]) {
   for(int l=1;l<argc;l++){
     TString arg = argv[l];
 
+    if(l==1) {
+      sim = arg;
+      continue;
+    }
+    
     if(arg.Contains("--pdf")) {
       opt += "pdf";
     } else if(arg.Contains("--eps")) {
@@ -122,15 +149,13 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-pmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmax);
-    } else if( !(arg.Contains("pitz") || arg.Contains("flash") || arg.Contains("regae") || arg.Contains("Gauss") || arg.Contains("pwfa") || arg.Contains("vacuum") || arg.Contains("seed") || arg.Contains("dchirp") || arg.Contains("facet") || arg.Contains("FACET") || arg.Contains("rake") || arg.Contains("LWFA") || arg.Contains("BOND") ) ) {
+    } else {
       cout << Form("\t Invalid argument (%i): exiting...\n",l) << endl;
       return 0;
-    } else {
-      sim = arg;
     }
   }
   
-
+  
   PGlobals::Initialize();
 
   // Palettes!
@@ -275,7 +300,7 @@ int main(int argc,char *argv[]) {
     
      if(sim.Contains("v2.5kA.G.JG.DDR")) {
 
-       x1Nbin = 400;
+       x1Nbin = 300;
        p1Nbin = 200;
        x2Nbin = 200;
        p2Nbin = 200;
@@ -285,11 +310,26 @@ int main(int argc,char *argv[]) {
        
        SNbin = 100;
        x1BinMin = -4.70;
-       x1BinMax = -3.70;
+       x1BinMax = -3.60;
       
      }
-    
-
+     
+     if(sim.Contains("v2.5kA.G.ZH.DDR")) {
+       
+       x1Nbin = 300;
+       p1Nbin = 200;
+       x2Nbin = 200;
+       p2Nbin = 200;
+       
+       x1Min = -5.4;
+       x1Max = -2.5; 
+       
+       SNbin = 100;
+       x1BinMin = -4.65;
+       x1BinMax = -3.40;
+      
+     }
+     
 
     } else if(sim.Contains("facet")) {
       
@@ -383,9 +423,20 @@ int main(int argc,char *argv[]) {
     TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
     if(hScanX1) delete hScanX1;
     hScanX1 = new TH1F("hScanX1","",pData->GetX1N(),pData->GetX1Min(),pData->GetX1Max());
-    // hScanX1->GetYaxis()->SetTitle("I [kA]");
-    // hScanX1->GetXaxis()->SetTitle("#zeta [#mum]");
+    TH1F *hScanX2 = (TH1F*) gROOT->FindObject("hScanX2");
+    if(hScanX2) delete hScanX2;
+    hScanX2 = new TH1F("hScanX2","",pData->GetX2N(),pData->GetX2Min(),pData->GetX2Max());
+    TH1F *hScanX3 = (TH1F*) gROOT->FindObject("hScanX3");
+    if(hScanX3) delete hScanX3;
+    hScanX3 = new TH1F("hScanX3","",pData->GetX3N(),pData->GetX3Min(),pData->GetX3Max());
 
+    TH1F *hScanP2 = (TH1F*) gROOT->FindObject("hScanP2");
+    if(hScanP2) delete hScanP2;
+    hScanP2 = new TH1F("hScanP2","",p2Nbin,p2Min,p2Max);
+    TH1F *hScanP3 = (TH1F*) gROOT->FindObject("hScanP3");
+    if(hScanP3) delete hScanP3;
+    hScanP3 = new TH1F("hScanP3","",p2Nbin,p2Min,p2Max);
+    
     cout << Form(" BOX (N = %i):  x1Min = %f  x1Max = %f ", pData->GetX1N(), pData->GetX1Min()-shiftz, pData->GetX1Max()-shiftz) << endl;
     
     
@@ -396,7 +447,7 @@ int main(int argc,char *argv[]) {
     
     if(opt.Contains("autop")) {
 
-      cout << Form(" Auto ranging just p1...") << endl;
+      cout << Form(" Auto ranging everything but x1...") << endl;
 
       Float_t MinP1 = 999999;
       Float_t MaxP1 = -999999;
@@ -428,6 +479,14 @@ int main(int argc,char *argv[]) {
 	  if(var[7][i]<MinX3) MinX3 = var[7][i];
 	  if(var[7][i]>MaxX3) MaxX3 = var[7][i];
 	}
+
+	hScanX1->Fill(var[5][i],TMath::Abs(var[4][i]));
+	hScanX2->Fill(var[6][i],TMath::Abs(var[4][i]));
+	if(Nvar==8)
+	  hScanX3->Fill(var[7][i],TMath::Abs(var[4][i]));
+	
+	hScanP2->Fill(var[2][i],TMath::Abs(var[4][i]));
+	hScanP3->Fill(var[3][i],TMath::Abs(var[4][i]));
       }
       
       p1Min = MinP1 - rfactor*(MaxP1-MinP1);
@@ -444,6 +503,48 @@ int main(int argc,char *argv[]) {
 	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
       }
 
+      // Set limits using Scan histograms
+      Float_t peakFactor = 0.2;
+      Float_t rfactor2 = 2;
+
+      peakFactor = 0.05;
+      Float_t x2min = -999;
+      Float_t x2max = -999;
+      FindLimits(hScanX2,x2min,x2max,peakFactor);
+      x2Min = x2min - rfactor2*(x2max-x2min);
+      x2Max = x2max + rfactor2*(x2max-x2min);
+
+      Float_t x3min = -999;
+      Float_t x3max = -999;
+      if(Nvar==8)
+	FindLimits(hScanX3,x3min,x3max,peakFactor);
+      x3Min = x3min - rfactor2*(x3max-x3min);
+      x3Max = x3max + rfactor2*(x3max-x3min);
+
+      Float_t p2min = -999;
+      Float_t p2max = -999;
+      FindLimits(hScanP2,p2min,p2max,peakFactor);
+      p2Min = p2min - rfactor2*(p2max-p2min);
+      p2Max = p2max + rfactor2*(p2max-p2min);
+
+      Float_t p3min = -999;
+      Float_t p3max = -999;
+      FindLimits(hScanP3,p3min,p3max,peakFactor);
+      p3Min = p3min - rfactor2*(p3max-p3min);
+      p3Max = p3max + rfactor2*(p3max-p3min);
+
+      x2Min = floor((x2Min-pData->GetXMin(1))/dx2) * dx2 + pData->GetXMin(1);  
+      x2Max = floor((x2Max-pData->GetXMin(1))/dx2) * dx2 + pData->GetXMin(1);  
+      x2Nbin = ceil ((x2Max - x2Min)/(dx2));
+      // p2Nbin = x2Nbin;
+      
+      if(pData->Is3D()) {
+	x3Min = floor((x3Min-pData->GetXMin(2))/dx3) * dx3 + pData->GetXMin(2);  
+	x3Max = floor((x3Max-pData->GetXMin(2))/dx3) * dx3 + pData->GetXMin(2);  
+	x3Nbin = ceil ((x3Max - x3Min)/(dx3));
+      }
+      // p3Nbin = x3Nbin;
+      
     } else if(opt.Contains("auto")) {
 
       cout << Form(" Auto ranging...") << endl;
@@ -479,6 +580,13 @@ int main(int argc,char *argv[]) {
 	}
 
 	hScanX1->Fill(var[5][i],TMath::Abs(var[4][i]));
+	hScanX2->Fill(var[6][i],TMath::Abs(var[4][i]));
+	if(Nvar==8)
+	  hScanX3->Fill(var[7][i],TMath::Abs(var[4][i]));
+
+	hScanP2->Fill(var[2][i],TMath::Abs(var[4][i]));
+	hScanP3->Fill(var[3][i],TMath::Abs(var[4][i]));
+	
       }
       
       p1Min = MinP1 - rfactor*(MaxP1-MinP1);
@@ -503,6 +611,47 @@ int main(int argc,char *argv[]) {
       x1BinMin = MinX1;
       x1BinMax = MaxX1;
 
+      // Set limits using Scan histograms
+      Float_t peakFactor = 0.2;
+      Float_t rfactor2 = 2;
+      
+      Float_t x1min = -999;
+      Float_t x1max = -999;
+      FindLimits(hScanX1,x1min,x1max,peakFactor);
+      x1BinMin = x1min;
+      x1BinMax = x1max;
+
+      peakFactor = 0.05;
+      FindLimits(hScanX1,x1min,x1max,peakFactor);
+      x1Min = x1min - rfactor2*(x1max-x1min);
+      x1Max = x1max + rfactor2*(x1max-x1min);
+      
+      Float_t x2min = -999;
+      Float_t x2max = -999;
+      FindLimits(hScanX2,x2min,x2max,peakFactor);
+      x2Min = x2min - rfactor2*(x2max-x2min);
+      x2Max = x2max + rfactor2*(x2max-x2min);
+
+      Float_t x3min = -999;
+      Float_t x3max = -999;
+      if(Nvar==8)
+	FindLimits(hScanX3,x3min,x3max,peakFactor);
+      x3Min = x3min - rfactor2*(x3max-x3min);
+      x3Max = x3max + rfactor2*(x3max-x3min);
+
+      Float_t p2min = -999;
+      Float_t p2max = -999;
+      FindLimits(hScanP2,p2min,p2max,peakFactor);
+      p2Min = p2min - rfactor2*(p2max-p2min);
+      p2Max = p2max + rfactor2*(p2max-p2min);
+
+      Float_t p3min = -999;
+      Float_t p3max = -999;
+      FindLimits(hScanP3,p3min,p3max,peakFactor);
+      p3Min = p3min - rfactor2*(p3max-p3min);
+      p3Max = p3max + rfactor2*(p3max-p3min);
+
+
       x1Min = floor((x1Min-pData->GetXMin(0))/dx1) * dx1 + pData->GetXMin(0);  
       x1Max = floor((x1Max-pData->GetXMin(0))/dx1) * dx1 + pData->GetXMin(0);  
       x1Nbin = ceil ((x1Max - x1Min)/(dx1));
@@ -512,7 +661,7 @@ int main(int argc,char *argv[]) {
       x2Max = floor((x2Max-pData->GetXMin(1))/dx2) * dx2 + pData->GetXMin(1);  
       x2Nbin = ceil ((x2Max - x2Min)/(dx2));
       // p2Nbin = x2Nbin;
-
+      
       if(pData->Is3D()) {
 	x3Min = floor((x3Min-pData->GetXMin(2))/dx3) * dx3 + pData->GetXMin(2);  
 	x3Max = floor((x3Max-pData->GetXMin(2))/dx3) * dx3 + pData->GetXMin(2);  
@@ -520,41 +669,9 @@ int main(int argc,char *argv[]) {
       }
       // p3Nbin = x3Nbin;
       
+
       // SNbin = ceil ((x1BinMax - x1BinMin)/(2.0*dx1));
-
-      // Set X1 limits using hScanX1
-      Float_t peakFactor = 0.2;
-      Float_t x1min = -999;
-      Float_t x1max = -999;
-      {
-	Float_t maxValue = hScanX1->GetBinContent(hScanX1->GetMaximumBin());
-	Int_t   lBin = -1;
-	for(Int_t i=1;i<=hScanX1->GetNbinsX();i++) {
-	  Float_t binValue = hScanX1->GetBinContent(i);
-	  if(binValue>maxValue*peakFactor) {
-	    lBin = i;
-	    x1min = hScanX1->GetBinCenter(i);
-	    break;
-	  }
-	}
-	
-	Int_t rBin = -1;	
-	for(Int_t i=hScanX1->GetNbinsX();i>0;i--) {
-	  Float_t binValue = hScanX1->GetBinContent(i);
-	  if(binValue>maxValue*peakFactor) {
-	    rBin = i;
-	    x1max = hScanX1->GetBinCenter(i);
-	    break;
-	  }
-	}
-      }
-
-      x1BinMin = x1min;
-      x1BinMax = x1max;
-
-      // x1Min = x1min - 2*rfactor*(x1max-x1min);
-      // x1Max = x1max + 2*rfactor*(x1max-x1min);
-      
+                  
     }
     
 

@@ -67,6 +67,7 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   Init = kFALSE;
   Cyl = kFALSE;
   ThreeD = kFALSE;
+  Navg = 1;
 
   TString NAME = name;
   if(NAME.Contains("cyl")) Cyl = kTRUE;
@@ -95,6 +96,7 @@ PData::PData(const char * name) : TNamed(name,name) {
   Init = kFALSE;
   Cyl = kFALSE;
   ThreeD = kFALSE;
+  Navg = 1;
 
   TString NAME = name;
   if(NAME.Contains("cyl")) Cyl = kTRUE;
@@ -125,6 +127,7 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   Init = kFALSE;
   Cyl = kFALSE;
   ThreeD = kFALSE;
+  Navg = 1;
 
   TString NAME = name;
   if(NAME.Contains("cyl")) Cyl = kTRUE;
@@ -894,13 +897,16 @@ TH1F* PData::GetH1SliceZ(const char *filename,const char *dataname,Int_t Firstx2
   x1Max -= shiftx1;
   
   TH1F* h1D = new TH1F();
-  h1D->SetBins(x1Dim,x1Min,x1Max);
+  UInt_t x1DimAvg = x1Dim/Navg;
+  h1D->SetBins(x1DimAvg,x1Min,x1Max);
   
   for(UInt_t i=0;i<x1Dim;i++) {
+    UInt_t iavg = i/Navg;
+    if(i%Navg) continue;
     Double_t content = x1Array[i];
     if(opt.Contains("avg")) content /= (Lastx2Bin-Firstx2Bin+1);
     else if(opt.Contains("int")) content *= x2binsize;
-    h1D->SetBinContent(i+1,content);
+    h1D->SetBinContent(iavg,content);
   }
  
   delete x1Array;
@@ -1547,17 +1553,19 @@ TH2F* PData::GetH2(const char *filename,const char *dataname, const char *option
  
   string sdata = dataname;
   TH2F *h2D = new TH2F();
-  h2D->SetBins(x1Dim,x1Min,x1Max,x2Dim,x2Min,x2Max);
- 
+  UInt_t x1DimAvg = x1Dim/Navg;
+  h2D->SetBins(x1DimAvg,x1Min,x1Max,x2Dim,x2Min,x2Max);
+
   for(UInt_t i=0;i<x1Dim;i++) {
+    UInt_t iavg = i/Navg;
+    if(i%Navg) continue;
     for(UInt_t j=0;j<x2Dim;j++) {
       UInt_t index = (long)j*(long)x1Dim + (long)i;
-      
       if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
-      	h2D->SetBinContent(i,j,-data[index]);
+      	h2D->SetBinContent(iavg,j,-data[index]);
       else
-	h2D->SetBinContent(i,j,data[index]);
-            
+	h2D->SetBinContent(iavg,j,data[index]);
+      
     } 
   }
 

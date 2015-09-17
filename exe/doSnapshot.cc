@@ -55,6 +55,9 @@ int main(int argc,char *argv[]) {
   Int_t   NonBin = 1;
   Int_t   NofBin = 10;
 
+  // Number of bins for averaging in z direction
+  Int_t   Navg = 1;
+  
   // Options for plotting mode
   UInt_t    mask = 0x3;  // First two bins on:  000011
 
@@ -62,6 +65,11 @@ int main(int argc,char *argv[]) {
   for(int l=1;l<argc;l++){
     TString arg = argv[l];
 
+    if(l==1) {
+      sim = arg;
+      continue;
+    }
+    
     if(arg.Contains("--pdf")) {
       opt += "pdf";
     } else if(arg.Contains("--eps")) {
@@ -85,8 +93,6 @@ int main(int argc,char *argv[]) {
       opt += "grid"; 
     } else if(arg.Contains("--logz")){
       opt += "logz"; 
-    } else if(arg.Contains("--notext")){
-      opt += "notext"; 
     } else if(arg.Contains("--noinfo")){
       opt += "noinfo"; 
     } else if(arg.Contains("-t")) {
@@ -110,15 +116,16 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-nof")) {
       char ss[2];
       sscanf(arg,"%4s%i",ss,&NofBin);
-    } else if( !(arg.Contains("pitz") || arg.Contains("flash") || arg.Contains("regae") || arg.Contains("Gauss") || arg.Contains("pwfa") || arg.Contains("vacuum") || arg.Contains("seed") || arg.Contains("dchirp") || arg.Contains("facet") || arg.Contains("FACET") || arg.Contains("rake") || arg.Contains("LWFA")|| arg.Contains("BOND") || arg.Contains("FLFP")) ) {
+    } else if(arg.Contains("-avg")){
+      char ss[4];
+      sscanf(arg,"%4s%i",ss,&Navg);
+    } else {
       cout << Form("\t Invalid argument (%i): exiting...\n",l) << endl;
       return 0;
-    } else {
-      sim = arg;
     }
   }
   
-
+  
   PGlobals::Initialize();
   
   // Palettes!
@@ -131,7 +138,9 @@ int main(int argc,char *argv[]) {
 
   // Load PData
   PData *pData = PData::Get(sim.Data());
-  
+
+  pData->SetNavg(Navg);
+
   if(iStart<0) iStart = time;
   if(iEnd<=iStart) iEnd = iStart;
   
