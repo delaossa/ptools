@@ -153,7 +153,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     xoff *= skindepth/PUnits::um;
   }  
 
-
   if(opt.Contains("center")) {
     Time -= zStartPlasma;
     if(opt.Contains("comov"))      // Centers on the head of the beam.
@@ -458,7 +457,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       //   //Min[i] = 5.01E-3 * Base;
       //   //Min[i] = 50.01E-2 * Base;
     }
-    
+
+    if(i==3) {
+      Min[i] = 1.01E-3 * Base;
+    }
+
     hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
   }
 
@@ -1332,18 +1335,20 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	if(i==noIndex) continue;
 	if(!hCur1D[i] || i==0 ) continue;
 	
-	Float_t curmin = 0.001;
+	Float_t curmin = 0.0;
 	Float_t curmax = hCur1D[i]->GetMaximum();
 	// Round for better plotting
-	//curmax = TMath::CeilNint(10*curmax)/10.0;
-	//curmax = TMath::CeilNint(curmax);
-
-	if(curmax ==0) continue;
-	if(curmax ==9) curmax = 10;
-
+	if(curmax>0.1) {
+	  if(curmax < 1)
+	    curmax = TMath::CeilNint(10*curmax)/10.0;
+	  else {
+	    curmax = TMath::CeilNint(curmax);
+	  }
+	}
+	
 	Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
 	Float_t zPos = hCur1D[i]->GetMean() + 1.5 * hCur1D[i]->GetRMS();
-	if(i==2) zPos = hCur1D[i]->GetMean() + 5.0 * hCur1D[i]->GetRMS();
+	//if(hCur1D[i]->GetRMS()<1) zPos = hCur1D[i]->GetMean() + 3 * hCur1D[i]->GetRMS();
       
 	for(Int_t j=0;j<hCur1D[i]->GetNbinsX();j++) {
 	  Float_t content = hCur1D[i]->GetBinContent(j+1);
@@ -1354,8 +1359,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hCur1D[i]->SetLineWidth(2);
 	if(i==1)
 	  hCur1D[i]->SetLineColor(PGlobals::elecLine);
-	else
+	else if(i==2)
 	  hCur1D[i]->SetLineColor(kOrange+8);
+	else if(i==3)
+	  hCur1D[i]->SetLineColor(kBlue-1);
 	  
 	hCur1D[i]->Draw("same C");
 

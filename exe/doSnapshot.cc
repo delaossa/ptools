@@ -655,8 +655,10 @@ int main(int argc,char *argv[]) {
 	    hCur1D[i]->GetYaxis()->SetTitle("I_{p} [kA]");
 	  else if(i==1)
 	    hCur1D[i]->GetYaxis()->SetTitle("I_{b} [kA]");
-	  else   
+	  else if(i==2) 
 	    hCur1D[i]->GetYaxis()->SetTitle("I_{i} [kA]");
+	  else if(i==3) 
+	    hCur1D[i]->GetYaxis()->SetTitle("I_{x} [kA]");
 	  
 	  if(opt.Contains("comov"))
 	    hCur1D[i]->GetXaxis()->SetTitle("#zeta [#mum]");
