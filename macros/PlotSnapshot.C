@@ -153,7 +153,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     xoff *= skindepth/PUnits::um;
   }  
 
-
   if(opt.Contains("center")) {
     Time -= zStartPlasma;
     if(opt.Contains("comov"))      // Centers on the head of the beam.
@@ -458,7 +457,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       //   //Min[i] = 5.01E-3 * Base;
       //   //Min[i] = 50.01E-2 * Base;
     }
-    
+
+    if(i==3) {
+      Min[i] = 1.01E-3 * Base;
+    }
+
     hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
   }
 
