@@ -198,7 +198,7 @@ int main(int argc,char *argv[]) {
     
     // Off-axis definition
     
-    Float_t rms0 = pData->GetBeamRmsY() * kp;
+    Float_t rms0 = pData->GetBeamRmsX() * kp;
     if(pData->IsCyl()) rms0 = pData->GetBeamRmsR() * kp;
     
     // Calculate the "axis range" in number of bins. 
