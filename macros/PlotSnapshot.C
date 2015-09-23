@@ -1334,7 +1334,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       for(Int_t i=0;i<Nspecies;i++) {
 	if(i==noIndex) continue;
 	if(!hCur1D[i] || i==0 ) continue;
-	
+	hCur1D[i]->ResetStats();
+
 	Float_t curmin = 0.0;
 	Float_t curmax = hCur1D[i]->GetMaximum();
 	// Round for better plotting
@@ -1344,7 +1345,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  else {
 	    curmax = TMath::CeilNint(curmax);
 	  }
-	}
+	} else if(curmax<0.01)
+	  continue;
 	
 	Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
 	Float_t zPos = hCur1D[i]->GetMean() + 1.5 * hCur1D[i]->GetRMS();
