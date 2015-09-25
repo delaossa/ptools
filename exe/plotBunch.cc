@@ -428,14 +428,15 @@ int main(int argc,char *argv[]) {
     hScanX2 = new TH1F("hScanX2","",pData->GetX2N(),pData->GetX2Min(),pData->GetX2Max());
     TH1F *hScanX3 = (TH1F*) gROOT->FindObject("hScanX3");
     if(hScanX3) delete hScanX3;
-    hScanX3 = new TH1F("hScanX3","",pData->GetX3N(),pData->GetX3Min(),pData->GetX3Max());
+    if(Nvar==8)
+      hScanX3 = new TH1F("hScanX3","",pData->GetX3N(),pData->GetX3Min(),pData->GetX3Max());
 
     TH1F *hScanP2 = (TH1F*) gROOT->FindObject("hScanP2");
     if(hScanP2) delete hScanP2;
     hScanP2 = new TH1F("hScanP2","",p2Nbin,p2Min,p2Max);
     TH1F *hScanP3 = (TH1F*) gROOT->FindObject("hScanP3");
     if(hScanP3) delete hScanP3;
-    hScanP3 = new TH1F("hScanP3","",p2Nbin,p2Min,p2Max);
+    hScanP3 = new TH1F("hScanP3","",p3Nbin,p3Min,p3Max);
     
     cout << Form(" BOX (N = %i):  x1Min = %f  x1Max = %f ", pData->GetX1N(), pData->GetX1Min()-shiftz, pData->GetX1Max()-shiftz) << endl;
     
@@ -601,7 +602,6 @@ int main(int argc,char *argv[]) {
       x2Min = MinX2 - rfactor*(MaxX2-MinX2);
       x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
 
-      cout << Form(" MinX1 = %f  MaxX1 = %f  ", MinX1,MaxX1) << endl;
       
       if(Nvar==8) {
 	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
@@ -818,11 +818,14 @@ int main(int argc,char *argv[]) {
 
       if(var[5][i]<x1Min || var[5][i]>x1Max ) continue; 
       if(var[6][i]<x2Min || var[6][i]>x2Max ) continue; 
-      if(Nvar==8) if(var[7][i]<x3Min || var[7][i]>x3Max ) continue; 
+      if(Nvar==8) {
+	if(var[7][i]<x3Min || var[7][i]>x3Max ) continue; 
+	if(var[3][i]<p3Min || var[3][i]>p3Max ) continue; 
+      }
       if(var[1][i]<p1Min || var[1][i]>p1Max ) continue; 
       if(var[2][i]<p2Min || var[2][i]>p2Max ) continue; 
-      if(var[3][i]<p3Min || var[3][i]>p3Max ) continue; 
-
+      
+      //cout << " filling " << endl;
 
       hX1->Fill(var[5][i],TMath::Abs(var[4][i]));
       hP1->Fill(var[1][i],TMath::Abs(var[4][i]));
