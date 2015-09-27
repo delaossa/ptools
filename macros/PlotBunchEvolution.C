@@ -50,7 +50,7 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
   // Load PData
   PData *pData = PData::Get(sim.Data());
 
-  pData->LoadFileNames(200);
+  pData->LoadFileNames(100);
   if(!pData->IsInit()) return;
 
   Float_t maxEmitx = -999.;
