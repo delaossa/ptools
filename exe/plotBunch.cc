@@ -125,6 +125,8 @@ int main(int argc,char *argv[]) {
       opt += "noinfo"; 
     } else if(arg.Contains("--bw")){
       opt += "bw"; 
+    } else if(arg.Contains("--nospec")){
+      opt += "nospec"; 
     } else if(arg.Contains("-index")) {
       char ss[6];
       sscanf(arg,"%6s%i",ss,&index);
@@ -1815,9 +1817,11 @@ int main(int argc,char *argv[]) {
       hFrame[1]->Draw();
 
       gP1left->SetLineWidth(2);
-      gP1left->Draw("F");
-      gP1left->Draw("L");
-
+      if(!opt.Contains("nospec")) {
+	gP1left->Draw("F");
+	gP1left->Draw("L");
+      }
+      
       TLine lZmean(zmean,hP1X1->GetYaxis()->GetXmin(),zmean,hP1X1->GetYaxis()->GetXmax());
       lZmean.SetLineColor(kGray+2);
       lZmean.SetLineStyle(2);
@@ -1920,7 +1924,7 @@ int main(int argc,char *argv[]) {
       // }
 
       TLegend *Leg;
-      Leg=new TLegend(0.50,0.75,1 - gPad->GetRightMargin() - 0.02,0.95);
+      Leg=new TLegend(0.55,0.75,1 - 0.5*gPad->GetRightMargin() - 0.02,0.95);
 
       PGlobals::SetPaveStyle(Leg);
       Leg->SetTextAlign(12);
