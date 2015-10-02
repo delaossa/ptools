@@ -47,6 +47,8 @@ int main(int argc,char *argv[]) {
       opt += "spoil";
     } else if(arg.find("--inv") != string::npos) {
       opt += "inv";
+    } else if(arg.find("--astra") != string::npos) {
+      opt += "astra";
     } else {
       filename = arg;
     }
@@ -54,16 +56,12 @@ int main(int argc,char *argv[]) {
 
   if(filename.find(".h5")==string::npos) {
     
-    printf("\n 1. Reading ELEGANT file (ascii mode) .. \n");
-    if(opt.find("spoil")!= string::npos) 
-      printf("\n  -> Spoiling emittance with %.1f um of Aluminum foil ...\n",X);
-    
     // --------------------------------------------------
-    // READ FROM TEXT ELEGANT FILE
+    // READ FROM TEXT ELEGANT OR ASTRA FILE
     ifstream file(filename.c_str());
     
-    double Q;
-    unsigned int Np;  
+    double Q = 0.0;
+    unsigned int Np = 0;  
     const int Nvar = 6;
     double *var[Nvar]; 
     double varMean[Nvar]; 
@@ -77,72 +75,146 @@ int main(int argc,char *argv[]) {
       varMin[i] = 1E20;
       varMax[i] = -1E20;
     }
-    
-    string str; 
-    int irow = 0;
-    while (std::getline(file, str)) {
-      std::stringstream stream(str);
-      
-      // Process str    
-      if(irow==0) {
-	stream >> Q;
-	// Q *= 1E12;   // pC
-      } else if(irow==1) {
-	stream >> Np;
-	for(int i=0;i<Nvar;i++)
-	  var[i] = new double[Np];
-      } else {
-	for(int i=0;i<Nvar;i++) {
-	  stream >> var[i][irow-2];	
-	}
-	
-	// transform variables
-	if(opt.find("inv")!= string::npos)
-	  var[0][irow-2] *= c_light; // m
-	else
-	  var[0][irow-2] *= -c_light; // m
-	  
-	var[1][irow-2] *= 1;     // m
-	var[2][irow-2] *= 1;     // m
 
-	// Emittance spoiler:
-	if(opt.find("spoil")!= string::npos) {
-	  // \Theta_0 from the multiple scattering model:
-	  // http://pdg.lbl.gov/2014/reviews/rpp2014-rev-passage-particles-matter.pdf
-	  
-	  Float_t E0 = var[3][irow-2] * e_mass;
-	  Float_t Theta0 = (13.6/E0) * sqrt(X/X0) * (1.0 - 0.038 * log(X/X0)); // rad
-	  Float_t xr1, xr2;
-	  rndEngine->Rannor(xr1,xr2);
-	  Float_t xplane  = ((xr1 * X * Theta0 / sqrt(12.)) + (xr2 * X * Theta0 / 2)) * 1E-6; // m
-	  Float_t txplane = xr2 * Theta0; // rad
-	  var[1][irow-2] += xplane;
-	  var[4][irow-2] += txplane;
-	  
-	  Float_t yr1, yr2;
-	  rndEngine->Rannor(yr1,yr2);
-	  Float_t yplane  = (yr1 * X * Theta0 / sqrt(12.) + yr2 * X * Theta0 / 2) * 1E-6; // m
-	  Float_t typlane = yr2 * Theta0; // rad
-	  var[2][irow-2] += yplane;
-	  var[5][irow-2] += typlane;
-	}
+    if(opt.find("astra")==string::npos) {
+      printf("\n 1. Reading ELEGANT file (ascii mode) .. \n");
+      if(opt.find("spoil")!= string::npos) 
+	printf("\n  -> Spoiling emittance with %.1f um of Aluminum foil ...\n",X);
+      
+      string str; 
+      int irow = 0;
+      while (std::getline(file, str)) {
+	std::stringstream stream(str);
+      
+	// Process str    
+	if(irow==0) {
+	  stream >> Q;
+	  // Q *= 1E12;   // pC
+	} else if(irow==1) {
+	  stream >> Np;
+	  for(int i=0;i<Nvar;i++)
+	    var[i] = new double[Np];
+	} else {
+	  for(int i=0;i<Nvar;i++) {
+	    stream >> var[i][irow-2];	
+	  }
 	
-	var[4][irow-2] *= var[3][irow-2]; // mc
-	var[5][irow-2] *= var[3][irow-2]; // mc
+	  // transform variables
+	  if(opt.find("inv")!= string::npos)
+	    var[0][irow-2] *= c_light; // m
+	  else
+	    var[0][irow-2] *= -c_light; // m
+	  
+	  var[1][irow-2] *= 1;     // m
+	  var[2][irow-2] *= 1;     // m
+
+	  // Emittance spoiler:
+	  if(opt.find("spoil")!= string::npos) {
+	    // \Theta_0 from the multiple scattering model:
+	    // http://pdg.lbl.gov/2014/reviews/rpp2014-rev-passage-particles-matter.pdf
+	  
+	    Float_t E0 = var[3][irow-2] * e_mass;
+	    Float_t Theta0 = (13.6/E0) * sqrt(X/X0) * (1.0 - 0.038 * log(X/X0)); // rad
+	    Float_t xr1, xr2;
+	    rndEngine->Rannor(xr1,xr2);
+	    Float_t xplane  = ((xr1 * X * Theta0 / sqrt(12.)) + (xr2 * X * Theta0 / 2)) * 1E-6; // m
+	    Float_t txplane = xr2 * Theta0; // rad
+	    var[1][irow-2] += xplane;
+	    var[4][irow-2] += txplane;
+	  
+	    Float_t yr1, yr2;
+	    rndEngine->Rannor(yr1,yr2);
+	    Float_t yplane  = (yr1 * X * Theta0 / sqrt(12.) + yr2 * X * Theta0 / 2) * 1E-6; // m
+	    Float_t typlane = yr2 * Theta0; // rad
+	    var[2][irow-2] += yplane;
+	    var[5][irow-2] += typlane;
+	  }
 	
-	for(int i=0;i<Nvar;i++) {
-	  varMean[i] += var[i][irow-2];
-	  varRms[i]  += var[i][irow-2]*var[i][irow-2];	
+	  var[4][irow-2] *= var[3][irow-2]; // mc
+	  var[5][irow-2] *= var[3][irow-2]; // mc
+	
+	  for(int i=0;i<Nvar;i++) {
+	    varMean[i] += var[i][irow-2];
+	    varRms[i]  += var[i][irow-2]*var[i][irow-2];	
 	  
-	  if(var[i][irow-2]<varMin[i]) varMin[i] = var[i][irow-2];
-	  if(var[i][irow-2]>varMax[i]) varMax[i] = var[i][irow-2];
+	    if(var[i][irow-2]<varMin[i]) varMin[i] = var[i][irow-2];
+	    if(var[i][irow-2]>varMax[i]) varMax[i] = var[i][irow-2];
 	  
+	  }
 	}
+	irow++;
       }
-      irow++;
+    } else {
+      printf("\n 1. Reading ASTRA file (ascii mode) .. \n");
+          
+      string str; 
+      Int_t irow = 0;
+      Double_t t,q;
+      Int_t pi,ps;
+
+      // Count the lines
+      while (std::getline(file, str)) ++Np;
+      for(Int_t i=0;i<Nvar;i++)
+	var[i] = new Double_t[Np];
+
+      // Rewind
+      file.clear();
+      file.seekg(0);
+      while (std::getline(file, str)) {
+	istringstream stream(str);
+
+	//      cout << str << endl;
+      
+	for(Int_t i=0;i<Nvar;i++) {
+	  stream >> var[i][irow];	
+	}
+      
+	stream >> t;
+	stream >> q;
+	q *= -1;
+	stream >> pi;
+	stream >> ps;
+      
+	if(pi!=1) continue;
+	if(ps!=5) continue;
+	if(ps!=5) continue;
+	if(var[2][irow]<-1) continue;
+	
+	// transform spatial coordinates
+	Double_t aux0 = var[0][irow];
+	Double_t aux1 = var[1][irow];
+	var[0][irow] = var[2][irow];  // m;
+	var[1][irow] = aux0;  // m;
+	var[2][irow] = aux1;  // m;
+
+	// transform momentum coordinates
+	aux0 = var[3][irow];
+	aux1 = var[4][irow];
+	var[3][irow] = var[5][irow] / (e_mass*1E6); // mc
+	var[4][irow] = aux0 / (e_mass*1E6); // mc
+	var[5][irow] = aux1 / (e_mass*1E6); // mc
+      
+	if(irow>0) {
+	  var[0][irow] += var[0][0];
+	  var[3][irow] += var[3][0];
+	}
+      
+	Q += q;
+
+	for(Int_t i=0;i<Nvar;i++) {
+	  varMean[i] += var[i][irow];
+	  varRms[i]  += var[i][irow]*var[i][irow];	
+	
+	  if(var[i][irow]<varMin[i]) varMin[i] = var[i][irow];
+	  if(var[i][irow]>varMax[i]) varMax[i] = var[i][irow];
+	}
+      
+	irow++;
+      }
+
+      Q *= 1E3; // pC
+      Np = irow;
     }
-    
-    file.close();
     
     for(int i=0;i<Nvar;i++) {
       varMean[i] /= Np;
@@ -150,7 +222,7 @@ int main(int argc,char *argv[]) {
       varRms[i] = sqrt( varRms[i] -  varMean[i]*varMean[i] );
     }
     
-    printf("\n  %i  particles read!    Charge = %.1f pC" , Np, Q*1E12);
+    printf("\n  %i  particles read!    Charge = %.1f pC" , Np, Q);
     printf("\n  x1 = %e +/- %e \n  x2 = %e +/- %e \n  x3 = %e +/- %e \n  p1 = %e +/- %e \n  p2 = %e +/- %e \n  p3 = %e +/- %e",
 	   varMean[0], varRms[0], varMean[1], varRms[1], varMean[2], varRms[2], varMean[3], varRms[3], varMean[4], varRms[4], varMean[5], varRms[5]);      
     

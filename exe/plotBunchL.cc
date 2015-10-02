@@ -91,6 +91,8 @@ int main(int argc,char *argv[]) {
       opt += "zmean"; 
     } else if(arg.Contains("--elli")){
       opt += "elli"; 
+    } else if(arg.Contains("--astra")){
+      opt += "astra"; 
     } else if(arg.Contains("-spoil")) {
       char ss[6];
       sscanf(arg,"%6s%f",ss,&X);
@@ -162,11 +164,11 @@ int main(int argc,char *argv[]) {
     cout << Form("\n  -> Spoiling emittance with %.1f um of Berylium foil ...\n",X);
 
   // --------------------------------------------------
-  // READ FROM TEXT ELEGANT FILE
+  // READ FROM TEXT ELEGANT OR ASTRA FILE
   ifstream file(ifile.Data());
   
-  Double_t Q;
-  UInt_t Np;  
+  Double_t Q = 0.0;
+  UInt_t Np = 0;  
   const Int_t Nvar = 6;
   Double_t *var[Nvar]; 
   Double_t varMean[Nvar]; 
@@ -180,79 +182,152 @@ int main(int argc,char *argv[]) {
     varMin[i] = 1E20;
     varMax[i] = -1E20;
   }
- 
-  string str; 
-  Int_t irow = 0;
-  while (std::getline(file, str)) {
-    istringstream stream(str);
 
-    //  cout << str << endl;
+  if(!opt.Contains("astra")) {
+    string str; 
+    Int_t irow = 0;
+    while (std::getline(file, str)) {
+      istringstream stream(str);
+
+      //  cout << str << endl;
    
-    // Process str    
-    if(irow==0) {
-      stream >> Q;
-      Q *= 1E12;
-    } else if(irow==1)
-      stream >> Np;
-    else if(irow==2) { // allocate memory for the variables
-      for(Int_t i=0;i<Nvar;i++)
-	var[i] = new Double_t[Np];
-    } else {
-      for(Int_t i=0;i<Nvar;i++) {
-	stream >> var[i][irow-2];	
-      }
+      // Process str    
+      if(irow==0) {
+	stream >> Q;
+	Q *= 1E12;
+      } else if(irow==1)
+	stream >> Np;
+      else if(irow==2) { // allocate memory for the variables
+	for(Int_t i=0;i<Nvar;i++)
+	  var[i] = new Double_t[Np];
+      } else {
+	for(Int_t i=0;i<Nvar;i++) {
+	  stream >> var[i][irow-2];	
+	}
  
-      // transform spatial coordinates
-      var[0][irow-2] *= -PConst::c_light*1E6; // um
-      var[1][irow-2] *= 1E6;  // um
-      var[2][irow-2] *= 1E6;  // um
+	// transform spatial coordinates
+	var[0][irow-2] *= -PConst::c_light*1E6; // um
+	var[1][irow-2] *= 1E6;  // um
+	var[2][irow-2] *= 1E6;  // um
 
-      // Emittance spoiler:
-      if(opt.Contains("spoil")) {
-	// \Theta_0 from the multiple scattering model:
-	// http://pdg.lbl.gov/2014/reviews/rpp2014-rev-passage-particles-matter.pdf
+	// Emittance spoiler:
+	if(opt.Contains("spoil")) {
+	  // \Theta_0 from the multiple scattering model:
+	  // http://pdg.lbl.gov/2014/reviews/rpp2014-rev-passage-particles-matter.pdf
 	
-	Float_t E0 = var[3][irow-2] * PConst::ElectronMassE/PUnits::MeV;
-	Float_t Theta0 = (13.6/E0) * TMath::Sqrt(X/X0) * (1.0 - 0.038 * TMath::Log(X/X0)); // rad
-	Float_t corr = 0.87;
-	Float_t xr1, xr2;
-	rndEngine->Rannor(xr1,xr2);
-	Float_t xplane  = (xr1 * X * Theta0 / TMath::Sqrt(12.)) + (xr2 * X * Theta0 / 2); // um
-	Float_t txplane = xr2 * Theta0; // rad
-	var[1][irow-2] += xplane;
-	var[4][irow-2] += txplane;
+	  Float_t E0 = var[3][irow-2] * PConst::ElectronMassE/PUnits::MeV;
+	  Float_t Theta0 = (13.6/E0) * TMath::Sqrt(X/X0) * (1.0 - 0.038 * TMath::Log(X/X0)); // rad
+	  Float_t corr = 0.87;
+	  Float_t xr1, xr2;
+	  rndEngine->Rannor(xr1,xr2);
+	  Float_t xplane  = (xr1 * X * Theta0 / TMath::Sqrt(12.)) + (xr2 * X * Theta0 / 2); // um
+	  Float_t txplane = xr2 * Theta0; // rad
+	  var[1][irow-2] += xplane;
+	  var[4][irow-2] += txplane;
 
-	//cout << Form(" rdn1 = %6f  rdn2 = %6f  xplane = %6f  txplane = %6f",xr1,xr2,xplane,txplane) << endl;
+	  //cout << Form(" rdn1 = %6f  rdn2 = %6f  xplane = %6f  txplane = %6f",xr1,xr2,xplane,txplane) << endl;
 	
-	Float_t yr1, yr2;
-	rndEngine->Rannor(yr1,yr2);
-	Float_t yplane  = yr1 * X * Theta0 / TMath::Sqrt(12.) + yr2 * X * Theta0 / 2; // um
-	Float_t typlane = yr2 * Theta0; // rad
-	var[2][irow-2] += yplane;
-	var[5][irow-2] += typlane;
+	  Float_t yr1, yr2;
+	  rndEngine->Rannor(yr1,yr2);
+	  Float_t yplane  = yr1 * X * Theta0 / TMath::Sqrt(12.) + yr2 * X * Theta0 / 2; // um
+	  Float_t typlane = yr2 * Theta0; // rad
+	  var[2][irow-2] += yplane;
+	  var[5][irow-2] += typlane;
 	
 	
 	
-      }
+	}
       
 
-      var[4][irow-2] *= var[3][irow-2]; // mc
-      var[5][irow-2] *= var[3][irow-2]; // mc
-      var[3][irow-2] *= PConst::ElectronMassE/PUnits::GeV; // GeV
+	var[4][irow-2] *= var[3][irow-2]; // mc
+	var[5][irow-2] *= var[3][irow-2]; // mc
+	var[3][irow-2] *= PConst::ElectronMassE/PUnits::GeV; // GeV
 
+      
+	for(Int_t i=0;i<Nvar;i++) {
+	  varMean[i] += var[i][irow-2];
+	  varRms[i]  += var[i][irow-2]*var[i][irow-2];	
+	
+	  if(var[i][irow-2]<varMin[i]) varMin[i] = var[i][irow-2];
+	  if(var[i][irow-2]>varMax[i]) varMax[i] = var[i][irow-2];
+	
+	}      
+      }
+    
+      irow++;
+    }
+  } else {
+
+    cout << "   ASTRA file: " << ifile.Data() << endl;
+    
+    string str; 
+    Int_t irow = 0;
+    Double_t t,q;
+    Int_t pi,ps;
+
+    // Count the lines
+    while (std::getline(file, str)) ++Np;
+    for(Int_t i=0;i<Nvar;i++)
+      var[i] = new Double_t[Np];
+
+    // Rewind
+    file.clear();
+    file.seekg(0);
+    while (std::getline(file, str)) {
+      istringstream stream(str);
+
+      //      cout << str << endl;
       
       for(Int_t i=0;i<Nvar;i++) {
-	varMean[i] += var[i][irow-2];
-	varRms[i]  += var[i][irow-2]*var[i][irow-2];	
+	stream >> var[i][irow];	
+      }
+      
+      stream >> t;
+      stream >> q;
+      q *= -1;
+      stream >> pi;
+      stream >> ps;
+      
+      if(pi!=1) continue;
+      if(ps!=5) continue;
+      
+      // transform spatial coordinates
+      Double_t aux0 = var[0][irow];
+      Double_t aux1 = var[1][irow];
+      var[0][irow] = var[2][irow] * 1E6;  // um;
+      var[1][irow] = aux0 * 1E6;  // um;
+      var[2][irow] = aux1 * 1E6;  // um;
+
+      // transform momentum coordinates
+      aux0 = var[3][irow];
+      aux1 = var[4][irow];
+      var[3][irow] = var[5][irow] * PUnits::eV / (PUnits::GeV);
+      var[4][irow] = aux0 * PUnits::eV / PConst::ElectronMassE;
+      var[5][irow] = aux1 * PUnits::eV / PConst::ElectronMassE;
+      
+      if(irow>0) {
+	var[0][irow] += var[0][0];
+	var[3][irow] += var[3][0];
+      }
+      
+      Q += q;
+
+      for(Int_t i=0;i<Nvar;i++) {
+	varMean[i] += var[i][irow];
+	varRms[i]  += var[i][irow]*var[i][irow];	
 	
-	if(var[i][irow-2]<varMin[i]) varMin[i] = var[i][irow-2];
-	if(var[i][irow-2]>varMax[i]) varMax[i] = var[i][irow-2];
-	
-      }      
+	if(var[i][irow]<varMin[i]) varMin[i] = var[i][irow];
+	if(var[i][irow]>varMax[i]) varMax[i] = var[i][irow];
+      }
+      
+      irow++;
     }
-    
-    irow++;
+
+    Q *= 1E3; // pC
   }
+
+
+  file.close();
   
   for(Int_t i=0;i<Nvar;i++) {
     varMean[i] /= Np;
@@ -859,7 +934,7 @@ int main(int argc,char *argv[]) {
   // To current.
   Float_t binSize = (x1Max - x1Min)/x1Nbin;
   Float_t lightspeed =  PConst::c_light / (PUnits::um/PUnits::femtosecond);  
-  hX1->Scale(lightspeed/binSize);
+  hX1->Scale(1000*lightspeed/binSize);
 
 
   cout << "\n  Summary _______________________________________________________ " << endl;
