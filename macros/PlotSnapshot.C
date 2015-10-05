@@ -450,6 +450,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     if(i==1) {
       Min[i] = 1.01E-1 * Base;
+      if(Max[i]<Min[i])
+	Min[i] = 1.01E-3 * Base;
+
     }
     
     if(i==2) {
