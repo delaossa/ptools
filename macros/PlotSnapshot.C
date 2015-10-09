@@ -420,9 +420,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // Set the range of the plasma charge density histogram for maximum constrast 
   // using a dynamic palette that adjusts the base value to a certain color.
   
-  Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
   Float_t Base  = 1;
-  
+  Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
+  if(localden<Base) localden = Base;
+    
   Float_t *Max = new Float_t[Nspecies];
   Float_t *Min = new Float_t[Nspecies];
   
@@ -441,11 +442,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	Min[i] = 2*localden - Max[i];
       } else {
 	Max[i] = 0.4*hDen2D[i]->GetMaximum(); // enhance plasma contrast.
-        Max[i] = hDen2D[i]->GetMaximum(); 
+        //Max[i] = hDen2D[i]->GetMaximum(); 
 	if(Max[i]<localden) Min[i] = 1.01 * Base;
-	if(Min[i]>localden) Min[i] = 0.5 * Base;
+	if(Min[i]>localden) Min[i] = 0.9*localden;
       }
-      //  cout << Form("Base = %f, Max = %f, Min = %f",Base,Max[i], Min[i]) << endl;
+      cout << Form("Base = %f, Max = %f, Min = %f",Base,Max[i], Min[i]) << endl;
     } 
     
     if(i==1) {
@@ -864,7 +865,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   char ctext[128];
   if(opt.Contains("units") && n0) 
-    sprintf(ctext,"z = %5.1f #mum", Time * skindepth / PUnits::um);
+    sprintf(ctext,"z = %5.1f mm", Time * skindepth / PUnits::mm);
   else
     sprintf(ctext,"t = %5.1f #omega_{p}^{-1}",Time);
   
@@ -875,7 +876,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   if(opt.Contains("units") && n0) 
     //    sprintf(ctext,"n_{0} = %5.1f x 10^{17} cm^{-3}", 1E-17*n0/(1./PUnits::cm3));
-    sprintf(ctext,"n_{0} = %5.2f x 10^{18} cm^{-3}", 1E-18*n0/(1./PUnits::cm3));
+    sprintf(ctext,"n_{0} = %5.2f x 10^{15} cm^{-3}", 1E-15*n0/(1./PUnits::cm3));
    
   TLatex *textDen = new TLatex(xMin + (xMax-xMin)/20.,yMax - (yMax-yMin)/10.,ctext);
   textDen->SetTextAlign(12);
@@ -1349,7 +1350,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	    curmax = TMath::CeilNint(curmax);
 	  }
 	} else if(curmax<0.01)
-	  continue;
+	  // continue;
 	
 	Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
 	Float_t zPos = hCur1D[i]->GetMean() + 1.5 * hCur1D[i]->GetRMS();
@@ -1636,12 +1637,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       lineZero->Draw();
     }
 
-    if(opt.Contains("off")) {
-      TLine *lineOff = new TLine(xMin,0,xMax,0);
-      lineOff->SetLineColor(lineColor);
-      lineOff->SetLineStyle(2);
-      lineOff->Draw();
-    }
+    // if(opt.Contains("off")) {
+    //   TLine *lineOff = new TLine(xMin,xoff,xMax,xoff);
+    //   lineOff->SetLineColor(lineColor);
+    //   lineOff->SetLineStyle(2);
+    //   lineOff->Draw();
+    // }
 
 
     if(opt.Contains("bopar")) {
