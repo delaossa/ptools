@@ -102,12 +102,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t E0 = pData->GetPlasmaE0();
 
   // Some beam properties:
-  Float_t Ebeam = pData->GetBeamEnergy();
-  Float_t gamma = pData->GetBeamGamma();
-  Float_t vbeam = pData->GetBeamVelocity();
+  // Float_t Ebeam = pData->GetBeamEnergy();
+  // Float_t gamma = pData->GetBeamGamma();
+  // Float_t vbeam = pData->GetBeamVelocity();
 
   // Other parameters
-  Float_t trapPotential = 1.0 - (1.0/gamma);
+  //  Float_t trapPotential = 1.0 - (1.0/gamma);
+  Float_t trapPotential = 1.0;
 
   // Time in OU
   Float_t Time = pData->GetRealTime();
@@ -137,10 +138,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TString *opttree = 0;
   infotree->SetBranchAddress("options",&opttree);
 
-  Float_t xon = 0.1;
+  Double_t xon = 0.1;
   infotree->SetBranchAddress("xon",&xon);
-  Float_t xoff = 0.1;
+  Double_t xoff = 0.1;
   infotree->SetBranchAddress("xoff",&xoff);
+  Double_t spaUnit = 1;
+  infotree->SetBranchAddress("spaUnit",&spaUnit);  
   
   infotree->GetEntry(0);
 
@@ -150,7 +153,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   // Off-axis
   if(opt.Contains("units")) {
-    xoff *= skindepth/PUnits::um;
+    xoff *= skindepth/spaUnit;
   }  
 
   if(opt.Contains("center")) {
@@ -446,7 +449,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	if(Max[i]<localden) Min[i] = 1.01 * Base;
 	if(Min[i]>localden) Min[i] = 0.9*localden;
       }
-      cout << Form("Base = %f, Max = %f, Min = %f",Base,Max[i], Min[i]) << endl;
+      //      cout << Form("Base = %f, Max = %f, Min = %f",Base,Max[i], Min[i]) << endl;
     } 
     
     if(i==1) {
@@ -511,7 +514,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hE2D[i]->GetZaxis()->SetRangeUser(Emin[0],Emax[0]); 
   }
 
-  Float_t ETmin = 0.001;  
+  Float_t ETmin = 0.0001;  
   Float_t ETmax = hETotal2D->GetMaximum();
   hETotal2D->GetZaxis()->SetRangeUser(ETmin,ETmax);
 
@@ -523,7 +526,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Fmax = -Fmin;
   hFocus2D->GetZaxis()->SetRangeUser(Fmin,Fmax);
 
-  
+
+  // CROSSINGS
   
   // Find the first point on-axis where Ez changes from positive to negative:
   Int_t MAXCROSS = 2;
@@ -542,8 +546,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
   // }
 
-  
-
+  // Find maximum in beams region
   TH1F *hEzclone = (TH1F*) hE1D[0]->Clone("hEzclone");
   hEzclone->GetXaxis()->SetRangeUser(EzCross[0],hEzclone->GetXaxis()->GetXmax());
   Int_t binEbMax = hEzclone->GetMaximumBin();
@@ -561,64 +564,78 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   memset(FocusCross,0,sizeof(Float_t)*MAXCROSS);
   memset(FocusExtr,0,sizeof(Float_t)*MAXCROSS);
   auxNcross = PGlobals::HCrossings(hFocus1D,FocusCross,FocusExtr,MAXCROSS,0.0,EzCross[0]);
-
-
-  Int_t binVmin = hV1D->GetMinimumBin();  
-  Float_t Vbase = hV1D->GetMinimum();
-  
-  // End of focusing
   Int_t binFcross = hFocus1D->FindBin(FocusCross[0]);
+  
   Float_t potValueFin = hV1D->GetBinContent(binFcross);
   Float_t EmaxIon = hE1D[0]->GetBinContent(binFcross);
+  
+  Int_t binVmin = hV1D->GetMinimumBin();  
+  Int_t binVmax = hV1D->GetMaximumBin();  
+  Float_t Vmin = hV1D->GetMinimum();   
+  Float_t Vmax = hV1D->GetMaximum();    
+ 
 
-  if(opt.Contains("vfoc")) {
-    Vbase = potValueFin;
+  if(opt.Contains("vfoc")) { // minimum in focusing
+    Vmin = potValueFin;
     binVmin = binFcross;
   }
   
+  // Find first bin over the trapping threshold (if any)
   Int_t binPotValueIni = -99;  
   Float_t potValueIni = -99;
   for(Int_t j=binVmin;j<hV1D->GetNbinsX();j++) {
-    if(hV1D->GetBinContent(j)>=Vbase+trapPotential) {
+    if(hV1D->GetBinContent(j) >= Vmin + trapPotential) {
       binPotValueIni = j;
       potValueIni = hV1D->GetBinContent(j);
       break;
     }
   }
+
+  PPalette * potPalette = (PPalette*) gROOT->FindObject("rbowinv");
   
-  { // Shift potential
-    Int_t   NbinsX = hV2D->GetNbinsX(); 
-    Int_t   NbinsY = hV2D->GetNbinsY();
-    //   Float_t shift = -Vbase - trapPotential;
-    Float_t shift = -Vbase;
-    for(Int_t j=0;j<=NbinsX;j++) {
-      for(Int_t k=0;k<=NbinsY;k++) {
-  	hV2D->SetBinContent(j,k, hV2D->GetBinContent(j,k) + shift);
+  // Dynamic potential palette (blue values indicate trapping volume in respect to the minimum.
+  if(binPotValueIni>0) {
+    { // Shift potential value in respect to the minimum
+      Int_t NbinsX = hV2D->GetNbinsX(); 
+      Int_t NbinsY = hV2D->GetNbinsY();
+      for(Int_t j=0;j<=NbinsX;j++) {
+	for(Int_t k=0;k<=NbinsY;k++) {
+	  hV2D->SetBinContent(j,k, hV2D->GetBinContent(j,k) - Vmin);
       }
-      hV1D->SetBinContent(j, hV1D->GetBinContent(j) + shift);
+	hV1D->SetBinContent(j, hV1D->GetBinContent(j) - Vmin);
+      }
     }
-  }
+    
+    Float_t Vzero = hV1D->GetBinContent(binPotValueIni);
+    // cout << Form(" VZERO = %f",Vzero) << endl;
+    
+    const Int_t potPNRGBs = 6;
+    const Int_t potPNCont = 64;
+    Float_t zeroPos = (Vzero-Vmin)/(Vmax-Vmin);
 
-  Float_t Vzero = hV1D->GetBinContent(binPotValueIni);
-  // cout << Form(" VZERO = %f",Vzero) << endl;
-
-  Float_t Vmin = hV1D->GetMinimum();   
-  Float_t Vmax = hV1D->GetMaximum();    
-  if(Vmax<0.1) Vmax = 0.1;
-
-  // Dynamic potential palette
-  const Int_t potPNRGBs = 6;
-  const Int_t potPNCont = 64;
-  Float_t zeroPos = -(Vmin-Vzero)/(Vmax-Vmin);
-
-  Double_t potPStops[potPNRGBs] = { 0.00, zeroPos-6.0/potPNCont,zeroPos-1.0/potPNCont, zeroPos, zeroPos+3.0/potPNCont, 1.00 };
-  Double_t potPRed[potPNRGBs]   = { 0.518, 0.965, 0.90, 0.90, 0.498, 0.106 };
-  Double_t potPGreen[potPNRGBs] = { 0.078, 0.925, 0.90, 0.90, 0.718, 0.078 };
-  Double_t potPBlue[potPNRGBs]  = { 0.106, 0.353, 0.90, 0.90, 0.780, 0.518 };
+    Double_t potPStops[potPNRGBs] = { 0.00, zeroPos-6.0/potPNCont,zeroPos-1.0/potPNCont, zeroPos, zeroPos+3.0/potPNCont, 1.00 };
+    Double_t potPRed[potPNRGBs]   = { 0.518, 0.965, 0.90, 0.90, 0.498, 0.106 };
+    Double_t potPGreen[potPNRGBs] = { 0.078, 0.925, 0.90, 0.90, 0.718, 0.078 };
+    Double_t potPBlue[potPNRGBs]  = { 0.106, 0.353, 0.90, 0.90, 0.780, 0.518 };
    
-  PPalette * potentialPalette = (PPalette*) gROOT->FindObject("rbowinv");
-  potentialPalette->CreateGradientColorTable(potPNRGBs, potPStops, 
-					     potPRed, potPGreen, potPBlue, potPNCont);
+    potPalette->CreateGradientColorTable(potPNRGBs, potPStops, 
+					 potPRed, potPGreen, potPBlue, potPNCont);
+
+  } else {
+    const Int_t potPNRGBs = 4;
+    const Int_t potPNCont = 64;
+
+    Float_t Vzero = 0.;
+    Float_t zeroPos = (Vzero-Vmin)/(Vmax-Vmin);
+
+    Double_t potPStops[potPNRGBs] = { 0.00, zeroPos, zeroPos + (1.-zeroPos)/2. ,1.00 };
+    Double_t potPRed[potPNRGBs]   = {  1.0, 0.9, 0.965, 0.518};
+    Double_t potPGreen[potPNRGBs] = {  1.0, 0.9, 0.925, 0.078};
+    Double_t potPBlue[potPNRGBs]  = {  1.0, 0.9, 0.353, 0.106};
+   
+    potPalette->CreateGradientColorTable(potPNRGBs, potPStops, 
+					 potPRed, potPGreen, potPBlue, potPNCont);
+  }
   
   // Extract contours from 2D histos
   TCanvas* c = new TCanvas("contours","Contour List",0,0,600,600);
@@ -806,7 +823,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     char name[16];
     sprintf(name,"pad_%i",i);
     pad[i] = (TPad*) gROOT->FindObject(name);
-    pad[i]->SetFrameLineWidth(2);
+    //pad[i]->SetFrameLineWidth(2);
     if(opt.Contains("tick")) {
       pad[i]->SetTickx(1);
       pad[i]->SetTicky(1);
@@ -1343,14 +1360,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	Float_t curmin = 0.0;
 	Float_t curmax = hCur1D[i]->GetMaximum();
 	// Round for better plotting
-	if(curmax>0.1) {
-	  if(curmax < 1)
-	    curmax = TMath::CeilNint(10*curmax)/10.0;
-	  else {
-	    curmax = TMath::CeilNint(curmax);
-	  }
-	} else if(curmax<0.01)
-	  // continue;
+	// if(curmax>0.1) {
+	//   if(curmax < 1)
+	//     curmax = TMath::CeilNint(10*curmax)/10.0;
+	//   else {
+	//     curmax = TMath::CeilNint(curmax);
+	//   }
+	// } else if(curmax<0.01)
+	//   // continue;
 	
 	Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
 	Float_t zPos = hCur1D[i]->GetMean() + 1.5 * hCur1D[i]->GetRMS();
@@ -1497,7 +1514,16 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(!opt.Contains("noden") && opt.Contains("units") && n0) 
       textDen->Draw();
 
-    pad[ip]->RedrawAxis("g"); 
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			  gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+    
+    pad[ip]->RedrawAxis("g");
+    
 
     ip--;  
     C->cd(0);
@@ -1714,8 +1740,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
     }
-   
-    pad[ip]->RedrawAxis(); 
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			    gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+    
+    pad[ip]->RedrawAxis("g"); 
 
     if(opt.Contains("blines")) {
       TLine *lineEbunch = NULL;
@@ -1875,7 +1908,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
     }
-   
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			    gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+    
     pad[ip]->RedrawAxis(); 
   
   
@@ -1985,7 +2025,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
     }
-   
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			  gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+
+    
     pad[ip]->RedrawAxis(); 
   
   
@@ -2126,7 +2174,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
     }
-   
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			  gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+
     pad[ip]->RedrawAxis(); 
   
   
@@ -2332,7 +2387,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
     }
-   
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			  gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+
     pad[ip]->RedrawAxis(); 
 
     ip--;
@@ -2496,6 +2558,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetLineColor(1);
     }
 
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			  gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+
     pad[ip]->RedrawAxis(); 
   
     ip--;
@@ -2616,7 +2685,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
     }
-   
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			  gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+
     pad[ip]->RedrawAxis(); 
 
     ip--;

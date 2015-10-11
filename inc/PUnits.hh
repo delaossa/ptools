@@ -2,6 +2,11 @@
 #define _PUNITS_HH_
 
 #include <iostream>
+//#include <fstream>
+#include <sstream>
+//#include <iomanip>
+//#include <stdlib.h>
+
 #include <vector>
 
 #include <Rtypes.h>
@@ -245,6 +250,25 @@ namespace PUnits
     /*! \brief Get the value with best unit as a c string
      */
     operator const char * () const;
+
+    /*! \brief Get best unit and its name
+     */
+    void GetBestUnits(Double_t &unit, std::string &sunit) {
+
+      Double_t bestvalue;
+      std::stringstream stream;
+      stream << *this;
+      std::string aux;
+      
+      stream >> bestvalue >> sunit >> aux;
+      if(!aux.empty()) {
+       	sunit += " ";
+       	sunit += aux;
+	aux.clear();
+      }
+      unit = fValue/bestvalue;
+    };
+
 
   protected:
 

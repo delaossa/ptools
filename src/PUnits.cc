@@ -64,10 +64,10 @@ PUnits::UnitsTable::UnitsTable()
   // Length
   AddUnit("Femtometer", "fm", "Length", femtometer);
   AddUnit("Nanometer",  "nm", "Length", nanometer);
-  AddUnit("Decananometer", "10xnm", "Length", 10*nanometer);
-  AddUnit("Hectonanometer", "100 nm", "Length", 100*nanometer);
+  //  AddUnit("Decananometer", "10xnm", "Length", 10*nanometer);
+  //  AddUnit("Hectonanometer", "100xnm", "Length", 100*nanometer);
   AddUnit("Micrometer", "#mum", "Length", micrometer);
-  AddUnit("Decamicrometer", "10x#mum", "Length", decamicrometer);
+  //  AddUnit("Decamicrometer", "10x#mum", "Length", decamicrometer);
   AddUnit("Millimeter", "mm", "Length", millimeter);
   AddUnit("Centimeter", "cm", "Length", centimeter);
   AddUnit("Meter",      "m",  "Length", meter);
@@ -77,7 +77,7 @@ PUnits::UnitsTable::UnitsTable()
   AddUnit("Femtosecond", "fs", "Time", femtosecond);
   AddUnit("Picosecond",  "ps", "Time", picosecond);
   AddUnit("Nanosecond",  "ns", "Time", nanosecond);
-  AddUnit("Microsecond", "us", "Time", microsecond);
+  AddUnit("Microsecond", "#mus", "Time", microsecond);
   AddUnit("Millisecond", "ms", "Time", millisecond);
   AddUnit("Second",      "s",  "Time", second);
   
@@ -118,10 +118,32 @@ PUnits::UnitsTable::UnitsTable()
   AddUnit("Gigaelectronvolt", "GeV/c", "Momentum", GeV);
   AddUnit("Teraelectronvolt", "TeV/c", "Momentum", TeV);
 
+  // Electromagnetic field
+  AddUnit("VoltPerm",     "V/m",  "Efield", volt/meter);
+  AddUnit("KilovoltPerm", "kV/m", "Efield", kV/meter);
+  AddUnit("MegavoltPerm", "MV/m", "Efield", MV/meter);
+  AddUnit("GigavoltPerm", "GV/m", "Efield", GV/meter);
+  AddUnit("TeravoltPerm", "TV/m", "Efield", TV/meter);
+
+  // Electromagnetic potential
+  AddUnit("Volt",     "V",  "Epotential", volt);
+  AddUnit("Kilovolt", "kV", "Epotential", kV);
+  AddUnit("Megavolt", "MV", "Epotential", MV);
+  AddUnit("Gigavolt", "GV", "Epotential", GV);
+  AddUnit("Teravolt", "TV", "Epotential", TV);
+
   // Density
   AddUnit("MilligramPerCm3",  "mg/cm^3", "Density", milligram/cm3);
   AddUnit("GramPerCm3",       "g/cm^3",  "Density", g/cm3);
   AddUnit("KilogramPerCm3",   "kg/cm^3", "Density", kg/cm3);
+
+  // Particle density
+  AddUnit("10^15PerCm3","10^{15} cm^{-3}", "PartDensity", 1E15/cm3);
+  AddUnit("10^16PerCm3","10^{16} cm^{-3}", "PartDensity", 1E16/cm3);
+  AddUnit("10^17PerCm3","10^{17} cm^{-3}", "PartDensity", 1E17/cm3);
+  AddUnit("10^18PerCm3","10^{18} cm^{-3}", "PartDensity", 1E18/cm3);
+  AddUnit("10^19PerCm3","10^{19} cm^{-3}", "PartDensity", 1E19/cm3);
+  AddUnit("10^20PerCm3","10^{20} cm^{-3}", "PartDensity", 1E20/cm3);
 
   // Charge
   AddUnit("Electrons",  "e", "Charge", echarge);

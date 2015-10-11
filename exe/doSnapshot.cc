@@ -22,6 +22,7 @@
 
 #include "PData.hh"
 #include "PGlobals.hh"
+#include "PFunctions.hh"
 #include "PPalette.hh"
 #include "H5Cpp.h"
 
@@ -145,34 +146,39 @@ int main(int argc,char *argv[]) {
   if(iEnd<=iStart) iEnd = iStart;
   
   // Some plasma constants
-  Float_t n0 = pData->GetPlasmaDensity();
-  // Float_t omegap = pData->GetPlasmaFrequency();
-  // Float_t timedepth = pData->GetPlasmaTimeDepth();
-  Float_t kp = pData->GetPlasmaK();
-  Float_t skindepth = pData->GetPlasmaSkinDepth();
-  Float_t E0 = pData->GetPlasmaE0();
+  Double_t n0 = pData->GetPlasmaDensity();
+  //  Double_t omegap = pData->GetPlasmaFrequency();
+  //  Double_t timedepth = pData->GetPlasmaTimeDepth();
+  Double_t period = pData->GetPlasmaPeriod();
+  Double_t kp = pData->GetPlasmaK();
+  Double_t skindepth = pData->GetPlasmaSkinDepth();
+  Double_t wavelength = pData->GetPlasmaWaveLength();
+  Double_t E0 = pData->GetPlasmaE0();
+
+  //  cout << Form(" Timedepth = %f fs",timedepth/PUnits::femtosecond) << endl;
 
   // Some beam properties:
-  // Float_t Ebeam = pData->GetBeamEnergy();
-  Float_t gamma = pData->GetBeamGamma();
-  // Float_t vbeam = pData->GetBeamVelocity();
+  // Double_t Ebeam = pData->GetBeamEnergy();
+  // Double_t gamma = pData->GetBeamGamma();
+  // Double_t vbeam = pData->GetBeamVelocity();
 
   // cout << Form(" - Bunch gamma      = %8.4f", gamma ) << endl;
   // cout << Form(" - Bunch velocity   = %8.4f c", vbeam ) << endl;
   
   // Other parameters
-  Float_t trapPotential = 1.0 - (1.0/gamma);
-  cout << Form(" - Trap. potential  = %8.4f mc2/e",trapPotential) << endl;
-  cout << endl;
+  Double_t trapPotential = 1.0;
+  // Double_t trapPotential = 1.0 - (1.0/gamma);
+  // cout << Form(" - Trap. potential  = %8.4f mc2/e",trapPotential) << endl;
+  // cout << endl;
 
   // z start of the plasma in normalized units.
-  Float_t zStartPlasma = pData->GetPlasmaStart()*kp;
+  Double_t zStartPlasma = pData->GetPlasmaStart()*kp;
   // z start of the beam in normalized units.
-  Float_t zStartBeam = pData->GetBeamStart()*kp;
+  Double_t zStartBeam = pData->GetBeamStart()*kp;
   // // z start of the neutral in normalized units.
-  // Float_t zStartNeutral = pData->GetNeutralStart()*kp;
+  // Double_t zStartNeutral = pData->GetNeutralStart()*kp;
   // // z end of the neutral in normalized units.
-  // Float_t zEndNeutral = pData->GetNeutralEnd()*kp;
+  // Double_t zEndNeutral = pData->GetNeutralEnd()*kp;
  
   // Time looper
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
@@ -188,7 +194,7 @@ int main(int argc,char *argv[]) {
     if(!pData->IsInit()) continue;
 
     // Time in OU
-    Float_t Time = pData->GetRealTime();
+    Double_t Time = pData->GetRealTime();
 
     if(opt.Contains("center")) {
       Time -= zStartPlasma;
@@ -198,7 +204,7 @@ int main(int argc,char *argv[]) {
     
     // Off-axis definition
     
-    Float_t rms0 = pData->GetBeamRmsX() * kp;
+    Double_t rms0 = pData->GetBeamRmsX() * kp;
     if(pData->IsCyl()) rms0 = pData->GetBeamRmsR() * kp;
     
     // Calculate the "axis range" in number of bins. 
@@ -226,8 +232,8 @@ int main(int argc,char *argv[]) {
       NofBin = -TMath::Nint(float(NofBin*0.1) / pData->GetDX(1));
     }
 
-    Float_t xon  = NonBin *  pData->GetDX(1); // onaxis interval in norm. units
-    Float_t xoff = NofBin *  pData->GetDX(1); // offaxis distance in norm. units
+    Double_t xon  = NonBin *  pData->GetDX(1); // onaxis interval in norm. units
+    Double_t xoff = NofBin *  pData->GetDX(1); // offaxis distance in norm. units
     
     // Slice width limits.
     Int_t FirstyBin = 0;
@@ -244,12 +250,12 @@ int main(int argc,char *argv[]) {
 
     // Zoom window:
   
-    Float_t yRange = (pData->GetXMax(1) - pData->GetXMin(1))/zoom;
-    Float_t yMid   = (pData->GetXMax(1) + pData->GetXMin(1))/2.;
-    //Float_t yMin = pData->GetXMin(1);
-    //Float_t yMax = pData->GetXMax(1);
-    Float_t yMin = yMid - yRange/2.0;
-    Float_t yMax = yMid + yRange/2.0;
+    Double_t yRange = (pData->GetXMax(1) - pData->GetXMin(1))/zoom;
+    Double_t yMid   = (pData->GetXMax(1) + pData->GetXMin(1))/2.;
+    //Double_t yMin = pData->GetXMin(1);
+    //Double_t yMax = pData->GetXMax(1);
+    Double_t yMin = yMid - yRange/2.0;
+    Double_t yMax = yMid + yRange/2.0;
     if(pData->IsCyl()) {
       yMin = pData->GetXMin(1);
       yMax = yRange;
@@ -257,17 +263,19 @@ int main(int argc,char *argv[]) {
     pData->SetX2Min(yMin);
     pData->SetX2Max(yMax);
   
-    Float_t zMin = pData->GetX1Min();
-    Float_t zMax = pData->GetX1Max();
-    // Float_t zRange = zMax - zMin;  
+    // Double_t zMin = pData->GetX1Min();
+    // Double_t zMax = pData->GetX1Max();
+    // Double_t zRange = zMax - zMin;  
     // pData->SetX1Min(zMin);
     // pData->SetX1Max(zMax);
 
-    cout << Form(" Plotting range:  %.2f < x1 < %.2f ,  %.2f < x2 < %.2f",zMin,zMax,yMin,yMax) << endl;
+    //    cout << Form(" Plotting range:  %.2f < x1 < %.2f ,  %.2f < x2 < %.2f",zMin,zMax,yMin,yMax) << endl;
 
     // ----------------------------------------------------------------------------------
   
-  
+
+    cout << Form("Reading simulation data: ") << endl; 
+
     // Get charge density histos
     Int_t Nspecies = pData->NSpecies();
     TH2F **hDen2D = new TH2F*[Nspecies];
@@ -377,7 +385,7 @@ int main(int argc,char *argv[]) {
 	hCur1D[i]->SetName(hName); 
       
 	// Normalized current:
-	Float_t dV = skindepth * skindepth * skindepth;
+	Double_t dV = skindepth * skindepth * skindepth;
 	hCur1D[i]->Scale(TMath::Abs(n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
 	
 	hCur1D[i]->GetYaxis()->SetTitle("#Lambda_{b}");  
@@ -596,18 +604,40 @@ int main(int argc,char *argv[]) {
     // Chaning to user units: 
     // --------------------------
   
-    if(opt.Contains("units") && n0) {
+    Double_t denUnit, spaUnit, timUnit, eUnit;
+    string denSUnit, spaSUnit, timSUnit, eSUnit;
     
+    if(opt.Contains("units") && n0) {
+
+      cout << endl << Form("Changing to SI units:") << endl;
+      
+      // Get the best units for each quantity
+      PUnits::BestUnit bdenSUnit(n0,"PartDensity");
+      bdenSUnit.GetBestUnits(denUnit,denSUnit);
+      cout << Form(" n0 = %.2f %s", n0/denUnit, denSUnit.c_str()) << endl;
+
+      PUnits::BestUnit bspaSUnit(wavelength,"Length");
+      bspaSUnit.GetBestUnits(spaUnit,spaSUnit);
+      cout << Form(" L  = %.2f %s", wavelength/spaUnit, spaSUnit.c_str()) << endl;
+
+      PUnits::BestUnit btimSUnit(period,"Time");
+      btimSUnit.GetBestUnits(timUnit,timSUnit);
+      cout << Form(" T  = %.2f %s", period/timUnit, timSUnit.c_str()) << endl;
+
+      PUnits::BestUnit beSUnit(E0 * hE1D[0]->GetMaximum(),"Efield");
+      beSUnit.GetBestUnits(eUnit,eSUnit);
+      cout << Form(" E0 = %.2f %s", E0 * hE1D[0]->GetMaximum()/eUnit, eSUnit.c_str()) << endl;
+
       for(Int_t i=0;i<Nspecies;i++) {
 
 	if(!hDen2D[i]) continue;
     
 	Int_t NbinsX = hDen2D[i]->GetNbinsX();
-	Float_t zMin = skindepth * hDen2D[i]->GetXaxis()->GetXmin() / PUnits::um;
-	Float_t zMax = skindepth * hDen2D[i]->GetXaxis()->GetXmax() / PUnits::um;
+	Double_t zMin = skindepth * hDen2D[i]->GetXaxis()->GetXmin() / spaUnit;
+	Double_t zMax = skindepth * hDen2D[i]->GetXaxis()->GetXmax() / spaUnit;
 	Int_t NbinsY = hDen2D[i]->GetNbinsY();
-	Float_t ymin = skindepth * hDen2D[i]->GetYaxis()->GetXmin() / PUnits::um;
-	Float_t ymax = skindepth * hDen2D[i]->GetYaxis()->GetXmax() / PUnits::um;
+	Double_t ymin = skindepth * hDen2D[i]->GetYaxis()->GetXmin() / spaUnit;
+	Double_t ymax = skindepth * hDen2D[i]->GetYaxis()->GetXmax() / spaUnit;
 	hDen2D[i]->SetBins(NbinsX,zMin,zMax,NbinsY,ymin,ymax);
 	// for(Int_t j=0;j<hDen2D[i]->GetNbinsX();j++) {
 	// 	for(Int_t k=0;k<hDen2D[i]->GetNbinsY();k++) {
@@ -616,14 +646,14 @@ int main(int argc,char *argv[]) {
 	// }
 
 	if(pData->IsCyl())
-	  hDen2D[i]->GetYaxis()->SetTitle("r [#mum]");      
+	  hDen2D[i]->GetYaxis()->SetTitle(Form("r [%s]",spaSUnit.c_str()));      
 	else
-	  hDen2D[i]->GetYaxis()->SetTitle("x [#mum]");      
+	  hDen2D[i]->GetYaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));      
       
 	if(opt.Contains("comov"))
-	  hDen2D[i]->GetXaxis()->SetTitle("#zeta [#mum]");
+	  hDen2D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
-	  hDen2D[i]->GetXaxis()->SetTitle("z [#mum]");
+	  hDen2D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
       
 	// if(i==0)
 	// 	hDen2D[i]->GetZaxis()->SetTitle("n_{e} [10^{17}/cm^{3}]");
@@ -639,37 +669,39 @@ int main(int argc,char *argv[]) {
       
       
 	if(opt.Contains("comov"))
-	  hDen1D[i]->GetXaxis()->SetTitle("#zeta [#mum]");
+	  hDen1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
-	  hDen1D[i]->GetXaxis()->SetTitle("z [#mum]");
+	  hDen1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
       
 	if(hCur1D[i]) {
 
 	  hCur1D[i]->SetBins(NbinsX,zMin,zMax);
 	
-	
-	  // hCur1D[i]->Scale(TMath::Abs(n0 * dV * (PConst::ElectronCharge/PUnits::picocoulomb) * (kp * PConst::c_light * PUnits::femtosecond)));
-	  hCur1D[i]->Scale(PConst::I0 / PUnits::kA);
-	
-	  if(i==0)
-	    hCur1D[i]->GetYaxis()->SetTitle("I_{p} [kA]");
-	  else if(i==1)
-	    hCur1D[i]->GetYaxis()->SetTitle("I_{b} [kA]");
-	  else if(i==2) 
-	    hCur1D[i]->GetYaxis()->SetTitle("I_{i} [kA]");
-	  else if(i==3) 
-	    hCur1D[i]->GetYaxis()->SetTitle("I_{x} [kA]");
+	  Double_t binSize = ((zMax - zMin)/NbinsX) * spaUnit;
+	  Double_t Charge = hCur1D[i]->Integral() * binSize * PConst::I0 / PConst::c_light;
+	  cout << Form(" Integrated charge of specie %3i = %8f pC",i,Charge/PUnits::picocoulomb) << endl;
+	  
+	  Double_t curUnit;
+	  string curSUnit;
+	  PUnits::BestUnit bcurSUnit(hCur1D[i]->GetMaximum() * PConst::I0,"Current");
+	  bcurSUnit.GetBestUnits(curUnit,curSUnit);
+	  
+	  hCur1D[i]->Scale(PConst::I0 / curUnit);
+	  hCur1D[i]->GetYaxis()->SetTitle(Form("I [%s]",curSUnit.c_str()));
+	  // if(i==0)
+	  //   hCur1D[i]->GetYaxis()->SetTitle("I_{p} [kA]");
+	  // else if(i==1)
+	  //   hCur1D[i]->GetYaxis()->SetTitle("I_{b} [kA]");
+	  // else if(i==2) 
+	  //   hCur1D[i]->GetYaxis()->SetTitle("I_{i} [kA]");
+	  // else if(i==3) 
+	  //   hCur1D[i]->GetYaxis()->SetTitle("I_{x} [kA]");
 	  
 	  if(opt.Contains("comov"))
-	    hCur1D[i]->GetXaxis()->SetTitle("#zeta [#mum]");
+	    hCur1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	  else
-	    hCur1D[i]->GetXaxis()->SetTitle("z [#mum]");
+	    hCur1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
 	
-	
-	  Float_t binSize = (zMax - zMin)/NbinsX;  // bin size in um.
-	  Float_t lightspeed =  PConst::c_light / (PUnits::um/PUnits::femtosecond);
-	  Float_t Charge = hCur1D[i]->Integral() * (binSize / lightspeed); 
-	  cout << Form(" Integrated charge of specie %3i = %8f pC",i,Charge) << endl;
 	}
       }
       
@@ -678,50 +710,50 @@ int main(int argc,char *argv[]) {
 	if(!hE2D[i]) continue;
 
 	Int_t NbinsX = hE2D[i]->GetNbinsX();
-	Float_t zMin = skindepth * hE2D[i]->GetXaxis()->GetXmin() / PUnits::um;
-	Float_t zMax = skindepth * hE2D[i]->GetXaxis()->GetXmax() / PUnits::um;
+	Double_t zMin = skindepth * hE2D[i]->GetXaxis()->GetXmin() / spaUnit;
+	Double_t zMax = skindepth * hE2D[i]->GetXaxis()->GetXmax() / spaUnit;
 	Int_t NbinsY = hE2D[i]->GetNbinsY();
-	Float_t ymin = skindepth * hE2D[i]->GetYaxis()->GetXmin() / PUnits::um;
-	Float_t ymax = skindepth * hE2D[i]->GetYaxis()->GetXmax() / PUnits::um;
+	Double_t ymin = skindepth * hE2D[i]->GetYaxis()->GetXmin() / spaUnit;
+	Double_t ymax = skindepth * hE2D[i]->GetYaxis()->GetXmax() / spaUnit;
 	hE2D[i]->SetBins(NbinsX,zMin,zMax,NbinsY,ymin,ymax);
 	hE1D[i]->SetBins(NbinsX,zMin,zMax);
             
 	for(Int_t j=0;j<=hE2D[i]->GetNbinsX();j++) {
 	  for(Int_t k=0;k<=hE2D[i]->GetNbinsY();k++) {
-	    hE2D[i]->SetBinContent(j,k, hE2D[i]->GetBinContent(j,k) * ( E0 / (PUnits::GV/PUnits::m) ) );
+	    hE2D[i]->SetBinContent(j,k, hE2D[i]->GetBinContent(j,k) * E0 / eUnit );
 	  }
-	  hE1D[i]->SetBinContent(j, hE1D[i]->GetBinContent(j) * ( E0 / (PUnits::GV/PUnits::m) ) );
+	  hE1D[i]->SetBinContent(j, hE1D[i]->GetBinContent(j) * E0 / eUnit );
 	}
       
 	if(pData->IsCyl())
-	  hE2D[i]->GetYaxis()->SetTitle("r [#mum]");      
+	  hE2D[i]->GetYaxis()->SetTitle(Form("r [%s]",spaSUnit.c_str()));
 	else
-	  hE2D[i]->GetYaxis()->SetTitle("x [#mum]");      
+	  hE2D[i]->GetYaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));
       
 	if(opt.Contains("comov"))
-	  hE2D[i]->GetXaxis()->SetTitle("#zeta [#mum]");
+	  hE2D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
-	  hE2D[i]->GetXaxis()->SetTitle("z [#mum]");
+	  hE2D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
       
 	if(i==0)
-	  hE2D[i]->GetZaxis()->SetTitle("E_{z} [GV/m]");
+	  hE2D[i]->GetZaxis()->SetTitle(Form("E_{z} [%s]",eSUnit.c_str()));
 	else if(i==1)
-	  hE2D[i]->GetZaxis()->SetTitle("E_{x} [GV/m]");
+	  hE2D[i]->GetZaxis()->SetTitle(Form("E_{x} [%s]",eSUnit.c_str()));
 	else if(i==2)
-	  hE2D[i]->GetZaxis()->SetTitle("E_{y} [GV/m]");
+	  hE2D[i]->GetZaxis()->SetTitle(Form("E_{y} [%s]",eSUnit.c_str()));
       
       
 	if(opt.Contains("comov"))
-	  hE1D[i]->GetXaxis()->SetTitle("#zeta [mm]");
+	  hE1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
-	  hE1D[i]->GetXaxis()->SetTitle("z [mm]");
+	  hE1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
       
 	if(i==0)
-	  hE1D[i]->GetYaxis()->SetTitle("E_{z} [GV/m]");
+	  hE1D[i]->GetYaxis()->SetTitle(Form("E_{z} [%s]",eSUnit.c_str()));
 	else if(i==1)
-	  hE1D[i]->GetYaxis()->SetTitle("E_{x} [GV/m]");
+	  hE1D[i]->GetYaxis()->SetTitle(Form("E_{x} [%s]",eSUnit.c_str()));
 	else if(i==2)
-	  hE1D[i]->GetYaxis()->SetTitle("E_{y} [GV/m]");
+	  hE1D[i]->GetYaxis()->SetTitle(Form("E_{y} [%s]",eSUnit.c_str()));
 	
       }
 
@@ -729,50 +761,51 @@ int main(int argc,char *argv[]) {
 	if(!hB2D[i]) continue;
 
 	Int_t NbinsX = hB2D[i]->GetNbinsX();
-	Float_t zMin = skindepth * hB2D[i]->GetXaxis()->GetXmin() / PUnits::um;
-	Float_t zMax = skindepth * hB2D[i]->GetXaxis()->GetXmax() / PUnits::um;
+	Double_t zMin = skindepth * hB2D[i]->GetXaxis()->GetXmin() / spaUnit;
+	Double_t zMax = skindepth * hB2D[i]->GetXaxis()->GetXmax() / spaUnit;
 	Int_t NbinsY = hB2D[i]->GetNbinsY();
-	Float_t ymin = skindepth * hB2D[i]->GetYaxis()->GetXmin() / PUnits::um;
-	Float_t ymax = skindepth * hB2D[i]->GetYaxis()->GetXmax() / PUnits::um;
+	Double_t ymin = skindepth * hB2D[i]->GetYaxis()->GetXmin() / spaUnit;
+	Double_t ymax = skindepth * hB2D[i]->GetYaxis()->GetXmax() / spaUnit;
 	hB2D[i]->SetBins(NbinsX,zMin,zMax,NbinsY,ymin,ymax);
 	hB1D[i]->SetBins(NbinsX,zMin,zMax);
       
 	for(Int_t j=0;j<=hB2D[i]->GetNbinsX();j++) {
 	  for(Int_t k=0;k<=hB2D[i]->GetNbinsY();k++) {
-	    hB2D[i]->SetBinContent(j,k, hB2D[i]->GetBinContent(j,k) * ( E0 / (PUnits::GV/PUnits::m) ) );
+	    hB2D[i]->SetBinContent(j,k, hB2D[i]->GetBinContent(j,k) / eUnit );
 	  }
-	  hB1D[i]->SetBinContent(j, hB1D[i]->GetBinContent(j) * ( E0 / (PUnits::GV/PUnits::m) ) );
+	  hB1D[i]->SetBinContent(j, hB1D[i]->GetBinContent(j) / eUnit );
 	  
 	}
 	
 	if(pData->IsCyl())
-	  hB2D[i]->GetYaxis()->SetTitle("r [#mum]");      
+	  hB2D[i]->GetYaxis()->SetTitle(Form("r [%s]",spaSUnit.c_str()));
 	else
-	  hB2D[i]->GetYaxis()->SetTitle("x [#mum]");      
+	  hB2D[i]->GetYaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));
       
 	if(opt.Contains("comov"))
-	  hB2D[i]->GetXaxis()->SetTitle("#zeta [#mum]");
+	  hB2D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
-	  hB2D[i]->GetXaxis()->SetTitle("z [#mum]");
+	  hB2D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
       
 	if(i==0)
-	  hB2D[i]->GetZaxis()->SetTitle("B_{z} [GV/m]");
+	  hB2D[i]->GetZaxis()->SetTitle(Form("B_{z} [%s]",eSUnit.c_str()));
 	else if(i==1)
-	  hB2D[i]->GetZaxis()->SetTitle("B_{x} [GV/m]");
+	  hB2D[i]->GetZaxis()->SetTitle(Form("B_{x} [%s]",eSUnit.c_str()));
 	else if(i==2)
-	  hB2D[i]->GetZaxis()->SetTitle("B_{y} [GV/m]");	
+	  hB2D[i]->GetZaxis()->SetTitle(Form("B_{y} [%s]",eSUnit.c_str()));
+      
       
 	if(opt.Contains("comov"))
-	  hB1D[i]->GetXaxis()->SetTitle("#zeta [mm]");
+	  hB1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
-	  hB1D[i]->GetXaxis()->SetTitle("z [mm]");
-	
+	  hB1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+      
 	if(i==0)
-	  hB1D[i]->GetYaxis()->SetTitle("B_{z} [GV/m]");
+	  hB1D[i]->GetYaxis()->SetTitle(Form("B_{z} [%s]",eSUnit.c_str()));
 	else if(i==1)
-	  hB1D[i]->GetYaxis()->SetTitle("B_{x} [GV/m]");
+	  hB1D[i]->GetYaxis()->SetTitle(Form("B_{x} [%s]",eSUnit.c_str()));
 	else if(i==2)
-	  hB1D[i]->GetYaxis()->SetTitle("B_{y} [GV/m]");
+	  hB1D[i]->GetYaxis()->SetTitle(Form("B_{y} [%s]",eSUnit.c_str()));
 	
       }
     }
@@ -782,7 +815,7 @@ int main(int argc,char *argv[]) {
     if(hB2D[2]) {
       hFocus2D->Add(hB2D[2],-1);
       if(opt.Contains("units")) {
-	hFocus2D->GetZaxis()->SetTitle("E_{x}-cB_{y} [GV/m]");
+	hFocus2D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
       } else {
 	hFocus2D->GetZaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
       }
@@ -792,7 +825,7 @@ int main(int argc,char *argv[]) {
     if(hB1D[2]) {
       hFocus1D->Add(hB1D[2],-1);
       if(opt.Contains("units")) {
-	hFocus1D->GetZaxis()->SetTitle("E_{x}-cB_{y} [GV/m]");
+	hFocus1D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
       } else {
 	hFocus1D->GetZaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
       }
@@ -849,7 +882,7 @@ int main(int argc,char *argv[]) {
 	}
       
 	if(opt.Contains("units")) {
-	  hRms->GetYaxis()->SetTitle("#Deltay_{rms} [#mum]");
+	  hRms->GetYaxis()->SetTitle(Form("#Deltay_{rms} [%s]",spaSUnit.c_str()));
 	} else {
 	  hRms->GetYaxis()->SetTitle("k_{p}#Deltay_{rms}");
 	}
@@ -865,23 +898,23 @@ int main(int argc,char *argv[]) {
     Int_t NbinsY = hE2D[0]->GetNbinsY();    
     for(Int_t j=1;j<=NbinsY;j++) {     
       for(Int_t k=NbinsX;k>0;k--) {
-	Float_t E1 = 0;
+	Double_t E1 = 0;
 	if(hE2D[0])
 	  E1 = hE2D[0]->GetBinContent(k,j);
-	Float_t E2 = 0;
+	Double_t E2 = 0;
 	if(hE2D[1])
 	  E2 = hE2D[1]->GetBinContent(k,j);
-	Float_t E3 = 0;
+	Double_t E3 = 0;
 	if(hE2D[2])
 	  E3 = hE2D[2]->GetBinContent(k,j);
 	
-	Float_t E  = TMath::Sqrt(E1*E1+E2*E2+E3*E3);
+	Double_t E  = TMath::Sqrt(E1*E1+E2*E2+E3*E3);
 	hETotal2D->SetBinContent(k,j,E);
       }
     }
    
     if(opt.Contains("units")) {
-      hETotal2D->GetZaxis()->SetTitle("E [GV/m]");
+      hETotal2D->GetZaxis()->SetTitle(Form("E [%s]",eSUnit.c_str()));
     } else {
       hETotal2D->GetZaxis()->SetTitle("E/E_{0}");
     }
@@ -891,23 +924,23 @@ int main(int argc,char *argv[]) {
 
     NbinsX = hE1D[0]->GetNbinsX();
     for(Int_t j=NbinsX;j>=0;j--) {
-      Float_t E1 = 0;
+      Double_t E1 = 0;
       if(hE1D[0])
 	E1 = hE1D[0]->GetBinContent(j);
-      Float_t E2 = 0;
+      Double_t E2 = 0;
       if(hE1D[1])
 	E2 = hE1D[1]->GetBinContent(j);
-      Float_t E3 = 0;
+      Double_t E3 = 0;
       if(hE1D[2])
 	E3 = hE1D[2]->GetBinContent(j);
       
-      Float_t E  = TMath::Sqrt(E1*E1+E2*E2+E3*E3);
+      Double_t E  = TMath::Sqrt(E1*E1+E2*E2+E3*E3);
       
       hETotal1D->SetBinContent(j,E);	
     }
     
     if(opt.Contains("units")) {
-      hETotal1D->GetYaxis()->SetTitle("E [GV/m]");
+      hETotal1D->GetYaxis()->SetTitle(Form("E [%s]",eSUnit.c_str()));
     } else {
       hETotal1D->GetYaxis()->SetTitle("E/E_{0}");
     }
@@ -917,7 +950,8 @@ int main(int argc,char *argv[]) {
       Int_t   NbinsX = hE2D[0]->GetNbinsX();
       Int_t   NbinsY = hE2D[0]->GetNbinsY();
       
-      Float_t dx = pData->GetDX(0);
+      // Double_t dx = pData->GetDX(0);
+      Double_t dx = hE2D[0]->GetXaxis()->GetBinWidth(0);
       //      if(opt.Contains("units")) dx *= skindepth / PUnits::m;
       
       char hName[24];
@@ -930,12 +964,11 @@ int main(int argc,char *argv[]) {
       hV1D->Reset();
       
       for(Int_t j=NbinsY;j>0;j--) {
-	Float_t integral = 0.0;
+	Double_t integral = 0.0;
 	for(Int_t k=NbinsX;k>0;k--) {
-	  Float_t value = hE2D[0]->GetBinContent(k,j);
+	  Double_t value = hE2D[0]->GetBinContent(k,j);
 	  if(opt.Contains("units")) { 
-	    value /= E0 / (PUnits::GV/PUnits::m);
-	    integral += (value * dx) * E0 * skindepth / (PUnits::MV);
+	    integral += (value * dx) * eUnit * spaUnit / (PUnits::MV);
 	  } else {
 	    integral += (value * dx);
 	  }
@@ -943,55 +976,48 @@ int main(int argc,char *argv[]) {
 	}
       }
       
-      Float_t integral = 0.0;
+      Double_t integral = 0.0;
       for(Int_t k=NbinsX;k>0;k--) {
-	Float_t value = hE1D[0]->GetBinContent(k);
+	Double_t value = hE1D[0]->GetBinContent(k);
 	if(opt.Contains("units")) { 
-	  value /= E0 / (PUnits::GV/PUnits::m);
-	  integral += (value * dx) * E0 * skindepth / (PUnits::MV);
+	  integral += (value * dx) * eUnit * spaUnit / (PUnits::MV);
 	} else {
 	  integral += (value * dx);
 	}
 	hV1D->SetBinContent(k,integral);
       }
     }
-    
-    Float_t trapPot = trapPotential;
-    if(opt.Contains("units") && n0) {
-      trapPot *=  ( E0 * skindepth / (PUnits::MV) ); 
-    }  
-  
-    Float_t Vmin = hV1D->GetMinimum();    
-    { // Shift potential
-      Int_t   NbinsX = hV2D->GetNbinsX(); 
-      Int_t   NbinsY = hV2D->GetNbinsY(); 
-      for(Int_t j=1;j<=NbinsX;j++) {
-	for(Int_t k=1;k<=NbinsY;k++) {
-	  hV2D->SetBinContent(j,k, hV2D->GetBinContent(j,k) - Vmin -trapPot);
-	}
-	hV1D->SetBinContent(j, hV1D->GetBinContent(j) - Vmin -trapPot);
-      }
-    }
 
-    Vmin = hV1D->GetMinimum();   
-    Float_t Vmax = hV1D->GetMaximum();    
-    if(Vmax<0.1) Vmax = 0.1;
-    // --
+    // Shift potential
+    // Double_t trapPot = trapPotential;
+    // if(opt.Contains("units") && n0) {
+    //   trapPot *=  ( E0 * skindepth / (PUnits::MV) ); 
+    // }  
+  
+    // Double_t Vmin = hV1D->GetMinimum();    
+    // { // Shift potential
+    //   Int_t   NbinsX = hV2D->GetNbinsX(); 
+    //   Int_t   NbinsY = hV2D->GetNbinsY(); 
+    //   for(Int_t j=1;j<=NbinsX;j++) {
+    // 	for(Int_t k=1;k<=NbinsY;k++) {
+    // 	  hV2D->SetBinContent(j,k, hV2D->GetBinContent(j,k) - Vmin -trapPot);
+    // 	}
+    // 	hV1D->SetBinContent(j, hV1D->GetBinContent(j) - Vmin -trapPot);
+    //   }
+    // }
 
     if(opt.Contains("units")) {
-      hV2D->GetZaxis()->SetTitle("#Delta#Psi [MV]");
-      hV1D->GetYaxis()->SetTitle("#Delta#Psi [MV]");
+      hV2D->GetZaxis()->SetTitle("#Psi [MV]");
+      hV1D->GetYaxis()->SetTitle("#Psi [MV]");
     } else {
-      //      hV2D->GetZaxis()->SetTitle("#Delta#Psi/#Psi_{0}");
-      //      hV1D->GetYaxis()->SetTitle("#Delta#Psi/#Psi_{0}");
-      hV2D->GetZaxis()->SetTitle("#psi-#psi_{F}");
-      hV1D->GetYaxis()->SetTitle("#psi-#psi_{F}");
+      hV2D->GetZaxis()->SetTitle("#psi");
+      hV1D->GetYaxis()->SetTitle("#psi");
     }
 
 
     // Change the range of z axis for the fields to be symmetric.
-    Float_t *Emax = new Float_t[Nfields];
-    Float_t *Emin = new Float_t[Nfields];
+    Double_t *Emax = new Double_t[Nfields];
+    Double_t *Emin = new Double_t[Nfields];
     for(Int_t i=0;i<Nfields;i++) {
 
       if(!hE2D[i]) continue;
@@ -1006,8 +1032,8 @@ int main(int argc,char *argv[]) {
       //hE2D[i]->GetZaxis()->SetRangeUser(Emin[0],Emax[0]); 
     }
 
-    // Float_t ETmin = 0.001;  
-    // Float_t ETmax = hETotal2D->GetMaximum();
+    // Double_t ETmin = 0.001;  
+    // Double_t ETmax = hETotal2D->GetMaximum();
     // hETotal2D->GetZaxis()->SetRangeUser(ETmin,ETmax);
 
     // Save output to file
@@ -1107,8 +1133,9 @@ int main(int argc,char *argv[]) {
 
     // Save TTree with options information for further processing.
     TTree *infotree = new TTree("infoTree","options tree from doSnapshot");
-    infotree->Branch("xon",&xon,"xon/F");
-    infotree->Branch("xoff",&xoff,"xoff/F");
+    infotree->Branch("xon",&xon,"xon/D");
+    infotree->Branch("xoff",&xoff,"xoff/D");
+    infotree->Branch("spaUnit",&spaUnit,"spaUnit/D");
 
     TString *optpoint = &opt;
     infotree->Branch("options","TString",&optpoint);
@@ -1126,7 +1153,7 @@ int main(int argc,char *argv[]) {
       gROOT->ProcessLine(command);
 
       command = Form(".x PlotSnapshot.C(\"%s\", %i , %i, \"%s\")",
-			     sim.Data(),time,mask,opt.Data());
+		     sim.Data(),time,mask,opt.Data());
       gROOT->ProcessLine(command);
       
     }

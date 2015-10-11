@@ -40,6 +40,9 @@ namespace PGlobals {
   static Int_t fieldLine = kOrange+10;
   static Int_t energyLine = kOrange+7;
   static Int_t energyFill = energyLine;
+  static Int_t frameColor = kGray+3; 
+  static Int_t frameWidth = 2; 
+
 
   void SetPlasmaStyle() {
       
@@ -63,13 +66,16 @@ namespace PGlobals {
     //PlasmaStyle->SetLineStyleString( 7, "[22 10 7 10]" );
 
     // use plain black on white colors
-    PlasmaStyle->SetFrameBorderMode(0);
     PlasmaStyle->SetCanvasBorderMode(0);
     PlasmaStyle->SetPadBorderMode(0);
     PlasmaStyle->SetPadColor(0);
+    PlasmaStyle->SetFrameBorderMode(0);
     PlasmaStyle->SetFrameFillColor(0);
-    PlasmaStyle->SetFrameLineColor(kGray+3);
+    PlasmaStyle->SetFrameLineColor(kBlack);
     PlasmaStyle->SetFrameLineWidth(1);
+
+    // Global line width (for TAxis)
+    PlasmaStyle->SetLineWidth(1);
 
     PlasmaStyle->SetGridStyle(2);
     PlasmaStyle->SetGridColor(kGray+1);

@@ -118,39 +118,39 @@ public:
   inline Double_t Shift(TString option="");
 
   // Give access to exeternal parameters
-  Float_t  GetPlasmaDensity() { return pParam.pDensity * (1/PUnits::cm3);  }  
-  Float_t  GetPlasmaStart()   { return pParam.pStart * GetPlasmaSkinDepth(); }    
+  Double_t  GetPlasmaDensity() { return pParam.pDensity * (1/PUnits::cm3);  }  
+  Double_t  GetPlasmaStart()   { return pParam.pStart * GetPlasmaSkinDepth(); }    
  
   // Other quantities
-  Float_t  GetPlasmaFrequency() { return PFunc::PlasmaFrequency(GetPlasmaDensity()); }
-  Float_t  GetPlasmaTimeDepth() { return PFunc::PlasmaTimeDepth(GetPlasmaDensity()); }
-  Float_t  GetPlasmaPeriod() { return PFunc::PlasmaPeriod(GetPlasmaDensity()); }
-  Float_t  GetPlasmaK() { return PFunc::PlasmaWavenumber(GetPlasmaDensity());}
-  Float_t  GetPlasmaSkinDepth() { return PFunc::PlasmaSkindepth(GetPlasmaDensity());}
-  Float_t  GetPlasmaWaveLength() { return PFunc::PlasmaWavelength(GetPlasmaDensity()); }
-  Float_t  GetPlasmaE0() { return PFunc::PlasmaWBField(GetPlasmaDensity()); }
+  Double_t  GetPlasmaFrequency() { return PFunc::PlasmaFrequency(GetPlasmaDensity()); }
+  Double_t  GetPlasmaTimeDepth() { return PFunc::PlasmaTimeDepth(GetPlasmaDensity()); }
+  Double_t  GetPlasmaPeriod() { return PFunc::PlasmaPeriod(GetPlasmaDensity()); }
+  Double_t  GetPlasmaK() { return PFunc::PlasmaWavenumber(GetPlasmaDensity());}
+  Double_t  GetPlasmaSkinDepth() { return PFunc::PlasmaSkindepth(GetPlasmaDensity());}
+  Double_t  GetPlasmaWaveLength() { return PFunc::PlasmaWavelength(GetPlasmaDensity()); }
+  Double_t  GetPlasmaE0() { return PFunc::PlasmaWBField(GetPlasmaDensity()); }
 
   // Parameters neutral specie
-  Float_t  GetNeutralDensity() { return pParam.nDensity * (1/PUnits::cm3); }  
-  Float_t  GetNeutralStart()   { return pParam.nStart * GetPlasmaSkinDepth(); }    
-  Float_t  GetNeutralEnd()     { return pParam.nEnd * GetPlasmaSkinDepth(); }    
+  Double_t  GetNeutralDensity() { return pParam.nDensity * (1/PUnits::cm3); }  
+  Double_t  GetNeutralStart()   { return pParam.nStart * GetPlasmaSkinDepth(); }    
+  Double_t  GetNeutralEnd()     { return pParam.nEnd * GetPlasmaSkinDepth(); }    
 
   // Parameters of the beam
-  Float_t  GetBeamDensity()   { return pParam.bDensity * GetPlasmaDensity(); }
-  Float_t  GetBeamStart()     { return pParam.bStart * GetPlasmaSkinDepth(); }      
-  Float_t  GetBeamEnergy()    { return GetBeamMass() * pParam.bGamma; }
-  Float_t  GetBeamMass()      { return pParam.bMass * PUnits::MeV; }
-  Float_t  GetBeamGamma()     { return pParam.bGamma; }
-  Float_t  GetBeamVelocity()  { return TMath::Sqrt(1. - 1./(GetBeamGamma()*GetBeamGamma()) ); } // units of c.
-  Float_t  GetBeamRmsZ()    { return pParam.bRmsZ * GetPlasmaSkinDepth() ;  }
-  Float_t  GetBeamRmsX()    { return pParam.bRmsX * GetPlasmaSkinDepth() ;  }
-  Float_t  GetBeamRmsY()    { return pParam.bRmsY * GetPlasmaSkinDepth() ;  }
-  Float_t  GetBeamRmsR()    { return pParam.bRmsR * GetPlasmaSkinDepth() ;  }
+  Double_t  GetBeamDensity()   { return pParam.bDensity * GetPlasmaDensity(); }
+  Double_t  GetBeamStart()     { return pParam.bStart * GetPlasmaSkinDepth(); }      
+  Double_t  GetBeamEnergy()    { return GetBeamMass() * pParam.bGamma; }
+  Double_t  GetBeamMass()      { return pParam.bMass * PUnits::MeV; }
+  Double_t  GetBeamGamma()     { return pParam.bGamma; }
+  Double_t  GetBeamVelocity()  { return TMath::Sqrt(1. - 1./(GetBeamGamma()*GetBeamGamma()) ); } // units of c.
+  Double_t  GetBeamRmsZ()    { return pParam.bRmsZ * GetPlasmaSkinDepth() ;  }
+  Double_t  GetBeamRmsX()    { return pParam.bRmsX * GetPlasmaSkinDepth() ;  }
+  Double_t  GetBeamRmsY()    { return pParam.bRmsY * GetPlasmaSkinDepth() ;  }
+  Double_t  GetBeamRmsR()    { return pParam.bRmsR * GetPlasmaSkinDepth() ;  }
 
-  Float_t  GetBeamBetatronK() { return PFunc::BeamBetatronWavenumber(GetPlasmaDensity(),GetBeamGamma()); }
+  Double_t  GetBeamBetatronK() { return PFunc::BeamBetatronWavenumber(GetPlasmaDensity(),GetBeamGamma()); }
 
-  Float_t  GetEMin()  { return pParam.EMin; }
-  Float_t  GetEMax()  { return pParam.EMax; }
+  Double_t  GetEMin()  { return pParam.EMin; }
+  Double_t  GetEMax()  { return pParam.EMax; }
  
   // Hyperslab access methods
   Double_t  GetX1Min() { return XMINR[0]; }
