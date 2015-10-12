@@ -575,16 +575,18 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t Vmax = hV1D->GetMaximum();    
  
 
+  Int_t binVfin = binVmin;
+  Float_t Vfin = Vmin;
   if(opt.Contains("vfoc")) { // minimum in focusing
-    Vmin = potValueFin;
-    binVmin = binFcross;
+    Vfin = potValueFin;
+    binVfin = binFcross;
   }
   
   // Find first bin over the trapping threshold (if any)
   Int_t binPotValueIni = -99;  
   Float_t potValueIni = -99;
-  for(Int_t j=binVmin;j<hV1D->GetNbinsX();j++) {
-    if(hV1D->GetBinContent(j) >= Vmin + trapPotential) {
+  for(Int_t j=binVfin;j<hV1D->GetNbinsX();j++) {
+    if(hV1D->GetBinContent(j) >= Vfin + trapPotential) {
       binPotValueIni = j;
       potValueIni = hV1D->GetBinContent(j);
       break;
@@ -600,10 +602,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Int_t NbinsY = hV2D->GetNbinsY();
       for(Int_t j=0;j<=NbinsX;j++) {
 	for(Int_t k=0;k<=NbinsY;k++) {
-	  hV2D->SetBinContent(j,k, hV2D->GetBinContent(j,k) - Vmin);
+	  hV2D->SetBinContent(j,k, hV2D->GetBinContent(j,k) - Vfin);
       }
-	hV1D->SetBinContent(j, hV1D->GetBinContent(j) - Vmin);
+	hV1D->SetBinContent(j, hV1D->GetBinContent(j) - Vfin);
       }
+      Vmin -= Vfin;
+      Vmax -= Vfin;
     }
     
     Float_t Vzero = hV1D->GetBinContent(binPotValueIni);
@@ -627,7 +631,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     Float_t Vzero = 0.;
     Float_t zeroPos = (Vzero-Vmin)/(Vmax-Vmin);
-
+    
     Double_t potPStops[potPNRGBs] = { 0.00, zeroPos, zeroPos + (1.-zeroPos)/2. ,1.00 };
     Double_t potPRed[potPNRGBs]   = {  1.0, 0.9, 0.965, 0.518};
     Double_t potPGreen[potPNRGBs] = {  1.0, 0.9, 0.925, 0.078};
@@ -2417,8 +2421,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     exPot->Draw();
   
     hV2D->GetZaxis()->SetRangeUser(Vmin,Vmax);
-    hV2D->Draw("col z same");
-  
+    hV2D->Draw("colz0 same");
+    
     for(Int_t i=0;i<graphsV2D.GetEntriesFast();i++) {
       TGraph *gr = (TGraph*) graphsV2D.At(i);
       if(!gr) continue;
