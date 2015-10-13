@@ -254,7 +254,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   
   // Ionization probability rates (ADK)
-  cout << Form("\n Calculating ionization probability rates (ADK) ... ") ; 
   // Calculates from the total E the ionization prob. rate for a given species.
   const Int_t NAtoms = 7;
   char atNames[NAtoms][8] = {"H","He","He2","Ne","Ne2","Ne5","HIT"};
@@ -274,118 +273,121 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // UInt_t ii = 2; // Helium2
   // UInt_t ii = 5; // Ne4
   // UInt_t ii = 6; // Custom
+
+  if(mask & 0x80) { // only if ionization bit is selected
+    cout << Form("\n Calculating ionization probability rates (ADK) ... ") ; 
   
-  for(Int_t iat=0;iat<NAtoms;iat++) {
+    for(Int_t iat=0;iat<NAtoms;iat++) {
 
-    if(iat!=ii) continue;
+      if(iat!=ii) continue;
     
-    sprintf(hName,"hIonRate2D_%s",atNames[iat]);   
-    hIonRate2D[iat] = (TH2F*) hETotal2D->Clone(hName);
-    hIonRate2D[iat]->Reset();
-    sprintf(hName,"hIonProb2D_%s",atNames[iat]);
-    hIonProb2D[iat] = (TH2F*) hETotal2D->Clone(hName);
-    hIonProb2D[iat]->Reset();
+      sprintf(hName,"hIonRate2D_%s",atNames[iat]);   
+      hIonRate2D[iat] = (TH2F*) hETotal2D->Clone(hName);
+      hIonRate2D[iat]->Reset();
+      sprintf(hName,"hIonProb2D_%s",atNames[iat]);
+      hIonProb2D[iat] = (TH2F*) hETotal2D->Clone(hName);
+      hIonProb2D[iat]->Reset();
     
-    Int_t NbinsX = hETotal2D->GetNbinsX();
-    Int_t NbinsY = hETotal2D->GetNbinsY();
-    Float_t dx = hETotal2D->GetXaxis()->GetBinWidth(1);
+      Int_t NbinsX = hETotal2D->GetNbinsX();
+      Int_t NbinsY = hETotal2D->GetNbinsY();
+      Float_t dx = hETotal2D->GetXaxis()->GetBinWidth(1);
 
-    if(opt.Contains("units")) dx *= spaUnit / PConst::c_light;
-    else dx *= timedepth;
-      
-    // if(!opt.Contains("units")) dx *=  timedepth / PUnits::femtosecond; // to fs
-    // else dx /= PConst::c_light / (PUnits::um/PUnits::femtosecond); // to fs
-    
-    for(Int_t j=1;j<=NbinsY;j++) {
-      
-      Float_t integral[NAtoms] = {0.0};
-      
-      for(Int_t k=NbinsX;k>0;k--) {
-
-	Float_t E = hETotal2D->GetBinContent(k,j);
-	if(opt.Contains("units")) E *= eUnit;
-	else E *= E0;
-	if(E<10) continue;
-		
-	Float_t IonRate = PFunc::ADK_ENG(E,Eion0[iat],Z[iat]);	
-	hIonRate2D[iat]->SetBinContent(k,j,IonRate);
-	integral[iat] += IonRate * dx;	
-	if(integral[iat]>=1) integral[iat] = 1;
-
-	if(opt.Contains("units"))
-	  IonRate /= 1.0/PUnits::femtosecond;
-	else
-	  IonRate /= omegap;
-	
-	hIonProb2D[iat]->SetBinContent(k,j,(1-integral[iat])*IonRate);
-	
-      }
-    }
-
-    {
-      sprintf(hName,"hIonRate1D_%s",atNames[iat]);
-      hIonRate1D[iat] = (TH1F*) hETotal1D->Clone(hName);
-      hIonRate1D[iat]->Reset();
-      sprintf(hName,"hIonProb1D_%s",atNames[iat]);
-      hIonProb1D[iat] = (TH1F*) hETotal1D->Clone(hName);
-      hIonProb1D[iat]->Reset();
-
-      Int_t NbinsX = hETotal1D->GetNbinsX();
-      Float_t dx = hETotal1D->GetBinWidth(1);
-      
       if(opt.Contains("units")) dx *= spaUnit / PConst::c_light;
       else dx *= timedepth;
-
-      Float_t integral[NAtoms] = {0.0};
-      for(Int_t j=NbinsX;j>0;j--) {
-	
-	Float_t E = hETotal1D->GetBinContent(j);
-	if(opt.Contains("units")) E *= eUnit;
-	else E *= E0;
-	if(E<10) continue;
-
-	Float_t IonRate = PFunc::ADK_ENG(E,Eion0[iat],Z[iat]);
-	hIonRate1D[iat]->SetBinContent(j,IonRate);
-	integral[iat] += IonRate * dx;	
-	if(integral[iat]>=1) integral[iat] = 1;
-	
-	if(opt.Contains("units"))
-	  IonRate /= 1.0/PUnits::femtosecond;
-	else
-	  IonRate /= omegap;
-
-	hIonProb1D[iat]->SetBinContent(j,(1-integral[iat])*IonRate);	
-      }
       
-    }
-
-    cout << Form(" done. ") << endl; 
+      // if(!opt.Contains("units")) dx *=  timedepth / PUnits::femtosecond; // to fs
+      // else dx /= PConst::c_light / (PUnits::um/PUnits::femtosecond); // to fs
     
+      for(Int_t j=1;j<=NbinsY;j++) {
+      
+	Float_t integral[NAtoms] = {0.0};
+      
+	for(Int_t k=NbinsX;k>0;k--) {
+
+	  Float_t E = hETotal2D->GetBinContent(k,j);
+	  if(opt.Contains("units")) E *= eUnit;
+	  else E *= E0;
+	  if(E<10) continue;
+		
+	  Float_t IonRate = PFunc::ADK_ENG(E,Eion0[iat],Z[iat]);	
+	  hIonRate2D[iat]->SetBinContent(k,j,IonRate);
+	  integral[iat] += IonRate * dx;	
+	  if(integral[iat]>=1) integral[iat] = 1;
+
+	  if(opt.Contains("units"))
+	    IonRate /= 1.0/PUnits::femtosecond;
+	  else
+	    IonRate /= omegap;
+	
+	  hIonProb2D[iat]->SetBinContent(k,j,(1-integral[iat])*IonRate);
+	
+	}
+      }
+
+      {
+	sprintf(hName,"hIonRate1D_%s",atNames[iat]);
+	hIonRate1D[iat] = (TH1F*) hETotal1D->Clone(hName);
+	hIonRate1D[iat]->Reset();
+	sprintf(hName,"hIonProb1D_%s",atNames[iat]);
+	hIonProb1D[iat] = (TH1F*) hETotal1D->Clone(hName);
+	hIonProb1D[iat]->Reset();
+
+	Int_t NbinsX = hETotal1D->GetNbinsX();
+	Float_t dx = hETotal1D->GetBinWidth(1);
+      
+	if(opt.Contains("units")) dx *= spaUnit / PConst::c_light;
+	else dx *= timedepth;
+
+	Float_t integral[NAtoms] = {0.0};
+	for(Int_t j=NbinsX;j>0;j--) {
+	
+	  Float_t E = hETotal1D->GetBinContent(j);
+	  if(opt.Contains("units")) E *= eUnit;
+	  else E *= E0;
+	  if(E<10) continue;
+
+	  Float_t IonRate = PFunc::ADK_ENG(E,Eion0[iat],Z[iat]);
+	  hIonRate1D[iat]->SetBinContent(j,IonRate);
+	  integral[iat] += IonRate * dx;	
+	  if(integral[iat]>=1) integral[iat] = 1;
+	
+	  if(opt.Contains("units"))
+	    IonRate /= 1.0/PUnits::femtosecond;
+	  else
+	    IonRate /= omegap;
+
+	  hIonProb1D[iat]->SetBinContent(j,(1-integral[iat])*IonRate);	
+	}
+      
+      }
+
+      cout << Form(" done. ") << endl; 
+    }  
     
     // axis labels
     if(opt.Contains("units")) {
       char axName[24];
-      sprintf(axName,"W_{%s} [fs^{-1}]",atAxNames[iat]);
-      hIonRate2D[iat]->GetZaxis()->SetTitle(axName);
-      sprintf(axName,"#Gamma_{%s} [fs^{-1}]",atAxNames[iat]);
-      hIonProb2D[iat]->GetZaxis()->SetTitle(axName);
+      sprintf(axName,"W_{%s} [fs^{-1}]",atAxNames[ii]);
+      hIonRate2D[ii]->GetZaxis()->SetTitle(axName);
+      sprintf(axName,"#Gamma_{%s} [fs^{-1}]",atAxNames[ii]);
+      hIonProb2D[ii]->GetZaxis()->SetTitle(axName);
 
-      sprintf(axName,"W_{%s} [fs^{-1}]",atAxNames[iat]);
-      hIonRate1D[iat]->GetZaxis()->SetTitle(axName);
-      sprintf(axName,"#Gamma_{%s} [fs^{-1}]",atAxNames[iat]);
-      hIonProb1D[iat]->GetZaxis()->SetTitle(axName);
+      sprintf(axName,"W_{%s} [fs^{-1}]",atAxNames[ii]);
+      hIonRate1D[ii]->GetZaxis()->SetTitle(axName);
+      sprintf(axName,"#Gamma_{%s} [fs^{-1}]",atAxNames[ii]);
+      hIonProb1D[ii]->GetZaxis()->SetTitle(axName);
       
     } else {
       char axName[24];
-      sprintf(axName,"W_{%s} #omega_{p}",atAxNames[iat]);
-      hIonRate2D[iat]->GetZaxis()->SetTitle(axName);
-      sprintf(axName,"#Gamma_{%s} #omega_{p}",atAxNames[iat]);
-      hIonProb2D[iat]->GetZaxis()->SetTitle(axName);
+      sprintf(axName,"W_{%s} #omega_{p}",atAxNames[ii]);
+      hIonRate2D[ii]->GetZaxis()->SetTitle(axName);
+      sprintf(axName,"#Gamma_{%s} #omega_{p}",atAxNames[ii]);
+      hIonProb2D[ii]->GetZaxis()->SetTitle(axName);
 
-      sprintf(axName,"W_{%s} #omega_{p}",atAxNames[iat]);
-      hIonRate1D[iat]->GetZaxis()->SetTitle(axName);
-      sprintf(axName,"#Gamma_{%s} #omega_{p}",atAxNames[iat]);
-      hIonProb1D[iat]->GetZaxis()->SetTitle(axName);
+      sprintf(axName,"W_{%s} #omega_{p}",atAxNames[ii]);
+      hIonRate1D[ii]->GetZaxis()->SetTitle(axName);
+      sprintf(axName,"#Gamma_{%s} #omega_{p}",atAxNames[ii]);
+      hIonProb1D[ii]->GetZaxis()->SetTitle(axName);
     }
     
     
@@ -725,65 +727,72 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
   }
   
-  Float_t IPmin = 0.00;
-  Float_t IPmax = hIonProb2D[ii]->GetMaximum();
+  // Get ionization probablity rates contours
+  TObjArray *graphsI2D = NULL;
+  TObjArray *graphsI2D_main = NULL;
+  Float_t IPmin, IPmax;
+  if(hIonProb2D[ii]) {
+    IPmin = 0.00;
+    IPmax = hIonProb2D[ii]->GetMaximum();
+
+    const Int_t NcontI = 1;
+    Double_t contI[NcontI] = {0.3*IPmax};
+    // Double_t contI[NcontI] = {0.1*IPmax};
+    //const Int_t NcontI = 1;
+    //Float_t contI[NcontI] = {0.1};
   
-  IPmax = hIonProb1D[ii]->GetMaximum();
-  hIonProb2D[ii]->GetZaxis()->SetRangeUser(IPmin,IPmax);
+    IPmax = hIonProb1D[ii]->GetMaximum();
+    hIonProb2D[ii]->GetZaxis()->SetRangeUser(IPmin,IPmax);
     
-  TH2F *hIonProb2Dc = (TH2F*) hIonProb2D[ii]->Clone("hIonProb2Dc");
+    TH2F *hIonProb2Dc = (TH2F*) hIonProb2D[ii]->Clone("hIonProb2Dc");
   
-  const Int_t NcontI = 1;
-  Double_t contI[NcontI] = {0.3*IPmax};
-  // Double_t contI[NcontI] = {0.1*IPmax};
-  //const Int_t NcontI = 1;
-  //Float_t contI[NcontI] = {0.1};
-  hIonProb2Dc->SetContour(NcontI, contI);
-  hIonProb2Dc->Draw("cont list 0");
+    hIonProb2Dc->SetContour(NcontI, contI);
+    hIonProb2Dc->Draw("cont list 0");
   
-  c->Update();
-  TObjArray *contsI2D = (TObjArray*) gROOT->GetListOfSpecials()->FindObject("contours");
-  TClonesArray graphsI2D("TGraph",NcontI);
-  TClonesArray graphsI2D_main("TGraph",NcontI);
-  {
-    Int_t ncontours = contsI2D->GetSize();
-    TList* clist = NULL;
-    Int_t nGraphs = 0;
-    Int_t nGraphs_main = 0;
-    TGraph *gr = NULL;
-    for(Int_t i = 0; i < ncontours; i++){
-      clist = (TList*) contsI2D->At(i);
+    c->Update();
+
+    TObjArray *contsI2D = (TObjArray*) gROOT->GetListOfSpecials()->FindObject("contours");
+    graphsI2D = new TObjArray();
+    graphsI2D_main = new TObjArray();
+    {
+      Int_t ncontours = contsI2D->GetSize();
+      TList* clist = NULL;
+      TGraph *gr = NULL;
+      for(Int_t i = 0; i < ncontours; i++){
+	clist = (TList*) contsI2D->At(i);
       
-      for(Int_t j = 0 ; j < clist->GetSize(); j++) {
-	gr = (TGraph*) clist->At(j);
-	if(!gr) continue;
+	for(Int_t j = 0 ; j < clist->GetSize(); j++) {
+	  gr = (TGraph*) clist->At(j);
+	  if(!gr) continue;
 	
-	if( i==0 ) {
-	  TGraph *grm = new(graphsI2D_main[nGraphs_main]) TGraph(*gr);
-	  nGraphs_main++;
-	  grm->SetLineWidth(1);
-	  grm->SetLineStyle(2);
-	  grm->SetLineColor(kGray+2);
-	  
-	  TGraph *gr2 = new(graphsI2D[nGraphs]) TGraph(*gr) ;
-	  nGraphs++;
-	  if(j==0) {
-	    gr2->SetLineWidth(1);
-	    gr2->SetLineStyle(2);
-	    //	    gr2->SetLineColor(PGlobals::elecLine);
-	    gr2->SetLineColor(kGray+2);
-	  } else {
-	    gr2->SetLineWidth(1);
-	    gr2->SetLineStyle(1);
-	    gr2->SetLineColor(kGray+2);
-	  }
-	  
-	} 
+	  if( i==0 ) {
+	    TGraph *grm = new TGraph(*gr);
+	    grm->SetLineWidth(1);
+	    grm->SetLineStyle(2);
+	    grm->SetLineColor(kGray+2);
+
+	    graphsI2D_main->Add(grm);
+	    
+	    TGraph *gr2 = new TGraph(*gr);
+	    if(j==0) {
+	      gr2->SetLineWidth(1);
+	      gr2->SetLineStyle(2);
+	      //	    gr2->SetLineColor(PGlobals::elecLine);
+	      gr2->SetLineColor(kGray+2);
+	    } else {
+	      gr2->SetLineWidth(1);
+	      gr2->SetLineStyle(1);
+	      gr2->SetLineColor(kGray+2);
+	    }
+	    graphsI2D->Add(gr2);
+	    
+	  } 
 	
+	}
       }
     }
   }
-
+  
   delete c;
 
 
@@ -1109,7 +1118,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(mask == 0) {
         
     pad[ip]->Draw();
-    pad[ip]->cd(); 
+    pad[ip]->cd();  // <---------------------------------------------------------- Just frame 
     if(opt.Contains("logz")) {
       pad[ip]->SetLogz(1);
     } else {
@@ -1118,15 +1127,31 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     hFrame[ip]->Draw("col");
 
-    if(opt.Contains("cont")) {
-
+    if(opt.Contains("contall")) {
+      // ADK contours
+      if(graphsI2D) {
+	for(Int_t i=0;i<graphsI2D->GetEntriesFast();i++) {
+	  TGraph *gr = (TGraph*) graphsI2D->At(i);
+	  if(!gr) continue;
+	  gr->Draw("C");
+	}
+      }
+      
+      // PSI contours  
+      for(Int_t i=0;i<graphsV2D.GetEntriesFast();i++) {
+	TGraph *gr = (TGraph*) graphsV2D.At(i);
+	if(!gr) continue;
+	gr->Draw("C");
+      }
+    } else if(opt.Contains("cont")) {
+	
       // // ADK contours  
-      // for(Int_t i=0;i<graphsI2D.GetEntriesFast();i++) {
-      // 	TGraph *gr = (TGraph*) graphsI2D_main.At(i);
+      // for(Int_t i=0;i<graphsI2D->GetEntriesFast();i++) {
+      // 	TGraph *gr = (TGraph*) graphsI2D_main->At(i);
       // 	if(!gr) continue;
       //   gr->Draw("C");
       // }
-
+      
       // PSI MAIN contour  
       for(Int_t i=0;i<graphsV2D_main.GetEntriesFast();i++) {
 	TGraph *gr = (TGraph*) graphsV2D_main.At(i);
@@ -1134,7 +1159,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	gr->Draw("C");
       }
       
-    }
+    } 
     
     
     ip--;  
@@ -1144,7 +1169,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(mask & 0x1) {
     
     pad[ip]->Draw();
-    pad[ip]->cd(); 
+    pad[ip]->cd();  // <---------------------------------------------------------- 1st panel
     if(opt.Contains("logz")) {
       pad[ip]->SetLogz(1);
     } else {
@@ -1252,12 +1277,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
  
     if(opt.Contains("contall")) {
-      // ADK contours  
-      for(Int_t i=0;i<graphsI2D.GetEntriesFast();i++) {
-	TGraph *gr = (TGraph*) graphsI2D.At(i);
-	if(!gr) continue;
-	gr->Draw("C");
-      }  
+      // ADK contours
+      if(graphsI2D) {
+	for(Int_t i=0;i<graphsI2D->GetEntriesFast();i++) {
+	  TGraph *gr = (TGraph*) graphsI2D->At(i);
+	  if(!gr) continue;
+	  gr->Draw("C");
+	}
+      }
 
       // PSI contours  
       for(Int_t i=0;i<graphsV2D.GetEntriesFast();i++) {
@@ -1266,13 +1293,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	gr->Draw("C");
       }
     } else if(opt.Contains("cont")) {
-      // ADK MAIN contour  
-      for(Int_t i=0;i<graphsI2D_main.GetEntriesFast();i++) {
-	TGraph *gr = (TGraph*) graphsI2D_main.At(i);
-	if(!gr) continue;
-	gr->Draw("C");
-      }  
-
+      // ADK MAIN contour
+      if(graphsI2D_main) {
+	for(Int_t i=0;i<graphsI2D_main->GetEntriesFast();i++) {
+	  TGraph *gr = (TGraph*) graphsI2D_main->At(i);
+	  if(!gr) continue;
+	  gr->Draw("C");
+	}  
+      }
+      
       // PSI MAIN contour  
       for(Int_t i=0;i<graphsV2D_main.GetEntriesFast();i++) {
 	TGraph *gr = (TGraph*) graphsV2D_main.At(i);
@@ -1553,7 +1582,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(mask & 0x2) {
 
     pad[ip]->Draw();
-    pad[ip]->cd(); 
+    pad[ip]->cd();  // <---------------------------------------------------------- 2nd panel
     // if(opt.Contains("logz")) {
     //   pad[ip]->SetLogz(1);
     // } else {
@@ -1826,7 +1855,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(mask & 0x4) {
 
     pad[ip]->Draw();
-    pad[ip]->cd(); // <---------------------------------------------------------- 2nd panel
+    pad[ip]->cd(); // <---------------------------------------------------------- 3rd panel
     // if(opt.Contains("logz")) {
     //   pad[ip]->SetLogz(1);
     // } else {
@@ -1960,7 +1989,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(mask & 0x8) {
 
     pad[ip]->Draw();
-    pad[ip]->cd(); // <---------------------------------------------------------- 2nd panel
+    pad[ip]->cd(); // <---------------------------------------------------------- 4th panel
     // if(opt.Contains("logz")) {
     //   pad[ip]->SetLogz(1);
     // } else {
@@ -2077,7 +2106,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(mask & 0x10) {
 
     pad[ip]->Draw();
-    pad[ip]->cd(); // <---------------------------------------------------------- 2nd panel
+    pad[ip]->cd(); // <---------------------------------------------------------- 5th panel
     // if(opt.Contains("logz")) {
     //   pad[ip]->SetLogz(1);
     // } else {
@@ -2228,7 +2257,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(mask & 0x20) {
     
     pad[ip]->Draw();
-    pad[ip]->cd(); // <--------------------------------------------------- 3rd panel
+    pad[ip]->cd(); // <--------------------------------------------------- 6th panel
     // if(opt.Contains("logz")) {
     //   pad[ip]->SetLogz(1);
     // } else {
@@ -2248,8 +2277,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hETotal2D->Draw(drawopt);
 
     // ADK contours  
-    // for(Int_t i=0;i<graphsI2D.GetEntriesFast();i++) {
-    //   TGraph *gr = (TGraph*) graphsI2D.At(i);
+    // for(Int_t i=0;i<graphsI2D->GetEntriesFast();i++) {
+    //   TGraph *gr = (TGraph*) graphsI2D->At(i);
     //   if(!gr) continue;
     //   gr->Draw("C");
     // }
@@ -2425,7 +2454,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(mask & 0x40) {
 
     pad[ip]->Draw();
-    pad[ip]->cd(); // <--------------------------------------------------------- 5th panel
+    pad[ip]->cd(); // <--------------------------------------------------------- 7th panel
  
     hFrame[ip]->Draw("col");
 
@@ -2513,8 +2542,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hV1D->Draw("sameL");
     
     // ADK MAIN contour  
-    // for(Int_t i=0;i<graphsI2D_main.GetEntriesFast();i++) {
-    //   TGraph *gr = (TGraph*) graphsI2D_main.At(i);
+    // for(Int_t i=0;i<graphsI2D_main->GetEntriesFast();i++) {
+    //   TGraph *gr = (TGraph*) graphsI2D_main->At(i);
     //   if(!gr) continue;
     //   gr->Draw("C");
     // }
@@ -2594,7 +2623,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   if(mask & 0x80) {
     pad[ip]->Draw();
-    pad[ip]->cd(); // <---------------------------------------------------------- 4th panel
+    pad[ip]->cd(); // <---------------------------------------------------------- 8th panel
     // if(opt.Contains("logz")) {
     //   pad[ip]->SetLogz(1);
     // } else {
@@ -2612,29 +2641,31 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     exIonP->Draw();
     hIonProb2D[ii]->Draw(drawopt);
 
-    // ADK contours  
-    for(Int_t i=0;i<graphsI2D.GetEntriesFast();i++) {
-      TGraph *gr = (TGraph*) graphsI2D.At(i);
-      if(!gr) continue;
-      gr->Draw("C");
+    // ADK contours
+    if(graphsI2D) {
+      for(Int_t i=0;i<graphsI2D->GetEntriesFast();i++) {
+	TGraph *gr = (TGraph*) graphsI2D->At(i);
+	if(!gr) continue;
+	gr->Draw("C");
+      }
     }
-
+    
     {
       Float_t rightmin = IPmin;
       Float_t rightmax = IPmax;
       Float_t slope = (yMax-yMin)/(rightmax-rightmin);
-    
+      
       for(Int_t j=0;j<hIonProb1D[ii]->GetNbinsX();j++) {
 	hIonProb1D[ii]->SetBinContent(j+1,slope*(hIonProb1D[ii]->GetBinContent(j+1)-rightmin)+yMin);
       }
     }
-  
+    
     hIonProb1D[ii]->SetLineStyle(1);
     hIonProb1D[ii]->SetLineWidth(2);
     hIonProb1D[ii]->SetLineColor(lineColor);
 
     hIonProb1D[ii]->Draw("sameL");
-
+    
     if(opt.Contains("bopar")) {
       
       TEllipse *ellipLo = new TEllipse(EzCross[0],0.0,radius);	
@@ -2658,17 +2689,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       // 	if(!gr) continue;
       // 	gr->Draw("C");
       // }
-
       
-
+      
+      // PSI contours
+      for(Int_t i=0;i<graphsV2D.GetEntriesFast();i++) {
+	TGraph *gr = (TGraph*) graphsV2D.At(i);
+	if(!gr) continue;
+	gr->Draw("C");
+      }
+      
     }
 
-    // PSI contours  
-    for(Int_t i=0;i<graphsV2D.GetEntriesFast();i++) {
-      TGraph *gr = (TGraph*) graphsV2D.At(i);
-      if(!gr) continue;
-      gr->Draw("C");
-    }
 
 
     if(opt.Contains("1dline")) {

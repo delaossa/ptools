@@ -769,9 +769,9 @@ int main(int argc,char *argv[]) {
       
 	for(Int_t j=0;j<=hB2D[i]->GetNbinsX();j++) {
 	  for(Int_t k=0;k<=hB2D[i]->GetNbinsY();k++) {
-	    hB2D[i]->SetBinContent(j,k, hB2D[i]->GetBinContent(j,k) / eUnit );
+	    hB2D[i]->SetBinContent(j,k, hB2D[i]->GetBinContent(j,k) * E0  / eUnit );
 	  }
-	  hB1D[i]->SetBinContent(j, hB1D[i]->GetBinContent(j) / eUnit );
+	  hB1D[i]->SetBinContent(j, hB1D[i]->GetBinContent(j) * E0  / eUnit );
 	  
 	}
 	

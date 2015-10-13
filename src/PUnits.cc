@@ -64,10 +64,10 @@ PUnits::UnitsTable::UnitsTable()
   // Length
   AddUnit("Femtometer", "fm", "Length", femtometer);
   AddUnit("Nanometer",  "nm", "Length", nanometer);
-  //  AddUnit("Decananometer", "10xnm", "Length", 10*nanometer);
-  //  AddUnit("Hectonanometer", "100xnm", "Length", 100*nanometer);
+  //  AddUnit("Decananometer", "10 nm", "Length", 10*nanometer);
+  //  AddUnit("Hectonanometer", "10^{2} nm", "Length", 100*nanometer);
   AddUnit("Micrometer", "#mum", "Length", micrometer);
-  //  AddUnit("Decamicrometer", "10x#mum", "Length", decamicrometer);
+  //  AddUnit("Decamicrometer", "10 #mum", "Length", decamicrometer);
   AddUnit("Millimeter", "mm", "Length", millimeter);
   AddUnit("Centimeter", "cm", "Length", centimeter);
   AddUnit("Meter",      "m",  "Length", meter);
@@ -158,16 +158,16 @@ PUnits::UnitsTable::UnitsTable()
   AddUnit("Centiampere", "cA", "Current", centiampere);
   AddUnit("Deciampere", "dA", "Current", deciampere);
   AddUnit("Ampere",  "A", "Current", ampere);
-  AddUnit("Decaampere", "10xA", "Current", decaampere);
-  AddUnit("Hectoampere","100xA", "Current", hectoampere);
+  AddUnit("Decaampere", "10 A", "Current", decaampere);
+  AddUnit("Hectoampere","10^{2} A", "Current", hectoampere);
   AddUnit("Kiloampere", "kA", "Current", kA);
-  AddUnit("Decakiloampere", "10xkA", "Current", decakA);
+  AddUnit("Decakiloampere", "10 kA", "Current", decakA);
 
   // Percentages
   AddUnit("Percent", "%", "Percentage", perCent);
-  AddUnit("Perten", "10x%", "Percentage", perTen);
-  AddUnit("Permille", "0.1x%", "Percentage", perThousand);
-  AddUnit("Permillion", "0.01x%", "Percentage", perMillion);
+  AddUnit("Perten", "10 %", "Percentage", perTen);
+  AddUnit("Permille", "0.1 %", "Percentage", perThousand);
+  AddUnit("Permillion", "0.01 %", "Percentage", perMillion);
 
 }
 
