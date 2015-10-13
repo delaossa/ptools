@@ -142,9 +142,27 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   infotree->SetBranchAddress("xon",&xon);
   Double_t xoff = 0.1;
   infotree->SetBranchAddress("xoff",&xoff);
+  Double_t denUnit = 1;
+  infotree->SetBranchAddress("denUnit",&denUnit);  
+  string   *denSUnit = 0;
+  infotree->SetBranchAddress("denSUnit",&denSUnit);  
   Double_t spaUnit = 1;
   infotree->SetBranchAddress("spaUnit",&spaUnit);  
-  
+  string   *spaSUnit = 0;
+  infotree->SetBranchAddress("spaSUnit",&spaSUnit);  
+  Double_t timUnit = 1;
+  infotree->SetBranchAddress("timUnit",&timUnit);  
+  string   *timSUnit = 0;
+  infotree->SetBranchAddress("timSUnit",&timSUnit);  
+  Double_t eUnit = 1;
+  infotree->SetBranchAddress("eUnit",&eUnit);  
+  string   *eSUnit = 0;
+  infotree->SetBranchAddress("eSUnit",&eSUnit);  
+  Double_t curUnit = 1;
+  infotree->SetBranchAddress("curUnit",&curUnit);  
+  string   *curSUnit = 0;
+  infotree->SetBranchAddress("curSUnit",&curSUnit);  
+    
   infotree->GetEntry(0);
 
   cout << Form(" Options from doSnapshot = %s \n", opttree->Data());
@@ -272,7 +290,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Int_t NbinsY = hETotal2D->GetNbinsY();
     Float_t dx = hETotal2D->GetXaxis()->GetBinWidth(1);
 
-    if(opt.Contains("units")) dx *= PUnits::um / PConst::c_light;
+    if(opt.Contains("units")) dx *= spaUnit / PConst::c_light;
     else dx *= timedepth;
       
     // if(!opt.Contains("units")) dx *=  timedepth / PUnits::femtosecond; // to fs
@@ -285,7 +303,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       for(Int_t k=NbinsX;k>0;k--) {
 
 	Float_t E = hETotal2D->GetBinContent(k,j);
-	if(opt.Contains("units")) E *= PUnits::GV/PUnits::m;
+	if(opt.Contains("units")) E *= eUnit;
 	else E *= E0;
 	if(E<10) continue;
 		
@@ -315,14 +333,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Int_t NbinsX = hETotal1D->GetNbinsX();
       Float_t dx = hETotal1D->GetBinWidth(1);
       
-      if(opt.Contains("units")) dx *= PUnits::um / PConst::c_light;
+      if(opt.Contains("units")) dx *= spaUnit / PConst::c_light;
       else dx *= timedepth;
 
       Float_t integral[NAtoms] = {0.0};
       for(Int_t j=NbinsX;j>0;j--) {
 	
 	Float_t E = hETotal1D->GetBinContent(j);
-	if(opt.Contains("units")) E *= PUnits::GV/PUnits::m;
+	if(opt.Contains("units")) E *= eUnit;
 	else E *= E0;
 	if(E<10) continue;
 
@@ -336,8 +354,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	else
 	  IonRate /= omegap;
 
-	hIonProb1D[iat]->SetBinContent(j,(1-integral[iat])*IonRate);
-	
+	hIonProb1D[iat]->SetBinContent(j,(1-integral[iat])*IonRate);	
       }
       
     }
@@ -886,9 +903,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   char ctext[128];
   if(opt.Contains("units") && n0) 
-    sprintf(ctext,"z = %5.1f mm", Time * skindepth / PUnits::mm);
+    sprintf(ctext,Form("z = %5.2f %s", Time * skindepth / spaUnit,spaSUnit->c_str()));
   else
-    sprintf(ctext,"t = %5.1f #omega_{p}^{-1}",Time);
+    sprintf(ctext,"k_{p}z = %5.1f",Time);
   
   TLatex *textTime = new TLatex(xMax - (xMax-xMin)/20.,yMax - (yMax-yMin)/10.,ctext);
   textTime->SetTextAlign(32);
@@ -896,8 +913,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   textTime->SetTextSize(fontsize-10);
 
   if(opt.Contains("units") && n0) 
-    //    sprintf(ctext,"n_{0} = %5.1f x 10^{17} cm^{-3}", 1E-17*n0/(1./PUnits::cm3));
-    sprintf(ctext,"n_{0} = %5.2f x 10^{15} cm^{-3}", 1E-15*n0/(1./PUnits::cm3));
+    sprintf(ctext,Form("n_{0} = %5.2f x %s", n0/denUnit,denSUnit->c_str()));
    
   TLatex *textDen = new TLatex(xMin + (xMax-xMin)/20.,yMax - (yMax-yMin)/10.,ctext);
   textDen->SetTextAlign(12);
@@ -916,9 +932,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   zEndNeutral -= shiftz; 
   
   if(opt.Contains("units") && n0) {
-    zStartPlasma *= skindepth / PUnits::um;
-    zStartNeutral *= skindepth / PUnits::um;
-    zEndNeutral *= skindepth / PUnits::um;
+    zStartPlasma *= skindepth /spaUnit;
+    zStartNeutral *= skindepth /spaUnit;
+    zEndNeutral *= skindepth /spaUnit;
   }
 
   //  cout << "Start plasma = " << zStartPlasma << endl;
@@ -946,7 +962,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   {
     Float_t zshift = 0.1; 
     if(opt.Contains("units")) 
-      zshift *= PUnits::um * kp;
+      zshift *=spaUnit * kp;
     
     Int_t bin1 = hE1D[0]->FindBin(EzCross[0]-zshift);
     Int_t bin2 = hE1D[0]->FindBin(EzCross[0]+zshift);
@@ -1014,8 +1030,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       maxcurr = hCur1D[1]->GetMaximum();
       rmslength = hCur1D[1]->GetRMS();
       if(opt.Contains("units")) {
-	maxcurr *= PUnits::kA / PConst::I0;
-	rmslength *= PUnits::um * kp;
+	maxcurr *= curUnit / PConst::I0;
+	rmslength *= spaUnit * kp;
       }
 
       radius = PFunc::RadiusBO(maxcurr,rmslength);
@@ -1028,26 +1044,26 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
       cout << endl << Form(" Blowout parameters") << endl;
       if(opt.Contains("units")) {
-	maxcurr /= PUnits::kA / PConst::I0;
-	rmslength /= PUnits::um * kp;
-	radius   *= skindepth / PUnits::um;
-	radiusLu *= skindepth / PUnits::um;
-	EzMaxLo  *= E0 / (PUnits::GV/PUnits::m);
-	EzMaxLuLinear  *= E0 / (PUnits::GV/PUnits::m);
-	EzMaxBeamLo  *= E0 / (PUnits::GV/PUnits::m);
-	DeltaPsiLo   *= E0 * skindepth /(PUnits::MV);
-	RadiusPsiLo  *= skindepth / PUnits::um;
+	maxcurr *= PConst::I0 / curUnit;
+	rmslength *= 1.0/(spaUnit * kp);
+	radius   *= skindepth / spaUnit;
+	radiusLu *= skindepth / spaUnit;
+	EzMaxLo  *= E0 / eUnit;
+	EzMaxLuLinear  *= E0 / eUnit;
+	EzMaxBeamLo  *= E0 / eUnit;
+	DeltaPsiLo   *= E0 * skindepth / (PUnits::MV);
+	RadiusPsiLo  *= skindepth / spaUnit;
 	
-	cout << Form("  Beam max. curr.  = %7.2f kA   RMS = %.2f um",maxcurr,rmslength) << endl;
-	cout << Form("  Ez max beam      = %7.2f GV/m",EzExtr[0]) << endl;
-	cout << Form("  Radius (Lotov) R = %7.2f um",radius) << endl;
-	cout << Form("  Radius (Lu)    R = %7.2f um",radiusLu) << endl;
-	cout << Form("  Ez max beam (Lo) = %7.2f GV/m",EzMaxBeamLo) << endl;
-	cout << Form("  Ez max acc. (Lo) = %7.2f GV/m",-EzMaxLo) << endl;
-	cout << Form("  Ez max (Lu)      = %7.2f GV/m",-EzMaxLuLinear) << endl;
-	cout << Form("  E  max (ion)     = %7.2f GV/m",EmaxIon) << endl;
+	cout << Form("  Beam max. curr.  = %7.2f %s   RMS = %.2f um",maxcurr,curSUnit->c_str(),rmslength) << endl;
+	cout << Form("  Ez max beam      = %7.2f %s",EzExtr[0],eSUnit->c_str()) << endl;
+	cout << Form("  Radius (Lotov) R = %7.2f %s",radius,spaSUnit->c_str()) << endl;
+	cout << Form("  Radius (Lu)    R = %7.2f %s",radiusLu,spaSUnit->c_str()) << endl;
+	cout << Form("  Ez max beam (Lo) = %7.2f %s",EzMaxBeamLo,eSUnit->c_str()) << endl;
+	cout << Form("  Ez max acc. (Lo) = %7.2f %s",-EzMaxLo,eSUnit->c_str()) << endl;
+	cout << Form("  Ez max (Lu)      = %7.2f %s",-EzMaxLuLinear,eSUnit->c_str()) << endl;
+	cout << Form("  E  max (ion)     = %7.2f %s",EmaxIon,eSUnit->c_str()) << endl;
 	cout << Form("  DPsi max. (Lo)   = %7.2f MV",DeltaPsiLo) << endl;
-	cout << Form("  Trapping R (Lo)  = %7.2f um",RadiusPsiLo) << endl;
+	cout << Form("  Trapping R (Lo)  = %7.2f %s",RadiusPsiLo,spaSUnit->c_str()) << endl;
       } else {
 	cout << Form("  Beam max. curr.  = %7.2f I0   RMS = %.2f kp^-1",maxcurr,rmslength) << endl;
 	cout << Form("  Ez max beam      = %7.2f E0",EzExtr[0]) << endl;
@@ -1448,7 +1464,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       // Fit the E1D in the E2D pad:
       Float_t HeIon  = 92.75;  // GV/m
       if(!opt.Contains("units") || !n0 ) {
-	HeIon  /= ( E0 / (PUnits::GV/PUnits::m));
+	HeIon  /= ( E0 / eUnit );
       }
 
       // Fit the E1D in the pad:
@@ -1593,7 +1609,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       lineE = new TLine(EzCross[0]-radius,-EzAdapted,zmatch,EzAdapted2);
 
       Double_t linelength = 1;
-      if(opt.Contains("units")) linelength *= skindepth / PUnits::um;
+      if(opt.Contains("units")) linelength *= skindepth / spaUnit;
  
       EzAdapted = slope*(EzMaxLuLinear-rightmin)+yMin;
       lineEmaxLuLinear = new TLine(EzCross[0]-radius,-EzAdapted,EzCross[0]-radius-linelength,-EzAdapted);
@@ -2279,7 +2295,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
       for(Int_t i=0;i<Nat;i++) {
 	if(!opt.Contains("units") || !n0 ) 
-	  IonTh[i] /= ( E0 / (PUnits::GV/PUnits::m));
+	  IonTh[i] /= ( E0 / eUnit );
 	
 	lineTh[i] = new TLine(xMin,slope*(IonTh[i]-rightmin)+yMin,
 			      xMax,slope*(IonTh[i]-rightmin)+yMin);

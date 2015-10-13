@@ -398,8 +398,15 @@ int main(int argc,char *argv[]) {
       x1BinMin = -6.8;
       x1BinMax = -5.7;
       
+    } else if (sim.Contains("pitz")) {
+      x1Min = -55.0;
+      x1Max = 25.0; 
+      
+      SNbin = 100;
+      x1BinMin = -32.0;
+      x1BinMax =   2.0;
     }
-
+    
     // dummy shift
     Float_t dshiftz = pData->Shift("centercomov");
     x1Min += dshiftz;
@@ -407,7 +414,7 @@ int main(int argc,char *argv[]) {
     x1BinMin += dshiftz;
     x1BinMax += dshiftz;
 
-    cout << Form(" x1Min = %f x1Max = %f x1BinMin = %f x1BinMax = %f  ", x1Min, x1Max, x1BinMin, x1BinMax) << endl;
+    //    cout << Form(" x1Min = %f x1Max = %f x1BinMin = %f x1BinMax = %f  ", x1Min, x1Max, x1BinMin, x1BinMax) << endl;
     
     // --------------------------------------------------
     

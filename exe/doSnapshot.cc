@@ -604,8 +604,8 @@ int main(int argc,char *argv[]) {
     // Chaning to user units: 
     // --------------------------
   
-    Double_t denUnit, spaUnit, timUnit, eUnit;
-    string denSUnit, spaSUnit, timSUnit, eSUnit;
+    Double_t denUnit, spaUnit, timUnit, eUnit, curUnit;
+    string denSUnit, spaSUnit, timSUnit, eSUnit, curSUnit;
     
     if(opt.Contains("units") && n0) {
 
@@ -681,8 +681,6 @@ int main(int argc,char *argv[]) {
 	  Double_t Charge = hCur1D[i]->Integral() * binSize * PConst::I0 / PConst::c_light;
 	  cout << Form(" Integrated charge of specie %3i = %8f pC",i,Charge/PUnits::picocoulomb) << endl;
 	  
-	  Double_t curUnit;
-	  string curSUnit;
 	  PUnits::BestUnit bcurSUnit(hCur1D[i]->GetMaximum() * PConst::I0,"Current");
 	  bcurSUnit.GetBestUnits(curUnit,curSUnit);
 	  
@@ -1135,7 +1133,16 @@ int main(int argc,char *argv[]) {
     TTree *infotree = new TTree("infoTree","options tree from doSnapshot");
     infotree->Branch("xon",&xon,"xon/D");
     infotree->Branch("xoff",&xoff,"xoff/D");
+    infotree->Branch("denUnit",&denUnit,"denUnit/D");
+    infotree->Branch("denSUnit","string",&denSUnit);
     infotree->Branch("spaUnit",&spaUnit,"spaUnit/D");
+    infotree->Branch("spaSUnit","string",&spaSUnit);
+    infotree->Branch("timUnit",&timUnit,"timUnit/D");
+    infotree->Branch("timSUnit","string",&timSUnit);
+    infotree->Branch("eUnit",&eUnit,"eUnit/D");
+    infotree->Branch("eSUnit","string",&eSUnit);
+    infotree->Branch("curUnit",&curUnit,"curUnit/D");
+    infotree->Branch("curSUnit","string",&curSUnit);
 
     TString *optpoint = &opt;
     infotree->Branch("options","TString",&optpoint);
