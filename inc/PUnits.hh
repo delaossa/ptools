@@ -503,10 +503,10 @@ namespace PUnits
   /** @name Miscellaneous constants
    */
   //@{
-  static const Double_t perTen      = 0.1;   ///< Perten
-  static const Double_t perCent     = 0.01;  ///< Percent
-  static const Double_t perThousand = 0.001; ///< Permile
-  static const Double_t perMillion  = 0.000001; ///< PPB
+  static const Double_t perTen      = 0.1;    ///< Perten
+  static const Double_t perCent     = 0.01;   ///< Percent
+  static const Double_t perThousand = 0.001;  ///< Permile
+  static const Double_t perMillion  = 0.0001; ///< PPB
   //@}
 };
 

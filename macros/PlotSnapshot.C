@@ -142,6 +142,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   infotree->SetBranchAddress("xon",&xon);
   Double_t xoff = 0.1;
   infotree->SetBranchAddress("xoff",&xoff);
+  Double_t xint = 0.1;
+  infotree->SetBranchAddress("xint",&xint);
   Double_t denUnit = 1;
   infotree->SetBranchAddress("denUnit",&denUnit);  
   string   *denSUnit = 0;
@@ -172,6 +174,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // Off-axis
   if(opt.Contains("units")) {
     xoff *= skindepth/spaUnit;
+    xon *= skindepth/spaUnit;
+    xint *= skindepth/spaUnit;
   }  
 
   if(opt.Contains("center")) {
@@ -1400,6 +1404,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen1D[i]->Draw("same C");
       }
     } else if(opt.Contains("cur1d")) {
+
+      TLine *lineCurUp = new TLine(xMin,xint,xMax,xint);
+      lineCurUp->SetLineColor(kGray+1);
+      lineCurUp->SetLineStyle(2);
+      lineCurUp->Draw();
+
+      TLine *lineCurDo = new TLine(xMin,-xint,xMax,-xint);
+      lineCurDo->SetLineColor(kGray+1);
+      lineCurDo->SetLineStyle(2);
+      lineCurDo->Draw();
+      
       
       for(Int_t i=0;i<Nspecies;i++) {
 	if(i==noIndex) continue;

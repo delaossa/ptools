@@ -105,6 +105,8 @@ int main(int argc,char *argv[]) {
       opt += "units";
     } else if(arg.Contains("--center")){
       opt += "center";
+    } else if(arg.Contains("--best")){
+      opt += "best";
     } else if(arg.Contains("--grid")){
       opt += "grid"; 
     } else if(arg.Contains("--logz")){
@@ -175,11 +177,10 @@ int main(int argc,char *argv[]) {
   if(iEnd<=iStart) iEnd = iStart;
   
   // Some plasma constants
-  Float_t n0 = pData->GetPlasmaDensity();
-  Float_t kp = pData->GetPlasmaK();
-  Float_t skindepth = 1.;
-  if(kp!=0.0) skindepth = 1/kp;
-  // Float_t E0 = pData->GetPlasmaE0();
+  Double_t n0 = pData->GetPlasmaDensity();
+  Double_t kp = pData->GetPlasmaK();
+  Double_t skindepth = pData->GetPlasmaSkinDepth();
+  Double_t wavelength = pData->GetPlasmaWaveLength();
 
   // z start of the plasma in normalized units.
   Float_t zStartPlasma = pData->GetPlasmaStart()*kp;
@@ -187,6 +188,53 @@ int main(int argc,char *argv[]) {
   Float_t zStartBeam = pData->GetBeamStart()*kp;
 
   //  opt += "comovcenter";
+
+  // Units
+  Double_t chargeUnit,  denUnit,  spaUnit,  tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit;
+  string  chargeSUnit, denSUnit, spaSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit;
+
+  if(opt.Contains("units") && n0) {
+
+    //  cout << endl << Form("Changing to SI units:") << endl;
+      
+    // Get the best units for each quantity
+    PUnits::BestUnit bdenSUnit(n0,"PartDensity");
+    bdenSUnit.GetBestUnits(denUnit,denSUnit);
+    //    cout << Form(" n0 = %.2f %s", n0/denUnit, denSUnit.c_str()) << endl;
+
+    PUnits::BestUnit bspaSUnit(wavelength,"Length");
+    bspaSUnit.GetBestUnits(spaUnit,spaSUnit);
+    //    cout << Form(" L  = %.2f %s", wavelength/spaUnit, spaSUnit.c_str()) << endl;
+  }
+
+  // Current units
+  curUnit = PUnits::kA;
+  curSUnit = "kA";
+  
+  // Charge units
+  chargeUnit = PUnits::picocoulomb;
+  chargeSUnit = "pC";
+  
+  // Longitudinal momentum units
+  eneUnit = PUnits::GeV;
+  eneSUnit = "GeV";
+
+  // Transverse momentum units
+  teneUnit = PUnits::MeV;
+  teneSUnit = "MeV";
+
+  // Transverse length units
+  tspaUnit = PUnits::um;
+  tspaSUnit = "#mum";
+  
+  // Emittance units
+  emitUnit = PUnits::um;
+  emitSUnit = "#mum";
+
+  // Relative energy spread units
+  ermsUnit = PUnits::perCent; 
+  ermsSUnit = "%";
+
   
   // Time looper
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
@@ -405,6 +453,16 @@ int main(int argc,char *argv[]) {
       SNbin = 100;
       x1BinMin = -32.0;
       x1BinMax =   2.0;
+
+      curUnit = PUnits::ampere;
+      curSUnit = "A";
+
+      eneUnit = PUnits::MeV;
+      eneSUnit = "MeV";
+
+      ermsUnit = PUnits::perMillion; 
+      ermsSUnit = "0.01 %";
+
     }
     
     // dummy shift
@@ -428,6 +486,8 @@ int main(int argc,char *argv[]) {
     var = new Float_t*[Nvar];
     UInt_t Np = pData->GetRawArray(pData->GetRawFileName(index)->c_str(),var);
 
+    cout << Form("     -> Number of particles = %i",Np) << endl;
+    
     // Scan histogram
     TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
     if(hScanX1) delete hScanX1;
@@ -446,8 +506,8 @@ int main(int argc,char *argv[]) {
     TH1F *hScanP3 = (TH1F*) gROOT->FindObject("hScanP3");
     if(hScanP3) delete hScanP3;
     hScanP3 = new TH1F("hScanP3","",p3Nbin,p3Min,p3Max);
-    
-    cout << Form(" BOX (N = %i):  x1Min = %f  x1Max = %f ", pData->GetX1N(), pData->GetX1Min()-shiftz, pData->GetX1Max()-shiftz) << endl;
+
+    // cout << Form(" BOX (N = %i):  x1Min = %f  x1Max = %f ", pData->GetX1N(), pData->GetX1Min()-shiftz, pData->GetX1Max()-shiftz) << endl;
     
     
     // -------------------------------------------------------------------------------
@@ -457,7 +517,7 @@ int main(int argc,char *argv[]) {
     
     if(opt.Contains("autop")) {
 
-      cout << Form(" Auto ranging everything but x1...") << endl;
+      cout << Form("\n Auto ranging everything but x1...") << endl;
 
       Float_t MinP1 = 999999;
       Float_t MaxP1 = -999999;
@@ -557,7 +617,7 @@ int main(int argc,char *argv[]) {
       
     } else if(opt.Contains("auto")) {
 
-      cout << Form(" Auto ranging...") << endl;
+      cout << Form("\n Auto ranging...") << endl;
       
       Float_t MinP1 = 999999;
       Float_t MaxP1 = -999999;
@@ -710,71 +770,74 @@ int main(int argc,char *argv[]) {
     TH1F *hX1 = (TH1F*) gROOT->FindObject(hName);
     if(hX1) delete hX1;
     hX1 = new TH1F(hName,"",x1Nbin,x1Min,x1Max);
-    hX1->GetYaxis()->SetTitle("I [kA]");
-    hX1->GetXaxis()->SetTitle("#zeta [#mum]");
+    hX1->GetYaxis()->SetTitle("#Lambda");
+    if(opt.Contains("comov"))
+      hX1->GetXaxis()->SetTitle("k_{p}#zeta");
+    else
+      hX1->GetXaxis()->SetTitle("k_{p}z");
     
     sprintf(hName,"hP1");
     TH1F *hP1 = (TH1F*) gROOT->FindObject(hName);
     if(hP1) delete hP1;
     hP1 = new TH1F(hName,"",p1Nbin,p1Min,p1Max);
-    hP1->GetYaxis()->SetTitle("p_{z} [GeV/c]");
+    hP1->GetYaxis()->SetTitle("p_{z}/mc");
     if(opt.Contains("comov"))
-      hP1->GetXaxis()->SetTitle("#zeta [#mum]");
+      hP1->GetXaxis()->SetTitle("k_{p}#zeta");
     else
-      hP1->GetXaxis()->SetTitle("z [#mum]");
+      hP1->GetXaxis()->SetTitle("k_{p}z");
     
     sprintf(hName,"hP1X1");
     TH2F *hP1X1 = (TH2F*) gROOT->FindObject(hName);
     if(hP1X1) delete hP1X1;
     hP1X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,p1Nbin,p1Min,p1Max);
     if(opt.Contains("comov"))
-      hP1X1->GetXaxis()->SetTitle("#zeta [#mum]");
+      hP1X1->GetXaxis()->SetTitle("k_{p}#zeta");
     else
-      hP1X1->GetXaxis()->SetTitle("z [#mum]");
-    hP1X1->GetYaxis()->SetTitle("p_{z} [GeV/c]");
-    hP1X1->GetZaxis()->SetTitle("Charge [pC]");
+      hP1X1->GetXaxis()->SetTitle("k_{p}z");
+    hP1X1->GetYaxis()->SetTitle("p_{z}/mc");
+    hP1X1->GetZaxis()->SetTitle("Charge [n_{0}dV]");
     hP1X1->GetZaxis()->CenterTitle();
   
     sprintf(hName,"hP2X2");
     TH2F *hP2X2 =  (TH2F*) gROOT->FindObject(hName);
     if(hP2X2) delete hP2X2;
     hP2X2 = new TH2F(hName,"",x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
-    hP2X2->GetXaxis()->SetTitle("x [#mum]");
+    hP2X2->GetXaxis()->SetTitle("k_{p}x");
     hP2X2->GetYaxis()->SetTitle("p_{x}/mc");
-    hP2X2->GetZaxis()->SetTitle("Charge [pC]");
+    hP2X2->GetZaxis()->SetTitle("Charge [n_{0}dV]");
 
     sprintf(hName,"hP3X3");
     TH2F *hP3X3 =  (TH2F*) gROOT->FindObject(hName);
     if(hP3X3) delete hP3X3;
     hP3X3 = new TH2F(hName,"",x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
-    hP3X3->GetXaxis()->SetTitle("y [#mum]");
+    hP3X3->GetXaxis()->SetTitle("k_{p}y");
     hP3X3->GetYaxis()->SetTitle("p_{y}/mc");
-    hP3X3->GetZaxis()->SetTitle("Charge [pC]");
+    hP3X3->GetZaxis()->SetTitle("Charge [n_{0}dV]");
     hP3X3->GetZaxis()->CenterTitle();
 
     sprintf(hName,"hX2X1");
     TH2F *hX2X1 = (TH2F*) gROOT->FindObject(hName);
     if(hX2X1) delete hX2X1;
     hX2X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,x2Nbin,x2Min,x2Max);
-    hX2X1->GetXaxis()->SetTitle("#zeta [#mum]");
-    hX2X1->GetYaxis()->SetTitle("x [#mum]");
-    hX2X1->GetZaxis()->SetTitle("Charge [pC]");
+    hX2X1->GetXaxis()->SetTitle("k_{p}#zeta");
+    hX2X1->GetYaxis()->SetTitle("k_{p}x");
+    hX2X1->GetZaxis()->SetTitle("Charge [n_{0}dV]");
 
     sprintf(hName,"hX3X1");
     TH2F *hX3X1 = (TH2F*) gROOT->FindObject(hName);
     if(hX3X1) delete hX3X1;
     hX3X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,x3Nbin,x3Min,x3Max);
-    hX3X1->GetXaxis()->SetTitle("#zeta [#mum]");
-    hX3X1->GetYaxis()->SetTitle("y [#mum]");
-    hX3X1->GetZaxis()->SetTitle("Charge [pC]");
+    hX3X1->GetXaxis()->SetTitle("k_{p}#zeta");
+    hX3X1->GetYaxis()->SetTitle("k_{p}y");
+    hX3X1->GetZaxis()->SetTitle("Charge [n_{0}dV]");
 
     sprintf(hName,"hX3X2");
     TH2F *hX3X2 = (TH2F*) gROOT->FindObject(hName);
     if(hX3X2) delete hX3X2;
     hX3X2 = new TH2F(hName,"",x2Nbin,x2Min,x2Max,x3Nbin,x3Min,x3Max);
-    hX3X2->GetXaxis()->SetTitle("x [#mum]");
-    hX3X2->GetYaxis()->SetTitle("y [#mum]");
-    hX3X2->GetZaxis()->SetTitle("Charge [pC]");
+    hX3X2->GetXaxis()->SetTitle("k_{p}x");
+    hX3X2->GetYaxis()->SetTitle("k_{p}y");
+    hX3X2->GetZaxis()->SetTitle("Charge [n_{0}dV]");
 
     
     // Sliced quantities:
@@ -798,18 +861,18 @@ int main(int argc,char *argv[]) {
       if(hP2X2sl[k]) delete hP2X2sl[k];
       hP2X2sl[k] = new TH2F(hName,"",x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
 
-      hP2X2sl[k]->GetXaxis()->SetTitle("k_{p} x");
+      hP2X2sl[k]->GetXaxis()->SetTitle("k_{p}x");
       hP2X2sl[k]->GetYaxis()->SetTitle("p_{x}/mc");
-      hP2X2sl[k]->GetZaxis()->SetTitle("Charge [a.u.]");
+      hP2X2sl[k]->GetZaxis()->SetTitle("Charge [n_{0}dV]");
 
       sprintf(hName,"hP3X3sl_%i",k);
       hP3X3sl[k] = (TH2F*) gROOT->FindObject(hName);
       if(hP3X3sl[k]) delete hP3X3sl[k];
       hP3X3sl[k] = new TH2F(hName,"",x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
       
-      hP3X3sl[k]->GetXaxis()->SetTitle("k_{p} y");
+      hP3X3sl[k]->GetXaxis()->SetTitle("k_{p}y");
       hP3X3sl[k]->GetYaxis()->SetTitle("p_{y}/mc");
-      hP3X3sl[k]->GetZaxis()->SetTitle("Charge [a.u.]");      
+      hP3X3sl[k]->GetZaxis()->SetTitle("Charge [n_{0}dV]");      
       
       sprintf(hName,"hP1sl_%2i",k);
       hP1sl[k] = (TH1F*) gROOT->FindObject(hName);
@@ -946,8 +1009,8 @@ int main(int argc,char *argv[]) {
     // cout << Form("  zRms  = %7.3f   pzRms  = %7.3f",zrms,pzrms) << endl;
     // cout << Form("  zEmittance = %7.3f",emitz) << endl;
     
-    cout <<  Form("  Normal  : pzMean  = %7.3f   pzRms  = %7.3f",pzmean,pzrms) << endl;
-    cout <<  Form("  In FWHM : pzMean  = %7.3f   pzRms  = %7.3f -> Interval: pmin = %7.3f pmax = %7.3f  ",pzmeanFWHM,pzrmsFWHM,pzmin,pzmax) << endl;
+    // cout <<  Form("  Normal  : pzMean  = %7.3f   pzRms  = %7.3f",pzmean,pzrms) << endl;
+    // cout <<  Form("  In FWHM : pzMean  = %7.3f   pzRms  = %7.3f -> Interval: pmin = %7.3f pmax = %7.3f  ",pzmeanFWHM,pzrmsFWHM,pzmin,pzmax) << endl;
 
     
     // ----------------------------------------
@@ -974,7 +1037,7 @@ int main(int argc,char *argv[]) {
     Double_t gamma = yrms2 / emit;
     Double_t alpha = -xyrms2 / emit;
   
-    Double_t grel = hP1->GetMean() * PUnits::GeV/PConst::ElectronMassE;
+    Double_t grel = hP1->GetMean() * eneUnit/PConst::ElectronMassE;
     Double_t betax = beta * grel;
 
     Double_t factor =  beta*beta + 2 * beta * gamma + gamma*gamma - 4 * emit;
@@ -1105,202 +1168,149 @@ int main(int argc,char *argv[]) {
     // Changing to user units: 
     // --------------------------
 
-    // Charge  
-    hX1->Scale(dx1*dx2*dx3);
-    Float_t Charge = hX1->Integral();
-    
-    string curUnit;
-    string emitUnit;
-    string ermsUnit;
-    string auxUnit;
-    
-    Float_t  lightspeed =  PConst::c_light / (PUnits::um/PUnits::femtosecond);
+    // Charge
+    Double_t dV = dx1*dx2*dx3 * skindepth * skindepth * skindepth;
+    Double_t Q0 = rawf * fabs(n0 * dV * PConst::ElectronCharge);
+    Double_t Charge = hX1->Integral() * Q0;
+    if(opt.Contains("best")) {
+      PUnits::BestUnit bchargeSUnit(Charge,"Charge");
+      bchargeSUnit.GetBestUnits(chargeUnit,chargeSUnit);
+    }
+    Charge /= chargeUnit;
     
     if(opt.Contains("units") && n0) {
 
-      Time *= skindepth / PUnits::um;
+      Time *= skindepth / spaUnit;
 
-      x1Min *= skindepth / PUnits::um;
-      x1Max *= skindepth / PUnits::um;
-      p1Min *= PConst::ElectronMassE / PUnits::GeV;
-      p1Max *= PConst::ElectronMassE / PUnits::GeV;
+      x1Min *= skindepth / spaUnit;
+      x1Max *= skindepth / spaUnit;
+      p1Min *= PConst::ElectronMassE / eneUnit;
+      p1Max *= PConst::ElectronMassE / eneUnit;
       
-      x1BinMin *= skindepth / PUnits::um;
-      x1BinMax *= skindepth / PUnits::um;
+      x1BinMin *= skindepth / spaUnit;
+      x1BinMax *= skindepth / spaUnit;
       for(Int_t k=0;k<=SNbin;k++) 
-	sBinLim[k] *= skindepth / PUnits::um;
+	sBinLim[k] *= skindepth / spaUnit;
       
       hP1X1->SetBins(x1Nbin,x1Min,x1Max,p1Nbin,p1Min,p1Max);
-
+      hP1X1->Scale(Q0 / chargeUnit);
+      
       // Converting electron density
-      Float_t dV = skindepth * skindepth * skindepth;
-      Charge *= n0 * dV * (PConst::ElectronCharge/PUnits::picocoulomb);
-
-      for(Int_t j=0;j<hP1X1->GetNbinsX();j++) {
-	for(Int_t k=0;k<hP1X1->GetNbinsY();k++) {
-	  Float_t binValue =  fabs(hP1X1->GetBinContent(j,k) * dx1 * dx2 * dx3 * dV * n0 *
-				   (PConst::ElectronCharge/PUnits::picocoulomb));
-	  //cout << Form(" value = %f",binValue) << endl;
-	  hP1X1->SetBinContent(j,k,binValue);
-
-	}
-      }
-
+      hP1->Scale(Q0 / chargeUnit);
       hP1->SetBins(p1Nbin,p1Min,p1Max);
-      hP1->GetYaxis()->SetTitle("p_{z} [GeV/c]");
+      hP1->GetYaxis()->SetTitle(Form("p_{z} [%s/c]",eneSUnit.c_str()));
 
       hX1->SetBins(x1Nbin,x1Min,x1Max);
-      Float_t binSize = (x1Max - x1Min)/x1Nbin;
+      Double_t dt = ((x1Max - x1Min)/x1Nbin) * spaUnit / PConst::c_light;
+      hX1->Scale(Q0 / dt);
 
-      hX1->Scale(TMath::Abs(n0 * dV * (PConst::ElectronCharge/PUnits::picocoulomb) * (lightspeed/binSize)));
-
-
-      Float_t curscal = rawf;
-      curUnit = "kA"; 
-
-      //PUnits::UnitsTable::Get();
-      stringstream stream;      
-      // Float_t peakCurr = hX1->GetMaximum() * PUnits::kA;
-      // stream << PUnits::BestUnit(peakCurr,"Current") << endl;
-      // Float_t best;
-      // stream >> best >> curUnit;
-      // curscal = best/(peakCurr/PUnits::kA);      
-      // cout << Form(" Peak current = %.2f %s  --> scale = %f",best,curUnit.c_str(),curscal) << endl;
+      if(opt.Contains("best")) {
+	PUnits::BestUnit bcurSUnit(hX1->GetMaximum(),"Current");
+	bcurSUnit.GetBestUnits(curUnit,curSUnit);
+      }
+      hX1->Scale(1/curUnit);
       
-      hX1->Scale(curscal);
-
-      // hX1->GetYaxis()->SetTitle("I[kA]");
+      hX1->GetYaxis()->SetTitle(Form("I[%s]",curSUnit.c_str()));
       hX1->GetYaxis()->SetTitle("");
       if(opt.Contains("comov"))
-	hX1->GetXaxis()->SetTitle("#zeta [#mum]");
+	hX1->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
       else
-	hX1->GetXaxis()->SetTitle("z [#mum]");
+	hX1->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
       
       
-      zmean *= skindepth / PUnits::um;
-      zrms  *= skindepth / PUnits::um;
+      zmean *= skindepth / spaUnit;
+      zrms  *= skindepth / spaUnit;
 
-      x_mean *= skindepth / PUnits::um;
-      x_rms  *= skindepth / PUnits::um;
+      x_mean *= skindepth / spaUnit;
+      x_rms  *= skindepth / spaUnit;
 
-      xmean *= skindepth / PUnits::um;
-      xrms  *= skindepth / PUnits::um;
+      xmean *= skindepth / spaUnit;
+      xrms  *= skindepth / spaUnit;
 
-      pzmean *= PConst::ElectronMassE / PUnits::GeV;
-      pzrms  *= PConst::ElectronMassE / PUnits::GeV;
-      pzmeanFWHM *= PConst::ElectronMassE / PUnits::GeV;
-      pzrmsFWHM *= PConst::ElectronMassE / PUnits::GeV;
-      pzmin  *= PConst::ElectronMassE / PUnits::GeV;
-      pzmax  *= PConst::ElectronMassE / PUnits::GeV;
+      pzmean *= PConst::ElectronMassE / eneUnit;
+      pzrms  *= PConst::ElectronMassE / eneUnit;
+      pzmeanFWHM *= PConst::ElectronMassE / eneUnit;
+      pzrmsFWHM *= PConst::ElectronMassE / eneUnit;
+      pzmin  *= PConst::ElectronMassE / eneUnit;
+      pzmax  *= PConst::ElectronMassE / eneUnit;
 
-      pxmean *= PConst::ElectronMassE / PUnits::MeV;
-      pxrms  *= PConst::ElectronMassE / PUnits::MeV;
+      pxmean *= PConst::ElectronMassE / teneUnit;
+      pxrms  *= PConst::ElectronMassE / teneUnit;
 
-      emitz *= (skindepth / PUnits::um);
+      emitz *= (skindepth / spaUnit);
 
       // Transverse phase-space
-      x2Min *= skindepth/PUnits::um;
-      x2Max *= skindepth/PUnits::um;
-      p2Min *= PConst::ElectronMassE / PUnits::MeV;
-      p2Max *= PConst::ElectronMassE / PUnits::MeV;
+      x2Min *= skindepth/spaUnit;
+      x2Max *= skindepth/spaUnit;
+      p2Min *= PConst::ElectronMassE / teneUnit;
+      p2Max *= PConst::ElectronMassE / teneUnit;
       
       hP2X2->SetBins(x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
-      for(Int_t j=0;j<hP2X2->GetNbinsX();j++) {
-	for(Int_t k=0;k<hP2X2->GetNbinsY();k++) {
-	  Float_t binValue =  fabs(hP2X2->GetBinContent(j,k) * dx1 * dx2 * dx3 * dV * n0 *
-				   (PConst::ElectronCharge/PUnits::picocoulomb));
-	  //cout << Form(" value = %f",binValue) << endl;
-	  hP2X2->SetBinContent(j,k,binValue);
-
-	}
-      }
-
-      hP2X2->GetXaxis()->SetTitle("x [#mum]");
-      hP2X2->GetYaxis()->SetTitle("p_{x} [MeV/c]");
-      hP2X2->GetZaxis()->SetTitle("Charge [pC]");
+      hP2X2->Scale(Q0 / chargeUnit);
+      
+      hP2X2->GetXaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));
+      hP2X2->GetYaxis()->SetTitle(Form("p_{x} [%s/c]",teneSUnit.c_str()));
+      hP2X2->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
       hP2X2->GetZaxis()->CenterTitle();
 
      
-
-      //      emitx *= (skindepth / PUnits::um);
       emitx *= skindepth;
-
-      Float_t emiscal = 1;
-      emitUnit = "#mum";
-      // stream << PUnits::BestUnit(emitx,"Length") << endl;
-      // stream >> best >> emitUnit >> auxUnit;
-      // if(!auxUnit.empty()) {
-      // 	emitUnit += " ";
-      // 	emitUnit += auxUnit;
-      // }
-      // emiscal = best/(emitx/PUnits::um);
-      // // cout << Form(" Emittance = %.2f %s  --> scale = %f",best,emitUnit.c_str(),emiscal) << endl;
-      emitx *= emiscal/PUnits::um;
-
+      if(opt.Contains("best")) {
+	PUnits::BestUnit bemitSUnit(emitx,"Length");
+	bemitSUnit.GetBestUnits(emitUnit,emitSUnit);    
+      }
+      emitx /= emitUnit;
+      
       Float_t erelMax = -999.;
       for(Int_t k=0;k<SNbin;k++) {
 
 	hP2X2sl[k]->SetBins(x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
-	// for(Int_t j=0;j<hP2X2sl[k]->GetNbinsX();j++) {
-	// 	for(Int_t l=0;l<hP2X2sl[k]->GetNbinsY();l++) {
-	// 	  Float_t binValue =  fabs(hP2X2sl[k]->GetBinContent(j,l) * dx1 * dx2 * dx3 * dV * n0 *
-	// 				    (PConst::ElectronCharge/PUnits::picocoulomb));
-	// 	  //cout << Form(" value = %f",binValue) << endl;
-	// 	  hP2X2sl[k]->SetBinContent(j,l,binValue);
-
-	// 	}
-	// }
-
-	hP2X2sl[k]->GetZaxis()->SetTitle("Charge [a.u.]");
-	hP2X2sl[k]->GetXaxis()->SetTitle("x [#mum]");
-	hP2X2sl[k]->GetYaxis()->SetTitle("p_{x} [MeV/c]");
+	hP2X2sl[k]->Scale(Q0 / chargeUnit);
+   
+	hP2X2sl[k]->GetXaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));
+	hP2X2sl[k]->GetYaxis()->SetTitle(Form("p_{x} [%s/c]",teneSUnit.c_str()));
+	hP2X2sl[k]->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
 
 	hP2X2sl[k]->GetZaxis()->CenterTitle();
 
-	xbin[k] *= skindepth / PUnits::um;
+	xbin[k] *= skindepth / spaUnit;
 
-	sxmean[k] *= skindepth / PUnits::um;
-	sxrms[k]  *= skindepth / PUnits::um;
-	symean[k] *= PConst::ElectronMassE / PUnits::MeV;
-	syrms[k] *= PConst::ElectronMassE / PUnits::MeV;
+	sxmean[k] *= skindepth / spaUnit;
+	sxrms[k]  *= skindepth / spaUnit;
+	symean[k] *= PConst::ElectronMassE / teneUnit;
+	syrms[k] *= PConst::ElectronMassE / teneUnit;
 
-	semit[k] *= emiscal * (skindepth / (PUnits::um));
-
-	sErms[k]  *= 100 / sEmean[k];
-	sEmean[k] *= PConst::ElectronMassE / PUnits::GeV;
-
+	semit[k] *= skindepth / emitUnit;
+	
+	sErms[k] = (sErms[k]/sEmean[k]) / PUnits::perCent;
+	sEmean[k] *= PConst::ElectronMassE / eneUnit;
+	
 	//	cout << Form(" Energy spread = %.2f +/- %.2f  %%",sEmean[k],sErms[k]) << endl;  
 	if(sErms[k]>erelMax) erelMax = sErms[k];
 	
       }
 
-      Float_t erelrmsscal = 1;
-      ermsUnit = "%";
-      // Float_t erelrmsscal = 1;
-      // ermsUnit = "%";
-      // stream << PUnits::BestUnit(erelMax,"Percentage") << endl;
-      // stream >> best >> ermsUnit;
-      // Float_t erelrmsscal = best/erelMax;
-      // cout << Form(" Energy spread = %.2f %s  --> scale = %f",best,ermsUnit.c_str(),erelrmsscal) << endl;      
-      // erelMax *= erelrmsscal/PUnits::perCent;      
+      if(opt.Contains("best")) {
+	PUnits::BestUnit berelSUnit(erelMax * PUnits::perCent,"Percentage");
+	berelSUnit.GetBestUnits(ermsUnit,ermsSUnit);
+      }
+      erelMax = PUnits::perCent/ermsUnit;
+      
       for(Int_t k=0;k<SNbin;k++)
-       	sErms[k]  *= erelrmsscal;
+       	sErms[k]  *= PUnits::perCent/ermsUnit;
       
     }
     // End of the users units module    
-
+    
     cout << "\n  Summary _______________________________________________________ " << endl;
     if(opt.Contains("units")) {
       cout << Form("  Integrated charge (RAW) of specie %3i = %8f pC",index,Charge) << endl;
-      cout << Form("  Peak current = %6.2f kA, Rms current = %6.2f kA",hX1->GetMaximum(),lightspeed*Charge/(TMath::Sqrt(2*PConst::pi)*zrms)) << endl;
-      cout << Form("  Total energy = %6.2f GeV, rms = %3.1f %%",pzmean,100*pzrms/pzmean) << endl;
-      cout << Form("  Trans. emit. = %6.2f  um",emitx) << endl;
-      cout << Form("  Bunch length = %6.2f  um (rms), width = %6.2f  um (rms)",zrms,x_rms) << endl;
-    } else {
-      cout << Form("  Integrated charge (RAW) of specie %3i = %8.4f n0 * kp^-3",index,Charge) << endl;
-    }
-
-
+      cout << Form("  Peak current = %6.2f %s",hX1->GetMaximum(),curSUnit.c_str()) << endl;
+      cout << Form("  Total energy = %6.2f %s, rms = %3.1f %s",pzmean,eneSUnit.c_str(),(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str()) << endl;
+      cout << Form("  Trans. emit. = %6.2f %s",emitx,emitSUnit.c_str()) << endl;
+      cout << Form("  Bunch length = %6.2f %s (rms), width = %6.2f %s (rms)",zrms,spaSUnit.c_str(),x_rms,spaSUnit.c_str()) << endl;
+    } 
+    
     if(opt.Contains("loop")) {
       cout << Form("\n 5. Saving results to file .. ") << endl;
   
@@ -1689,16 +1699,16 @@ int main(int argc,char *argv[]) {
       char ctext[128];
       if(opt.Contains("units") && pData->GetPlasmaDensity()) 
 	// sprintf(ctext,"z = %5.1f um", Time);
-	sprintf(ctext,"z = %5.1f mm", Time/1000);
+	sprintf(ctext,"z = %5.1f %s", Time, spaSUnit.c_str());
       else
-	sprintf(ctext,"t = %5.1f #omega_{p}^{-1}",Time);
+	sprintf(ctext,"k_{p}z = %5.1f",Time);
       textTime->AddText(ctext);
  
       TPaveText *textDen = new TPaveText(0.15,0.85,0.48,0.9,"NDC");
       PGlobals::SetPaveTextStyle(textDen,12); 
       textDen->SetTextColor(kOrange+10);
       if(opt.Contains("units") && pData->GetPlasmaDensity())
-	sprintf(ctext,"n_{0} = %5.2f x 10^{17} / cc", n0 / (1e17/PUnits::cm3));
+	sprintf(ctext,"n_{0} = %.2f %s", n0 / denUnit,denSUnit.c_str());
       else if(pData->GetBeamDensity() && pData->GetPlasmaDensity())
 	sprintf(ctext,"n_{b}/n_{0} = %5.2f", pData->GetBeamDensity()/n0);
       textDen->AddText(ctext);
@@ -1717,7 +1727,7 @@ int main(int argc,char *argv[]) {
       textMom->SetTextColor(kGray+3);
       textMom->SetTextFont(62);
       if(opt.Contains("units") && pData->GetPlasmaDensity())
-	sprintf(ctext,"#LTp_{z}#GT = %5.2f GeV/c", pzmeanFWHM);
+	sprintf(ctext,"#LTp_{z}#GT = %5.2f %s/c", pzmeanFWHM, eneSUnit.c_str());
       else
 	sprintf(ctext,"#LTp_{z}#GT = %5.2f mc", pzmeanFWHM);    
       textMom->AddText(ctext);
@@ -1729,14 +1739,12 @@ int main(int argc,char *argv[]) {
       textInfo->SetTextFont(42);
       sprintf(ctext,"Q = %5.2f pC",Charge);
       textInfo->AddText(ctext);
-      sprintf(ctext,"#Delta#zeta = %5.2f #mum",zrms);
+      sprintf(ctext,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
       textInfo->AddText(ctext);
-      //     sprintf(ctext,"#LTp_{z}#GT_{rms} = %5.2f GeV/c",pzrms);
-      // sprintf(ctext,"#Deltap_{z}/p_{z} = %4.1f %%",100*pzrms/pzmean);
-      // sprintf(ctext,"#Deltap_{z}/p_{z} = %4.1f %%",100*pzrmsFWHM/pzmeanFWHM);
-      sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %%",100*pzrmsFWHM/pzmeanFWHM);
+      // sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
+      sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
       textInfo->AddText(ctext);
-      sprintf(ctext,"#varepsilon_{n} = %5.2f %s",emitx,emitUnit.c_str());
+      sprintf(ctext,"#varepsilon_{n} = %5.2f %s",emitx,emitSUnit.c_str());
       //sprintf(ctext,"#varepsilon_{n} = %5.2f %s",emitx,"#mum");
       textInfo->AddText(ctext);
 
@@ -1944,13 +1952,13 @@ int main(int argc,char *argv[]) {
       Leg->SetFillStyle(0); // Hollow
 
       char sleg[16];
-      sprintf(sleg,"Current [%s]",curUnit.c_str());
+      sprintf(sleg,"Current [%s]",curSUnit.c_str());
       Leg->AddEntry(hX1  ,sleg,"L");	
       //sprintf(sleg,"Energy spread [%s]",ermsUnit.c_str());
-      sprintf(sleg,"Energy spread [%s]",ermsUnit.c_str());
+      sprintf(sleg,"E. spread [%s]",ermsSUnit.c_str());
       Leg->AddEntry(gErms,sleg,"PL");
       //      sprintf(sleg,"Emittance [%s]",emitUnit.c_str());
-      sprintf(sleg,"Emittance [%s]",emitUnit.c_str());
+      sprintf(sleg,"Emittance [%s]",emitSUnit.c_str());
       Leg->AddEntry(gEmitx,sleg,"PL");
       //Leg->AddEntry(gXrms,"Bunch width [#mum]","PL");
 

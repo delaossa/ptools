@@ -185,7 +185,8 @@ void PData::ReadParameters(const char * pfile)
 	
 	iss >> word;
 	if(word.find("!") != string::npos) continue;
-
+	if(word.empty()) continue;
+	
 	if(word.find("pDensity") != string::npos) {  // Plasma density is read here in part/cm^3 .
 	  iss >> pParam.pDensity;
 	  cout << endl;
@@ -234,9 +235,10 @@ void PData::ReadParameters(const char * pfile)
 	}
 	else if(word.find("bRmsZ") != string::npos)
 	  iss >> pParam.bRmsZ;
-	else if(word.find("bRmsX") != string::npos)
+	else if(word.find("bRmsX") != string::npos) {
 	  iss >> pParam.bRmsX;
-	else if(word.find("bRmsY") != string::npos) {
+	  cout << Form(" - Beam X RMS       = %8.4f um", GetBeamRmsX() / PUnits::um) << endl;
+	} else if(word.find("bRmsY") != string::npos) {
 	  iss >> pParam.bRmsY;
 	  cout << Form(" - Beam Y RMS       = %8.4f um", GetBeamRmsY() / PUnits::um) << endl;
 	} else if(word.find("bRmsR") != string::npos)
@@ -259,6 +261,8 @@ void PData::ReadParameters(const char * pfile)
 	  iss >> pParam.EMin;
 	else if(word.find("EMax") != string::npos)
 	  iss >> pParam.EMax;
+
+	word.clear();
       }
     
     ifile.close();
@@ -796,7 +800,7 @@ Double_t PData::GetRealTimeFromFile(const char *filename) {
   // Write time info to a string
   // char stime[48];
   // sprintf(stime," at t=%6.5f [%s]",time,"#omega_{p}^{-1}"); 
-  cout << Form("\n Time = %.10e",rtime) << endl;
+  // cout << Form("\n Time = %.10e",rtime) << endl;
 
   att->close();
   delete att;

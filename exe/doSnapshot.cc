@@ -166,7 +166,7 @@ int main(int argc,char *argv[]) {
   // cout << Form(" - Bunch velocity   = %8.4f c", vbeam ) << endl;
   
   // Other parameters
-  Double_t trapPotential = 1.0;
+  // Double_t trapPotential = 1.0;
   // Double_t trapPotential = 1.0 - (1.0/gamma);
   // cout << Form(" - Trap. potential  = %8.4f mc2/e",trapPotential) << endl;
   // cout << endl;
@@ -234,6 +234,15 @@ int main(int argc,char *argv[]) {
 
     Double_t xon  = NonBin *  pData->GetDX(1); // onaxis interval in norm. units
     Double_t xoff = NofBin *  pData->GetDX(1); // offaxis distance in norm. units
+
+    // Range for current calculation
+    Int_t NonBinT = pData->GetNX(1)/4;
+    if(rms0>0) {    // This adapts the size of the data chunk to the initial rms size of the beam
+      NonBinT = TMath::Nint(3.5 * rms0 / pData->GetDX(1));
+      // cout << Form(" Getting current within an on-axis range of NonBinT = %i",NonBinT) << endl;
+    }
+    Double_t xint = NonBinT * pData->GetDX(1);
+
     
     // Slice width limits.
     Int_t FirstyBin = 0;
@@ -368,13 +377,7 @@ int main(int argc,char *argv[]) {
       
       if(opt.Contains("curr")) {
 
-	// To get the current is needed to read in a wider transverse range which includes all the charge.
-	Int_t NonBinT = 100;
-	if(rms0>0) {    // This adapts the size of the data chunk to the initial rms size of the beam
-	  NonBinT = TMath::Nint(3.5 * rms0 / pData->GetDX(1));
-	  cout << Form(" Getting current within an on-axis range of NonBinT = %i",NonBinT) << endl;
-	}
-	
+	// To get the current is needed to read in a wider transverse range which includes all the charge.	
 	if(pData->Is3D()) {
 	  hCur1D[i] = pData->GetH1SliceZ3D(pData->GetChargeFileName(i)->c_str(),"charge",-1,NonBinT,-1,NonBinT,opt+"int");
 	} else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
@@ -1133,6 +1136,7 @@ int main(int argc,char *argv[]) {
     TTree *infotree = new TTree("infoTree","options tree from doSnapshot");
     infotree->Branch("xon",&xon,"xon/D");
     infotree->Branch("xoff",&xoff,"xoff/D");
+    infotree->Branch("xint",&xint,"xint/D");
     infotree->Branch("denUnit",&denUnit,"denUnit/D");
     infotree->Branch("denSUnit","string",&denSUnit);
     infotree->Branch("spaUnit",&spaUnit,"spaUnit/D");
