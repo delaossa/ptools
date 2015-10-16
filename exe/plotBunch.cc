@@ -29,11 +29,11 @@
 using namespace std;
 using namespace H5;
 
-void FindLimits(TH1F *h,Float_t &xmin, Float_t &xmax, Float_t factor = 0.11) {
-  Float_t maxValue = h->GetBinContent(h->GetMaximumBin());
+void FindLimits(TH1F *h,Double_t &xmin, Double_t &xmax, Double_t factor = 0.11) {
+  Double_t maxValue = h->GetBinContent(h->GetMaximumBin());
   Int_t   lBin = -1;
   for(Int_t i=1;i<=h->GetNbinsX();i++) {
-    Float_t binValue = h->GetBinContent(i);
+    Double_t binValue = h->GetBinContent(i);
     if(binValue>maxValue*factor) {
       lBin = i;
       xmin = h->GetBinCenter(i);
@@ -43,7 +43,7 @@ void FindLimits(TH1F *h,Float_t &xmin, Float_t &xmax, Float_t factor = 0.11) {
   
   Int_t rBin = -1;	
   for(Int_t i=h->GetNbinsX();i>0;i--) {
-    Float_t binValue = h->GetBinContent(i);
+    Double_t binValue = h->GetBinContent(i);
     if(binValue>maxValue*factor) {
       rBin = i;
       xmax = h->GetBinCenter(i);
@@ -183,9 +183,9 @@ int main(int argc,char *argv[]) {
   Double_t wavelength = pData->GetPlasmaWaveLength();
 
   // z start of the plasma in normalized units.
-  Float_t zStartPlasma = pData->GetPlasmaStart()*kp;
+  Double_t zStartPlasma = pData->GetPlasmaStart()*kp;
   // z start of the beam in normalized units.
-  Float_t zStartBeam = pData->GetBeamStart()*kp;
+  Double_t zStartBeam = pData->GetBeamStart()*kp;
 
   //  opt += "comovcenter";
 
@@ -230,6 +230,8 @@ int main(int argc,char *argv[]) {
   // Emittance units
   emitUnit = PUnits::um;
   emitSUnit = "#mum";
+  // emitUnit = 10 * PUnits::um;
+  // emitSUnit = "10 #mum";
 
   // Relative energy spread units
   ermsUnit = PUnits::perCent; 
@@ -254,10 +256,10 @@ int main(int argc,char *argv[]) {
     }
 
     // Time in OU
-    Float_t Time = pData->GetRealTime();
+    Double_t Time = pData->GetRealTime();
 
     // Centering time and z position:
-    Float_t shiftz = pData->Shift(opt);
+    Double_t shiftz = pData->Shift(opt);
 
     if(opt.Contains("center")) {
       Time -= zStartPlasma;
@@ -266,7 +268,7 @@ int main(int argc,char *argv[]) {
     } 
 
     // Spatial resolution
-    Float_t dx1, dx2, dx3;
+    Double_t dx1, dx2, dx3;
     
     dx1 = pData->GetDX(0);
     dx2 = pData->GetDX(1);    
@@ -285,25 +287,25 @@ int main(int argc,char *argv[]) {
     
     // Slices
     Int_t SNbin = 100;
-    Float_t x1BinMin = -4.5;
-    Float_t x1BinMax = -4.0;
+    Double_t x1BinMin = -4.5;
+    Double_t x1BinMax = -4.0;
 
     // Spatial coordinates intervals:
-    // Float_t x1Min = -7.8;
-    Float_t x1Min = -7.75;
-    Float_t x1Max = -7.0;
-    Float_t x2Min = -0.5;
-    Float_t x2Max =  0.5;
-    Float_t x3Min = -0.5;
-    Float_t x3Max =  0.5;
+    // Double_t x1Min = -7.8;
+    Double_t x1Min = -7.75;
+    Double_t x1Max = -7.0;
+    Double_t x2Min = -0.5;
+    Double_t x2Max =  0.5;
+    Double_t x3Min = -0.5;
+    Double_t x3Max =  0.5;
 
     // Momentum coordinates intervals:
-    Float_t p1Min =  Pmin;
-    Float_t p1Max =  Pmax;
-    Float_t p2Min = -15.0;
-    Float_t p2Max =  15.0;
-    Float_t p3Min = -15.0;
-    Float_t p3Max =  15.0;
+    Double_t p1Min =  Pmin;
+    Double_t p1Max =  Pmax;
+    Double_t p2Min = -15.0;
+    Double_t p2Max =  15.0;
+    Double_t p3Min = -15.0;
+    Double_t p3Max =  15.0;
 
     // Specific initializations:
     // The ranges in x1 are defined in the comoving frame, centered at the driver's position.
@@ -466,7 +468,7 @@ int main(int argc,char *argv[]) {
     }
     
     // dummy shift
-    Float_t dshiftz = pData->Shift("centercomov");
+    Double_t dshiftz = pData->Shift("centercomov");
     x1Min += dshiftz;
     x1Max += dshiftz;
     x1BinMin += dshiftz;
@@ -478,7 +480,7 @@ int main(int argc,char *argv[]) {
     
     cout << Form("\n 1. Reading file : ") << pData->GetRawFileName(index)->c_str() << endl;
 
-    // Float_t **var = NULL;
+    // Double_t **var = NULL;
     UInt_t Nvar = 8;
     if(!pData->Is3D()) Nvar = 7;
     
@@ -486,7 +488,7 @@ int main(int argc,char *argv[]) {
     var = new Float_t*[Nvar];
     UInt_t Np = pData->GetRawArray(pData->GetRawFileName(index)->c_str(),var);
 
-    cout << Form("     -> Number of particles = %i",Np) << endl;
+    cout << Form("    Number of particles = %i",Np) << endl;
     
     // Scan histogram
     TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
@@ -513,23 +515,23 @@ int main(int argc,char *argv[]) {
     // -------------------------------------------------------------------------------
 
     // auto ranges factor
-    Float_t rfactor = 0.3;
+    Double_t rfactor = 0.3;
     
     if(opt.Contains("autop")) {
 
       cout << Form("\n Auto ranging everything but x1...") << endl;
 
-      Float_t MinP1 = 999999;
-      Float_t MaxP1 = -999999;
-      Float_t MinP2 = 999999;
-      Float_t MaxP2 = -999999;
-      Float_t MinP3 = 999999;
-      Float_t MaxP3 = -999999;
+      Double_t MinP1 = 999999;
+      Double_t MaxP1 = -999999;
+      Double_t MinP2 = 999999;
+      Double_t MaxP2 = -999999;
+      Double_t MinP3 = 999999;
+      Double_t MaxP3 = -999999;
 
-      Float_t MinX2 = 999999;
-      Float_t MaxX2 = -999999;
-      Float_t MinX3 = 999999;
-      Float_t MaxX3 = -999999;
+      Double_t MinX2 = 999999;
+      Double_t MaxX2 = -999999;
+      Double_t MinX3 = 999999;
+      Double_t MaxX3 = -999999;
 
       for(UInt_t i=0;i<Np;i++) {
 
@@ -574,31 +576,31 @@ int main(int argc,char *argv[]) {
       }
 
       // Set limits using Scan histograms
-      Float_t peakFactor = 0.2;
-      Float_t rfactor2 = 2;
+      Double_t peakFactor = 0.2;
+      Double_t rfactor2 = 2;
 
       peakFactor = 0.05;
-      Float_t x2min = -999;
-      Float_t x2max = -999;
+      Double_t x2min = -999;
+      Double_t x2max = -999;
       FindLimits(hScanX2,x2min,x2max,peakFactor);
       x2Min = x2min - rfactor2*(x2max-x2min);
       x2Max = x2max + rfactor2*(x2max-x2min);
 
-      Float_t x3min = -999;
-      Float_t x3max = -999;
+      Double_t x3min = -999;
+      Double_t x3max = -999;
       if(Nvar==8)
 	FindLimits(hScanX3,x3min,x3max,peakFactor);
       x3Min = x3min - rfactor2*(x3max-x3min);
       x3Max = x3max + rfactor2*(x3max-x3min);
 
-      Float_t p2min = -999;
-      Float_t p2max = -999;
+      Double_t p2min = -999;
+      Double_t p2max = -999;
       FindLimits(hScanP2,p2min,p2max,peakFactor);
       p2Min = p2min - rfactor2*(p2max-p2min);
       p2Max = p2max + rfactor2*(p2max-p2min);
 
-      Float_t p3min = -999;
-      Float_t p3max = -999;
+      Double_t p3min = -999;
+      Double_t p3max = -999;
       FindLimits(hScanP3,p3min,p3max,peakFactor);
       p3Min = p3min - rfactor2*(p3max-p3min);
       p3Max = p3max + rfactor2*(p3max-p3min);
@@ -619,19 +621,19 @@ int main(int argc,char *argv[]) {
 
       cout << Form("\n Auto ranging...") << endl;
       
-      Float_t MinP1 = 999999;
-      Float_t MaxP1 = -999999;
-      Float_t MinP2 = 999999;
-      Float_t MaxP2 = -999999;
-      Float_t MinP3 = 999999;
-      Float_t MaxP3 = -999999;
+      Double_t MinP1 = 999999;
+      Double_t MaxP1 = -999999;
+      Double_t MinP2 = 999999;
+      Double_t MaxP2 = -999999;
+      Double_t MinP3 = 999999;
+      Double_t MaxP3 = -999999;
 
-      Float_t MinX1 = 999999;
-      Float_t MaxX1 = -999999;
-      Float_t MinX2 = 999999;
-      Float_t MaxX2 = -999999;
-      Float_t MinX3 = 999999;
-      Float_t MaxX3 = -999999;
+      Double_t MinX1 = 999999;
+      Double_t MaxX1 = -999999;
+      Double_t MinX2 = 999999;
+      Double_t MaxX2 = -999999;
+      Double_t MinX3 = 999999;
+      Double_t MaxX3 = -999999;
 
       for(UInt_t i=0;i<Np;i++) {
 	if(var[1][i]<MinP1) MinP1 = var[1][i];
@@ -681,11 +683,11 @@ int main(int argc,char *argv[]) {
       x1BinMax = MaxX1;
 
       // Set limits using Scan histograms
-      Float_t peakFactor = 0.2;
-      Float_t rfactor2 = 2;
+      Double_t peakFactor = 0.2;
+      Double_t rfactor2 = 2;
       
-      Float_t x1min = -999;
-      Float_t x1max = -999;
+      Double_t x1min = -999;
+      Double_t x1max = -999;
       FindLimits(hScanX1,x1min,x1max,peakFactor);
       x1BinMin = x1min;
       x1BinMax = x1max;
@@ -695,27 +697,27 @@ int main(int argc,char *argv[]) {
       x1Min = x1min - rfactor2*(x1max-x1min);
       x1Max = x1max + rfactor2*(x1max-x1min);
       
-      Float_t x2min = -999;
-      Float_t x2max = -999;
+      Double_t x2min = -999;
+      Double_t x2max = -999;
       FindLimits(hScanX2,x2min,x2max,peakFactor);
       x2Min = x2min - rfactor2*(x2max-x2min);
       x2Max = x2max + rfactor2*(x2max-x2min);
 
-      Float_t x3min = -999;
-      Float_t x3max = -999;
+      Double_t x3min = -999;
+      Double_t x3max = -999;
       if(Nvar==8)
 	FindLimits(hScanX3,x3min,x3max,peakFactor);
       x3Min = x3min - rfactor2*(x3max-x3min);
       x3Max = x3max + rfactor2*(x3max-x3min);
 
-      Float_t p2min = -999;
-      Float_t p2max = -999;
+      Double_t p2min = -999;
+      Double_t p2max = -999;
       FindLimits(hScanP2,p2min,p2max,peakFactor);
       p2Min = p2min - rfactor2*(p2max-p2min);
       p2Max = p2max + rfactor2*(p2max-p2min);
 
-      Float_t p3min = -999;
-      Float_t p3max = -999;
+      Double_t p3min = -999;
+      Double_t p3max = -999;
       FindLimits(hScanP3,p3min,p3max,peakFactor);
       p3Min = p3min - rfactor2*(p3max-p3min);
       p3Max = p3max + rfactor2*(p3max-p3min);
@@ -844,10 +846,10 @@ int main(int argc,char *argv[]) {
     // --------------------------------------------------------------------------
  
     // Set the binning
-    Float_t *sBinLim = new Float_t[SNbin+1];
+    Double_t *sBinLim = new Double_t[SNbin+1];
     sBinLim[0] = x1BinMin;
     sBinLim[SNbin] = x1BinMax;
-    Float_t slbinSize = (sBinLim[SNbin] - sBinLim[0])/SNbin;
+    Double_t slbinSize = (sBinLim[SNbin] - sBinLim[0])/SNbin;
     for(Int_t i=1;i<SNbin;i++) {
       sBinLim[i] = sBinLim[i-1] + slbinSize;
     }
@@ -921,10 +923,9 @@ int main(int argc,char *argv[]) {
       hP2X2sl[iBin]->Fill(var[6][i],var[2][i],TMath::Abs(var[4][i]));
 
       if(Nvar==8){
-	hP3X3->Fill(var[2][i],var[5][i],TMath::Abs(var[4][i]));
+	hP3X3->Fill(var[7][i],var[3][i],TMath::Abs(var[4][i]));
 	hP3X3sl[iBin]->Fill(var[7][i],var[3][i],TMath::Abs(var[4][i]));
 
-	hX3X1->Fill(var[5][i],var[7][i],TMath::Abs(var[4][i]));
 	hX3X1->Fill(var[5][i],var[7][i],TMath::Abs(var[4][i]));
 	hX3X2->Fill(var[6][i],var[7][i],TMath::Abs(var[4][i]));      
       }
@@ -936,7 +937,7 @@ int main(int argc,char *argv[]) {
     
       
     }
-    cout << " done! " << endl;
+    // cout << " done! " << endl;
 
     // Integrated long. emittance:
     cout << Form("\n 3. Calculating integrated quantities: ") << endl ;
@@ -974,11 +975,11 @@ int main(int argc,char *argv[]) {
     TH1F *hP1cut = (TH1F*) hP1->Clone(hName);
     hP1cut->Reset();
 
-    Float_t maxValue = hP1->GetBinContent(hP1->GetMaximumBin());
+    Double_t maxValue = hP1->GetBinContent(hP1->GetMaximumBin());
     Int_t   lBin = -1;
-    Float_t pzmin = -999;
+    Double_t pzmin = -999;
     for(Int_t i=1;i<=hP1->GetNbinsX();i++) {
-      Float_t binValue = hP1->GetBinContent(i);
+      Double_t binValue = hP1->GetBinContent(i);
       if(binValue>maxValue/2) {
 	lBin = i;
 	pzmin = hP1->GetBinCenter(i);
@@ -987,9 +988,9 @@ int main(int argc,char *argv[]) {
     }
 
     Int_t rBin = -1;
-    Float_t pzmax = -999;
+    Double_t pzmax = -999;
     for(Int_t i=hP1->GetNbinsX();i>0;i--) {
-      Float_t binValue = hP1->GetBinContent(i);
+      Double_t binValue = hP1->GetBinContent(i);
       if(binValue>maxValue/2) {
 	rBin = i;
 	pzmax = hP1->GetBinCenter(i);
@@ -998,12 +999,12 @@ int main(int argc,char *argv[]) {
     }
     
     for(Int_t i=lBin;i<=rBin;i++) {
-      Float_t binValue = hP1->GetBinContent(i);
+      Double_t binValue = hP1->GetBinContent(i);
       hP1cut->SetBinContent(i,binValue);
     }
     //  hP1cut->ResetStats();
-    Float_t pzmeanFWHM = hP1cut->GetMean();
-    Float_t pzrmsFWHM = hP1cut->GetRMS();
+    Double_t pzmeanFWHM = hP1cut->GetMean();
+    Double_t pzrmsFWHM = hP1cut->GetRMS();
         
     // cout << Form("  zMean = %7.3f   pzMean = %7.3f",zmean,pzmean) << endl;
     // cout << Form("  zRms  = %7.3f   pzRms  = %7.3f",zrms,pzrms) << endl;
@@ -1030,8 +1031,8 @@ int main(int argc,char *argv[]) {
     Double_t emitx = emit;
     Double_t x_mean = stats[2]/stats[0];
     Double_t x_rms = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
-    Double_t pxmean = stats[4]/stats[0];
-    Double_t pxrms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+    Double_t px_mean = stats[4]/stats[0];
+    Double_t px_rms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
 
     Double_t beta = xrms2 / emit;
     Double_t gamma = yrms2 / emit;
@@ -1052,7 +1053,7 @@ int main(int argc,char *argv[]) {
     Double_t angle = - TMath::ATan( (1+pf) / (2*p) );
     //  if (angle <0.0) angle += 2*PConst::pi;
   
-    TEllipse *ellipP2X2 = new TEllipse(x_mean,pxmean,TMath::Sqrt(a2),TMath::Sqrt(b2),0.,360.,angle * 180. / PConst::pi );
+    TEllipse *ellipP2X2 = new TEllipse(x_mean,px_mean,TMath::Sqrt(a2),TMath::Sqrt(b2),0.,360.,angle * 180. / PConst::pi );
     ellipP2X2->SetFillStyle(0);
     ellipP2X2->SetLineStyle(2);
     ellipP2X2->SetLineColor(2);
@@ -1071,8 +1072,8 @@ int main(int argc,char *argv[]) {
     Double_t emity = emit;
     Double_t y_mean = stats[2]/stats[0];
     Double_t y_rms = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
-    Double_t pymean = stats[4]/stats[0];
-    Double_t pyrms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+    Double_t py_mean = stats[4]/stats[0];
+    Double_t py_rms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
 
     beta = xrms2 / emit;
     gamma = yrms2 / emit;
@@ -1092,7 +1093,7 @@ int main(int argc,char *argv[]) {
     angle = - TMath::ATan( (1+pf) / (2*p) );
     //  if (angle <0.0) angle += 2*PConst::pi;
 
-    TEllipse *ellipP3X3 = new TEllipse(x_mean,pxmean,TMath::Sqrt(a2),TMath::Sqrt(b2),0.,360.,angle * 180. / PConst::pi );
+    TEllipse *ellipP3X3 = new TEllipse(x_mean,px_mean,TMath::Sqrt(a2),TMath::Sqrt(b2),0.,360.,angle * 180. / PConst::pi );
     ellipP3X3->SetFillStyle(0);
     ellipP3X3->SetLineStyle(2);
     ellipP3X3->SetLineColor(2);
@@ -1102,67 +1103,132 @@ int main(int argc,char *argv[]) {
     cout << Form("\n 4. Calculating sliced quantities.. ") << endl ;
 
     TGraph *gEmitx = NULL;
+    TGraph *gEmity = NULL;
     TGraph *gXrms = NULL;
+    TGraph *gYrms = NULL;
     TGraph *gErms = NULL;
 
-    Float_t * sxmean = new Float_t[SNbin];
-    Float_t * sxrms2 = new Float_t[SNbin]; 
-    Float_t * sxrms = new Float_t[SNbin]; 
-    Float_t * symean = new Float_t[SNbin];
-    Float_t * syrms2 = new Float_t[SNbin]; 
-    Float_t * syrms = new Float_t[SNbin];  
-    Float_t * sxyrms2 = new Float_t[SNbin];
-    Float_t * sxyrms = new Float_t[SNbin];
-    Float_t * semit = new Float_t[SNbin];
-    Float_t * semit2 = new Float_t[SNbin];
+    Double_t * zbin = new Double_t[SNbin];
+    Double_t * sEmean = new Double_t[SNbin];
+    Double_t * sErms = new Double_t[SNbin];
 
-    Float_t * xbin = new Float_t[SNbin];
+    TEllipse **sellipP2X2 = new TEllipse*[SNbin];
 
-    Float_t * sEmean = new Float_t[SNbin];
-    Float_t * sErms = new Float_t[SNbin];
-    Float_t * sErms2 = new Float_t[SNbin];
-
+    Double_t *sx_mean = new Double_t[SNbin];
+    Double_t *sx_rms = new Double_t[SNbin];
+    Double_t *spx_mean = new Double_t[SNbin];
+    Double_t *spx_rms = new Double_t[SNbin];
+    Double_t *semitx = new Double_t[SNbin];
+    Double_t *sbetax = new Double_t[SNbin];
+    
+    TEllipse **sellipP3X3 = new TEllipse*[SNbin];
+    
+    Double_t *sy_mean = new Double_t[SNbin];
+    Double_t *sy_rms = new Double_t[SNbin];
+    Double_t *spy_mean = new Double_t[SNbin];
+    Double_t *spy_rms = new Double_t[SNbin];
+    Double_t *semity = new Double_t[SNbin];
+    Double_t *sbetay = new Double_t[SNbin];
+    
     for(Int_t k=0;k<SNbin;k++) {
-      sxmean[k] = symean[k] = sxrms2[k] = syrms2[k] = sxrms[k] = syrms[k]
-	= sxyrms2[k] = sxyrms[k] = xbin[k] = semit[k] = 0.0;
-      sEmean[k] = sErms[k] = sErms2[k] = 0.0;
 
+      Double_t sxmean, sxrms2, sxrms, symean, syrms2, syrms, sxyrms2, sxyrms, semit, semit2;
+      
+      // P2X2 slices
+      sellipP2X2[k] = NULL;            
       hP2X2sl[k]->GetStats(stats);
       
-      sxmean[k]  = stats[2]/stats[0];
-      sxrms2[k]  = stats[3]/stats[0] - sxmean[k] * sxmean[k];
-      sxrms[k]   = (sxrms2[k]>0.0) ? TMath::Sqrt(sxrms2[k]) : 0.0 ;
-      symean[k]  = stats[4]/stats[0];
-      syrms2[k]  = stats[5]/stats[0] - symean[k] * symean[k];
-      syrms[k]   = (syrms2[k]>0.0) ? TMath::Sqrt(syrms2[k]) : 0.0 ;
-      sxyrms2[k] = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
-      sxyrms[k]  = (sxyrms2[k]>0.0) ? TMath::Sqrt(sxyrms2[k]) : 0.0 ;
-      semit2[k] = sxrms2[k]*syrms2[k] - sxyrms2[k]*sxyrms2[k];
-      semit[k] = (semit2[k]>0.0) ? TMath::Sqrt(semit2[k]) : 0.0 ;
+      sxmean  = stats[2]/stats[0];
+      sxrms2  = stats[3]/stats[0] - sxmean * sxmean;
+      sxrms   = (sxrms2>0.0) ? TMath::Sqrt(sxrms2) : 0.0 ;
+      symean  = stats[4]/stats[0];
+      syrms2  = stats[5]/stats[0] - symean * symean;
+      syrms   = (syrms2>0.0) ? TMath::Sqrt(syrms2) : 0.0 ;
+      sxyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+      sxyrms  = (sxyrms2>0.0) ? TMath::Sqrt(sxyrms2) : 0.0 ;
+      semit2 = sxrms2*syrms2 - sxyrms2*sxyrms2;
+      semit = (semit2>0.0) ? TMath::Sqrt(semit2) : 0.0 ;
 
-      xbin[k] = (sBinLim[k] + sBinLim[k+1])/2.;
-
-      // Double_t stats1d[4];  // { sumw, sumw2, sumwx, sumwx2 }
-      // hP1sl[k]->GetStats(stats1d);
-
-      // sEmean[k] = stats[2]/stats[0];
-      // sErms2[k] = stats[3]/stats[0] - sEmean[k] * sEmean[k];
-      // sErms[k]  = (sErms2[k]>0.0) ? TMath::Sqrt(sErms2[k]) : 0.0 ;
+      zbin[k] = (sBinLim[k] + sBinLim[k+1])/2.;
 
       sEmean[k] = hP1sl[k]->GetMean();
       sErms[k]  = hP1sl[k]->GetRMS();
+
+      sx_mean[k] = sxmean;
+      spx_mean[k] = symean;
+      sx_rms[k] = sxrms;
+      spx_rms[k] = syrms;
+      semitx[k] = semit;
       
-      // cout<< Form("\nk = %i : (x1 > %f && x1 < %f)",k,sBinLim[k],sBinLim[k+1]) << endl; 
+      // Ellipse calculation
+      Double_t beta, gamma, alpha, factor, a2, b2, p, pf, angle;
+      Double_t zoomEllip = 3.0;
+      
+      beta = sxrms2 / semit;
+      gamma = syrms2 / semit ;
+      alpha = - sxyrms2 / semit;
 
-      // cout << Form("  xMean = %7.3f   yMean = %7.3f",sxmean[k],symean[k]) << endl;
-      // cout << Form("  xRms  = %7.3f   yRms  = %7.3f",sxrms[k],syrms[k]) << endl;
-      // cout << Form("  Emittance = %7.3f",semit[k]) << endl;
+      sbetax[k] = beta * sEmean[k];
+      
+      factor =  beta*beta + 2 * beta * gamma + gamma*gamma - 4 * semit;
+      if(factor<0.0) factor *= -1;
+      factor = TMath::Sqrt(factor);
 
-      // cout << Form("  Emean = %7.3f   Erms = %7.3f",sEmean[k],sErms[k]) << endl;
+      a2 = 0.5 * (beta + gamma - factor);
+      b2 = 0.5 * (beta + gamma + factor);
+ 
+      p  = alpha / (a2-b2);
+      pf = TMath::Sqrt( 1 - 4*p*p ); 
+      angle = - TMath::ATan( (1+pf) / (2*p) );
 
+      //  if (angle <0.0) angle += 2*PConst::pi;    
+      sellipP2X2[k] = new TEllipse(sx_mean[k],spx_mean[k],TMath::Sqrt(zoomEllip*a2),TMath::Sqrt(zoomEllip*b2),0.,360.,angle * 180. / PConst::pi );
+      
 
+      // P3X3 slices 
+      sellipP3X3[k] = NULL;            
+      hP3X3sl[k]->GetStats(stats);
+      
+      sxmean  = stats[2]/stats[0];
+      sxrms2  = stats[3]/stats[0] - sxmean * sxmean;
+      sxrms   = (sxrms2>0.0) ? TMath::Sqrt(sxrms2) : 0.0 ;
+      symean  = stats[4]/stats[0];
+      syrms2  = stats[5]/stats[0] - symean * symean;
+      syrms   = (syrms2>0.0) ? TMath::Sqrt(syrms2) : 0.0 ;
+      sxyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+      sxyrms  = (sxyrms2>0.0) ? TMath::Sqrt(sxyrms2) : 0.0 ;
+      semit2 = sxrms2*syrms2 - sxyrms2*sxyrms2;
+      semit = (semit2>0.0) ? TMath::Sqrt(semit2) : 0.0 ;
+
+      sy_mean[k] = sxmean;
+      spy_mean[k] = symean;
+      sy_rms[k] = sxrms;
+      spy_rms[k] = syrms;
+      semity[k] = semit;
+      
+      // Ellipse calculation
+      beta = sxrms2 / semit;
+      gamma = syrms2 / semit ;
+      alpha = - sxyrms2 / semit;
+
+      sbetax[k] = beta * sEmean[k];
+      
+      factor =  beta*beta + 2 * beta * gamma + gamma*gamma - 4 * semit;
+      if(factor<0.0) factor *= -1;
+      factor = TMath::Sqrt(factor);
+
+      a2 = 0.5 * (beta + gamma - factor);
+      b2 = 0.5 * (beta + gamma + factor);
+ 
+      p  = alpha / (a2-b2);
+      pf = TMath::Sqrt( 1 - 4*p*p ); 
+      angle = - TMath::ATan( (1+pf) / (2*p) );
+
+      //  if (angle <0.0) angle += 2*PConst::pi;    
+      sellipP3X3[k] = new TEllipse(sy_mean[k],spy_mean[k],TMath::Sqrt(zoomEllip*a2),TMath::Sqrt(zoomEllip*b2),0.,360.,angle * 180. / PConst::pi );
+      
     }
-    cout << " done! " << endl;
+    //    cout << " done! " << endl;
 
 
     // Changing to user units: 
@@ -1221,27 +1287,22 @@ int main(int argc,char *argv[]) {
       zmean *= skindepth / spaUnit;
       zrms  *= skindepth / spaUnit;
 
-      x_mean *= skindepth / spaUnit;
-      x_rms  *= skindepth / spaUnit;
-
-      xmean *= skindepth / spaUnit;
-      xrms  *= skindepth / spaUnit;
-
       pzmean *= PConst::ElectronMassE / eneUnit;
       pzrms  *= PConst::ElectronMassE / eneUnit;
       pzmeanFWHM *= PConst::ElectronMassE / eneUnit;
       pzrmsFWHM *= PConst::ElectronMassE / eneUnit;
       pzmin  *= PConst::ElectronMassE / eneUnit;
       pzmax  *= PConst::ElectronMassE / eneUnit;
-
-      pxmean *= PConst::ElectronMassE / teneUnit;
-      pxrms  *= PConst::ElectronMassE / teneUnit;
-
       emitz *= (skindepth / spaUnit);
 
       // Transverse phase-space
-      x2Min *= skindepth/spaUnit;
-      x2Max *= skindepth/spaUnit;
+      x_mean *= skindepth / tspaUnit;
+      x_rms  *= skindepth / tspaUnit;
+      px_mean *= PConst::ElectronMassE / teneUnit;
+      px_rms  *= PConst::ElectronMassE / teneUnit;
+
+      x2Min *= skindepth/tspaUnit;
+      x2Max *= skindepth/tspaUnit;
       p2Min *= PConst::ElectronMassE / teneUnit;
       p2Max *= PConst::ElectronMassE / teneUnit;
       
@@ -1253,16 +1314,41 @@ int main(int argc,char *argv[]) {
       hP2X2->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
       hP2X2->GetZaxis()->CenterTitle();
 
-     
+      y_mean *= skindepth / tspaUnit;
+      y_rms  *= skindepth / tspaUnit;
+      py_mean *= PConst::ElectronMassE / teneUnit;
+      py_rms  *= PConst::ElectronMassE / teneUnit;      
+      
+      x3Min *= skindepth/tspaUnit;
+      x3Max *= skindepth/tspaUnit;
+      p3Min *= PConst::ElectronMassE / teneUnit;
+      p3Max *= PConst::ElectronMassE / teneUnit;
+      
+      hP3X3->SetBins(x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
+      hP3X3->Scale(Q0 / chargeUnit);
+      
+      hP3X3->GetXaxis()->SetTitle(Form("y [%s]",spaSUnit.c_str()));
+      hP3X3->GetYaxis()->SetTitle(Form("p_{y} [%s/c]",teneSUnit.c_str()));
+      hP3X3->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
+      hP3X3->GetZaxis()->CenterTitle();
+
       emitx *= skindepth;
       if(opt.Contains("best")) {
-	PUnits::BestUnit bemitSUnit(emitx,"Length");
-	bemitSUnit.GetBestUnits(emitUnit,emitSUnit);    
+	PUnits::BestUnit bemitSUnit(emitx,"Emittance");
+	bemitSUnit.GetBestUnits(emitUnit,emitSUnit);
+	// cout << bemitSUnit << endl;
       }
       emitx /= emitUnit;
+      emity /= emitUnit;
       
-      Float_t erelMax = -999.;
+      // cout << Form(" %.6f   %s",emitUnit,emitSUnit.c_str())  << endl;
+      
+      Double_t erelMax = -999.;
       for(Int_t k=0;k<SNbin;k++) {
+
+	zbin[k] *= skindepth / spaUnit;
+	sErms[k] = (sErms[k]/sEmean[k]) / PUnits::perCent;
+	sEmean[k] *= PConst::ElectronMassE / eneUnit;
 
 	hP2X2sl[k]->SetBins(x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
 	hP2X2sl[k]->Scale(Q0 / chargeUnit);
@@ -1273,19 +1359,29 @@ int main(int argc,char *argv[]) {
 
 	hP2X2sl[k]->GetZaxis()->CenterTitle();
 
-	xbin[k] *= skindepth / spaUnit;
-
-	sxmean[k] *= skindepth / spaUnit;
-	sxrms[k]  *= skindepth / spaUnit;
-	symean[k] *= PConst::ElectronMassE / teneUnit;
-	syrms[k] *= PConst::ElectronMassE / teneUnit;
-
-	semit[k] *= skindepth / emitUnit;
+	sx_mean[k] *= skindepth / tspaUnit;
+	sx_rms[k]  *= skindepth / tspaUnit;
+	spx_mean[k] *= PConst::ElectronMassE / teneUnit;
+	spx_rms[k] *= PConst::ElectronMassE / teneUnit;
+	semitx[k] *= skindepth / emitUnit;
+	sbetax[k] *= skindepth / tspaUnit;
 	
-	sErms[k] = (sErms[k]/sEmean[k]) / PUnits::perCent;
-	sEmean[k] *= PConst::ElectronMassE / eneUnit;
-	
-	//	cout << Form(" Energy spread = %.2f +/- %.2f  %%",sEmean[k],sErms[k]) << endl;  
+	hP3X3sl[k]->SetBins(x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
+	hP3X3sl[k]->Scale(Q0 / chargeUnit);
+   
+	hP3X3sl[k]->GetXaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));
+	hP3X3sl[k]->GetYaxis()->SetTitle(Form("p_{x} [%s/c]",teneSUnit.c_str()));
+	hP3X3sl[k]->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
+
+	hP3X3sl[k]->GetZaxis()->CenterTitle();
+
+	sy_mean[k] *= skindepth / tspaUnit;
+	sy_rms[k]  *= skindepth / tspaUnit;
+	spy_mean[k] *= PConst::ElectronMassE / teneUnit;
+	spy_rms[k] *= PConst::ElectronMassE / teneUnit;
+	semity[k] *= skindepth / emitUnit;
+	sbetay[k] *= skindepth / tspaUnit;
+		
 	if(sErms[k]>erelMax) erelMax = sErms[k];
 	
       }
@@ -1568,16 +1664,18 @@ int main(int argc,char *argv[]) {
       hX1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean);
       hP1X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,p1Nbin,p1Min,p1Max);
       for(Int_t k=0;k<SNbin;k++) {
-	xbin[k] -= zmean;
+	zbin[k] -= zmean;
       }
       zmean = 0.0;
     }
     // ------
 
     // Create the graph with the sliced quantities:
-    gEmitx = new TGraph(SNbin,xbin,semit);
-    gXrms = new TGraph(SNbin,xbin,sxrms);
-    gErms = new TGraph(SNbin,xbin,sErms);
+    gEmitx = new TGraph(SNbin,zbin,semitx);
+    gXrms = new TGraph(SNbin,zbin,sx_rms);
+    gEmity = new TGraph(SNbin,zbin,semity);
+    gYrms = new TGraph(SNbin,zbin,sy_rms);
+    gErms = new TGraph(SNbin,zbin,sErms);
 
 
     // Profile energy for p1 vs x1:
@@ -1592,8 +1690,8 @@ int main(int argc,char *argv[]) {
 
     // if(hP1X1prof) {
     //   Int_t NP1X1Bins = hP1X1prof->GetNbinsX();
-    //   Float_t *x1bins = new Float_t[NP1X1Bins];
-    //   Float_t *eRms   = new Float_t[NP1X1Bins];
+    //   Double_t *x1bins = new Double_t[NP1X1Bins];
+    //   Double_t *eRms   = new Double_t[NP1X1Bins];
     //   for(Int_t i=1;i<=hP1X1prof->GetNbinsX();i++) {
     // 	x1bins[i] = hP1X1prof->GetBinCenter(i);
     // 	eRms[i] = 100 * hP1X1prof->GetBinError(i) / hP1X1prof->GetBinContent(i);
@@ -1606,17 +1704,17 @@ int main(int argc,char *argv[]) {
     // --------------------------------------------------------------------------------   
     TGraph *gP1left = NULL;
     if(hP1) {
-      Float_t *yarray   = new Float_t[p1Nbin];
-      Float_t *xarray   = new Float_t[p1Nbin];
+      Double_t *yarray   = new Double_t[p1Nbin];
+      Double_t *xarray   = new Double_t[p1Nbin];
 
       // This is for the right side:
-      // Float_t xMax = x1Min + (x1Max-x1Min) * 0.9;
-      // Float_t xMin = x1Max;
+      // Double_t xMax = x1Min + (x1Max-x1Min) * 0.9;
+      // Double_t xMin = x1Max;
       // And this for left:
-      Float_t xMin = hX1->GetXaxis()->GetXmin();
-      Float_t xMax = hX1->GetXaxis()->GetXmin() + 
+      Double_t xMin = hX1->GetXaxis()->GetXmin();
+      Double_t xMax = hX1->GetXaxis()->GetXmin() + 
 	(hX1->GetXaxis()->GetXmax()-hX1->GetXaxis()->GetXmin()) * 0.2;
-      Float_t EneMax = hP1->GetMaximum();
+      Double_t EneMax = hP1->GetMaximum();
       // cout << Form("  EneMax = %f ", EneMax) << endl;
 
       for(Int_t j=0; j<p1Nbin; j++) {
@@ -1636,15 +1734,15 @@ int main(int argc,char *argv[]) {
       delete xarray;
 
       // Ranges!!
-      Float_t yMin =  999.9;
-      Float_t yMax =  -999.9;
+      Double_t yMin =  999.9;
+      Double_t yMax =  -999.9;
 
       for(Int_t k=0;k<SNbin;k++) {
-	if(semit[k]<yMin)
-	  yMin = semit[k];
+	if(semitx[k]<yMin)
+	  yMin = semitx[k];
 
-	if(semit[k]>yMax)
-	  yMax = semit[k];
+	if(semitx[k]>yMax)
+	  yMax = semitx[k];
 
 	if(sErms[k]<yMin)
 	  yMin = sErms[k];
@@ -1654,7 +1752,7 @@ int main(int argc,char *argv[]) {
       }
 
       for(Int_t k=1;k<=x1Nbin;k++) {
-	Float_t value = hX1->GetBinContent(k);
+	Double_t value = hX1->GetBinContent(k);
 
 	if(value<yMin)
 	  yMin = value;
@@ -1687,8 +1785,8 @@ int main(int argc,char *argv[]) {
       PPalette * pPalette = (PPalette*) gROOT->FindObject("electron");
       pPalette->cd();
 
-      // Float_t Max  = hP1X1->GetMaximum();
-      // Float_t Min  = hP1X1->GetMinimum();
+      // Double_t Max  = hP1X1->GetMaximum();
+      // Double_t Min  = hP1X1->GetMinimum();
 
       // hP1X1->GetZaxis()->SetRangeUser(Min,Max); 
 
@@ -1755,23 +1853,23 @@ int main(int argc,char *argv[]) {
       TString sLabels[] = {"(b)","(a)"};
       TPaveText **textLabel = new TPaveText*[NPad];
 
-      Float_t lMargin = 0.15;
-      Float_t rMargin = 0.18;
-      Float_t bMargin = 0.15;
-      Float_t tMargin = 0.04;
-      Float_t factor = 1.0;    
+      Double_t lMargin = 0.15;
+      Double_t rMargin = 0.18;
+      Double_t bMargin = 0.15;
+      Double_t tMargin = 0.04;
+      Double_t factor = 1.0;    
       PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor,0.00);
 
       // Define the frames for plotting
       Int_t fonttype = 43;
       Int_t fontsize = 24;
       Int_t tfontsize = 28;
-      Float_t txoffset = 2.0;
-      Float_t lxoffset = 0.02;
-      Float_t tyoffset = 1.3;
-      Float_t lyoffset = 0.01;
-      Float_t tylength = 0.02;
-      Float_t txlength = 0.04;
+      Double_t txoffset = 2.0;
+      Double_t lxoffset = 0.02;
+      Double_t tyoffset = 1.3;
+      Double_t lyoffset = 0.01;
+      Double_t tylength = 0.02;
+      Double_t txlength = 0.04;
       for(Int_t i=0;i<NPad;i++) {
 	char name[16];
 	sprintf(name,"pad_%i",i);
@@ -1790,8 +1888,8 @@ int main(int argc,char *argv[]) {
 	hFrame[i] = (TH1F*) hX1->Clone(name);
 	hFrame[i]->Reset();
 
-	Float_t xFactor = pad[0]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
-	Float_t yFactor = pad[0]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
+	Double_t xFactor = pad[0]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
+	Double_t yFactor = pad[0]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
 
 	// Format for y axis
 	hFrame[i]->GetYaxis()->SetTitleFont(fonttype);
@@ -1860,8 +1958,8 @@ int main(int argc,char *argv[]) {
       pzmaxline.Draw();
 
       // 2D histogram z range
-      // Float_t dmax = hP1X1->GetMaximum();
-      // Float_t dmin = 0.0;
+      // Double_t dmax = hP1X1->GetMaximum();
+      // Double_t dmin = 0.0;
       // hP1X1->GetZaxis()->SetRangeUser(dmin,dmax);
 
       hP1X1->GetZaxis()->SetTitleFont(fonttype);
@@ -1880,9 +1978,9 @@ int main(int argc,char *argv[]) {
 
       TPaletteAxis *palette = (TPaletteAxis*)hP1X1->GetListOfFunctions()->FindObject("palette");
       if(palette) {
-	Float_t y1 = gPad->GetBottomMargin();
-	Float_t y2 = 1 - gPad->GetTopMargin();
-	Float_t x1 = 1 - gPad->GetRightMargin();
+	Double_t y1 = gPad->GetBottomMargin();
+	Double_t y2 = 1 - gPad->GetTopMargin();
+	Double_t x1 = 1 - gPad->GetRightMargin();
 	palette->SetY2NDC(y2 - 0.04);
 	palette->SetY1NDC(y1 + 0.04);
 	palette->SetX1NDC(x1 + 0.01);
@@ -1912,12 +2010,12 @@ int main(int argc,char *argv[]) {
       }
 
 
-      Float_t y1 = gPad->GetBottomMargin();
-      Float_t y2 = 1 - gPad->GetTopMargin();
-      Float_t x1 = gPad->GetLeftMargin();
-      Float_t x2 = 1 - gPad->GetRightMargin();
-      Float_t yrange = y2-y1; 
-      Float_t xrange = x2-x1; 
+      Double_t y1 = gPad->GetBottomMargin();
+      Double_t y2 = 1 - gPad->GetTopMargin();
+      Double_t x1 = gPad->GetLeftMargin();
+      Double_t x2 = 1 - gPad->GetRightMargin();
+      Double_t yrange = y2-y1; 
+      Double_t xrange = x2-x1; 
 
       textLabel[1] = new TPaveText(x1 + 0.02*(x2-x1), y2-0.2*(y2-y1), x1+0.30*(x2-x1), y2-0.05*(y2-y1),"NDC");
       PGlobals::SetPaveTextStyle(textLabel[1],12); 
@@ -1958,7 +2056,7 @@ int main(int argc,char *argv[]) {
       sprintf(sleg,"E. spread [%s]",ermsSUnit.c_str());
       Leg->AddEntry(gErms,sleg,"PL");
       //      sprintf(sleg,"Emittance [%s]",emitUnit.c_str());
-      sprintf(sleg,"Emittance [%s]",emitSUnit.c_str());
+      sprintf(sleg,"Emitt. [%s]",emitSUnit.c_str());
       Leg->AddEntry(gEmitx,sleg,"PL");
       //Leg->AddEntry(gXrms,"Bunch width [#mum]","PL");
 
@@ -2097,11 +2195,11 @@ int main(int argc,char *argv[]) {
 	textStatInt->SetTextFont(42);
 	
 	char text[64];
-	sprintf(text,"#LTy#GT_{rms} = %5.2f",xrms);
+	sprintf(text,Form("#LTx#GT_{rms} = %5.2f %s",xrms,tspaSUnit.c_str()));
 	textStatInt->AddText(text);
-	sprintf(text,"#LTp_{y}#GT_{rms} = %5.2f",yrms);
+	sprintf(text,Form("#LTp_{x}#GT_{rms} = %5.2f %s/c",yrms,teneSUnit.c_str()));
 	textStatInt->AddText(text);
-	sprintf(text,"#varepsilon_{n} = %5.2f",emitx);
+	sprintf(text,Form("#varepsilon_{n} = %5.2f %s",emitx,emitSUnit.c_str()));
 	textStatInt->AddText(text);
 	textStatInt->Draw();
 	
@@ -2143,23 +2241,23 @@ int main(int argc,char *argv[]) {
 	  
 	  hP2X2sl[k]->Draw("colz");
 	  
-	  // Float_t y1 = gPad->GetBottomMargin();
-	  Float_t y2 = 1 - gPad->GetTopMargin();
-	  Float_t x1 = gPad->GetLeftMargin();
-	  // Float_t x2 = 1 - gPad->GetRightMargin();
+	  // Double_t y1 = gPad->GetBottomMargin();
+	  Double_t y2 = 1 - gPad->GetTopMargin();
+	  Double_t x1 = gPad->GetLeftMargin();
+	  // Double_t x2 = 1 - gPad->GetRightMargin();
 	  textStat[k] = new TPaveText(x1+0.02,y2-0.50,x1+0.20,y2-0.05,"NDC");
 	  PGlobals::SetPaveTextStyle(textStat[k],12); 
 	  textStat[k]->SetTextColor(kGray+3);
 	  textStat[k]->SetTextFont(42);
 	  
 	  char text[64];
-	  sprintf(text,"%5.2f #LT #zeta #LT %5.2f",sBinLim[k],sBinLim[k+1]);
+	  sprintf(text,Form("%5.2f %s < #zeta < %5.2f %s",sBinLim[k],spaSUnit.c_str(),sBinLim[k+1],spaSUnit.c_str()));
 	  textStat[k]->AddText(text);
-	  sprintf(text,"#LTx#GT_{rms} = %5.2f",sxrms[k]);
+	  sprintf(text,Form("#LTx#GT_{rms} = %5.2f %s",sx_rms[k],tspaSUnit.c_str()));
 	  textStat[k]->AddText(text);
-	  sprintf(text,"#LTp_{x}#GT_{rms} = %5.2f",syrms[k]);
+	  sprintf(text,Form("#LTp_{x}#GT_{rms} = %5.2f %s",spx_rms[k],teneSUnit.c_str()));
 	  textStat[k]->AddText(text);
-	  sprintf(text,"#varepsilon_{n} = %5.2f",semit[k]);
+	  sprintf(text,Form("#varepsilon_{n} = %5.2f %s",semitx[k],emitSUnit.c_str()));
 	  textStat[k]->AddText(text);
 	  textStat[k]->Draw();
 	  
@@ -2201,23 +2299,23 @@ int main(int argc,char *argv[]) {
     
     // Delete newly created vectors
     delete sBinLim;
-
-    delete sxmean;
-    delete symean;
-    delete sxrms2;  
-    delete syrms2; 
-    delete sxrms;  
-    delete syrms;  
-    delete sxyrms2;
-    delete xbin;
-    delete semit;
+    delete zbin;
     delete sEmean;
     delete sErms;
 
-    // delete gemit;
-    // delete gXrms;
-    // delete gErms;
-    // delete gErmsB;
+    delete sx_mean;
+    delete sx_rms;
+    delete spx_mean;
+    delete spx_rms;
+    delete semitx;
+    delete sbetax;
+
+    delete sy_mean;
+    delete sy_rms;
+    delete spy_mean;
+    delete spy_rms;
+    delete semity;
+    delete sbetay;
 
     // end time looper
   }

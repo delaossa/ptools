@@ -442,7 +442,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
 
 
-  // ------------- z Zoom --------------- Plasma palette -----------
+  // ----- z Zoom ---------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
   // using a dynamic palette that adjusts the base value to a certain color.
   
@@ -458,7 +458,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(!hDen2D[i]) continue;
     
     Max[i] = hDen2D[i]->GetMaximum();
-    Min[i] = 1.01E-1 * Base;
+    Min[i] = 0.99E-1 * localden;
     if(Min[i]>Max[i]) 1.01E-1 * Max[i];
     
     if(i==0) {
@@ -468,11 +468,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	Min[i] = 2*localden - Max[i];
       } else {
 	Max[i] = 0.4*hDen2D[i]->GetMaximum(); // enhance plasma contrast.
-        //Max[i] = hDen2D[i]->GetMaximum(); 
-	if(Max[i]<localden) Min[i] = 1.01 * Base;
+        // Max[i] = hDen2D[i]->GetMaximum(); 
+	if(Max[i]<localden) Max[i] = 1.01 * localden;
 	if(Min[i]>localden) Min[i] = 0.9*localden;
       }
-      //      cout << Form("Base = %f, Max = %f, Min = %f",Base,Max[i], Min[i]) << endl;
+      // cout << Form("Base = %f, Max = %f, Min = %f",Base,Max[i], Min[i]) << endl;
     } 
     
     if(i==1) {
@@ -492,9 +492,23 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Min[i] = 1.01E-3 * Base;
     }
 
-    hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
-  }
+    if(pData->GetDenMax(i)>0)
+      Max[i] = pData->GetDenMax(i);
+    else if(pData->GetDenMax(i)==0) {
+      delete hDen2D[i];
+      hDen2D[i] = NULL;
+    }
+    
+    if(pData->GetDenMin(i)>=0)
+      Min[i] = pData->GetDenMin(i);
 
+    //    cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,pData->GetDenMin(i),pData->GetDenMax(i)) << endl;
+    cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,Min[i],Max[i]) << endl;
+    
+    if(hDen2D[i])
+      hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
+  }
+  
   
   // Dynamic plasma palette
   const Int_t plasmaDNRGBs = 3;

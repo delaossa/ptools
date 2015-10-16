@@ -39,33 +39,43 @@ template <class C> void FreeClear( C & cntr ) {
 // External set of parameters
 struct pparam {
   // Plasma parameters
-  Float_t pDensity;  // Plasma density
-  Float_t pStart;    // Start of plasma channel (first point of constant density).
+  Double_t pDensity;  // Plasma density
+  Double_t pStart;    // Start of plasma channel (first point of constant density).
 
   // Neutral specie parameters
-  Float_t nDensity;  // Density of Neutral specie.
-  Float_t nStart;    // Start of neutral channel (first point of constant density).
-  Float_t nEnd;      // End of neutral channel (first point of constant density).
+  Double_t nDensity;  // Density of Neutral specie.
+  Double_t nStart;    // Start of neutral channel (first point of constant density).
+  Double_t nEnd;      // End of neutral channel (first point of constant density).
   
   // Bunch parameters
-  Float_t bDensity;  // Peak density of the bunch = nb .
-  Float_t bStart;    // Start of the bunch (first point at nb).
-  Float_t bMass;     // Mass of the beam particles.
-  Float_t bGamma;    // Mean energy of the beam in gamma units.
-  Float_t bRmsZ;     // Characteristic length of the bunch on Z.
-  Float_t bRmsX;     // Charasteristic transverse size of the bunch on X.
-  Float_t bRmsY;     // Charasteristic transverse size of the bunch on Y.
-  Float_t bRmsR;     // Charasteristic transverse size of the bunch on R.
+  Double_t bDensity;  // Peak density of the bunch = nb .
+  Double_t bStart;    // Start of the bunch (first point at nb).
+  Double_t bMass;     // Mass of the beam particles.
+  Double_t bGamma;    // Mean energy of the beam in gamma units.
+  Double_t bRmsZ;     // Characteristic length of the bunch on Z.
+  Double_t bRmsX;     // Charasteristic transverse size of the bunch on X.
+  Double_t bRmsY;     // Charasteristic transverse size of the bunch on Y.
+  Double_t bRmsR;     // Charasteristic transverse size of the bunch on R.
   
   // Box parameters: These are 4D box ranges for plotting. 
-  Float_t x1Min;
-  Float_t x1Max;
-  Float_t x2Min;
-  Float_t x2Max;
-  Float_t x3Min;
-  Float_t x3Max;
-  Float_t EMin;
-  Float_t EMax;
+  Double_t x1Min;
+  Double_t x1Max;
+  Double_t x2Min;
+  Double_t x2Max;
+  Double_t x3Min;
+  Double_t x3Max;
+  Double_t EMin;
+  Double_t EMax;
+
+  // Density ranges
+  Double_t denMin;
+  Double_t denMax;
+  Double_t denMin1;
+  Double_t denMax1;
+  Double_t denMin2;
+  Double_t denMax2;
+  Double_t denMin3;
+  Double_t denMax3;  
 };
 
 // PData class definition
@@ -179,7 +189,32 @@ public:
   void  SetX3Min(Double_t x) { XMINR[2] = x; }
   void  SetX3Max(Double_t x) { XMAXR[2] = x; }
 
+  // Density ranges
+  Double_t  GetDenMin(Int_t i)  {
+    if(i==0)
+      return pParam.denMin;
+    else if(i==1)
+      return pParam.denMin1;
+    else if(i==2)
+      return pParam.denMin2;
+    else if(i==3)
+      return pParam.denMin3;
+    else
+      return -999.0;
+  }
 
+  Double_t  GetDenMax(Int_t i)  {
+    if(i==0)
+      return pParam.denMax;
+    else if(i==1)
+      return pParam.denMax1;
+    else if(i==2)
+      return pParam.denMax2;
+    else if(i==3)
+      return pParam.denMax3;
+    else
+      return -999.0;
+  }
 
   // Simulation parameters:
   Int_t    GetNDim()  { return NDIM; } 
@@ -447,6 +482,9 @@ void PData::ResetParameters() {
 
   // Default beam gamma
   pParam.bGamma = 10000.0;
+
+  // Density ranges
+  pParam.denMin = pParam.denMax = pParam.denMin1 = pParam.denMax1 = pParam.denMin2 = pParam.denMax2 = pParam.denMin3 = pParam.denMax3 = -999.;
 }
 
 //______________________________________________________________________________________

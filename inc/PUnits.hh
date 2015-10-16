@@ -253,21 +253,7 @@ namespace PUnits
 
     /*! \brief Get best unit and its name
      */
-    void GetBestUnits(Double_t &unit, std::string &sunit) {
-
-      Double_t bestvalue;
-      std::stringstream stream;
-      stream << *this;
-      std::string aux;
-      
-      stream >> bestvalue >> sunit >> aux;
-      if(!aux.empty()) {
-       	sunit += " ";
-       	sunit += aux;
-	aux.clear();
-      }
-      unit = fValue/bestvalue;
-    };
+    void GetBestUnits(Double_t &unit, std::string &sunit) ;
 
 
   protected:
@@ -326,8 +312,6 @@ namespace PUnits
 
   static const Double_t um          = 1.e-6*meter; ///< Micrometer
   static const Double_t micrometer  = 1.e-6*meter; ///< Micrometer
-  static const Double_t decaum          = 1.e-5*meter; ///< Decaicrometer
-  static const Double_t decamicrometer  = 1.e-5*meter; ///< Decamicrometer
   static const Double_t nm          = 1.e-9*meter; ///< Nanometer
   static const Double_t nanometer   = 1.e-9*meter; ///< Nanometer
   static const Double_t femtometer  = 1.e-15*meter; ///< Femtometer

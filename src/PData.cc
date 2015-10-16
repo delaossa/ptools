@@ -261,6 +261,22 @@ void PData::ReadParameters(const char * pfile)
 	  iss >> pParam.EMin;
 	else if(word.find("EMax") != string::npos)
 	  iss >> pParam.EMax;
+	else if(word.find("denMin0") != string::npos)
+	  iss >> pParam.denMin;
+	else if(word.find("denMax0") != string::npos)
+	  iss >> pParam.denMax;
+	else if(word.find("denMin1") != string::npos)
+	  iss >> pParam.denMin1;
+	else if(word.find("denMax1") != string::npos)
+	  iss >> pParam.denMax1;
+	else if(word.find("denMin2") != string::npos)
+	  iss >> pParam.denMin2;
+	else if(word.find("denMax2") != string::npos)
+	  iss >> pParam.denMax2;
+	else if(word.find("denMin3") != string::npos)
+	  iss >> pParam.denMin3;
+	else if(word.find("denMax3") != string::npos)
+	  iss >> pParam.denMax3;
 
 	word.clear();
       }

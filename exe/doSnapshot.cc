@@ -188,11 +188,11 @@ int main(int argc,char *argv[]) {
     cout << Form("\n Processing time step %i",time) << endl;
     cout << Form(" -------------------------\n") << endl;
 
-    pData->LoadFileNames(time);    
-    if(time==iStart) pData->PrintData();
+    pData->LoadFileNames(time);
     
     if(!pData->IsInit()) continue;
-
+    if(time==iStart) pData->PrintData();
+    
     // Time in OU
     Double_t Time = pData->GetRealTime();
 
@@ -333,10 +333,8 @@ int main(int argc,char *argv[]) {
     
       if(i==0)
 	hDen2D[i]->GetZaxis()->SetTitle("n_{p}/n_{0}");
-      else if(i==1)
-	hDen2D[i]->GetZaxis()->SetTitle("n_{b}/n_{0}");
-      else if(i==2)
-	hDen2D[i]->GetZaxis()->SetTitle("n_{i}/n_{0}");
+      else 
+	hDen2D[i]->GetZaxis()->SetTitle(Form("n_{%i}/n_{0}",i));
       
       sprintf(hName,"hDen1D_%i",i);
       hDen1D[i] = (TH1F*) gROOT->FindObject(hName);

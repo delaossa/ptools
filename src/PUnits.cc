@@ -64,14 +64,24 @@ PUnits::UnitsTable::UnitsTable()
   // Length
   AddUnit("Femtometer", "fm", "Length", femtometer);
   AddUnit("Nanometer",  "nm", "Length", nanometer);
-  //  AddUnit("Decananometer", "10 nm", "Length", 10*nanometer);
-  //  AddUnit("Hectonanometer", "10^{2} nm", "Length", 100*nanometer);
   AddUnit("Micrometer", "#mum", "Length", micrometer);
-  //  AddUnit("Decamicrometer", "10 #mum", "Length", decamicrometer);
   AddUnit("Millimeter", "mm", "Length", millimeter);
   AddUnit("Centimeter", "cm", "Length", centimeter);
   AddUnit("Meter",      "m",  "Length", meter);
   AddUnit("Kilometer",  "km", "Length", kilometer);
+
+  // Emittance
+  AddUnit("Femtometer", "fm", "Emittance", femtometer);
+  AddUnit("Nanometer",  "nm", "Emittance", nanometer);
+  AddUnit("Decananometer", "10 nm", "Emittance", 10*nanometer);
+  AddUnit("Hectonanometer", "10^{2} nm", "Emittance", 100*nanometer);
+  AddUnit("Micrometer", "#mum", "Emittance", micrometer);
+  AddUnit("Decamicrometer", "10 #mum", "Emittance", 10*micrometer);
+  AddUnit("Millimeter", "mm", "Emittance", millimeter);
+  AddUnit("Centimeter", "cm", "Emittance", centimeter);
+  AddUnit("Meter",      "m",  "Emittance", meter);
+  AddUnit("Kilometer",  "km", "Emittance", kilometer);
+
 
   // Time
   AddUnit("Femtosecond", "fs", "Time", femtosecond);
@@ -295,6 +305,27 @@ const TString PUnits::BestUnit::AsString() const
   std::ostringstream oss;
   oss << *this;
   return TString(oss.str().c_str());
+}
+
+/*!
+ */
+void PUnits::BestUnit::GetBestUnits(Double_t &unit, std::string &sunit)
+{
+  Double_t bestvalue;
+  std::stringstream stream;
+  stream << AsString();
+
+  sunit.clear();
+  std::string aux;
+  stream >> bestvalue >> sunit >> aux;
+  if(!aux.empty()) {
+    sunit += " ";
+    sunit += aux;
+    aux.clear();
+  }
+  unit = fValue/bestvalue;
+  // std::cout << AsString() << std::endl;      
+  // std::cout << Form("%.6f %s",bestvalue,sunit.c_str()) << std::endl;      
 }
 
 /*!
