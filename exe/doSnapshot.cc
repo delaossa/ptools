@@ -616,7 +616,8 @@ int main(int argc,char *argv[]) {
       PUnits::BestUnit bdenSUnit(n0,"PartDensity");
       bdenSUnit.GetBestUnits(denUnit,denSUnit);
       cout << Form(" n0 = %.2f %s", n0/denUnit, denSUnit.c_str()) << endl;
-
+      // cout << bdenSUnit << endl;
+  
       PUnits::BestUnit bspaSUnit(wavelength,"Length");
       bspaSUnit.GetBestUnits(spaUnit,spaSUnit);
       cout << Form(" L  = %.2f %s", wavelength/spaUnit, spaSUnit.c_str()) << endl;
@@ -625,9 +626,12 @@ int main(int argc,char *argv[]) {
       btimSUnit.GetBestUnits(timUnit,timSUnit);
       cout << Form(" T  = %.2f %s", period/timUnit, timSUnit.c_str()) << endl;
 
-      PUnits::BestUnit beSUnit(E0 * hE1D[0]->GetMaximum(),"Efield");
+
+      Float_t Emax =  hE1D[0]->GetMaximum();
+      if(Emax < 10E-3) Emax = 10E-3;
+      PUnits::BestUnit beSUnit(E0 * Emax,"Efield");
       beSUnit.GetBestUnits(eUnit,eSUnit);
-      cout << Form(" E0 = %.2f %s", E0 * hE1D[0]->GetMaximum()/eUnit, eSUnit.c_str()) << endl;
+      cout << Form(" E0 = %.2f %s", E0 * Emax/eUnit, eSUnit.c_str()) << endl;
 
       for(Int_t i=0;i<Nspecies;i++) {
 
