@@ -34,10 +34,10 @@ int main(int argc,char *argv[]) {
   if(argc<=2) {
     printf("\n Usage: %s <simulation name> <-t(time)>\n",argv[0]);
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
-    printf("      <-z(zoom factor)> <-non(# on-axis)> <-nof(# off-axis)>\n");
-    printf("      <--png> <--pdf> <--eps> <-msk(mask)>\n");
-    printf("      <--center> <--comov>\n");
-    printf("      <--units> <--logz>\n");
+    printf("      <--center> <--comov> <--units>\n");
+    printf("      <-z(zoom factor)> <-non(# on-axis)> <-nof(# off-axis)> <-avg(# bins)>\n");
+    printf("      <-msk(mask)> <-opt(plot options)>\n");
+    printf("      \n");
     return 0;
   }
 
@@ -90,12 +90,6 @@ int main(int argc,char *argv[]) {
       opt += "curr";	
     } else if(arg.Contains("--alt1D")){
       opt += "alt1D";	
-    } else if(arg.Contains("--grid")){
-      opt += "grid"; 
-    } else if(arg.Contains("--logz")){
-      opt += "logz"; 
-    } else if(arg.Contains("--noinfo")){
-      opt += "noinfo"; 
     } else if(arg.Contains("-t")) {
       char ss[2];
       sscanf(arg,"%2s%i",ss,&time);
@@ -120,6 +114,10 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-avg")){
       char ss[4];
       sscanf(arg,"%4s%i",ss,&Navg);
+    } else if(arg.Contains("-opt")){
+      char ss[4], sopt[64];
+      sscanf(arg,"%4s%s",ss,sopt);
+      opt += sopt;
     } else {
       cout << Form("\t Invalid argument (%i): exiting...\n",l) << endl;
       return 0;
@@ -129,14 +127,6 @@ int main(int argc,char *argv[]) {
   
   PGlobals::Initialize();
   
-  // Palettes!
-  gROOT->Macro("PPalettes.C");
-
-  if(opt.Contains("grid")) {
-    gStyle->SetPadGridX(1);
-    gStyle->SetPadGridY(1);
-  }
-
   // Load PData
   PData *pData = PData::Get(sim.Data());
 
@@ -155,30 +145,19 @@ int main(int argc,char *argv[]) {
   Double_t wavelength = pData->GetPlasmaWaveLength();
   Double_t E0 = pData->GetPlasmaE0();
 
-  //  cout << Form(" Timedepth = %f fs",timedepth/PUnits::femtosecond) << endl;
-
   // Some beam properties:
   // Double_t Ebeam = pData->GetBeamEnergy();
   // Double_t gamma = pData->GetBeamGamma();
   // Double_t vbeam = pData->GetBeamVelocity();
-
-  // cout << Form(" - Bunch gamma      = %8.4f", gamma ) << endl;
-  // cout << Form(" - Bunch velocity   = %8.4f c", vbeam ) << endl;
   
   // Other parameters
   // Double_t trapPotential = 1.0;
   // Double_t trapPotential = 1.0 - (1.0/gamma);
-  // cout << Form(" - Trap. potential  = %8.4f mc2/e",trapPotential) << endl;
-  // cout << endl;
 
   // z start of the plasma in normalized units.
   Double_t zStartPlasma = pData->GetPlasmaStart()*kp;
   // z start of the beam in normalized units.
   Double_t zStartBeam = pData->GetBeamStart()*kp;
-  // // z start of the neutral in normalized units.
-  // Double_t zStartNeutral = pData->GetNeutralStart()*kp;
-  // // z end of the neutral in normalized units.
-  // Double_t zEndNeutral = pData->GetNeutralEnd()*kp;
  
   // Time looper
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
@@ -202,8 +181,7 @@ int main(int argc,char *argv[]) {
 	Time += zStartBeam;
     } 
     
-    // Off-axis definition
-    
+    // Off-axis definition    
     Double_t rms0 = pData->GetBeamRmsX() * kp;
     if(pData->IsCyl()) rms0 = pData->GetBeamRmsR() * kp;
     
