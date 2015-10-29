@@ -4,7 +4,17 @@ ClassImp(PDataHiP);
 
 
 //_______________________________________________________________________
+PDataHiP::PDataHiP(const char * name, const char * title) : PData(name,title) {
+  
+}
+
+//_______________________________________________________________________
 PDataHiP::PDataHiP(const char * name) : PData(name) {
+  
+}
+
+//_______________________________________________________________________
+PDataHiP::PDataHiP(const char * name, UInt_t time) : PData(name, time) {
   
 }
 
@@ -27,7 +37,7 @@ PDataHiP * PDataHiP::Get(const char * name)
   }
 
   if (name && strcmp(fgData->GetName(), name)!=0) {
-    cout << "PData: Changing analysis to " << name << endl;
+    cout << "PDataHiP: Changing analysis to " << name << endl;
 
     if(fgData) delete fgData;
     fgData = new PDataHiP(name);
