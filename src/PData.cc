@@ -7,42 +7,6 @@ ClassImp(PData)
 
 using namespace H5; 
 
-
-// Some utilities:
-void DoSlice(Int_t Dim, Int_t &FirstBin, Int_t &LastBin) {
-
-  if(FirstBin >= 0 ) return;
-  
-  Int_t midBin = floor(Dim/2.0);
-  if(LastBin > midBin) LastBin = midBin;
-  if(-FirstBin > midBin) FirstBin = -midBin;
-
-  // If FirstBin is set to -1 then the slice is taken exactly in the center of the histogram
-  // and LastBin means the half width of the slice (in bin numbers).
-  if(FirstBin == -1) {
-    FirstBin = midBin + 1 - LastBin;
-    LastBin  = midBin + LastBin;
-    //    if(LastBin > Dim) { LastBin = Dim; FirstBin = 1;}
-  } 
-  
-  // If FirstBin is set to <-1 then the slice is taken exactly ASIDE of the center of the histogram
-  // displaced by fabs(FirstBin) of the center,
-  // and then LastBin means the TOTAL width of the slice (in bin numbers).
-  else if(FirstBin < -1) {
-    Int_t pivot = midBin + abs(FirstBin);
-    if(fabs(LastBin)>fabs(FirstBin)) LastBin = abs(FirstBin);
-    FirstBin = pivot + 1 - LastBin;
-    LastBin  = pivot;
-    //    if(LastBin > Dim) { LastBin = Dim; FirstBin = midBin + 1;}
-  }
-
-  if(LastBin>=Dim) LastBin = Dim - 1;
-
-  // cout << Form("  %i   %i   %i  ",Dim,FirstBin,LastBin) << endl;
-  
-}
-
-
 PData * PData::fgData = NULL;
 PData * gData = NULL;
 
@@ -67,6 +31,8 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   Init = kFALSE;
   Cyl = kFALSE;
   ThreeD = kFALSE;
+  Osi = kFALSE;
+  HiP = kFALSE;
   Navg = 1;
 
   TString NAME = name;
@@ -96,6 +62,8 @@ PData::PData(const char * name) : TNamed(name,name) {
   Init = kFALSE;
   Cyl = kFALSE;
   ThreeD = kFALSE;
+  Osi = kFALSE;
+  HiP = kFALSE;
   Navg = 1;
 
   TString NAME = name;
@@ -127,6 +95,8 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   Init = kFALSE;
   Cyl = kFALSE;
   ThreeD = kFALSE;
+  Osi = kFALSE;
+  HiP = kFALSE;
   Navg = 1;
 
   TString NAME = name;

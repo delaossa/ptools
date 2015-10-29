@@ -8,8 +8,6 @@
 #pragma link C++ nestedtypedefs;
 
 #pragma link C++ namespace PFunc;
-//#pragma link C++ defined_in "PFunctions.hh";
-//#pragma link C++ function PFunc::BeamBetatronWavenumber(Double_t, Double_t);
 
 #pragma link C++ namespace PConst;
 #pragma link C++ namespace PUnits;
@@ -19,6 +17,8 @@
 
 #pragma link C++ class PData+;
 #pragma link C++ global gData;
+
+#pragma link C++ class PDataHiP+;
 
 #pragma link C++ class PPalette+;
 

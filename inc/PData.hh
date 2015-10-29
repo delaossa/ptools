@@ -23,9 +23,9 @@
 
 #include "PFunctions.hh"
 
-#define DATA(i,j,k) (data[i * dim[2] * dim[1] + j * dim[2] + k])
-
 using namespace std;
+
+#define DATA(i,j,k) (data[i * dim[2] * dim[1] + j * dim[2] + k])
 
 // Method for properly deleting a vector or list of pointers.
 template <class C> void FreeClear( C & cntr ) {
@@ -78,6 +78,7 @@ struct pparam {
   Double_t denMax3;  
 };
 
+
 // PData class definition
 // -----------------------------------------------------------------
 
@@ -92,12 +93,12 @@ public:
 
   virtual ~PData();
 
-  virtual void    Clear(Option_t *option="");
+  void    Clear(Option_t *option="");
   void    PrintData(Option_t *option="");
   void    SetPath(const char *path) { simPath = path; }
   void    SetTime(Int_t t) { time = t; LoadFileNames(time); }
   void    ReadParameters(const char *pfile="");
-  void    LoadFileNames(Int_t t);
+  virtual void    LoadFileNames(Int_t t);
   void    CopyData(const char *opath, const char *cpcmd="cp -v");
   void    Delete(const char *dlcmd="rm -f");
 
@@ -126,7 +127,8 @@ public:
   inline Int_t ListDir(string dir, string pattern, vector<string> &files,string option="");
   inline void ResetParameters();
   inline Double_t Shift(TString option="");
-
+  inline void DoSlice(Int_t Dim, Int_t &FirstBin, Int_t &LastBin);
+  
   // Give access to exeternal parameters
   Double_t  GetPlasmaDensity() { return pParam.pDensity * (1/PUnits::cm3);  }  
   Double_t  GetPlasmaStart()   { return pParam.pStart * GetPlasmaSkinDepth(); }    
@@ -403,8 +405,10 @@ protected:
   Double_t                  *XMAXR;   // Up edges of simulation box (zoom).
   string                   simPath;   // Path to the simulation directory.
   Bool_t                      Init;   // Flag for initialization.
+  Bool_t                       Osi;   // Flag for OSIRIS 
   Bool_t                       Cyl;   // Flag for cylindrical coordinates.
   Bool_t                    ThreeD;   // Flag for 3D sim.
+  Bool_t                       HiP;   // Flag for HiPACE
 
   vector<string>           species;   // vector of species names.
   vector<string*>            *sCHG;   // vector of files with the Charge density.
@@ -508,5 +512,39 @@ Double_t PData::Shift(TString option) {
 
   return shiftx1;
 }
+
+void PData::DoSlice(Int_t Dim, Int_t &FirstBin, Int_t &LastBin) {
+
+  if(FirstBin >= 0 ) return;
+  
+  Int_t midBin = floor(Dim/2.0);
+  if(LastBin > midBin) LastBin = midBin;
+  if(-FirstBin > midBin) FirstBin = -midBin;
+
+  // If FirstBin is set to -1 then the slice is taken exactly in the center of the histogram
+  // and LastBin means the half width of the slice (in bin numbers).
+  if(FirstBin == -1) {
+    FirstBin = midBin + 1 - LastBin;
+    LastBin  = midBin + LastBin;
+    //    if(LastBin > Dim) { LastBin = Dim; FirstBin = 1;}
+  } 
+  
+  // If FirstBin is set to <-1 then the slice is taken exactly ASIDE of the center of the histogram
+  // displaced by abs(FirstBin) of the center,
+  // and then LastBin means the TOTAL width of the slice (in bin numbers).
+  else if(FirstBin < -1) {
+    Int_t pivot = midBin + abs(FirstBin);
+    if(abs(LastBin)>abs(FirstBin)) LastBin = abs(FirstBin);
+    FirstBin = pivot + 1 - LastBin;
+    LastBin  = pivot;
+    //    if(LastBin > Dim) { LastBin = Dim; FirstBin = midBin + 1;}
+  }
+
+  if(LastBin>=Dim) LastBin = Dim - 1;
+
+  // cout << Form("  %i   %i   %i  ",Dim,FirstBin,LastBin) << endl;
+  
+}
+
 
 #endif
