@@ -250,18 +250,20 @@ int main(int argc,char *argv[]) {
     pData->SetX2Min(yMin);
     pData->SetX2Max(yMax);
   
-    // Double_t zMin = pData->GetX1Min();
-    // Double_t zMax = pData->GetX1Max();
+    Double_t zMin = pData->GetX1Min();
+    Double_t zMax = pData->GetX1Max();
     // Double_t zRange = zMax - zMin;  
     // pData->SetX1Min(zMin);
     // pData->SetX1Max(zMax);
 
-    //    cout << Form(" Plotting range:  %.2f < x1 < %.2f ,  %.2f < x2 < %.2f",zMin,zMax,yMin,yMax) << endl;
+    cout << Form(" --- doSnapshot ---\n") << endl;
+  
+    cout << Form(" Plotting range:  %.2f < x1 < %.2f ,  %.2f < x2 < %.2f",zMin,zMax,yMin,yMax) << endl;
 
     // ----------------------------------------------------------------------------------
   
 
-    cout << Form("Reading simulation data: ") << endl; 
+    cout << Form("\n Reading simulation data: ") << endl; 
 
     // Get charge density histos
     Int_t Nspecies = pData->NSpecies();
@@ -279,7 +281,7 @@ int main(int argc,char *argv[]) {
       if(!pData->GetChargeFileName(i)) 
 	continue;
 
-      cout << Form(" Getting charge density of specie %i  (%s)", i, pData->GetSpeciesName(i).c_str())  << endl;
+      cout << Form(" -> Getting charge density of specie %i  (%s)", i, pData->GetSpeciesName(i).c_str())  << endl;
       
     
       char hName[24];
@@ -391,7 +393,7 @@ int main(int argc,char *argv[]) {
       if(!pData->GetEfieldFileName(i))
 	continue;
 
-      cout << Form(" Getting electric field number ") << i+1 << endl;
+      cout << Form(" -> Getting electric field number ") << i+1 << endl;
     
       char hName[24];
       sprintf(hName,"hE2D_%i",i);
@@ -496,7 +498,7 @@ int main(int argc,char *argv[]) {
       if(!pData->GetBfieldFileName(i))
 	continue;
 
-      cout << Form(" Getting magnetic field number ") << i+1 << endl;
+      cout << Form(" -> Getting magnetic field number ") << i+1 << endl;
     
       char hName[24];
       sprintf(hName,"hB2D_%i",i);
