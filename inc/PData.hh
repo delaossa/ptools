@@ -93,8 +93,8 @@ public:
 
   virtual ~PData();
 
-  void    Clear(Option_t *option="");
-  void    PrintData(Option_t *option="");
+  virtual void    Clear(Option_t *option="");
+  virtual void    PrintData(Option_t *option="");
   void    SetPath(const char *path) { simPath = path; }
   void    SetTime(Int_t t) { time = t; LoadFileNames(time); }
   void    ReadParameters(const char *pfile="");
@@ -105,7 +105,7 @@ public:
   void    GetBoxDimensionsFromFile(const char *filename);  
   string  GetPath() { return simPath; };
   Int_t   GetTime() {  return time; } ;
-  Double_t GetRealTimeFromFile(const char *filename);
+  virtual Double_t GetRealTimeFromFile(const char *filename);
   Double_t GetRealTime() { return rtime; };
   Bool_t  IsInit() { return Init; }
   Bool_t  Is3D() { return ThreeD; }
@@ -114,11 +114,15 @@ public:
   void    SetNavg(Int_t navg) { Navg = navg; }
   
   UInt_t  NSpecies() { return species.size(); }
+  virtual UInt_t  NRawSpecies() { return species.size(); }  
   string  GetSpeciesName(UInt_t i) { return species.at(i); }
   string *GetChargeFileName(UInt_t i) { return sCHG->at(i); }
   string *GetEfieldFileName(UInt_t i) { return sEF->at(i); }
   string *GetBfieldFileName(UInt_t i) { return sBF->at(i); }
   string *GetRawFileName(UInt_t i) { return sRAW->at(i); }
+
+  virtual string   GetRawSpeciesName(UInt_t i) { return 0; }
+  virtual string  *GetWfieldFileName(UInt_t i) { return 0; }
 
   UInt_t  NPhaseSpaces() { return pspaces.size(); }
   string  GetPhasespaceName(UInt_t i) { return pspaces.at(i); }
@@ -245,7 +249,7 @@ public:
 			 Int_t FirstrBin = -1, Int_t LastrBin = 1,
 			 const char *options="avg");
   
-  TH2F* GetH2SliceZX(const char *filename, const char *dataname, 
+  virtual TH2F* GetH2SliceZX(const char *filename, const char *dataname, 
 		     Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg");
 
   TH2F* GetH2SliceZY(const char *filename, const char *dataname, 
@@ -296,7 +300,7 @@ public:
   TH2F*  GetCharge(UInt_t i, const char *options="") 
   { 
     return GetH2(GetChargeFileName(i)->c_str(),"charge",options); 
-  } ;
+  } 
   
   TH2F*  GetEField(UInt_t i, const char *options="") 
   { char nam[3]; sprintf(nam,"e%i",i+1); 
@@ -311,85 +315,86 @@ public:
   TH2F*  GetPhasespace(UInt_t i, UInt_t j,const char *options="") 
   { 
     return GetH2(GetPhasespaceFileName(i,j)->c_str(),GetPhasespaceName(j).c_str(),options); 
-  } ;
+  } 
   
   // 3D Histos
   TH3F* GetCharge3D(UInt_t i) 
   { 
     return GetH3(GetChargeFileName(i)->c_str(),"charge"); 
-  } ;
+  } 
   
   TH3F* GetEField3D(UInt_t i) 
   { char nam[3]; sprintf(nam,"e%i",i+1); 
     return GetH3(GetEfieldFileName(i)->c_str(),nam); 
-  } ;
+  } 
   
   TH3F* GetBField3D(UInt_t i) 
   { char nam[3]; sprintf(nam,"b%i",i+1); 
     return GetH3(GetBfieldFileName(i)->c_str(),nam); 
-  } ;
+  } 
   
 
   // ZX Slices
-  TH2F* GetCharge2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="" ) 
+  TH2F* GetCharge2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) 
   { 
     return GetH2SliceZX(GetChargeFileName(i)->c_str(),"charge",Firstx3Bin,Lastx3Bin,options); 
-  } ;
+  } 
   
-  TH2F* GetEField2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="" ) 
+  virtual TH2F* GetEField2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) 
   { char nam[3]; sprintf(nam,"e%i",i+1); 
     return GetH2SliceZX(GetEfieldFileName(i)->c_str(),nam,Firstx3Bin,Lastx3Bin,options); 
-  } ;
+  } 
   
-  TH2F* GetBField2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="" ) 
+  virtual TH2F* GetBField2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) 
   { char nam[3]; sprintf(nam,"b%i",i+1); 
     return GetH2SliceZX(GetBfieldFileName(i)->c_str(),nam,Firstx3Bin,Lastx3Bin,options); 
-  } ;
+  } 
 
+  virtual TH2F* GetWField2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) { return 0; }
   
   // ZY Slices 
   TH2F* GetCharge2DSliceZY(UInt_t i, Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="" ) 
   { 
     return GetH2SliceZY(GetChargeFileName(i)->c_str(),"charge",Firstx2Bin,Lastx2Bin,options); 
-  } ;
+  } 
   
   TH2F* GetEField2DSliceZY(UInt_t i, Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="" ) 
   { char nam[3]; sprintf(nam,"e%i",i+1); 
     return GetH2SliceZY(GetEfieldFileName(i)->c_str(),nam,Firstx2Bin,Lastx2Bin,options); 
-  } ;
+  } 
   
   TH2F* GetBField2DSliceZY(UInt_t i, Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="" ) 
   { char nam[3]; sprintf(nam,"b%i",i+1); 
     return GetH2SliceZY(GetBfieldFileName(i)->c_str(),nam,Firstx2Bin,Lastx2Bin,options); 
-  } ;
+  } 
 
   // XY Slices
   TH2F* GetCharge2DSliceXY(UInt_t i, Int_t Firstx1Bin = -1, Int_t Lastx1Bin = 1, const char *options="" ) 
   { 
     return GetH2SliceXY(GetChargeFileName(i)->c_str(),"charge",Firstx1Bin,Lastx1Bin,options); 
-  } ;
+  } 
   
   TH2F* GetEField2DSliceXY(UInt_t i, Int_t Firstx1Bin = -1, Int_t Lastx1Bin = 1, const char *options="" ) 
   { char nam[3]; sprintf(nam,"e%i",i+1); 
     return GetH2SliceXY(GetEfieldFileName(i)->c_str(),nam,Firstx1Bin,Lastx1Bin,options); 
-  } ;
+  } 
   
   TH2F* GetBField2DSliceXY(UInt_t i, Int_t Firstx1Bin = -1, Int_t Lastx1Bin = 1, const char *options="" ) 
   { char nam[3]; sprintf(nam,"b%i",i+1); 
     return GetH2SliceXY(GetBfieldFileName(i)->c_str(),nam,Firstx1Bin,Lastx1Bin,options); 
-  } ;
+  } 
 
   // ZR Slices
 
   TH2F* GetChargeR(UInt_t i, const char *option="")  
   { 
     return GetH2ZR(GetChargeFileName(i)->c_str(),"charge",option);
-  } ;
+  } 
   
   TH2F* GetEFieldR(UInt_t i, const char *option="") 
   { char nam[3]; sprintf(nam,"e%i",i+1); 
     return GetH2ZR(GetEfieldFileName(i)->c_str(),nam,option); 
-  } ;
+  } 
   
 protected:
 
@@ -414,14 +419,14 @@ protected:
   vector<string*>            *sCHG;   // vector of files with the Charge density.
   vector<string*>             *sEF;   // vector of files with the Electric field.
   vector<string*>             *sBF;   // vector of files with the Magnetic field. 
-  vector<string*>            *sRAW;   // vector of files with the RAW data.
+  vector<string*>            *sRAW;   // vector of files with RAW data.
   vector<string>           pspaces;   // vector of phase spaces names.
   vector<vector<string*> >   *sPHA;   // vector of files with PHASESPACE info.
 
   pparam                    pParam;   // Struct with simulation parameters (see above).
   Int_t                       Navg;   // Number of bins to average in z direction.
 
-  ClassDef(PData,1) // Singleton class for global configuration settings
+  ClassDef(PData,1) 
 };
 
 extern PData *gData;

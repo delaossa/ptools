@@ -491,9 +491,6 @@ void PData::PrintData(Option_t *option) {
 
     if(sCHG->at(is)) 
       cout << " - " << sCHG->at(is)->c_str() << endl;
-
-    if(sRAW->at(is)) 
-      cout << " - " << sRAW->at(is)->c_str() << endl;
     
     for(UInt_t ip=0;ip<NPhaseSpaces();ip++) {
       if(sPHA->at(is).at(ip))
@@ -502,7 +499,14 @@ void PData::PrintData(Option_t *option) {
 
     cout << endl;
   }
- 
+  
+  cout << "Data for RAW macroparticles:" << endl;
+  for(UInt_t is=0;is<NRawSpecies();is++) {
+    if(sRAW->at(is)) 
+      cout << " - " << sRAW->at(is)->c_str() << endl;
+  }
+  cout << endl;
+  
   cout << "Data for Electromagnetic fields: " << endl;
   for(UInt_t ief=0;ief<3;ief++) {
     if(sEF) 
