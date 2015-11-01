@@ -280,9 +280,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   if(mask & 0x80) { // only if ionization bit is selected
     cout << Form("\n Calculating ionization probability rates (ADK) ... ") ; 
-  
-    for(Int_t iat=0;iat<NAtoms;iat++) {
 
+    if(!hETotal2D)
+      continue;
+    
+    for(Int_t iat=0;iat<NAtoms;iat++) {
+      
       if(iat!=ii) continue;
     
       sprintf(hName,"hIonRate2D_%s",atNames[iat]);   
@@ -437,10 +440,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hB2D[i]->GetYaxis()->SetRangeUser(yMin,yMax);
     hB2D[i]->GetXaxis()->SetRangeUser(xMin,xMax);
   }
-  
-  hETotal2D->GetYaxis()->SetRangeUser(yMin,yMax);
-  hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
 
+  if(hETotal2D) {
+    hETotal2D->GetYaxis()->SetRangeUser(yMin,yMax);
+    hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
+  }
 
   // ----- z Zoom ---------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
@@ -552,9 +556,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   }
 
   Float_t ETmin = 0.0001;  
-  Float_t ETmax = hETotal2D->GetMaximum();
-  hETotal2D->GetZaxis()->SetRangeUser(ETmin,ETmax);
-
+  Float_t ETmax = 1;
+  if(hETotal2D) {
+    ETmax = hETotal2D->GetMaximum();
+    hETotal2D->GetZaxis()->SetRangeUser(ETmin,ETmax);
+  }
+  
   Float_t Fmin = hFocus2D->GetMinimum();
   Float_t Fmax = hFocus2D->GetMaximum();
   if(Fmax > TMath::Abs(Fmin))

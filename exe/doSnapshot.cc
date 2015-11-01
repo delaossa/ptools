@@ -21,6 +21,7 @@
 #include <TExec.h>
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PFunctions.hh"
 #include "PPalette.hh"
@@ -129,7 +130,11 @@ int main(int argc,char *argv[]) {
   
   // Load PData
   PData *pData = PData::Get(sim.Data());
-
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sim.Data());
+  }
+  
   pData->SetNavg(Navg);
 
   if(iStart<0) iStart = time;
@@ -434,7 +439,17 @@ int main(int argc,char *argv[]) {
       if(hE1D[i]) delete hE1D[i];
       
       // 1D histograms
-      char nam[3]; sprintf(nam,"e%i",i+1);
+      char nam[3];
+      if(pData->isHiPACE()){
+	if(i==0)
+	  sprintf(nam,"Ez");
+	else if(i==1)
+	  sprintf(nam,"Ex");
+	else if(i==2)
+	  sprintf(nam,"Ey");
+      } else
+	sprintf(nam,"e%i",i+1);
+      
       if(pData->Is3D()) {
       
 	if(!opt.Contains("alt1D")){
@@ -533,14 +548,27 @@ int main(int argc,char *argv[]) {
       else if(i==2)
 	hB2D[i]->GetZaxis()->SetTitle("B_{y}/E_{0}");
 
+
+      
       // 1D histograms
+      char nam[3];
+      if(pData->isHiPACE()){
+	if(i==0)
+	  sprintf(nam,"Bz");
+	else if(i==1)
+	  sprintf(nam,"Bx");
+	else if(i==2)
+	  sprintf(nam,"By");
+      } else
+	sprintf(nam,"b%i",i+1);
+      
       if(pData->Is3D()) {
 	
 	if(!opt.Contains("alt1D")){
 	  if(i==0) 
-	    hB1D[i] = pData->GetH1SliceZ3D(pData->GetBfieldFileName(i)->c_str(),bnam,-1,NonBin,-1,NonBin,opt+"avg");
+	    hB1D[i] = pData->GetH1SliceZ3D(pData->GetBfieldFileName(i)->c_str(),nam,-1,NonBin,-1,NonBin,opt+"avg");
 	  else // In case of transverse fields, the 1D line is taken offaxis
-	    hB1D[i] = pData->GetH1SliceZ3D(pData->GetBfieldFileName(i)->c_str(),bnam,-NofBin,NonBin,-1,NonBin,opt+"avg");
+	    hB1D[i] = pData->GetH1SliceZ3D(pData->GetBfieldFileName(i)->c_str(),nam,-NofBin,NonBin,-1,NonBin,opt+"avg");
 	  
 	} else {  // Alternative
 	  cout << " Alternative! " << endl;
@@ -556,14 +584,14 @@ int main(int argc,char *argv[]) {
 
       } else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
       
-	hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),bnam,1,NonBin,opt+"avg");
+	hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),nam,1,NonBin,opt+"avg");
       
       } else { // 2D cartesian
       
 	if(i==0) 
-	  hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),bnam,-1,NonBin,opt+"avg");
+	  hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),nam,-1,NonBin,opt+"avg");
 	else 
-	  hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),bnam,-NonBin,NonBin,opt+"avg");    
+	  hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),nam,-NonBin,NonBin,opt+"avg");    
       }
     
       hB1D[i]->SetName(hName);
@@ -792,27 +820,145 @@ int main(int argc,char *argv[]) {
 	
       }
     }
-    
+
     // Focusing field
-    TH2F *hFocus2D = (TH2F*) hE2D[1]->Clone("hFocus2D");
-    if(hB2D[2]) {
-      hFocus2D->Add(hB2D[2],-1);
-      if(opt.Contains("units")) {
-	hFocus2D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
+    TH2F *hFocus2D = NULL;
+    if(hE2D[1]) {
+      hFocus2D = (TH2F*) hE2D[1]->Clone("hFocus2D");
+      
+      if(hB2D[2]) {
+	hFocus2D->Add(hB2D[2],-1);
+	if(opt.Contains("units")) {
+	  hFocus2D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
+	} else {
+	  hFocus2D->GetZaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
+	}
       } else {
+	delete hFocus2D;
+	hFocus2D = NULL;
+      }
+      
+    } else {
+      if(!pData->GetWfieldFileName(0))
+	continue;
+
+      cout << Form(" -> Getting transverse wakefield ") << endl;
+    
+      char hName[24];
+      sprintf(hName,"hFocus2D");
+      hFocus2D = (TH2F*) gROOT->FindObject(hName);
+      if(hFocus2D) delete hFocus2D;
+    
+      if(!pData->Is3D())
+	hFocus2D = pData->GetBField(0,opt);
+      else
+	hFocus2D = pData->GetWField2DSliceZX(0,-1,NonBin,opt+"avg");
+
+      hFocus2D->SetName(hName);   
+      hFocus2D->GetXaxis()->CenterTitle();
+      hFocus2D->GetYaxis()->CenterTitle();
+      hFocus2D->GetZaxis()->CenterTitle();
+
+      if(opt.Contains("units") && n0) {
+	Int_t NbinsX = hFocus2D->GetNbinsX();
+	Double_t zMin = skindepth * hFocus2D->GetXaxis()->GetXmin() / spaUnit;
+	Double_t zMax = skindepth * hFocus2D->GetXaxis()->GetXmax() / spaUnit;
+	Int_t NbinsY = hFocus2D->GetNbinsY();
+	Double_t ymin = skindepth * hFocus2D->GetYaxis()->GetXmin() / spaUnit;
+	Double_t ymax = skindepth * hFocus2D->GetYaxis()->GetXmax() / spaUnit;
+	hFocus2D->SetBins(NbinsX,zMin,zMax,NbinsY,ymin,ymax);
+	
+	for(Int_t j=0;j<=hFocus2D->GetNbinsX();j++) {
+	  for(Int_t k=0;k<=hFocus2D->GetNbinsY();k++) {
+	    hFocus2D->SetBinContent(j,k, hFocus2D->GetBinContent(j,k) * E0 / eUnit );
+	  }
+	}
+      
+	if(pData->IsCyl())
+	  hFocus2D->GetYaxis()->SetTitle(Form("r [%s]",spaSUnit.c_str()));
+	else
+	  hFocus2D->GetYaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));
+      
+	if(opt.Contains("comov"))
+	  hFocus2D->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	else
+	  hFocus2D->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+      
+	hFocus2D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
+
+      } else {
+	if(opt.Contains("comov"))
+	  hFocus2D->GetXaxis()->SetTitle("k_{p} #zeta");
+	else
+	  hFocus2D->GetXaxis()->SetTitle("k_{p} z");
+	
+	if(pData->IsCyl()) 
+	  hFocus2D->GetYaxis()->SetTitle("k_{p} r");
+	else
+	  hFocus2D->GetYaxis()->SetTitle("k_{p} x");
+	
 	hFocus2D->GetZaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
       }
     }
+    
+    TH1F *hFocus1D = NULL;
+    if(hE1D[1]) {
+      hFocus1D = (TH1F*) hE1D[1]->Clone("hFocus1D");
 
-    TH1F *hFocus1D = (TH1F*) hE1D[1]->Clone("hFocus1D");
-    if(hB1D[2]) {
-      hFocus1D->Add(hB1D[2],-1);
-      if(opt.Contains("units")) {
-	hFocus1D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
+      if(hB1D[2]) {
+	hFocus1D->Add(hB1D[2],-1);
+	if(opt.Contains("units")) {
+	  hFocus1D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
+	} else {
+	  hFocus1D->GetZaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
+	}
       } else {
-	hFocus1D->GetZaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
+	delete hFocus1D;
+	hFocus1D = NULL;
+      }
+
+    } else {
+      if(!pData->GetWfieldFileName(0))
+	continue;
+      
+      // 1D histograms
+      if(pData->Is3D()) {
+	// In case of transverse fields, the 1D line is taken offaxis
+	hFocus1D = pData->GetH1SliceZ3D(pData->GetWfieldFileName(0)->c_str(),"ExmBy",-NofBin,NonBin,-1,NonBin,opt+"avg");
+      } else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
+	hFocus1D = pData->GetH1SliceZ(pData->GetWfieldFileName(0)->c_str(),"ExmBy",1,NonBin,opt+"avg");
+      } else { // 2D cartesian
+	hFocus1D = pData->GetH1SliceZ(pData->GetWfieldFileName(0)->c_str(),"ExmBy",-NonBin,NonBin,opt+"avg");    
+      }
+      hFocus1D->SetName("hFocus1D");
+
+      if(opt.Contains("units") && n0) {
+	Int_t NbinsX = hFocus1D->GetNbinsX();
+	Double_t zMin = skindepth * hFocus1D->GetXaxis()->GetXmin() / spaUnit;
+	Double_t zMax = skindepth * hFocus1D->GetXaxis()->GetXmax() / spaUnit;
+	hFocus1D->SetBins(NbinsX,zMin,zMax);
+	
+	for(Int_t j=0;j<=hFocus1D->GetNbinsX();j++) {
+	  hFocus1D->SetBinContent(j,hFocus1D->GetBinContent(j) * E0 / eUnit );
+	}
+      
+	if(opt.Contains("comov"))
+	  hFocus1D->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	else
+	  hFocus1D->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+	
+	hFocus1D->GetYaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
+	
+      } else {
+	if(opt.Contains("comov"))
+	  hFocus1D->GetXaxis()->SetTitle("#zeta [c/#omega_{p}]");
+	else
+	  hFocus1D->GetXaxis()->SetTitle("z [c/#omega_{p}]");
+	
+	hFocus1D->GetYaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
       }
     }
+      
     
     // RMS (vs z) of the beam's charge distribution: 
     TProfile *hDen2Dprof = NULL;
@@ -874,60 +1020,71 @@ int main(int argc,char *argv[]) {
 
 
     // Now, combine the electric field components into the total |E|
-    TH2F *hETotal2D = (TH2F*) hE2D[0]->Clone("hETotal2D");
-    hETotal2D->Reset();
+    TH2F *hETotal2D = NULL;
+    if(hE2D[0] && hE2D[1] && hE2D[2])
+      hETotal2D = (TH2F*) hE2D[0]->Clone("hETotal2D");
+
+    if(hETotal2D) {
+      hETotal2D->Reset();
     
-    Int_t NbinsX = hE2D[0]->GetNbinsX();
-    Int_t NbinsY = hE2D[0]->GetNbinsY();    
-    for(Int_t j=1;j<=NbinsY;j++) {     
-      for(Int_t k=NbinsX;k>0;k--) {
-	Double_t E1 = 0;
-	if(hE2D[0])
-	  E1 = hE2D[0]->GetBinContent(k,j);
-	Double_t E2 = 0;
-	if(hE2D[1])
-	  E2 = hE2D[1]->GetBinContent(k,j);
-	Double_t E3 = 0;
-	if(hE2D[2])
-	  E3 = hE2D[2]->GetBinContent(k,j);
-	
-	Double_t E  = TMath::Sqrt(E1*E1+E2*E2+E3*E3);
-	hETotal2D->SetBinContent(k,j,E);
+      Int_t NbinsX = hE2D[0]->GetNbinsX();
+      Int_t NbinsY = hE2D[0]->GetNbinsY();    
+      for(Int_t j=1;j<=NbinsY;j++) {     
+	for(Int_t k=NbinsX;k>0;k--) {
+	  Double_t E1 = 0;
+	  if(hE2D[0])
+	    E1 = hE2D[0]->GetBinContent(k,j);
+	  Double_t E2 = 0;
+	  if(hE2D[1])
+	    E2 = hE2D[1]->GetBinContent(k,j);
+	  Double_t E3 = 0;
+	  if(hE2D[2])
+	    E3 = hE2D[2]->GetBinContent(k,j);
+	  
+	  Double_t E  = TMath::Sqrt(E1*E1+E2*E2+E3*E3);
+	  hETotal2D->SetBinContent(k,j,E);
+	}
+      }
+         
+      if(opt.Contains("units")) {
+	hETotal2D->GetZaxis()->SetTitle(Form("E [%s]",eSUnit.c_str()));
+      } else {
+	hETotal2D->GetZaxis()->SetTitle("E/E_{0}");
       }
     }
-   
-    if(opt.Contains("units")) {
-      hETotal2D->GetZaxis()->SetTitle(Form("E [%s]",eSUnit.c_str()));
-    } else {
-      hETotal2D->GetZaxis()->SetTitle("E/E_{0}");
-    }
   
-    TH1F *hETotal1D = (TH1F*) hE1D[0]->Clone("hETotal1D");
-    hETotal1D->Reset();
+    TH1F *hETotal1D = NULL;
+    if(hE1D[0] && hE1D[1] && hE1D[2])
+      hETotal1D = (TH1F*) hE1D[0]->Clone("hETotal1D");
 
-    NbinsX = hE1D[0]->GetNbinsX();
-    for(Int_t j=NbinsX;j>=0;j--) {
-      Double_t E1 = 0;
-      if(hE1D[0])
-	E1 = hE1D[0]->GetBinContent(j);
-      Double_t E2 = 0;
-      if(hE1D[1])
-	E2 = hE1D[1]->GetBinContent(j);
-      Double_t E3 = 0;
-      if(hE1D[2])
-	E3 = hE1D[2]->GetBinContent(j);
+    if(hETotal1D) {
+
+      hETotal1D->Reset();
       
-      Double_t E  = TMath::Sqrt(E1*E1+E2*E2+E3*E3);
+      Int_t NbinsX = hE1D[0]->GetNbinsX();
+      for(Int_t j=NbinsX;j>=0;j--) {
+	Double_t E1 = 0;
+	if(hE1D[0])
+	  E1 = hE1D[0]->GetBinContent(j);
+	Double_t E2 = 0;
+	if(hE1D[1])
+	  E2 = hE1D[1]->GetBinContent(j);
+	Double_t E3 = 0;
+	if(hE1D[2])
+	  E3 = hE1D[2]->GetBinContent(j);
+	
+	Double_t E  = TMath::Sqrt(E1*E1+E2*E2+E3*E3);
+	
+	hETotal1D->SetBinContent(j,E);	
+      }
       
-      hETotal1D->SetBinContent(j,E);	
+      if(opt.Contains("units")) {
+	hETotal1D->GetYaxis()->SetTitle(Form("E [%s]",eSUnit.c_str()));
+      } else {
+	hETotal1D->GetYaxis()->SetTitle("E/E_{0}");
+      }
     }
     
-    if(opt.Contains("units")) {
-      hETotal1D->GetYaxis()->SetTitle(Form("E [%s]",eSUnit.c_str()));
-    } else {
-      hETotal1D->GetYaxis()->SetTitle("E/E_{0}");
-    }
- 
     // Potential
     if(hE2D[0] && hE1D[0]) {
       Int_t   NbinsX = hE2D[0]->GetNbinsX();

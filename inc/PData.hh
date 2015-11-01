@@ -132,6 +132,15 @@ public:
   inline void ResetParameters();
   inline Double_t Shift(TString option="");
   inline void DoSlice(Int_t Dim, Int_t &FirstBin, Int_t &LastBin);
+
+  Bool_t isHiPACE() {
+    vector<string> datadir;
+    ListDir(simPath,"DATA",datadir,"nam");
+    if(datadir.size())
+      return kTRUE;
+    else
+      return kFALSE;
+  }
   
   // Give access to exeternal parameters
   Double_t  GetPlasmaDensity() { return pParam.pDensity * (1/PUnits::cm3);  }  
@@ -241,7 +250,7 @@ public:
   TH2F* GetH2(const char *filename, const char *dataname, const char *options="");
   
   // 3D simulations
-  TH1F* GetH1SliceZ3D(const char *filename, const char *dataname, 
+  virtual TH1F* GetH1SliceZ3D(const char *filename, const char *dataname, 
 		      Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, 
 		      Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg");
 

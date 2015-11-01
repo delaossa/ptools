@@ -28,6 +28,10 @@ public:
 
   string  *GetWfieldFileName(UInt_t i);
 
+  TH1F* GetH1SliceZ3D(const char *filename, const char *dataname, 
+		      Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, 
+		      Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg");
+  
   TH2F*    GetH2SliceZX(const char *filename, const char *dataname, 
 		     Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg");
 

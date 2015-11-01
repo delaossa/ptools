@@ -19,6 +19,7 @@
 #include <TExec.h>
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PPalette.hh"
 
@@ -27,12 +28,16 @@ void PlotCharge2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom
 #ifdef __CINT__  
   gSystem->Load("libptools.so");
 #endif
-
-  // Load PData
+  
   PData *pData = PData::Get(sim.Data());
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sim.Data());
+  }
+  
   pData->LoadFileNames(time);
   if(!pData->IsInit()) return;
-
+  
   // Refresh and Style
   PGlobals::Initialize();
 

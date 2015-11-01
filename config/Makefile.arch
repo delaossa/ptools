@@ -205,7 +205,7 @@ endif
 ifeq ($(ARCH),linux)
 # Linux with egcs, gcc 2.9x, gcc 3.x
 CXX           = g++
-CXXFLAGS      = $(OPT2) -Wall -fPIC
+CXXFLAGS      = $(OPT2) -Wall -Wno-unused-variable -fPIC
 LD            = g++
 LDFLAGS       = $(OPT2)
 SOFLAGS       = -shared
@@ -227,7 +227,7 @@ endif
 ifeq ($(ARCH),linuxppcgcc)
 # PPC Linux with gcc and glibc
 CXX           = g++
-CXXFLAGS      = $(OPT2) -Wall -fPIC
+CXXFLAGS      = $(OPT2) -Wall -Wno-unused-variable -fPIC
 LD            = g++
 LDFLAGS       = $(OPT2)
 SOFLAGS       = -shared
@@ -236,7 +236,7 @@ endif
 ifeq ($(ARCH),linuxia64gcc)
 # Itanium Linux with gcc 2.9x
 CXX           = g++
-CXXFLAGS      = $(OPT2) -Wall -fPIC
+CXXFLAGS      = $(OPT2) -Wall -Wno-unused-variable -fPIC
 LD            = g++
 LDFLAGS       = $(OPT2)
 SOFLAGS       = -shared
@@ -258,7 +258,7 @@ endif
 ifeq ($(ARCH),linuxx8664gcc)
 # AMD Opteron and Intel EM64T (64 bit mode) Linux with gcc 3.x
 CXX           = g++
-CXXFLAGS      = $(OPT2) -Wall -fPIC
+CXXFLAGS      = $(OPT2) -Wall -Wno-unused-variable -fPIC
 LD            = g++
 LDFLAGS       = $(OPT2)
 SOFLAGS       = -shared
@@ -267,7 +267,7 @@ endif
 ifeq ($(ARCH),linuxppc64gcc)
 # PPC64 Linux with gcc 3.x
 CXX           = g++
-CXXFLAGS      = $(OPT) -Wall -fPIC
+CXXFLAGS      = $(OPT) -Wall -Wno-unused-variable -fPIC
 LD            = g++
 LDFLAGS       = $(OPT)
 SOFLAGS       = -shared
