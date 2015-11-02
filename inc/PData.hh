@@ -121,7 +121,7 @@ public:
   string *GetBfieldFileName(UInt_t i) { return sBF->at(i); }
   string *GetRawFileName(UInt_t i) { return sRAW->at(i); }
 
-  virtual string   GetRawSpeciesName(UInt_t i) { return 0; }
+  virtual string   GetRawSpeciesName(UInt_t i) { return species.at(i); }
   virtual string  *GetWfieldFileName(UInt_t i) { return 0; }
 
   UInt_t  NPhaseSpaces() { return pspaces.size(); }

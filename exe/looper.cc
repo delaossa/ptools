@@ -6,17 +6,10 @@
 #include <TROOT.h>
 #include <TSystem.h>
 #include <TFile.h>
-#include <TTree.h>
-#include <TChain.h>
-#include <TH1F.h>
-#include <TH2F.h>
-#include <TGraphErrors.h>
-#include <TCanvas.h>
-#include <TStyle.h>
 #include <TExec.h>
 
-#include "PData.hh"
-#include "PDataHiP.hh"
+//#include "PData.hh"
+//#include "PDataHiP.hh"
 
 using namespace std;
 
@@ -70,42 +63,31 @@ int main(int argc,char *argv[]) {
   sscanf(macro.Data(),"%[^\(]%2s%[^\"]",mname,aux,sname);
   
   // The Data manager
-  PData *pData = PData::Get(sname);
-  if(pData->isHiPACE()) {
-    delete pData; pData = NULL;
-    pData = PDataHiP::Get(sname);
-  }
+  // PData *pData = PData::Get(sname);
+  // if(pData->isHiPACE()) {
+  //   delete pData; pData = NULL;
+  //   pData = PDataHiP::Get(sname);
+  // }
   
   if(iStart<0) iStart = time;
   if(iEnd<=iStart) iEnd = iStart;
 
   // Time looper
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
-    
+
     time = i;
-    pData->LoadFileNames(time);    
-    // if(time==iStart) pData->PrintData();
+
+    cout << Form("\nLooping %s at time step %i:\n",sim.Data(),time) << endl;
     
-    if(pData->IsInit()) {
-      cout << Form("\nLooping %s at time step %i:\n",sim.Data(),time) << endl;
-      
-      // Run macro
-      TString command = Form(macro.Data(),time);
-      command = Form(".x %s",command.Data());
-      
-      cout << command << endl;
-      gROOT->ProcessLine(command);
-            
-    } else {
-      continue;
-    }
+    // Run macro
+    TString command = Form(macro.Data(),time);
+    command = Form(".x %s",command.Data());
+    
+    cout << command << endl;
+    gROOT->ProcessLine(command);
     
   }
 
-
-  
-  if(pData)
-    delete pData;
 
   // ---------------------------------------------------------
 }

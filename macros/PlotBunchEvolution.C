@@ -23,6 +23,7 @@
 #include <TPaletteAxis.h>
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PPalette.hh"
 
@@ -32,6 +33,14 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
   gSystem->Load("libptools.so");
 #endif
 
+  PData *pData = PData::Get(sim.Data());
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sim.Data());
+  }
+  pData->LoadFileNames(100);
+  if(!pData->IsInit()) return;
+  
   PGlobals::Initialize();
   
   // Palettes!
@@ -46,12 +55,6 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
     gStyle->SetPadGridX(1);
     gStyle->SetPadGridY(1);
   }
-
-  // Load PData
-  PData *pData = PData::Get(sim.Data());
-
-  pData->LoadFileNames(100);
-  if(!pData->IsInit()) return;
 
   Float_t maxEmitx = -999.;
   Float_t minEmitx = 999.;
@@ -84,7 +87,7 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
   Float_t maxTime =-999.;
   Float_t minTime = 999.;
   
-  TString filename = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s.root",sim.Data(),pData->GetSpeciesName(index).c_str(),sim.Data());
+  TString filename = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s.root",sim.Data(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
   
   cout << filename << endl;
     
@@ -579,7 +582,7 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
   
   // Print to a file
   // Output file
-  TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s",sim.Data(),pData->GetSpeciesName(index).c_str(),sim.Data());
+  TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s",sim.Data(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
   PGlobals::imgconv(C,fOutName,opt);
   
 }

@@ -214,7 +214,9 @@ void PDataHiP::LoadFileNames(Int_t t) {
   }
 
   ReadOutputSummary();
-
+  ThreeD = kTRUE;
+  HiP = kTRUE;
+  
   if(species.size()) {
     rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
     cout << Form(" - Time from start = %6.2f ",rtime) << endl;
@@ -258,10 +260,7 @@ void PDataHiP::LoadFileNames(Int_t t) {
     XMAXR[2] = pParam.x3Max;
   }
   
-  ThreeD = kTRUE;
-  HiP = kTRUE;
-  Init = kTRUE;
-  
+  Init = kTRUE;  
 }
 
 //_______________________________________________________________________
