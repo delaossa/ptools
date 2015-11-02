@@ -133,6 +133,7 @@ int main(int argc,char *argv[]) {
   if(pData->isHiPACE()) {
     delete pData; pData = NULL;
     pData = PDataHiP::Get(sim.Data());
+    opt += "comov";
   }
   
   pData->SetNavg(Navg);
