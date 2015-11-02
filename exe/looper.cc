@@ -16,6 +16,7 @@
 #include <TExec.h>
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 
 using namespace std;
 
@@ -68,8 +69,12 @@ int main(int argc,char *argv[]) {
   char sname[50];
   sscanf(macro.Data(),"%[^\(]%2s%[^\"]",mname,aux,sname);
   
-  // // The Data manager
+  // The Data manager
   PData *pData = PData::Get(sname);
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sname);
+  }
   
   if(iStart<0) iStart = time;
   if(iEnd<=iStart) iEnd = iStart;

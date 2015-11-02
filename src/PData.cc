@@ -1080,10 +1080,10 @@ UInt_t PData::GetRawArray(const char *filename, Float_t **var, const char *optio
   //UInt_t Ndata = root->getNumObjs();
   //cout << Form(" %i  datasets", Ndata) << endl;
   
-  UInt_t Nvar = 8;
-  if(!Is3D()) Nvar = 7;
+  UInt_t Nvar = 7;
+  if(!Is3D()) Nvar = 6;
   
-  char varname[8][4] = {{"ene"},{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+  char varname[8][4] = {{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
 
   DataSet *dataSet[Nvar];
   UInt_t Np = 0;
@@ -2832,4 +2832,41 @@ Float_t* PData::Get3Darray(const char *filename,const char *dataname, UInt_t dim
   // return data
   return data;
 
+}
+
+//______________________________________________________________________________________
+Double_t PData::Shift(TString option) {
+  TString opt = option;
+
+  Double_t shiftx1 = 0;
+  if(opt.Contains("center")) {
+    Double_t kp = GetPlasmaK();
+    if(opt.Contains("comov"))        // Centers on the head of the beam.
+      shiftx1 += GetBeamStart()*kp;   // Centers on the start of the plasma channel.
+    else
+      shiftx1 += GetPlasmaStart()*kp;
+  }
+  
+  if(opt.Contains("comov")) {
+    Double_t v = GetBeamVelocity();    
+    if(v==0) v = 1.0; // If equals to 0 (default), then set to c.
+    shiftx1 += v * GetRealTime();
+  }   
+
+  return shiftx1;
+}
+
+//______________________________________________________________________________________
+Double_t PData::ShiftT(TString option) {
+  TString opt = option;
+  
+  Double_t shiftt = 0;
+  Double_t kp = GetPlasmaK();
+  if(opt.Contains("center")) {
+    shiftt -= GetPlasmaStart()*kp;
+    if(opt.Contains("comov"))      // Centers on the head of the beam.
+      shiftt += GetBeamStart()*kp;
+  }
+  
+  return shiftt;
 }

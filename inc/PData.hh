@@ -130,9 +130,11 @@ public:
 
   inline Int_t ListDir(string dir, string pattern, vector<string> &files,string option="");
   inline void ResetParameters();
-  inline Double_t Shift(TString option="");
   inline void DoSlice(Int_t Dim, Int_t &FirstBin, Int_t &LastBin);
-
+  
+  virtual Double_t Shift(TString option="");
+  virtual Double_t ShiftT(TString option="");
+  
   Bool_t isHiPACE() {
     vector<string> datadir;
     ListDir(simPath,"DATA",datadir,"nam");
@@ -505,28 +507,8 @@ void PData::ResetParameters() {
   pParam.denMin = pParam.denMax = pParam.denMin1 = pParam.denMax1 = pParam.denMin2 = pParam.denMax2 = pParam.denMin3 = pParam.denMax3 = -999.;
 }
 
+
 //______________________________________________________________________________________
-Double_t PData::Shift(TString option) {
-  TString opt = option;
-
-  Double_t shiftx1 = 0;
-  if(opt.Contains("center")) {
-    Double_t kp = GetPlasmaK();
-    if(opt.Contains("comov"))        // Centers on the head of the beam.
-      shiftx1 += GetBeamStart()*kp;   // Centers on the start of the plasma channel.
-    else
-      shiftx1 += GetPlasmaStart()*kp;
-  }
-  
-  if(opt.Contains("comov")) {
-    Double_t v = GetBeamVelocity();    
-    if(v==0) v = 1.0; // If equals to 0 (default), then set to c.
-    shiftx1 += v * GetRealTime();
-  }   
-
-  return shiftx1;
-}
-
 void PData::DoSlice(Int_t Dim, Int_t &FirstBin, Int_t &LastBin) {
 
   if(FirstBin >= 0 ) return;

@@ -159,11 +159,6 @@ int main(int argc,char *argv[]) {
   // Double_t trapPotential = 1.0;
   // Double_t trapPotential = 1.0 - (1.0/gamma);
 
-  // z start of the plasma in normalized units.
-  Double_t zStartPlasma = pData->GetPlasmaStart()*kp;
-  // z start of the beam in normalized units.
-  Double_t zStartBeam = pData->GetBeamStart()*kp;
- 
   // Time looper
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
 
@@ -179,12 +174,9 @@ int main(int argc,char *argv[]) {
     
     // Time in OU
     Double_t Time = pData->GetRealTime();
-
-    if(opt.Contains("center")) {
-      Time -= zStartPlasma;
-      if(opt.Contains("comov"))      // Centers on the head of the beam.
-	Time += zStartBeam;
-    } 
+    cout << Form(" Real time = %.2f  ",Time);
+    Time += pData->ShiftT(opt);
+    cout << Form(" Shifted time = %.2f  ",Time) << endl;
     
     // Off-axis definition    
     Double_t rms0 = pData->GetBeamRmsX() * kp;

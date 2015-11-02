@@ -35,7 +35,9 @@ public:
   TH2F*    GetH2SliceZX(const char *filename, const char *dataname, 
 		     Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg");
 
-
+  Double_t Shift(TString option="");
+  Double_t ShiftT(TString option="");
+  
   TH2F* GetEField2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) 
   { char nam[3];
     if(i==0) sprintf(nam,"Ez");
@@ -56,7 +58,7 @@ public:
     else if(i==1) sprintf(nam,"EypBx");
     return GetH2SliceZX(GetWfieldFileName(i)->c_str(),nam,Firstx3Bin,Lastx3Bin,options); 
   } 
-  
+
   
 protected:
 
@@ -65,5 +67,7 @@ protected:
 
   ClassDef(PDataHiP,1) 
 };
+
+
 
 #endif

@@ -22,6 +22,7 @@
 #include <TEllipse.h>
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PPalette.hh"
 #include "H5Cpp.h"
@@ -172,7 +173,11 @@ int main(int argc,char *argv[]) {
 
   // Load PData
   PData *pData = PData::Get(sim.Data());
-
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sim.Data());
+  }
+  
   if(iStart<0) iStart = time;
   if(iEnd<=iStart) iEnd = iStart;
   
@@ -257,15 +262,10 @@ int main(int argc,char *argv[]) {
 
     // Time in OU
     Double_t Time = pData->GetRealTime();
-
+    Time += pData->ShiftT(opt);
+    
     // Centering time and z position:
     Double_t shiftz = pData->Shift(opt);
-
-    if(opt.Contains("center")) {
-      Time -= zStartPlasma;
-      if(opt.Contains("comov"))  // Centers on the head of the beam.
-	Time += zStartBeam;
-    } 
 
     // BOX limits
     Double_t X1MIN = pData->GetXMin(0);
@@ -493,8 +493,8 @@ int main(int argc,char *argv[]) {
     cout << Form("\n 1. Reading file : ") << pData->GetRawFileName(index)->c_str() << endl;
 
     // Double_t **var = NULL;
-    UInt_t Nvar = 8;
-    if(!pData->Is3D()) Nvar = 7;
+    UInt_t Nvar = 7;
+    if(!pData->Is3D()) Nvar = 6;
     
     Float_t **var;
     var = new Float_t*[Nvar];
@@ -511,7 +511,7 @@ int main(int argc,char *argv[]) {
     hScanX2 = new TH1F("hScanX2","",pData->GetX2N(),pData->GetX2Min(),pData->GetX2Max());
     TH1F *hScanX3 = (TH1F*) gROOT->FindObject("hScanX3");
     if(hScanX3) delete hScanX3;
-    if(Nvar==8)
+    if(Nvar==7)
       hScanX3 = new TH1F("hScanX3","",pData->GetX3N(),pData->GetX3Min(),pData->GetX3Max());
 
     TH1F *hScanP2 = (TH1F*) gROOT->FindObject("hScanP2");
@@ -547,30 +547,30 @@ int main(int argc,char *argv[]) {
 
       for(UInt_t i=0;i<Np;i++) {
 
-	// if(var[5][i]-shiftz<x1BinMin || var[5][i]-shiftz>x1BinMax ) continue; 
-	// if(var[5][i]-shiftz<x1Min || var[5][i]-shiftz>x1Max ) continue; 
-	if(var[5][i]<x1Min || var[5][i]>x1Max ) continue; 
+	// if(var[4][i]-shiftz<x1BinMin || var[4][i]-shiftz>x1BinMax ) continue; 
+	// if(var[4][i]-shiftz<x1Min || var[4][i]-shiftz>x1Max ) continue; 
+	if(var[4][i]<x1Min || var[4][i]>x1Max ) continue; 
 
-	if(var[1][i]<MinP1) MinP1 = var[1][i];
-	if(var[1][i]>MaxP1) MaxP1 = var[1][i];
-	if(var[2][i]<MinP2) MinP2 = var[2][i];
-	if(var[2][i]>MaxP2) MaxP2 = var[2][i];
-	if(var[3][i]<MinP3) MinP3 = var[3][i];
-	if(var[3][i]>MaxP3) MaxP3 = var[3][i];
-	if(var[6][i]<MinX2) MinX2 = var[6][i];
-	if(var[6][i]>MaxX2) MaxX2 = var[6][i];
-	if(Nvar==8) {
-	  if(var[7][i]<MinX3) MinX3 = var[7][i];
-	  if(var[7][i]>MaxX3) MaxX3 = var[7][i];
+	if(var[0][i]<MinP1) MinP1 = var[0][i];
+	if(var[0][i]>MaxP1) MaxP1 = var[0][i];
+	if(var[1][i]<MinP2) MinP2 = var[1][i];
+	if(var[1][i]>MaxP2) MaxP2 = var[1][i];
+	if(var[2][i]<MinP3) MinP3 = var[2][i];
+	if(var[2][i]>MaxP3) MaxP3 = var[2][i];
+	if(var[5][i]<MinX2) MinX2 = var[5][i];
+	if(var[5][i]>MaxX2) MaxX2 = var[5][i];
+	if(Nvar==7) {
+	  if(var[6][i]<MinX3) MinX3 = var[6][i];
+	  if(var[6][i]>MaxX3) MaxX3 = var[6][i];
 	}
 
-	hScanX1->Fill(var[5][i],TMath::Abs(var[4][i]));
-	hScanX2->Fill(var[6][i],TMath::Abs(var[4][i]));
-	if(Nvar==8)
-	  hScanX3->Fill(var[7][i],TMath::Abs(var[4][i]));
+	hScanX1->Fill(var[4][i],TMath::Abs(var[3][i]));
+	hScanX2->Fill(var[5][i],TMath::Abs(var[3][i]));
+	if(Nvar==7)
+	  hScanX3->Fill(var[6][i],TMath::Abs(var[3][i]));
 	
-	hScanP2->Fill(var[2][i],TMath::Abs(var[4][i]));
-	hScanP3->Fill(var[3][i],TMath::Abs(var[4][i]));
+	hScanP2->Fill(var[1][i],TMath::Abs(var[3][i]));
+	hScanP3->Fill(var[2][i],TMath::Abs(var[3][i]));
       }
       
       p1Min = MinP1 - rfactor*(MaxP1-MinP1);
@@ -582,7 +582,7 @@ int main(int argc,char *argv[]) {
 
       x2Min = MinX2 - rfactor*(MaxX2-MinX2);
       x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
-      if(Nvar==8) {
+      if(Nvar==7) {
 	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
 	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
       }
@@ -599,7 +599,7 @@ int main(int argc,char *argv[]) {
 
       Double_t x3min = -999;
       Double_t x3max = -999;
-      if(Nvar==8)
+      if(Nvar==7)
 	FindLimits(hScanX3,x3min,x3max,peakFactor);
       x3Min = x3min - rfactor2*(x3max-x3min);
       x3Max = x3max + rfactor2*(x3max-x3min);
@@ -636,28 +636,28 @@ int main(int argc,char *argv[]) {
       Double_t MaxX3 = -999999;
 
       for(UInt_t i=0;i<Np;i++) {
-	if(var[1][i]<MinP1) MinP1 = var[1][i];
-	if(var[1][i]>MaxP1) MaxP1 = var[1][i];
-	if(var[2][i]<MinP2) MinP2 = var[2][i];
-	if(var[2][i]>MaxP2) MaxP2 = var[2][i];
-	if(var[3][i]<MinP3) MinP3 = var[3][i];
-	if(var[3][i]>MaxP3) MaxP3 = var[3][i];
-	if(var[5][i]<MinX1) MinX1 = var[5][i];
-	if(var[5][i]>MaxX1) MaxX1 = var[5][i];
-	if(var[6][i]<MinX2) MinX2 = var[6][i];
-	if(var[6][i]>MaxX2) MaxX2 = var[6][i];
-	if(Nvar==8) {
-	  if(var[7][i]<MinX3) MinX3 = var[7][i];
-	  if(var[7][i]>MaxX3) MaxX3 = var[7][i];
+	if(var[0][i]<MinP1) MinP1 = var[0][i];
+	if(var[0][i]>MaxP1) MaxP1 = var[0][i];
+	if(var[1][i]<MinP2) MinP2 = var[1][i];
+	if(var[1][i]>MaxP2) MaxP2 = var[1][i];
+	if(var[2][i]<MinP3) MinP3 = var[2][i];
+	if(var[2][i]>MaxP3) MaxP3 = var[2][i];
+	if(var[4][i]<MinX1) MinX1 = var[4][i];
+	if(var[4][i]>MaxX1) MaxX1 = var[4][i];
+	if(var[5][i]<MinX2) MinX2 = var[5][i];
+	if(var[5][i]>MaxX2) MaxX2 = var[5][i];
+	if(Nvar==7) {
+	  if(var[6][i]<MinX3) MinX3 = var[6][i];
+	  if(var[6][i]>MaxX3) MaxX3 = var[6][i];
 	}
 
-	hScanX1->Fill(var[5][i],TMath::Abs(var[4][i]));
-	hScanX2->Fill(var[6][i],TMath::Abs(var[4][i]));
-	if(Nvar==8)
-	  hScanX3->Fill(var[7][i],TMath::Abs(var[4][i]));
+	hScanX1->Fill(var[4][i],TMath::Abs(var[3][i]));
+	hScanX2->Fill(var[5][i],TMath::Abs(var[3][i]));
+	if(Nvar==7)
+	  hScanX3->Fill(var[6][i],TMath::Abs(var[3][i]));
 
-	hScanP2->Fill(var[2][i],TMath::Abs(var[4][i]));
-	hScanP3->Fill(var[3][i],TMath::Abs(var[4][i]));
+	hScanP2->Fill(var[1][i],TMath::Abs(var[3][i]));
+	hScanP3->Fill(var[2][i],TMath::Abs(var[3][i]));
 	
       }
       
@@ -674,7 +674,7 @@ int main(int argc,char *argv[]) {
       x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
 
       
-      if(Nvar==8) {
+      if(Nvar==7) {
 	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
 	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
       }
@@ -702,7 +702,7 @@ int main(int argc,char *argv[]) {
 
       Double_t x3min = -999;
       Double_t x3max = -999;
-      if(Nvar==8) {
+      if(Nvar==7) {
 	FindLimits(hScanX3,x3min,x3max,peakFactor);
 	x3Min = x3min - rfactor2*(x3max-x3min);
 	x3Max = x3max + rfactor2*(x3max-x3min);
@@ -900,30 +900,30 @@ int main(int argc,char *argv[]) {
     
     for(UInt_t i=0;i<Np;i++) {
 
-      var[5][i] -= shiftz;
+      var[4][i] -= shiftz;
 
-      if(var[5][i]<x1Min || var[5][i]>x1Max ) continue; 
-      if(var[6][i]<x2Min || var[6][i]>x2Max ) continue; 
-      if(Nvar==8) {
-	if(var[7][i]<x3Min || var[7][i]>x3Max ) continue; 
-	if(var[3][i]<p3Min || var[3][i]>p3Max ) continue; 
+      if(var[4][i]<x1Min || var[4][i]>x1Max ) continue; 
+      if(var[5][i]<x2Min || var[5][i]>x2Max ) continue; 
+      if(Nvar==7) {
+	if(var[6][i]<x3Min || var[6][i]>x3Max ) continue; 
+	if(var[2][i]<p3Min || var[2][i]>p3Max ) continue; 
       }
-      if(var[1][i]<p1Min || var[1][i]>p1Max ) continue; 
-      if(var[2][i]<p2Min || var[2][i]>p2Max ) continue; 
+      if(var[0][i]<p1Min || var[0][i]>p1Max ) continue; 
+      if(var[1][i]<p2Min || var[1][i]>p2Max ) continue; 
       
       //cout << " filling " << endl;
 
-      hX1->Fill(var[5][i],TMath::Abs(var[4][i]));
-      hP1->Fill(var[1][i],TMath::Abs(var[4][i]));
+      hX1->Fill(var[4][i],TMath::Abs(var[3][i]));
+      hP1->Fill(var[0][i],TMath::Abs(var[3][i]));
 
-      hP1X1->Fill(var[5][i],var[1][i],TMath::Abs(var[4][i]));
+      hP1X1->Fill(var[4][i],var[0][i],TMath::Abs(var[3][i]));
 
       // Slices    
-      if(var[5][i]<sBinLim[0] || var[5][i]>sBinLim[SNbin]) continue;
+      if(var[4][i]<sBinLim[0] || var[4][i]>sBinLim[SNbin]) continue;
       Int_t iBin = -1;
       for(Int_t j=0; j<SNbin; j++) {
 
-	if(var[5][i]<sBinLim[j+1]) {
+	if(var[4][i]<sBinLim[j+1]) {
 	  iBin = j;
 	  break;
 	}
@@ -931,21 +931,21 @@ int main(int argc,char *argv[]) {
       if(iBin<0) continue;
 
       // Projected emittance in the bunch range. (skip the tails to "match" the sliced ones)
-      hP2X2->Fill(var[6][i],var[2][i],TMath::Abs(var[4][i]));
-      hP2X2sl[iBin]->Fill(var[6][i],var[2][i],TMath::Abs(var[4][i]));
+      hP2X2->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
+      hP2X2sl[iBin]->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
 
-      if(Nvar==8){
-	hP3X3->Fill(var[7][i],var[3][i],TMath::Abs(var[4][i]));
-	hP3X3sl[iBin]->Fill(var[7][i],var[3][i],TMath::Abs(var[4][i]));
+      if(Nvar==7){
+	hP3X3->Fill(var[6][i],var[2][i],TMath::Abs(var[3][i]));
+	hP3X3sl[iBin]->Fill(var[6][i],var[2][i],TMath::Abs(var[3][i]));
 
-	hX3X1->Fill(var[5][i],var[7][i],TMath::Abs(var[4][i]));
-	hX3X2->Fill(var[6][i],var[7][i],TMath::Abs(var[4][i]));      
+	hX3X1->Fill(var[4][i],var[6][i],TMath::Abs(var[3][i]));
+	hX3X2->Fill(var[5][i],var[6][i],TMath::Abs(var[3][i]));      
       }
 
-      hX2X1->Fill(var[5][i],var[6][i],TMath::Abs(var[4][i]));
+      hX2X1->Fill(var[4][i],var[5][i],TMath::Abs(var[3][i]));
       
-      hP1sl[iBin]->Fill(var[1][i],TMath::Abs(var[4][i]));
-      //      cout << Form("  iBin = %i   p1 = %7.3f",iBin,var[1][i]) << endl;
+      hP1sl[iBin]->Fill(var[0][i],TMath::Abs(var[3][i]));
+      //      cout << Form("  iBin = %i   p1 = %7.3f",iBin,var[0][i]) << endl;
     
       
     }

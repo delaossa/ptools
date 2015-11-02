@@ -24,6 +24,7 @@
 
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PPalette.hh"
 
@@ -66,6 +67,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   gSystem->Load("libptools.so");
 #endif
 
+  PData *pData = PData::Get(sim.Data());
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sim.Data());
+  }
+  
+  pData->LoadFileNames(timestep);
+  if(!pData->IsInit()) return;
+  
   string imask = DecToBin(mask);
   cout << Form("\n Plotting Snapshot with mask: %s",imask.c_str()) << endl; 
   
@@ -73,17 +83,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   // Palettes!
   gROOT->Macro("PPalettes.C");
-
-  // Init Units table
-  PUnits::UnitsTable::Get();
   
-  // Load PData
-  PData *pData = PData::Get(sim.Data());
-  pData->LoadFileNames(timestep);
-  if(!pData->IsInit()) return;
-
   TString opt = options;
- 
+  
   // More makeup
   gStyle->SetPadGridY(0);
   if(opt.Contains("gridx")) {
@@ -108,19 +110,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   // Other parameters
   //  Float_t trapPotential = 1.0 - (1.0/gamma);
-  Float_t trapPotential = 1.0;
-
-  // Time in OU
-  Float_t Time = pData->GetRealTime();
-  // z start of the plasma in normalized units.
-  Float_t zStartPlasma = pData->GetPlasmaStart()*kp;
-  // z start of the beam in normalized units.
-  Float_t zStartBeam = pData->GetBeamStart()*kp;
-  // z start of the neutral in normalized units.
-  Float_t zStartNeutral = pData->GetNeutralStart()*kp;
-  // z end of the neutral in normalized units.
-  Float_t zEndNeutral = pData->GetNeutralEnd()*kp;
-  
+  Float_t trapPotential = 1.0;  
   
   // ----------------------------------------------------------------------------------
   
@@ -178,12 +168,21 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     xint *= skindepth/spaUnit;
   }  
 
-  if(opt.Contains("center")) {
-    Time -= zStartPlasma;
-    if(opt.Contains("comov"))      // Centers on the head of the beam.
-      Time += zStartBeam;
-  }
+  // Time in OU
+  Double_t Time = pData->GetRealTime();
+  cout << Form(" Real time = %.2f  ",Time);
+  Time += pData->ShiftT(opt);
+  cout << Form(" Shifted time = %.2f  ",Time) << endl;
+
   Float_t shiftz = pData->Shift(opt);
+
+  // z start of the plasma in normalized units.
+  Float_t zStartPlasma = pData->GetPlasmaStart()*kp - shiftz;
+  // z start of the neutral in normalized units.
+  Float_t zStartNeutral = pData->GetNeutralStart()*kp - shiftz;
+  // z end of the neutral in normalized units.
+  Float_t zEndNeutral = pData->GetNeutralEnd()*kp - shiftz;
+
   
   cout << Form("\n Getting the histograms ... ") ; 
 
@@ -259,7 +258,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   // Ionization probability rates (ADK)
   // Calculates from the total E the ionization prob. rate for a given species.
-  const Int_t NAtoms = 7;
+  const UInt_t NAtoms = 7;
   char atNames[NAtoms][8] = {"H","He","He2","Ne","Ne2","Ne5","HIT"};
   char atAxNames[NAtoms][8] = {"H","He","He^{+}","Ne","Ne^{+}","Ne^{4+}","HIT"};
   Float_t Eion0[NAtoms] = {13.6 * PUnits::eV, 24.59 * PUnits::eV, 54.4 * PUnits::eV, 21.56 * PUnits::eV, 40.96 * PUnits::eV, 126.247 * PUnits::eV, 85.00 *  PUnits::eV};
@@ -278,13 +277,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // UInt_t ii = 5; // Ne4
   // UInt_t ii = 6; // Custom
 
-  if(mask & 0x80) { // only if ionization bit is selected
+  if( (mask & 0x80) && hETotal2D) { // only if ionization bit is selected
     cout << Form("\n Calculating ionization probability rates (ADK) ... ") ; 
-
-    if(!hETotal2D)
-      continue;
     
-    for(Int_t iat=0;iat<NAtoms;iat++) {
+    for(UInt_t iat=0;iat<NAtoms;iat++) {
       
       if(iat!=ii) continue;
     
@@ -463,7 +459,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     Max[i] = hDen2D[i]->GetMaximum();
     Min[i] = 0.99E-1 * localden;
-    if(Min[i]>Max[i]) 1.01E-1 * Max[i];
+    if(Min[i]>Max[i]) Min[i] = 1.01E-1 * Max[i];
     
     if(i==0) {
       if(Max[i]<localden) { 
@@ -961,10 +957,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   lineYzero->SetLineColor(kGray+2);
   lineYzero->SetLineStyle(2);
 
-  zStartPlasma -= shiftz; 
-  zStartNeutral -= shiftz; 
-  zEndNeutral -= shiftz; 
-  
   if(opt.Contains("units") && n0) {
     zStartPlasma *= skindepth /spaUnit;
     zStartNeutral *= skindepth /spaUnit;
