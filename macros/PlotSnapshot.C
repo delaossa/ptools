@@ -558,15 +558,18 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hETotal2D->GetZaxis()->SetRangeUser(ETmin,ETmax);
   }
   
-  Float_t Fmin = hFocus2D->GetMinimum();
-  Float_t Fmax = hFocus2D->GetMaximum();
-  if(Fmax > TMath::Abs(Fmin))
-    Fmin = -Fmax;
-  else
-    Fmax = -Fmin;
-  hFocus2D->GetZaxis()->SetRangeUser(Fmin,Fmax);
+  Float_t Fmin, Fmax;
 
-
+  if(hFocus2D) {
+    Fmin = hFocus2D->GetMinimum();
+    Fmax = hFocus2D->GetMaximum();
+    if(Fmax > TMath::Abs(Fmin))
+      Fmin = -Fmax;
+    else
+      Fmax = -Fmin;
+    hFocus2D->GetZaxis()->SetRangeUser(Fmin,Fmax);
+  }
+  
   // CROSSINGS
   
   // Find the first point on-axis where Ez changes from positive to negative:
@@ -575,8 +578,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t *EzExtr = new Float_t[MAXCROSS];
   memset(EzCross,0,sizeof(Float_t)*MAXCROSS);
   memset(EzExtr,0,sizeof(Float_t)*MAXCROSS);
-  
-  Int_t auxNcross = PGlobals::HCrossings(hE1D[0],EzCross,EzExtr,MAXCROSS,0.,0.);
+
+  Int_t auxNcross;
+  if(hE1D[0])
+    auxNcross = PGlobals::HCrossings(hE1D[0],EzCross,EzExtr,MAXCROSS,0.,0.);
   
   // for(Int_t i=0;i<auxNcross;i++) {
   //   if(opt.Contains("units"))
@@ -603,8 +608,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t *FocusExtr = new Float_t[MAXCROSS];
   memset(FocusCross,0,sizeof(Float_t)*MAXCROSS);
   memset(FocusExtr,0,sizeof(Float_t)*MAXCROSS);
-  auxNcross = PGlobals::HCrossings(hFocus1D,FocusCross,FocusExtr,MAXCROSS,0.0,EzCross[0]);
-  Int_t binFcross = hFocus1D->FindBin(FocusCross[0]);
+
+  Int_t binFcross;
+  if(hFocus1D) {
+    auxNcross = PGlobals::HCrossings(hFocus1D,FocusCross,FocusExtr,MAXCROSS,0.0,EzCross[0]);
+    binFcross = hFocus1D->FindBin(FocusCross[0]);
+  }
   
   Float_t potValueFin = hV1D->GetBinContent(binFcross);
   Float_t EmaxIon = hE1D[0]->GetBinContent(binFcross);

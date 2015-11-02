@@ -503,7 +503,7 @@ int main(int argc,char *argv[]) {
       hB1D[i] = NULL;
       if(i<2) continue;  // Just get the third component.
 
-      if(!pData->GetBfieldFileName(i))
+      if(!pData->GetBfieldFileName(i)) 
 	continue;
 
       cout << Form(" -> Getting magnetic field number ") << i+1 << endl;
@@ -831,9 +831,7 @@ int main(int argc,char *argv[]) {
 	hFocus2D = NULL;
       }
       
-    } else {
-      if(!pData->GetWfieldFileName(0))
-	continue;
+    } else if(pData->GetWfieldFileName(0)) {
 
       cout << Form(" -> Getting transverse wakefield ") << endl;
     
@@ -910,9 +908,7 @@ int main(int argc,char *argv[]) {
 	hFocus1D = NULL;
       }
 
-    } else {
-      if(!pData->GetWfieldFileName(0))
-	continue;
+    } else if(pData->GetWfieldFileName(0)) {
       
       // 1D histograms
       if(pData->Is3D()) {
