@@ -1010,9 +1010,11 @@ int main(int argc,char *argv[]) {
 
     // Now, combine the electric field components into the total |E|
     TH2F *hETotal2D = NULL;
-    if(hE2D[0] && hE2D[1] && hE2D[2])
+    if(pData->Is3D() && hE2D[0] && hE2D[1] && hE2D[2])
       hETotal2D = (TH2F*) hE2D[0]->Clone("hETotal2D");
-
+    else if(!pData->Is3D() && hE2D[0] && hE2D[1])
+      hETotal2D = (TH2F*) hE2D[0]->Clone("hETotal2D");
+        
     if(hETotal2D) {
       hETotal2D->Reset();
     
