@@ -447,7 +447,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // using a dynamic palette that adjusts the base value to a certain color.
   
   Float_t Base  = 1;
-  Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
+  //  Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
+  Float_t localden = 1;
   if(localden<Base) localden = Base;
     
   Float_t *Max = new Float_t[Nspecies];

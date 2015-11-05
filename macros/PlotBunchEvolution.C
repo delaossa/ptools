@@ -38,7 +38,7 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
     delete pData; pData = NULL;
     pData = PDataHiP::Get(sim.Data());
   }
-  pData->LoadFileNames(100);
+  pData->LoadFileNames(10);
   if(!pData->IsInit()) return;
   
   PGlobals::Initialize();

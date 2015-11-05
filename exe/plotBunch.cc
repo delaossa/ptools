@@ -81,6 +81,10 @@ int main(int argc,char *argv[]) {
   Float_t Pmin =  99999.;
   Float_t Pmax = -99999.;
 
+  // Option for longitudinal binning
+  // dxf is a fraction of the simulation binning
+  Float_t dxf = 1.0;
+
   // Interfacing command line:
   for(int l=1;l<argc;l++){
     TString arg = argv[l];
@@ -120,6 +124,8 @@ int main(int argc,char *argv[]) {
       opt += "loop"; 
     } else if(arg.Contains("--file")){
       opt += "file"; 
+    } else if(arg.Contains("--smooth")){
+      opt += "smooth"; 
     } else if(arg.Contains("--trans")){
       opt += "trans"; 
     } else if(arg.Contains("--notext")){
@@ -148,6 +154,9 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-rawf")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&rawf);
+    } else if(arg.Contains("-dxf")) {
+      char ss[4];
+      sscanf(arg,"%4s%f",ss,&dxf);
     } else if(arg.Contains("-pmin")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmin);
@@ -239,6 +248,10 @@ int main(int argc,char *argv[]) {
   // emitUnit = 10 * PUnits::um;
   // emitSUnit = "10 #mum";
 
+  // beta units
+  betaUnit = PUnits::um;
+  betaSUnit = "#mum";
+  
   // Relative energy spread units
   ermsUnit = PUnits::perCent; 
   ermsSUnit = "%";
@@ -461,6 +474,15 @@ int main(int argc,char *argv[]) {
       x1BinMin = -6.8;
       x1BinMax = -5.7;
       
+    } else if (sim.Contains("BOND_betatron")) {
+      
+      x1Min = -9.2;
+      x1Max = -8.0; 
+      
+      SNbin = 80;
+      x1BinMin = -8.90;
+      x1BinMax = -8.55;
+      
     } else if (sim.Contains("pitz")) {
       x1Min = -55.0;
       x1Max = 25.0; 
@@ -590,7 +612,7 @@ int main(int argc,char *argv[]) {
 
       // Set limits using Scan histograms
       Double_t peakFactor = 0.05;
-      Double_t rfactor2 = 2;
+      Double_t rfactor2 = 1.0;
 
       Double_t x2min = -999;
       Double_t x2max = -999;
@@ -682,7 +704,7 @@ int main(int argc,char *argv[]) {
 
       // Set limits using Scan histograms
       Double_t peakFactor = 0.2;
-      Double_t rfactor2 = 2;
+      Double_t rfactor2 = 1.5;
       
       Double_t x1min = -999;
       Double_t x1max = -999;
@@ -733,25 +755,36 @@ int main(int argc,char *argv[]) {
       if(x3Max>X3MAX) x3Max = X3MAX;
     }
 
-    // Adjust the binning
+    // Adjust the binning to match simualtion grid
     x1Min = floor((x1Min-X1MIN)/dx1) * dx1 + X1MIN;  
-    x1Max = floor((x1Max-X1MIN)/dx1) * dx1 + X1MIN;  
-    x1Nbin = ceil ((x1Max - x1Min)/(dx1));
-    // p1Nbin = x1Nbin;
-      
+    x1Max = floor((x1Max-X1MIN)/dx1) * dx1 + X1MIN;
+
+    Double_t ddx1 = dxf * dx1;
+    x1Nbin = ceil ((x1Max - x1Min)/(ddx1));
+    p1Nbin = x1Nbin;
+
+    // slices
+    x1BinMin = floor((x1BinMin-X1MIN)/dx1) * dx1 + X1MIN;  
+    x1BinMax = floor((x1BinMax-X1MIN)/dx1) * dx1 + X1MIN;
+    
+    x1Nbin = ceil ((x1Max - x1Min)/(ddx1));
+    p1Nbin = x1Nbin;
+
+    SNbin  = ceil ((x1BinMax - x1BinMin)/(ddx1));
+    
+    Double_t ddx2 = dxf * dx2;      
     x2Min = floor((x2Min-X2MIN)/dx2) * dx2 + X2MIN;  
     x2Max = floor((x2Max-X2MIN)/dx2) * dx2 + X2MIN;  
-    x2Nbin = ceil ((x2Max - x2Min)/(dx2));
-    // p2Nbin = x2Nbin;
+    x2Nbin = ceil ((x2Max - x2Min)/(ddx2));
+    p2Nbin = x2Nbin;
       
     if(pData->Is3D()) {
+      Double_t ddx3 = dxf * dx3;      
       x3Min = floor((x3Min-X3MIN)/dx3) * dx3 + X3MIN;  
       x3Max = floor((x3Max-X3MIN)/dx3) * dx3 + X3MIN;  
-      x3Nbin = ceil ((x3Max - x3Min)/(dx3));
+      x3Nbin = ceil ((x3Max - x3Min)/(ddx3));
     }
-    // p3Nbin = x3Nbin;
-    // SNbin = ceil ((x1BinMax - x1BinMin)/(2.0*dx1));
-
+    p3Nbin = x3Nbin;
     
     x1Min -= shiftz;
     x1Max -= shiftz;
@@ -1051,7 +1084,8 @@ int main(int argc,char *argv[]) {
     Double_t gamma = yrms2 / emit;
     Double_t alpha = -xyrms2 / emit;
   
-    Double_t grel = hP1->GetMean() * eneUnit/PConst::ElectronMassE;
+    //    Double_t grel = hP1->GetMean() * eneUnit/PConst::ElectronMassE;
+    Double_t grel = hP1->GetMean();
     Double_t betax = beta * grel;
 
     Double_t factor =  beta*beta + 2 * beta * gamma + gamma*gamma - 4 * emit;
@@ -1389,7 +1423,7 @@ int main(int argc,char *argv[]) {
       if(opt.Contains("best")) {
 	PUnits::BestUnit bbetaSUnit(betax,"Length");
 	bbetaSUnit.GetBestUnits(betaUnit,betaSUnit);
-	// cout << bbetaSUnit << endl;
+	cout << bbetaSUnit << endl;
       }
       betax /= betaUnit;
 
@@ -1773,8 +1807,9 @@ int main(int argc,char *argv[]) {
 
     // Vertical Energy histogram:
     // --------------------------------------------------------------------------------   
-    TGraph *gP1left = NULL;
+    TGraph *gP1 = NULL;
     if(hP1) {
+      
       Double_t *yarray   = new Double_t[p1Nbin];
       Double_t *xarray   = new Double_t[p1Nbin];
 
@@ -1786,20 +1821,20 @@ int main(int argc,char *argv[]) {
       Double_t xMax = hX1->GetXaxis()->GetXmin() + 
 	(hX1->GetXaxis()->GetXmax()-hX1->GetXaxis()->GetXmin()) * 0.2;
       Double_t EneMax = hP1->GetMaximum();
-      // cout << Form("  EneMax = %f ", EneMax) << endl;
 
+      if(opt.Contains("smooth"))
+	hP1->Smooth(3);
+         
       for(Int_t j=0; j<p1Nbin; j++) {
 	yarray[j] = hP1->GetBinCenter(j+1);
 	xarray[j] = ((xMax-xMin)/EneMax)*hP1->GetBinContent(j+1) + xMin;
-
-	// cout << Form("  x = %f  y = %f ", xarray[j],yarray[j]) << endl;
       }
 
-      gP1left = new TGraph(p1Nbin,xarray,yarray);
-      gP1left->SetLineColor(PGlobals::elecLine);
-      gP1left->SetLineWidth(2);
-      gP1left->SetFillStyle(1001);
-      gP1left->SetFillColor(PGlobals::elecFill);
+      gP1 = new TGraph(p1Nbin,xarray,yarray);
+      gP1->SetLineColor(PGlobals::elecLine);
+      gP1->SetLineWidth(2);
+      gP1->SetFillStyle(1001);
+      gP1->SetFillColor(PGlobals::elecFill);
 
       delete yarray;
       delete xarray;
@@ -1863,11 +1898,6 @@ int main(int argc,char *argv[]) {
       // Set palette:
       PPalette * pPalette = (PPalette*) gROOT->FindObject("electron0");
       pPalette->cd();
-
-      // Double_t Max  = hP1X1->GetMaximum();
-      // Double_t Min  = hP1X1->GetMinimum();
-
-      // hP1X1->GetZaxis()->SetRangeUser(Min,Max); 
 
       // Text objects
       TPaveText *textTime =  new TPaveText(0.55,0.76,0.80,0.86,"NDC");
@@ -2011,10 +2041,10 @@ int main(int argc,char *argv[]) {
 
       hFrame[1]->Draw();
 
-      gP1left->SetLineWidth(2);
+      gP1->SetLineWidth(2);
       if(!opt.Contains("nospec")) {
-	gP1left->Draw("F");
-	gP1left->Draw("L");
+	gP1->Draw("F");
+	gP1->Draw("L");
       }
       
       TLine lZmean(zmean,hP1X1->GetYaxis()->GetXmin(),zmean,hP1X1->GetYaxis()->GetXmax());
@@ -2039,22 +2069,14 @@ int main(int argc,char *argv[]) {
       pzmaxline.SetLineStyle(3);
       pzmaxline.Draw();
 
-      // 2D histogram z range
-      // Double_t dmax = hP1X1->GetMaximum();
-      // Double_t dmin = 0.0;
-      // hP1X1->GetZaxis()->SetRangeUser(dmin,dmax);
 
       hP1X1->GetZaxis()->SetTitleFont(fonttype);
-      hP1X1->GetZaxis()->SetTickLength(0.01);
-      
+      hP1X1->GetZaxis()->SetTickLength(0.01);      
       hP1X1->Draw("colzsame");
-      // hP1X1->SetContour(20);
-      // hP1X1->Draw("contzsame");
+
       // hP1X1prof->SetMarkerStyle(1);
       // hP1X1prof->SetLineWidth(2);
       // hP1X1prof->Draw("zsame");
-
-      //hP1->Draw("C");
 
       gPad->Update();
 
@@ -2119,7 +2141,7 @@ int main(int argc,char *argv[]) {
       // }
 
       TLegend *Leg;
-      Leg=new TLegend(0.55,0.72,1 - 0.5*gPad->GetRightMargin() - 0.02,0.95);
+      Leg=new TLegend(0.58,0.72,1 - 0.5*gPad->GetRightMargin() + 0.01,0.95);
 
       PGlobals::SetPaveStyle(Leg);
       Leg->SetTextAlign(12);
@@ -2154,7 +2176,8 @@ int main(int argc,char *argv[]) {
       hX1->SetLineWidth(2);
       hX1->SetFillStyle(1001);
       hX1->SetFillColor(PGlobals::elecFill);
-      //hX1->Smooth();
+      if(opt.Contains("smooth"))
+	hX1->Smooth(3);
       hX1->Draw("FL same");
 
       TLine lZmean2(zmean,0.0,zmean,1.1*yMax);
