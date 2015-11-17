@@ -371,7 +371,7 @@ Double_t PDataHiP::GetRealTimeFromFile(const char *filename) {
 }
 
 //_______________________________________________________________________
-TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *dataname, 
+TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *datanameold, 
 			   Int_t Firstx2Bin, Int_t Lastx2Bin, 
 			   Int_t Firstx3Bin, Int_t Lastx3Bin, const char *options) {
   
@@ -391,6 +391,14 @@ TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *dataname,
 
   // Read data
   // ----------
+  H5std_string strreadbuf ("");
+  StrType strdatatype(PredType::C_S1, 32); 
+  Attribute *att = new Attribute(root->openAttribute("NAME"));
+  att->read(strdatatype,strreadbuf); 
+  att->close();
+  delete att;
+  const char *dataname = strreadbuf.c_str();
+
   DataSet  *dataSet = new DataSet(root->openDataSet(dataname));
   DataSpace dataSpace = dataSet->getSpace();
   const DataType type = dataSet->getDataType();
@@ -501,7 +509,7 @@ TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *dataname,
 }
 
 //_______________________________________________________________________
-TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *dataname, Int_t Firstx3Bin, Int_t Lastx3Bin, const char *options) {
+TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *datanameold, Int_t Firstx3Bin, Int_t Lastx3Bin, const char *options) {
   
   // Check for valid HDF5 file 
   if (!H5File::isHdf5(filename))    
@@ -520,6 +528,16 @@ TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *dataname, Int_t Fi
 
   // Read data
   // ----------
+  H5std_string strreadbuf ("");
+  StrType strdatatype(PredType::C_S1, 32); 
+  Attribute *att = new Attribute(root->openAttribute("NAME"));
+  att->read(strdatatype,strreadbuf); 
+  att->close();
+  delete att;
+  const char *dataname = strreadbuf.c_str();
+  
+  //  cout << Form(" Dataname = %s ", dataname) << endl;
+
   DataSet  *dataSet = new DataSet(root->openDataSet(dataname));
   DataSpace dataSpace = dataSet->getSpace();
   const DataType type = dataSet->getDataType();

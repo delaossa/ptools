@@ -286,7 +286,7 @@ int main(int argc,char *argv[]) {
       sprintf(hName,"hDen2D_%i",i);
       hDen2D[i] = (TH2F*) gROOT->FindObject(hName);
       if(hDen2D[i]) delete hDen2D[i];
-    
+
       if(pData->Is3D()) {
 	hDen2D[i] = pData->GetCharge2DSliceZX(i,-1,NonBin,opt+"avg");
 	//hDen2D[i] = pData->GetH2SliceZX(pData->GetChargeFileName(i)->c_str(),"charge",-1,NonBin,opt+"avg");
