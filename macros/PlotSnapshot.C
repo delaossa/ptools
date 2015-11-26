@@ -646,7 +646,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   PPalette * potPalette = (PPalette*) gROOT->FindObject("rbowinv");
   
   // Dynamic potential palette (blue values indicate trapping volume in respect to the minimum.
-  if(binPotValueIni>0) {
+  if(binPotValueIni>0 && opt.Contains("trap")) {
     { // Shift potential value in respect to the minimum
       Int_t NbinsX = hV2D->GetNbinsX(); 
       Int_t NbinsY = hV2D->GetNbinsY();
@@ -699,9 +699,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TH2F *hV2Dc = (TH2F*) hV2D->Clone("hV2Dc");
   const Int_t Ncontours = 25;
   Double_t contours[Ncontours];
-  for(Int_t i=0; i<Ncontours; i++) {
-    contours[i] = i*(trapPotential/5.0);// - trapPotential; 
+
+  if(opt.Contains("trap")) {
+    for(Int_t i=0; i<Ncontours; i++) {
+      contours[i] = i*(trapPotential/5.0);// - trapPotential; 
+    }
+  } else {
+    for(Int_t i=0; i<Ncontours; i++) {
+      contours[i] = Vmin + i*(trapPotential/10.0);// - trapPotential; 
+    }
   }
+    
   hV2Dc->SetContour(Ncontours, contours);
   hV2Dc->Draw("cont list 0");
   
@@ -729,11 +737,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
 	gr->SetLineWidth(1);
 	gr->SetLineColor(kGray+1);
-      
-	if( i==0 || i==5 || i==10 ) {
-	  gr->SetLineWidth(2);
-	  gr->SetLineColor(kGray+2);
-	} 
+
+	if(opt.Contains("trap")) {
+	  if( i==0 || i==5 || i==10 ) {
+	    gr->SetLineWidth(2);
+	    gr->SetLineColor(kGray+2);
+	  }
+	}
 	
 	new(graphsV2D[nGraphs]) TGraph(*gr) ;
 	nGraphs++;
