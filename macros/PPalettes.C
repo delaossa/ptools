@@ -273,6 +273,14 @@
     bluePalette->CreateGradientColorTable(blueNRGBs, blueStops, blueRed, blueGreen, blueBlue, blueNCont);
   }
 
+  PPalette * oliPalette = (PPalette*) gROOT->FindObject("oli");
+  const Int_t nRGBs = 9;
+  Double_t stops[nRGBs] = { 0.0000, 0.1250, 0.2500, 0.3750, 0.5000, 0.6250, 0.7500, 0.8750, 1.0000};
+  Double_t red[nRGBs]   = { 0.2081, 0.0591, 0.0779, 0.0231, 0.1801, 0.5300, 0.8185, 0.9955, 0.9763};
+  Double_t green[nRGBs] = { 0.1663, 0.3598, 0.5040, 0.6418, 0.7177, 0.7491, 0.7327, 0.7861, 0.9831};
+  Double_t blue[nRGBs]  = { 0.5292, 0.8683, 0.8384, 0.7913, 0.6424, 0.4661, 0.3498, 0.1967, 0.0538};
+  PPalette * oliPalette = new PPalette("oli");
+  oliPalette->CreateGradientColorTable(nRGBs, stops, red, green, blue, 255, 1);
   
   // Default palette
   electron0Palette->cd();

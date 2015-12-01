@@ -591,8 +591,8 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   // palettes for drawing
   PPalette * redPalette = (PPalette*) gROOT->FindObject("red0");
   PPalette * rbowwhitePalette = (PPalette*) gROOT->FindObject("rbowwhite");
-  PPalette * electronPalette = (PPalette*) gROOT->FindObject("electron0");
-  PPalette * electroninvPalette = (PPalette*) gROOT->FindObject("electron0inv");
+  PPalette * electronPalette = (PPalette*) gROOT->FindObject("oli");
+  PPalette * electroninvPalette = (PPalette*) gROOT->FindObject("oli");
   PPalette * barsaPalette = (PPalette*) gROOT->FindObject("barsa");
   
   // Canvas setup
@@ -1034,9 +1034,9 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
 
     gPad->Update();
 
-    Int_t Np = gVextr_alt[1]->GetN();
-    Double_t *yVextr  = gVextr_alt[1]->GetY();
-    Double_t *xVextr  = gVextr_alt[1]->GetX();
+    Int_t Np = gVextr_avg[1]->GetN();
+    Double_t *yVextr  = gVextr_avg[1]->GetY();
+    Double_t *xVextr  = gVextr_avg[1]->GetX();
     Double_t *den = new Double_t[Np];
 
     for(Int_t ip=0;ip<Np;ip++) {
@@ -1207,14 +1207,14 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   Float_t margin = (maxEdephas - minEdephas)/10;
   Float_t D0   = minEdephas-margin;
   Float_t D1   = maxEdephas+margin;
-  TH1F *hFrame3 = new TH1F("hFrame3","",100,hEvsTime[0]->GetXaxis()->GetXmin(),hEvsTime[0]->GetXaxis()->GetXmax());
+  TH1F *hFrame4 = new TH1F("hFrame4","",100,hEvsTime[0]->GetXaxis()->GetXmin(),hEvsTime[0]->GetXaxis()->GetXmax());
   
-  hFrame3->GetYaxis()->SetRangeUser(D0,D1);
-  hFrame3->GetXaxis()->SetTitle(hEvsTime[0]->GetXaxis()->GetTitle());
-  hFrame3->GetYaxis()->SetTitle("#Delta#zeta");
+  hFrame4->GetYaxis()->SetRangeUser(D0,D1);
+  hFrame4->GetXaxis()->SetTitle(hEvsTime[0]->GetXaxis()->GetTitle());
+  hFrame4->GetYaxis()->SetTitle("#Delta#zeta");
 
-  PGlobals::SetH1LabelSize(hFrame3);
-  hFrame3->Draw("axis");
+  PGlobals::SetH1LabelSize(hFrame4);
+  hFrame4->Draw("axis");
   
   gPad->Update();
      

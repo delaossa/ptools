@@ -447,7 +447,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // using a dynamic palette that adjusts the base value to a certain color.
   
   Float_t Base  = 1;
-  //  Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
+  //Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
   Float_t localden = 1;
   if(localden<Base) localden = Base;
     
@@ -459,7 +459,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(!hDen2D[i]) continue;
     
     Max[i] = hDen2D[i]->GetMaximum();
-    Min[i] = 0.99E-1 * localden;
+    Min[i] = 1.01E-1 * localden;
     if(Min[i]>Max[i]) Min[i] = 1.01E-1 * Max[i];
     
     if(i==0) {
@@ -570,6 +570,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Fmax = -Fmin;
     hFocus2D->GetZaxis()->SetRangeUser(Fmin,Fmax);
   }
+
+
   
   // CROSSINGS
   
@@ -643,8 +645,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
   }
 
-  PPalette * potPalette = (PPalette*) gROOT->FindObject("rbowinv");
-  
+  PPalette * potPalette = (PPalette*) gROOT->FindObject("rbow");
+   
   // Dynamic potential palette (blue values indicate trapping volume in respect to the minimum.
   if(binPotValueIni>0 && opt.Contains("trap")) {
     { // Shift potential value in respect to the minimum
@@ -676,19 +678,26 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 					 potPRed, potPGreen, potPBlue, potPNCont);
 
   } else {
-    const Int_t potPNRGBs = 4;
-    const Int_t potPNCont = 64;
-
-    Float_t Vzero = 0.;
-    Float_t zeroPos = (Vzero-Vmin)/(Vmax-Vmin);
     
-    Double_t potPStops[potPNRGBs] = { 0.00, zeroPos, zeroPos + (1.-zeroPos)/2. ,1.00 };
-    Double_t potPRed[potPNRGBs]   = {  1.0, 0.9, 0.965, 0.518};
-    Double_t potPGreen[potPNRGBs] = {  1.0, 0.9, 0.925, 0.078};
-    Double_t potPBlue[potPNRGBs]  = {  1.0, 0.9, 0.353, 0.106};
+    // const Int_t potPNRGBs = 4;
+    // const Int_t potPNCont = 64;
+
+    // Float_t Vzero = 0.;
+    // Float_t zeroPos = (Vzero-Vmin)/(Vmax-Vmin);
+    
+    // Double_t potPStops[potPNRGBs] = { 0.00, zeroPos, zeroPos + (1.-zeroPos)/2. ,1.00 };
+    // Double_t potPRed[potPNRGBs]   = {  1.0, 0.9, 0.965, 0.518};
+    // Double_t potPGreen[potPNRGBs] = {  1.0, 0.9, 0.925, 0.078};
+    // Double_t potPBlue[potPNRGBs]  = {  1.0, 0.9, 0.353, 0.106};
    
-    potPalette->CreateGradientColorTable(potPNRGBs, potPStops, 
-					 potPRed, potPGreen, potPBlue, potPNCont);
+    // potPalette->CreateGradientColorTable(potPNRGBs, potPStops, 
+    // 					 potPRed, potPGreen, potPBlue, potPNCont);
+
+    if(Vmax > TMath::Abs(Vmin))
+      Vmin = -Vmax;
+    else
+      Vmax = -Vmin;
+    
   }
   
   // Extract contours from 2D histos
@@ -1128,7 +1137,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   cout << endl;
 
   // Access to color Palettes 
-  TExec *exPlasma = new TExec("exPlasma","plasmaPalette->SetAlpha(0.8); plasmaPalette->cd();");
+  TExec *exPlasma;
+  if(opt.Contains("alpha"))
+    exPlasma = new TExec("exPlasma","plasmaPalette->SetAlpha(0.8); plasmaPalette->cd();");
+  else
+    exPlasma = new TExec("exPlasma","plasmaPalette->SetAlpha(1.0); plasmaPalette->cd();");
+    
   //  TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
   //  TExec *exElec   = new TExec("exElec","redelectronPalette->SetAlpha(0.8); redelectronPalette->cd();");
   TExec *exElec   = new TExec("exElec","redelectronPalette->cd();");
@@ -1138,8 +1152,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TExec *exFieldT = new TExec("exFieldT","red0Palette->cd();");
   //TExec *exIonP   = new TExec("exIonP","grayPalette->cd();");
   TExec *exIonP   = new TExec("exIonP","redelectron0Palette->cd();");
-  TExec *exPot    = new TExec("exPot","rbowinvPalette->cd();");
-     
+  // TExec *exPot    = new TExec("exPot","rbowPalette->cd();");
+  TExec *exPot    = new TExec("exPot","rbowwhitePalette->cd();");
+        
   TString drawopt = "colz same";
 
   // Actual Plotting!
