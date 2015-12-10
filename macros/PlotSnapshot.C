@@ -551,26 +551,27 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 					  plasmaDRed, plasmaDGreen, plasmaDBlue, plasmaDNCont,1.0);
 
   // Redefines the ground color of the electron palette to match background plasmas.
-  Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
-  Int_t rootcolorindex = plasmaPalette->GetColor(localcolorindex);
-  TColor *localcolor = gROOT->GetColor(rootcolorindex);
-  Float_t r,g,b;
-  localcolor->GetRGB(r,g,b);
+  if(opt.Contains("mbeam")) {
+    Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
+    Int_t rootcolorindex = plasmaPalette->GetColor(localcolorindex);
+    TColor *localcolor = gROOT->GetColor(rootcolorindex);
+    Float_t r,g,b;
+    localcolor->GetRGB(r,g,b);
 
-  cout << Form(" N colors = %i   Base position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plasmaPalette->GetNColors(), basePos, rootcolorindex, r, g, b) << endl;
+    cout << Form(" N colors = %i   Base position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plasmaPalette->GetNColors(), basePos, rootcolorindex, r, g, b) << endl;
 
-  PPalette * elecPalette = (PPalette*) gROOT->FindObject("redelectron");
-  if(elecPalette) {
-    const Int_t elecNRGBs = 5;
-    const Int_t elecNCont = 64;
-    Double_t elecStops[elecNRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
-    Double_t elecRed[elecNRGBs] =   { r, 0.22, 0.39, 0.70, 1.00};
-    Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
-    Double_t elecBlue[elecNRGBs] =  { b, 0.58, 0.33, 0.30, 0.20};
-    elecPalette->CreateGradientColorTable(elecNRGBs, elecStops, 
+    PPalette * elecPalette = (PPalette*) gROOT->FindObject("redelectron");
+    if(elecPalette) {
+      const Int_t elecNRGBs = 5;
+      const Int_t elecNCont = 64;
+      Double_t elecStops[elecNRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
+      Double_t elecRed[elecNRGBs] =   { r, 0.22, 0.39, 0.70, 1.00};
+      Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
+      Double_t elecBlue[elecNRGBs] =  { b, 0.58, 0.33, 0.30, 0.20};
+      elecPalette->CreateGradientColorTable(elecNRGBs, elecStops, 
 					    elecRed, elecGreen, elecBlue, elecNCont,1.0);
-  }
-  
+    }
+  }  
 
   
   // Change the range of z axis for the fields to be symmetric.
