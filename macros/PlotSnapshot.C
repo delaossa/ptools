@@ -527,14 +527,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   const Int_t plasmaDNRGBs = 3;
   const Int_t plasmaDNCont = 64;
   Float_t basePos = 0.5;
+  Float_t localPos = basePos;
   if(Max[0]!=Min[0]) {
     if(opt.Contains("logz")) {
       Float_t a = 1.0/(TMath::Log10(Max[0])-TMath::Log10(Min[0]));
       Float_t b = TMath::Log10(Min[0]);
       basePos = a*(TMath::Log10(baseden) - b);
+      localPos = a*(TMath::Log10(localden) - b);
       
     } else {
       basePos = (1.0/(Max[0]-Min[0]))*(baseden - Min[0]);
+      localPos = (1.0/(Max[0]-Min[0]))*(localden - Min[0]);
     }
   }
 
@@ -547,9 +550,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   plasmaPalette->CreateGradientColorTable(plasmaDNRGBs, plasmaDStops, 
 					  plasmaDRed, plasmaDGreen, plasmaDBlue, plasmaDNCont,1.0);
 
-  // Base color
-  
-  Int_t localcolorindex =  TMath::Nint(basePos * plasmaPalette->GetNColors());
+  // Redefines the ground color of the electron palette to match background plasmas.
+  Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
   Int_t rootcolorindex = plasmaPalette->GetColor(localcolorindex);
   TColor *localcolor = gROOT->GetColor(rootcolorindex);
   Float_t r,g,b;
@@ -559,12 +561,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   PPalette * elecPalette = (PPalette*) gROOT->FindObject("redelectron");
   if(elecPalette) {
-    const Int_t elecNRGBs = 6;
+    const Int_t elecNRGBs = 5;
     const Int_t elecNCont = 64;
-    Double_t elecStops[elecNRGBs] = { 0.00, 0.20, 0.40, 0.50, 0.60, 1.00};
-    Double_t elecRed[elecNRGBs] =   { r, 0.52, 0.22, 0.39, 0.70, 1.00};
-    Double_t elecGreen[elecNRGBs] = { g, 0.74, 0.34, 0.05, 0.20, 1.00};
-    Double_t elecBlue[elecNRGBs] =  { b, 0.80, 0.58, 0.33, 0.30, 0.20};
+    Double_t elecStops[elecNRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
+    Double_t elecRed[elecNRGBs] =   { r, 0.22, 0.39, 0.70, 1.00};
+    Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
+    Double_t elecBlue[elecNRGBs] =  { b, 0.58, 0.33, 0.30, 0.20};
     elecPalette->CreateGradientColorTable(elecNRGBs, elecStops, 
 					    elecRed, elecGreen, elecBlue, elecNCont,1.0);
   }
