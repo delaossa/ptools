@@ -178,7 +178,7 @@ PUnits::UnitsTable::UnitsTable()
   AddUnit("Percent", "%", "Percentage", perCent);
   AddUnit("Perten", "10 %", "Percentage", perTen);
   AddUnit("Permille", "0.1 %", "Percentage", perThousand);
-  AddUnit("Permillion", "0.01 %", "Percentage", perMillion);
+  // AddUnit("Permillion", "0.01 %", "Percentage", perMillion);
 
 }
 

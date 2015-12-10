@@ -77,6 +77,10 @@ int main(int argc,char *argv[]) {
   // Option for raw fraction correction
   Float_t rawf = 1;
   
+  // Longitudinal range
+  Float_t zmin =  99999.;
+  Float_t zmax = -99999.;
+
   // Options for Spectrum
   Float_t Pmin =  99999.;
   Float_t Pmax = -99999.;
@@ -157,6 +161,12 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-dxf")) {
       char ss[4];
       sscanf(arg,"%4s%f",ss,&dxf);
+    } else if(arg.Contains("-zmin")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&zmin);
+    } else if(arg.Contains("-zmax")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&zmax);
     } else if(arg.Contains("-pmin")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmin);
@@ -205,8 +215,8 @@ int main(int argc,char *argv[]) {
   //  opt += "comovcenter";
 
   // Units
-  Double_t chargeUnit,  denUnit,  spaUnit,  tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit,  betaUnit;
-  string  chargeSUnit, denSUnit, spaSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit,  betaSUnit;
+  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit,  betaUnit;
+  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit,  betaSUnit;
 
   if(opt.Contains("units") && n0) {
 
@@ -221,6 +231,10 @@ int main(int argc,char *argv[]) {
     bspaSUnit.GetBestUnits(spaUnit,spaSUnit);
     //    cout << Form(" L  = %.2f %s", wavelength/spaUnit, spaSUnit.c_str()) << endl;
   }
+
+  // Propagation distance units
+  propUnit = PUnits::mm;
+  propSUnit = "mm";
 
   // Current units
   curUnit = PUnits::kA;
@@ -311,19 +325,13 @@ int main(int argc,char *argv[]) {
     Int_t x3Nbin = 200;
     Int_t p3Nbin = 200;
     
-    // Slices
-    Int_t SNbin = 100;
-    Double_t x1BinMin = -4.5;
-    Double_t x1BinMax = -4.0;
-
     // Spatial coordinates intervals:
-    // Double_t x1Min = -7.8;
-    Double_t x1Min = -7.75;
-    Double_t x1Max = -7.0;
-    Double_t x2Min = -0.5;
-    Double_t x2Max =  0.5;
-    Double_t x3Min = -0.5;
-    Double_t x3Max =  0.5;
+    Double_t x1Min = X1MIN;
+    Double_t x1Max = X1MAX;
+    Double_t x2Min = X2MIN;
+    Double_t x2Max = X2MAX;
+    Double_t x3Min = X3MIN;
+    Double_t x3Max = X3MAX;
 
     // Momentum coordinates intervals:
     Double_t p1Min =  Pmin;
@@ -333,9 +341,12 @@ int main(int argc,char *argv[]) {
     Double_t p3Min = -15.0;
     Double_t p3Max =  15.0;
 
+    // z-slices
+    Int_t SNbin = 100;
+    Double_t x1BinMin = -4.5;
+    Double_t x1BinMax = -4.0;
+    
     // Specific initializations:
-    // The ranges in x1 are defined in the comoving frame, centered at the driver's position.
-    // We setup a dummy shift to make them consitent with the plotting options.
     if(sim.Contains("flash")) {
     
       x1Min = -5.5;
@@ -501,6 +512,12 @@ int main(int argc,char *argv[]) {
       ermsSUnit = "0.01 %";
 
     }
+
+    // Overrides auto ranging if specified in command line
+    if(zmax>zmin) {
+      x1Min = zmin;
+      x1Max = zmax;
+    }
     
     // dummy shift
     Double_t dshiftz = pData->Shift("centercomov");
@@ -526,9 +543,11 @@ int main(int argc,char *argv[]) {
     cout << Form("    Number of particles = %i",Np) << endl;
     
     // Scan histogram
+    Int_t NX1 = pData->GetX1N()*(x1Max-x1Min)/(pData->GetX1Max()-pData->GetX1Min());
     TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
     if(hScanX1) delete hScanX1;
-    hScanX1 = new TH1F("hScanX1","",pData->GetX1N(),pData->GetX1Min(),pData->GetX1Max());
+    hScanX1 = new TH1F("hScanX1","",NX1,x1Min,x1Max);
+    
     TH1F *hScanX2 = (TH1F*) gROOT->FindObject("hScanX2");
     if(hScanX2) delete hScanX2;
     hScanX2 = new TH1F("hScanX2","",pData->GetX2N(),pData->GetX2Min(),pData->GetX2Max());
@@ -720,9 +739,14 @@ int main(int argc,char *argv[]) {
       Double_t x2min = -999;
       Double_t x2max = -999;
       FindLimits(hScanX2,x2min,x2max,peakFactor);
+      if( x2max-x2min < 0.1) {
+	x2min -= 0.1;
+	x2max += 0.1;
+      }
       x2Min = x2min - rfactor2*(x2max-x2min);
       x2Max = x2max + rfactor2*(x2max-x2min);
-
+      //      cout << Form("  x2Min = %f  x2Max = %f ",x2min,x2max) << endl;
+      
       Double_t x3min = -999;
       Double_t x3max = -999;
       if(Nvar==7) {
@@ -755,7 +779,18 @@ int main(int argc,char *argv[]) {
       if(x3Max>X3MAX) x3Max = X3MAX;
     }
 
-    // Adjust the binning to match simualtion grid
+    // Overrides auto ranging if specified in command line
+    if(zmax>zmin) {
+      x1Min = zmin;
+      x1Max = zmax;
+
+      x1Min += dshiftz;
+      x1Max += dshiftz;
+    }
+        
+    // Adjust the binning to match simulation grid
+    // -----
+    
     x1Min = floor((x1Min-X1MIN)/dx1) * dx1 + X1MIN;  
     x1Max = floor((x1Max-X1MIN)/dx1) * dx1 + X1MIN;
 
@@ -776,8 +811,10 @@ int main(int argc,char *argv[]) {
     x2Min = floor((x2Min-X2MIN)/dx2) * dx2 + X2MIN;  
     x2Max = floor((x2Max-X2MIN)/dx2) * dx2 + X2MIN;  
     x2Nbin = ceil ((x2Max - x2Min)/(ddx2));
+    if(x2Nbin<50) x2Nbin = 50;
+
     p2Nbin = x2Nbin;
-      
+    
     if(pData->Is3D()) {
       Double_t ddx3 = dxf * dx3;      
       x3Min = floor((x3Min-X3MIN)/dx3) * dx3 + X3MIN;  
@@ -792,9 +829,9 @@ int main(int argc,char *argv[]) {
     x1BinMax -= shiftz;
 
     if(p1Min < 0.0) p1Min = 0.01;
-    if(x1Nbin < 100) x1Nbin = 100;
-    if(x2Nbin < 100) x2Nbin = 100;
-    if(x3Nbin < 100) x3Nbin = 100;
+    // if(x1Nbin < 100) x1Nbin = 100;
+    // if(x2Nbin < 100) x2Nbin = 100;
+    // if(x3Nbin < 100) x3Nbin = 100;
 
     cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
     cout << Form(" p1 range (N = %i):  p1Min = %f  p1Max = %f  dp1 = %f", p1Nbin, p1Min, p1Max, (p1Max - p1Min)/p1Nbin) << endl;
@@ -1302,7 +1339,7 @@ int main(int argc,char *argv[]) {
     
     if(opt.Contains("units") && n0) {
 
-      Time *= skindepth / spaUnit;
+      Time *= skindepth / propUnit;
 
       x1Min *= skindepth / spaUnit;
       x1Max *= skindepth / spaUnit;
@@ -1906,7 +1943,7 @@ int main(int argc,char *argv[]) {
       char ctext[128];
       if(opt.Contains("units") && pData->GetPlasmaDensity()) 
 	// sprintf(ctext,"z = %5.1f um", Time);
-	sprintf(ctext,"z = %5.1f %s", Time, spaSUnit.c_str());
+	sprintf(ctext,"z = %5.1f %s", Time, propSUnit.c_str());
       else
 	sprintf(ctext,"k_{p}z = %5.1f",Time);
       textTime->AddText(ctext);

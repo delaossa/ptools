@@ -20,17 +20,21 @@ public:
 							UInt_t NColors,
 							Float_t alpha=1);
 
-  UInt_t                        GetColor(UInt_t i=0) {
+  Int_t                        GetColor(UInt_t i=0) {
     if(i>=fNColors) {
-      std::cout << "Color index out of range" << std::endl;
+      std::cout << "Color index out of range. Returning last color." << std::endl;
       return fColors[fNColors-1];
     }
-    //  else if(i<0) {
-    //   std::cout << "Color index out of range" << std::endl;
-    //   return fColors[0];
-    // }
+    else if(i<0) {
+      std::cout << "Color index out of range. Returning first color." << std::endl;
+      return fColors[0];
+    }
     return fColors[i];
   };
+
+  UInt_t GetNColors() {
+    return fNColors+1;
+  }
   
   virtual void                 cd();
   static void                  SetPalette(const char * name);

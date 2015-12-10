@@ -606,8 +606,8 @@ int main(int argc,char *argv[]) {
     // Chaning to user units: 
     // --------------------------
   
-    Double_t denUnit, spaUnit, timUnit, eUnit, curUnit;
-    string denSUnit, spaSUnit, timSUnit, eSUnit, curSUnit;
+    Double_t denUnit, spaUnit, propUnit, timUnit, eUnit, curUnit;
+    string denSUnit, spaSUnit, propSUnit, timSUnit, eSUnit, curSUnit;
     
     if(opt.Contains("units") && n0) {
 
@@ -627,7 +627,10 @@ int main(int argc,char *argv[]) {
       btimSUnit.GetBestUnits(timUnit,timSUnit);
       cout << Form(" T  = %.2f %s", period/timUnit, timSUnit.c_str()) << endl;
 
+      propUnit = PUnits::mm;
+      propSUnit = "mm";
 
+      
       Float_t Emax =  hE1D[0]->GetMaximum();
       if(Emax < 10E-3) Emax = 10E-3;
       PUnits::BestUnit beSUnit(E0 * Emax,"Efield");
@@ -1271,6 +1274,8 @@ int main(int argc,char *argv[]) {
     infotree->Branch("denSUnit","string",&denSUnit);
     infotree->Branch("spaUnit",&spaUnit,"spaUnit/D");
     infotree->Branch("spaSUnit","string",&spaSUnit);
+    infotree->Branch("propUnit",&propUnit,"propUnit/D");
+    infotree->Branch("propSUnit","string",&propSUnit);
     infotree->Branch("timUnit",&timUnit,"timUnit/D");
     infotree->Branch("timSUnit","string",&timSUnit);
     infotree->Branch("eUnit",&eUnit,"eUnit/D");

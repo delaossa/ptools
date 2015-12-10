@@ -142,6 +142,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   infotree->SetBranchAddress("spaUnit",&spaUnit);  
   string   *spaSUnit = 0;
   infotree->SetBranchAddress("spaSUnit",&spaSUnit);  
+  Double_t propUnit = 1;
+  infotree->SetBranchAddress("propUnit",&propUnit);  
+  string   *propSUnit = 0;
+  infotree->SetBranchAddress("propSUnit",&propSUnit);  
   Double_t timUnit = 1;
   infotree->SetBranchAddress("timUnit",&timUnit);  
   string   *timSUnit = 0;
@@ -156,6 +160,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   infotree->SetBranchAddress("curSUnit",&curSUnit);  
     
   infotree->GetEntry(0);
+
+  if(propSUnit==0) {
+    propUnit = spaUnit;
+    propSUnit = spaSUnit;
+  }
 
   cout << Form(" Options from doSnapshot = %s \n", opttree->Data());
   cout << Form(" Options in PlotSnapshot = %s \n", opt.Data());
@@ -447,9 +456,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // using a dynamic palette that adjusts the base value to a certain color.
   
   Float_t Base  = 1;
-  //Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
-  Float_t localden = 1;
-  if(localden<Base) localden = Base;
+
+  // Local value of the density at the right edge of the simulation box:
+  Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
+
+  Float_t baseden = Base;
+  if(baseden<Base) baseden = Base;
     
   Float_t *Max = new Float_t[Nspecies];
   Float_t *Min = new Float_t[Nspecies];
@@ -459,19 +471,19 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(!hDen2D[i]) continue;
     
     Max[i] = hDen2D[i]->GetMaximum();
-    Min[i] = 1.01E-1 * localden;
+    Min[i] = 1.01E-1 * baseden;
     if(Min[i]>Max[i]) Min[i] = 1.01E-1 * Max[i];
     
     if(i==0) {
-      if(Max[i]<localden) { 
-	Max[i] = 1.1*localden;
-      } else if(Max[i]<2*localden) {
-	Min[i] = 2*localden - Max[i];
+      if(Max[i]<baseden) { 
+	Max[i] = 1.1*baseden;
+      } else if(Max[i]<2*baseden) {
+	Min[i] = 2*baseden - Max[i];
       } else {
 	Max[i] = 0.4*hDen2D[i]->GetMaximum(); // enhance plasma contrast.
         // Max[i] = hDen2D[i]->GetMaximum(); 
-	if(Max[i]<localden) Max[i] = 1.01 * localden;
-	if(Min[i]>localden) Min[i] = 0.9*localden;
+	if(Max[i]<baseden) Max[i] = 1.01 * baseden;
+	if(Min[i]>baseden) Min[i] = 0.9*baseden;
       }
       // cout << Form("Base = %f, Max = %f, Min = %f",Base,Max[i], Min[i]) << endl;
     } 
@@ -519,10 +531,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(opt.Contains("logz")) {
       Float_t a = 1.0/(TMath::Log10(Max[0])-TMath::Log10(Min[0]));
       Float_t b = TMath::Log10(Min[0]);
-      basePos = a*(TMath::Log10(localden) - b);
+      basePos = a*(TMath::Log10(baseden) - b);
       
     } else {
-      basePos = (1.0/(Max[0]-Min[0]))*(localden - Min[0]);
+      basePos = (1.0/(Max[0]-Min[0]))*(baseden - Min[0]);
     }
   }
 
@@ -534,6 +546,29 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
   plasmaPalette->CreateGradientColorTable(plasmaDNRGBs, plasmaDStops, 
 					  plasmaDRed, plasmaDGreen, plasmaDBlue, plasmaDNCont,1.0);
+
+  // Base color
+  
+  Int_t localcolorindex =  TMath::Nint(basePos * plasmaPalette->GetNColors());
+  Int_t rootcolorindex = plasmaPalette->GetColor(localcolorindex);
+  TColor *localcolor = gROOT->GetColor(rootcolorindex);
+  Float_t r,g,b;
+  localcolor->GetRGB(r,g,b);
+
+  cout << Form(" N colors = %i   Base position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plasmaPalette->GetNColors(), basePos, rootcolorindex, r, g, b) << endl;
+
+  PPalette * elecPalette = (PPalette*) gROOT->FindObject("redelectron");
+  if(elecPalette) {
+    const Int_t elecNRGBs = 6;
+    const Int_t elecNCont = 64;
+    Double_t elecStops[elecNRGBs] = { 0.00, 0.20, 0.40, 0.50, 0.60, 1.00};
+    Double_t elecRed[elecNRGBs] =   { r, 0.52, 0.22, 0.39, 0.70, 1.00};
+    Double_t elecGreen[elecNRGBs] = { g, 0.74, 0.34, 0.05, 0.20, 1.00};
+    Double_t elecBlue[elecNRGBs] =  { b, 0.80, 0.58, 0.33, 0.30, 0.20};
+    elecPalette->CreateGradientColorTable(elecNRGBs, elecStops, 
+					    elecRed, elecGreen, elecBlue, elecNCont,1.0);
+  }
+  
 
   
   // Change the range of z axis for the fields to be symmetric.
@@ -962,7 +997,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   char ctext[128];
   if(opt.Contains("units") && n0) 
-    sprintf(ctext,Form("z = %5.2f %s", Time * skindepth / spaUnit,spaSUnit->c_str()));
+    sprintf(ctext,Form("z = %5.2f %s", Time * skindepth / propUnit,propSUnit->c_str()));
   else
     sprintf(ctext,"k_{p}z = %5.1f",Time);
   
@@ -1456,12 +1491,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       TLine *lineCurUp = new TLine(xMin,xint,xMax,xint);
       lineCurUp->SetLineColor(kGray+1);
       lineCurUp->SetLineStyle(2);
-      lineCurUp->Draw();
+      //      lineCurUp->Draw();
 
       TLine *lineCurDo = new TLine(xMin,-xint,xMax,-xint);
       lineCurDo->SetLineColor(kGray+1);
       lineCurDo->SetLineStyle(2);
-      lineCurDo->Draw();
+      //      lineCurDo->Draw();
       
       
       for(Int_t i=0;i<Nspecies;i++) {
@@ -2531,19 +2566,21 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hV2D->GetZaxis()->SetRangeUser(Vmin,Vmax);
     hV2D->Draw("colz0 same");
     
-    for(Int_t i=0;i<graphsV2D.GetEntriesFast();i++) {
-      TGraph *gr = (TGraph*) graphsV2D.At(i);
-      if(!gr) continue;
-      gr->Draw("C");
+    if(opt.Contains("cont")) {
+      for(Int_t i=0;i<graphsV2D.GetEntriesFast();i++) {
+	TGraph *gr = (TGraph*) graphsV2D.At(i);
+	if(!gr) continue;
+	gr->Draw("C");
+      }
+      
+      // PSI MAIN contour  
+      // for(Int_t i=0;i<graphsV2D_main.GetEntriesFast();i++) {
+      //   TGraph *gr = (TGraph*) graphsV2D_main.At(i);
+      //   if(!gr) continue;
+      //   gr->Draw("C");
+      // }
     }
-  
-    // PSI MAIN contour  
-    // for(Int_t i=0;i<graphsV2D_main.GetEntriesFast();i++) {
-    //   TGraph *gr = (TGraph*) graphsV2D_main.At(i);
-    //   if(!gr) continue;
-    //   gr->Draw("C");
-    // }
-
+    
     // Fit the V1D in the V2D pad:
     TLine *lineT = NULL;
     {
