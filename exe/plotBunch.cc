@@ -513,7 +513,7 @@ int main(int argc,char *argv[]) {
 
     }
 
-    // Overrides auto ranging if specified in command line
+    // Command line input
     if(zmax>zmin) {
       x1Min = zmin;
       x1Max = zmax;
@@ -521,12 +521,13 @@ int main(int argc,char *argv[]) {
     
     // dummy shift
     Double_t dshiftz = pData->Shift("centercomov");
-    x1Min += dshiftz;
-    x1Max += dshiftz;
-    x1BinMin += dshiftz;
-    x1BinMax += dshiftz;
-
-    //    cout << Form(" x1Min = %f x1Max = %f x1BinMin = %f x1BinMax = %f  ", x1Min, x1Max, x1BinMin, x1BinMax) << endl;
+    if(opt.Contains("autop") || (zmax>zmin) ) {
+      x1Min += dshiftz;
+      x1Max += dshiftz;
+      x1BinMin += dshiftz;
+      x1BinMax += dshiftz;
+    }
+    
     
     // --------------------------------------------------
     
@@ -544,6 +545,9 @@ int main(int argc,char *argv[]) {
     
     // Scan histogram
     Int_t NX1 = pData->GetX1N()*(x1Max-x1Min)/(pData->GetX1Max()-pData->GetX1Min());
+
+    cout << Form(" NBINS = %i  x1Min = %f x1Max = %f",NX1,x1Min ,x1Max) << endl;
+    
     TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
     if(hScanX1) delete hScanX1;
     hScanX1 = new TH1F("hScanX1","",NX1,x1Min,x1Max);
@@ -715,7 +719,7 @@ int main(int argc,char *argv[]) {
       x2Min = MinX2 - rfactor*(MaxX2-MinX2);
       x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
 
-      
+      cout << Form(" NBINS = %i  x1Min = %f x1Max = %f",NX1,x1Min ,x1Max) << endl;     
       if(Nvar==7) {
 	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
 	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
@@ -728,14 +732,18 @@ int main(int argc,char *argv[]) {
       Double_t x1min = -999;
       Double_t x1max = -999;
       FindLimits(hScanX1,x1min,x1max,peakFactor);
+
+      cout << Form(" NBINS = %i  x1Min = %f x1Max = %f",NX1,x1min ,x1max) << endl;     
+      
       x1BinMin = x1min;
       x1BinMax = x1max;
 
+      
       peakFactor = 0.05;
       FindLimits(hScanX1,x1min,x1max,peakFactor);
       x1Min = x1min - rfactor*(x1max-x1min);
       x1Max = x1max + rfactor*(x1max-x1min);
-      
+
       Double_t x2min = -999;
       Double_t x2max = -999;
       FindLimits(hScanX2,x2min,x2max,peakFactor);
@@ -779,7 +787,7 @@ int main(int argc,char *argv[]) {
       if(x3Max>X3MAX) x3Max = X3MAX;
     }
 
-    // Overrides auto ranging if specified in command line
+    // Overrides auto z ranging if specified in command line
     if(zmax>zmin) {
       x1Min = zmin;
       x1Max = zmax;
@@ -790,7 +798,9 @@ int main(int argc,char *argv[]) {
         
     // Adjust the binning to match simulation grid
     // -----
-    
+    cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
+
+
     x1Min = floor((x1Min-X1MIN)/dx1) * dx1 + X1MIN;  
     x1Max = floor((x1Max-X1MIN)/dx1) * dx1 + X1MIN;
 
@@ -802,9 +812,6 @@ int main(int argc,char *argv[]) {
     x1BinMin = floor((x1BinMin-X1MIN)/dx1) * dx1 + X1MIN;  
     x1BinMax = floor((x1BinMax-X1MIN)/dx1) * dx1 + X1MIN;
     
-    x1Nbin = ceil ((x1Max - x1Min)/(ddx1));
-    p1Nbin = x1Nbin;
-
     SNbin  = ceil ((x1BinMax - x1BinMin)/(ddx1));
     
     Double_t ddx2 = dxf * dx2;      
