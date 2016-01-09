@@ -20,7 +20,7 @@ public:
 							UInt_t NColors,
 							Float_t alpha=1);
 
-  Int_t                        GetColor(UInt_t i=0) {
+  Int_t                        GetColor(Int_t i=0) {
     if(i>=fNColors) {
       std::cout << "Color index out of range. Returning last color." << std::endl;
       return fColors[fNColors-1];

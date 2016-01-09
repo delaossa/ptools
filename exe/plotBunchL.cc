@@ -337,7 +337,7 @@ int main(int argc,char *argv[]) {
   
   cout << Form("  %i  particles read!    Charge = %.1f pC" , Np, Q);
 
-  cout << Form("  \n x1 = %e +/- %e \n x2 = %.4f +/- %.4f \n x3 = %.4f +/- %.4f \n p1 = %.4f +/- %.4f \n p2 = %.4f +/- %.4f \n p3 = %.4f",
+  cout << Form("  \n x1 = %e +/- %e \n x2 = %.4f +/- %.4f \n x3 = %.4f +/- %.4f \n p1 = %.4f +/- %.4f \n p2 = %.4f +/- %.4f \n p3 = %.4f +/- %.4f",
 	       // 	       varMean[0]/PUnits::um, varRms[0]/PUnits::um, varMean[1]/PUnits::um, varRms[1]/PUnits::um, varMean[2]/PUnits::um, varRms[2]/PUnits::um, varMean[3]/PUnits::GeV, varRms[3]/PUnits::GeV, varMean[4]/PUnits::MeV, varRms[4]/PUnits::MeV, varMean[5]/PUnits::MeV, varRms[5]/PUnits::MeV) << endl;      
    	       varMean[0], varRms[0], varMean[1], varRms[1], varMean[2], varRms[2], varMean[3], varRms[3], varMean[4], varRms[4], varMean[5], varRms[5]) << endl;      
   
@@ -1386,8 +1386,8 @@ int main(int argc,char *argv[]) {
     lZmean2.SetLineStyle(2);
     lZmean2.Draw();
 
-    Int_t markerSize = 1.2; 
-    Int_t lineWidth  = 2.0;   
+    Int_t markerSize = 1; 
+    Int_t lineWidth  = 2;   
 
     gYrms->SetMarkerStyle(20);
     gYrms->SetLineStyle(1);

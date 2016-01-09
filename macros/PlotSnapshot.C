@@ -650,7 +650,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   memset(FocusCross,0,sizeof(Float_t)*MAXCROSS);
   memset(FocusExtr,0,sizeof(Float_t)*MAXCROSS);
 
-  Int_t binFcross;
+  Int_t binFcross = -1;
   if(hFocus1D) {
     auxNcross = PGlobals::HCrossings(hFocus1D,FocusCross,FocusExtr,MAXCROSS,0.0,EzCross[0]);
     binFcross = hFocus1D->FindBin(FocusCross[0]);
