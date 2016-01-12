@@ -3,9 +3,6 @@
   // Palettes !
   PPalette * grayPalette =  (PPalette*) gROOT->FindObject("gray");
   if(!grayPalette) {
-
-    //    cout << "Loading palettes for plasma...  " ;
-
     const Int_t grayNRGBs = 2;
     const Int_t grayNCont = 64;
     Double_t grayStops[grayNRGBs] = { 0.00, 1.00 };
@@ -40,19 +37,6 @@
     plasmaPalette = new PPalette("plasma");
     plasmaPalette->CreateGradientColorTable(plasmaNRGBs, plasmaStops, 
 					    plasmaRed, plasmaGreen, plasmaBlue, plasmaNCont);
-  }
-
-  PPalette * plasmaHPalette =  (PPalette*) gROOT->FindObject("plasmaH");
-  if(!plasmaHPalette) {
-    const Int_t plasmaHNRGBs = 3;
-    const Int_t plasmaHNCont = 64;
-    Double_t plasmaHStops[plasmaHNRGBs] = { 0.00,  0.1, 1.00 };
-    Double_t plasmaHRed[plasmaHNRGBs] =   { 0.99, 0.90, 0.00 };
-    Double_t plasmaHGreen[plasmaHNRGBs] = { 0.99, 0.90, 0.00 };
-    Double_t plasmaHBlue[plasmaHNRGBs] =  { 0.99, 0.90, 0.00 };
-    plasmaHPalette = new PPalette("plasmaH");
-    plasmaHPalette->CreateGradientColorTable(plasmaHNRGBs, plasmaHStops, 
-					     plasmaHRed, plasmaHGreen, plasmaHBlue, plasmaHNCont);
   }
 
   PPalette * electronPalette =  (PPalette*) gROOT->FindObject("electron");
@@ -123,20 +107,17 @@
 
   PPalette * redelectron0Palette =  (PPalette*) gROOT->FindObject("redelectron0");
   if(!redelectron0Palette) {
-    const Int_t redelectronNRGBs = 6;
-    const Int_t redelectronNCont = 64;
-    Double_t redelectronStops[redelectronNRGBs] = { 0.00, 0.20, 0.40, 0.50, 0.60, 1.00};
-    Double_t redelectronRed[redelectronNRGBs] =   { 1.00, 0.52, 0.22, 0.39, 0.70, 1.00};
-    Double_t redelectronGreen[redelectronNRGBs] = { 1.00, 0.74, 0.34, 0.05, 0.20, 1.00};
-    Double_t redelectronBlue[redelectronNRGBs] =  { 1.00, 0.80, 0.58, 0.33, 0.30, 0.20};
+    const Int_t redelectron0NRGBs = 6;
+    const Int_t redelectron0NCont = 64;
+    Double_t redelectron0Stops[redelectronNRGBs] = { 0.00, 0.20, 0.40, 0.50, 0.60, 1.00};
+    Double_t redelectron0Red[redelectronNRGBs] =   { 1.00, 0.52, 0.22, 0.39, 0.70, 1.00};
+    Double_t redelectron0Green[redelectronNRGBs] = { 1.00, 0.74, 0.34, 0.05, 0.20, 1.00};
+    Double_t redelectron0Blue[redelectronNRGBs] =  { 1.00, 0.80, 0.58, 0.33, 0.30, 0.20};
     redelectron0Palette = new PPalette("redelectron0");
-    redelectron0Palette->CreateGradientColorTable(redelectronNRGBs, redelectronStops, 
-					      redelectronRed, redelectronGreen, redelectronBlue, redelectronNCont);
+    redelectron0Palette->CreateGradientColorTable(redelectron0NRGBs, redelectron0Stops, redelectron0Red, redelectron0Green, redelectron0Blue, redelectron0NCont);
   }
 
   
-
-
   PPalette * electron1Palette =  (PPalette*) gROOT->FindObject("electron1");
   if(!electron1Palette) {
     const Int_t electron1NRGBs = 5;
@@ -146,20 +127,19 @@
     Double_t electron1Green[electron1NRGBs] = { 0.74, 0.34, 0.05, 0.20, 1.00};
     Double_t electron1Blue[electron1NRGBs] =  { 0.80, 0.58, 0.33, 0.30, 0.20};
     electron1Palette = new PPalette("electron1");
-    electron1Palette->CreateGradientColorTable(electron1NRGBs, electron1Stops, 
-					      electron1Red, electron1Green, electron1Blue, electron1NCont);
+    electron1Palette->CreateGradientColorTable(electron1NRGBs, electron1Stops, electron1Red, electron1Green, electron1Blue, electron1NCont);
   }
 
   PPalette *hotPalette = (PPalette*) gROOT->FindObject("hot");
   if(!hotPalette) {
     const Int_t hotNRGBs = 3;
     const Int_t hotNCont = 64;
-    Double_t hotStops[hotNRGBs] = { 0.25, 0.75, 1.00 };
+    Double_t hotStops[hotNRGBs] = { 0.0, 0.75, 1.00 };
     Double_t hotRed[hotNRGBs] =   { 1.000, 1.000, 1.000 };
     Double_t hotGreen[hotNRGBs] = { 0.149, 0.984, 1.000 };
     Double_t hotBlue[hotNRGBs] =  { 0.000, 0.000, 1.000 };
     hotPalette = new PPalette("hot");
-    hotPalette->CreateGradientColorTable(hotNRGBs, hotStops,hotRed, hotGreen, hotBlue, hotNCont);
+    hotPalette->CreateGradientColorTable(hotNRGBs, hotStops, hotRed, hotGreen, hotBlue, hotNCont);
   }    
 
   PPalette *hot2Palette = (PPalette*) gROOT->FindObject("hot2");
@@ -194,7 +174,7 @@
     Double_t rbowRed[rbowNRGBs] =   { 0.106, 0.698, 0.90, 0.90, 0.965, 0.518 };
     Double_t rbowGreen[rbowNRGBs] = { 0.078, 0.818, 0.90, 0.90, 0.925, 0.078 };
     Double_t rbowBlue[rbowNRGBs] =  { 0.518, 0.880, 0.90, 0.90, 0.353, 0.106 };
-    PPalette *rbowPalette = new PPalette("rbow");
+    rbowPalette = new PPalette("rbow");
     rbowPalette->CreateGradientColorTable(rbowNRGBs, rbowStops,rbowRed, rbowGreen, rbowBlue, rbowNCont);
   }
 
@@ -206,7 +186,7 @@
     Double_t rbowinvRed[rbowinvNRGBs] =   { 0.518, 0.965, 0.90, 0.90, 0.698, 0.106 };
     Double_t rbowinvGreen[rbowinvNRGBs] = { 0.078, 0.925, 0.90, 0.90, 0.818, 0.078 };
     Double_t rbowinvBlue[rbowinvNRGBs] =  { 0.106, 0.353, 0.90, 0.90, 0.880, 0.518 };
-    PPalette *rbowinvPalette = new PPalette("rbowinv");
+    rbowinvPalette = new PPalette("rbowinv");
     rbowinvPalette->CreateGradientColorTable(rbowinvNRGBs, rbowinvStops,rbowinvRed, rbowinvGreen, rbowinvBlue, rbowinvNCont);
   }
 
@@ -219,7 +199,7 @@
     Double_t rbowwhiteRed[rbowwhiteNRGBs] =   { 0.106, 0.698, 1.0, 1.0, 0.965, 0.518 };
     Double_t rbowwhiteGreen[rbowwhiteNRGBs] = { 0.078, 0.818, 1.0, 1.0, 0.925, 0.078 };
     Double_t rbowwhiteBlue[rbowwhiteNRGBs] =  { 0.518, 0.880, 1.0, 1.0, 0.353, 0.106 };
-    PPalette *rbowwhitePalette = new PPalette("rbowwhite");
+    rbowwhitePalette = new PPalette("rbowwhite");
     rbowwhitePalette->CreateGradientColorTable(rbowwhiteNRGBs, rbowwhiteStops,rbowwhiteRed, rbowwhiteGreen, rbowwhiteBlue, rbowwhiteNCont);
   }
   
@@ -245,7 +225,7 @@
     Double_t redRed[redNRGBs] =   { 0.90, 0.965, 0.518 };
     Double_t redGreen[redNRGBs] = { 0.90, 0.925, 0.078 };
     Double_t redBlue[redNRGBs] =  { 0.90, 0.353, 0.106 };
-    PPalette *redPalette = new PPalette("red");
+    redPalette = new PPalette("red");
     redPalette->CreateGradientColorTable(redNRGBs, redStops,redRed, redGreen, redBlue, redNCont);
   }
 
@@ -257,7 +237,7 @@
     Double_t red0Red0[red0NRGBs] =   { 1.00, 0.965, 0.518 };
     Double_t red0Green[red0NRGBs] = { 1.00, 0.925, 0.078 };
     Double_t red0Blue[red0NRGBs] =  { 1.00, 0.353, 0.106 };
-    PPalette *red0Palette = new PPalette("red0");
+    red0Palette = new PPalette("red0");
     red0Palette->CreateGradientColorTable(red0NRGBs, red0Stops,red0Red0, red0Green, red0Blue, red0NCont);
   }
 
@@ -269,19 +249,21 @@
     Double_t blueRed[blueNRGBs] =   { 0.90, 0.498, 0.106};
     Double_t blueGreen[blueNRGBs] = { 0.90, 0.718, 0.078};
     Double_t blueBlue[blueNRGBs] =  { 0.90, 0.780, 0.518};
-    PPalette *bluePalette = new PPalette("blue");
+    bluePalette = new PPalette("blue");
     bluePalette->CreateGradientColorTable(blueNRGBs, blueStops, blueRed, blueGreen, blueBlue, blueNCont);
   }
 
   PPalette * oliPalette = (PPalette*) gROOT->FindObject("oli");
-  const Int_t nRGBs = 9;
-  Double_t stops[nRGBs] = { 0.0000, 0.1250, 0.2500, 0.3750, 0.5000, 0.6250, 0.7500, 0.8750, 1.0000};
-  Double_t red[nRGBs]   = { 0.2081, 0.0591, 0.0779, 0.0231, 0.1801, 0.5300, 0.8185, 0.9955, 0.9763};
-  Double_t green[nRGBs] = { 0.1663, 0.3598, 0.5040, 0.6418, 0.7177, 0.7491, 0.7327, 0.7861, 0.9831};
-  Double_t blue[nRGBs]  = { 0.5292, 0.8683, 0.8384, 0.7913, 0.6424, 0.4661, 0.3498, 0.1967, 0.0538};
-  PPalette * oliPalette = new PPalette("oli");
-  oliPalette->CreateGradientColorTable(nRGBs, stops, red, green, blue, 255, 1);
-  
+  if(!oliPalette) {
+    const Int_t nRGBs = 9;
+    Double_t stops[nRGBs] = { 0.0000, 0.1250, 0.2500, 0.3750, 0.5000, 0.6250, 0.7500, 0.8750, 1.0000};
+    Double_t red[nRGBs]   = { 0.2081, 0.0591, 0.0779, 0.0231, 0.1801, 0.5300, 0.8185, 0.9955, 0.9763};
+    Double_t green[nRGBs] = { 0.1663, 0.3598, 0.5040, 0.6418, 0.7177, 0.7491, 0.7327, 0.7861, 0.9831};
+    Double_t blue[nRGBs]  = { 0.5292, 0.8683, 0.8384, 0.7913, 0.6424, 0.4661, 0.3498, 0.1967, 0.0538};
+    oliPalette = new PPalette("oli");
+    oliPalette->CreateGradientColorTable(nRGBs, stops, red, green, blue, 255, 1);
+  }
+
   // Default palette
   electron0Palette->cd();
   // cout << "Done! (default palette : electron)." << endl;

@@ -35,7 +35,7 @@ PPalette::~PPalette()
   if (fColors) delete [] fColors;
 }
   
-void PPalette::CreateGradientColorTable(UInt_t Number, 
+Int_t PPalette::CreateGradientColorTable(UInt_t Number, 
 					Double_t* Stops, 
 					Double_t* Red, 
 					Double_t* Green,
@@ -43,49 +43,36 @@ void PPalette::CreateGradientColorTable(UInt_t Number,
 					UInt_t NColors,
 					Float_t alpha)
 {
-  // Linear gradient color table:
-  // Red, Green and Blue are several RGB colors with values from 0.0 .. 1.0.
-  // Their number is "Intervals".
-  // Stops is the length of the color interval between the RGB-colors:
-  // Imaging the whole gradient goes from 0.0 for the first RGB color to 1.0
-  // for the last RGB color, then each "Stops"-entry in between stands for
-  // the length of the intervall between the according RGB colors.
-  //
-  // This definition is similar to the povray-definition of gradient
-  // color tables.
-  //
-  // In order to create a color table do the following:
-  // Define the RGB Colors:
-  // > UInt_t Number = 5;
-  // > Double_t Red[5]   = { 0.00, 0.09, 0.18, 0.09, 0.00 };
-  // > Double_t Green[5] = { 0.01, 0.02, 0.39, 0.68, 0.97 };
-  // > Double_t Blue[5]  = { 0.17, 0.39, 0.62, 0.79, 0.97 };
-  // Define the length of the (color)-interval between this points
-  // > Double_t Stops[5] = { 0.00, 0.34, 0.61, 0.84, 1.00 };
-  // i.e. the color interval between Color 2 and Color 3 is
-  // 0.79 - 0.62 => 17 % of the total palette area between these colors
-  //
-  //  Original code by Andreas Zoglauer <zog@mpe.mpg.de>
-
-  // // This bit tries to directly use the method in TColor, but was somehow mixing the palettes
-  // fNColors = NColors;
-  // fColors = new Int_t[NColors];
-  
-  // fColors[0]=TColor::CreateGradientColorTable(Number,Stops,Red,Green,Blue,NColors,alpha);
-  // for(UInt_t i=1;i<NColors;i++)
-  //   fColors[i] = fColors[i-1]+1;
-
-    UInt_t g, c;
-  
+ 
   if (fColors) delete [] fColors;
+  fNColors = NColors;
+  fColors = new Int_t[fNColors];
+  
+  Int_t ind = TColor::CreateGradientColorTable(Number,Stops,Red,Green,Blue,NColors,alpha);
 
-  fNColors = 0;
-  fColors = new Int_t[NColors+1];
+  for (UInt_t i = 0; i < NColors; i++) fColors[i] = ind+i;
 
-  UInt_t nColorsGradient;
-  TColor * color;
-  Int_t highestIndex = 0;
+  return ind;
+  
+}
 
+Int_t PPalette::ChangeGradientColorTable(UInt_t Number, 
+					Double_t* Stops, 
+					Double_t* Red, 
+					Double_t* Green,
+					Double_t* Blue,
+					Float_t alpha)
+{
+
+  TColor::InitializeColors();
+  
+  if(Number < 2 || fNColors < 1){
+    return -1;
+  }
+  
+  UInt_t g, c;
+
+  
   // Check if all RGB values are between 0.0 and 1.0 and
   // Stops goes from 0.0 to 1.0 in increasing order.
   for (c = 0; c < Number; c++) {
@@ -94,87 +81,106 @@ void PPalette::CreateGradientColorTable(UInt_t Number,
 	Blue[c] < 0 || Blue[c] > 1.0 ||
 	Stops[c] < 0 || Stops[c] > 1.0) {
       //Error("CreateGradientColorTable",
-      //      "All RGB colors and interval lengths have to be between 0.0 and 1.0");
-      
-      delete [] fColors;
-      fColors = 0;
-      
-      return;
+      //      "All RGB colors and stops have to be between 0.0 and 1.0");
+      return -1;
     }
     if (c >= 1) {
       if (Stops[c-1] > Stops[c]) {
 	//Error("CreateGradientColorTable",
-	//      "The interval lengths have to be in increasing order");
-	
-	delete [] fColors;
-	fColors = 0;
-
-	return;
+	//      "Stops have to be in increasing order");
+	return -1;
       }
     }
   }
   
-  TColor::InitializeColors();
+  // Now create the new colors and replace the old ones
+  UInt_t nPalette = 0;
+  Int_t *palette = new Int_t[fNColors+1];
+  UInt_t nColorsGradient;
+  TColor *color;
+  Int_t  index = fColors[0];
 
-  // Search for the highest color index not used in ROOT:
-  // We do not want to overwrite some colors...
-  TSeqCollection * colorTable = gROOT->GetListOfColors();
-  if ((color = (TColor *) colorTable->Last()) != 0) {
-    if (color->GetNumber() > highestIndex) {
-      highestIndex = color->GetNumber();
-    }
-    while ((color = (TColor *) (colorTable->Before(color))) != 0) {
-      if (color->GetNumber() > highestIndex) {
-	highestIndex = color->GetNumber();
-      }
-    }
-  }
-  highestIndex++;
-
-  // Now create the colors and add them to the default palette:
-  
-  // For each defined gradient...
   for (g = 1; g < Number; g++) {
     // create the colors...
-    nColorsGradient = (Int_t) (floor(NColors*Stops[g]) - floor(NColors*Stops[g-1]));
+    nColorsGradient = (Int_t) (floor(fNColors*Stops[g]) - floor(fNColors*Stops[g-1]));
     for (c = 0; c < nColorsGradient; c++) {
-      color = new TColor(highestIndex,
-			 Red[g-1] + c * (Red[g] - Red[g-1])/ nColorsGradient,
-			 Green[g-1] + c * (Green[g] - Green[g-1])/ nColorsGradient,
-			 Blue[g-1] + c * (Blue[g] - Blue[g-1])/ nColorsGradient,
-			 Form("%s_%d", GetName(), fNColors));
-      gROOT->GetColor(highestIndex)->SetAlpha(alpha);
-      fColors[fNColors] = highestIndex;
-      fNColors++;
-      highestIndex++;
+      TColor *col = gROOT->GetColor(index);
+      if(col) {
+	col->SetRGB(Red[g-1] + c * (Red[g] - Red[g-1])/ nColorsGradient,
+		     Green[g-1] + c * (Green[g] - Green[g-1])/ nColorsGradient,
+		     Blue[g-1] + c * (Blue[g] - Blue[g-1])/ nColorsGradient);
+	
+	col->SetAlpha(alpha);
+
+      } else {
+	new TColor(index,
+		   Red[g-1] + c * (Red[g] - Red[g-1])/ nColorsGradient,
+		   Green[g-1] + c * (Green[g] - Green[g-1])/ nColorsGradient,
+		   Blue[g-1] + c * (Blue[g] - Blue[g-1])/ nColorsGradient,
+		   "  ",alpha);
+      }
+      
+      palette[nPalette] = index;
+      nPalette++;
+      index++;
     }
   }
-
-  fNColors--;
-
-  TColor::SetPalette(fNColors, fColors);
-
   
+  TColor::SetPalette(nPalette, palette);  
+  
+  Int_t ind = index - fNColors; 
+  for (UInt_t i = 0; i < fNColors; i++) fColors[i] = ind+i;
+
+  return ind;
+
 }
- 
+
 void PPalette::cd()
 {
   gStyle->SetPalette(fNColors, fColors);
-  gStyle->SetNumberContours(fNColors);
+  // gStyle->SetNumberContours(fNColors);
 }
  
-void PPalette::SetPalette(const char * name)
+Int_t PPalette::SetPalette(const char * name)
 {
   TObject * obj = gROOT->GetListOfSpecials()->First();
   while (obj) {
-    if (strcmp(obj->GetName(), name)==0 && 
-	obj->IsA()->InheritsFrom(PPalette::Class())) {
+    if (strcmp(obj->GetName(), name)==0 && obj->IsA()->InheritsFrom(PPalette::Class())) {
       ((PPalette*)obj)->cd();
       break;
     }
     obj = gROOT->GetListOfSpecials()->After(obj);
   }
+  
+  if(obj) {
+    if (fColors) delete [] fColors;
+    fNColors = ((PPalette*)obj)->GetNColors();
+    fColors = new Int_t[fNColors];
+    for (UInt_t i = 0; i < fNColors; i++) fColors[i] = ((PPalette*)obj)->GetColorIndex(i);
+    
+    return 1;
+  } else {
+
+    if(strcmp(name,"gray")==0) {
+      const Int_t NRGBs = 2;
+      const Int_t NCont = 64;
+      Double_t Stops[NRGBs] = { 0.00, 1.00 };
+      Double_t Red[NRGBs] =   { 0.99, 0.1 };
+      Double_t Green[NRGBs] = { 0.99, 0.1 };
+      Double_t Blue[NRGBs] =  { 0.99, 0.1 };
+     
+      this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont);
+      return 1;
+      
+    } else    
+      return 0;
+    
+    
+  }
+  
 }
+
+  
 
 
 void PPalette::SetAlpha(Float_t alpha)

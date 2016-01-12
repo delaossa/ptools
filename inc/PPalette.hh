@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <TNamed.h>
+#include <TColor.h>
 
 class PPalette : public TNamed
 {
@@ -12,15 +13,23 @@ public:
   PPalette(const char * name);
   virtual ~PPalette();
   
-  void                         CreateGradientColorTable(UInt_t Number, 
-							Double_t* Stops, 
-							Double_t* Red, 
-							Double_t* Green,
-							Double_t* Blue,
-							UInt_t NColors,
-							Float_t alpha=1);
+  Int_t   CreateGradientColorTable(UInt_t Number, 
+				  Double_t* Stops, 
+				  Double_t* Red, 
+				  Double_t* Green,
+				  Double_t* Blue,
+				  UInt_t NColors,
+				  Float_t alpha=1);
 
-  Int_t                        GetColor(Int_t i=0) {
+  Int_t   ChangeGradientColorTable(UInt_t Number, 
+				  Double_t* Stops, 
+				  Double_t* Red, 
+				  Double_t* Green,
+				  Double_t* Blue,
+				  Float_t alpha=1);
+
+  
+  Int_t  GetColor(UInt_t i=0) {
     if(i>=fNColors) {
       std::cout << "Color index out of range. Returning last color." << std::endl;
       return fColors[fNColors-1];
@@ -33,12 +42,28 @@ public:
   };
 
   UInt_t GetNColors() {
-    return fNColors+1;
+    return fNColors;
   }
   
-  virtual void                 cd();
-  static void                  SetPalette(const char * name);
-  void                         SetAlpha(Float_t alpha=1);
+  virtual void    cd();
+  void    SetPalette(Int_t ncolors, Int_t *colors = 0,Float_t alpha=1.) {
+    TColor::SetPalette(ncolors,colors,alpha);
+    fNColors = TColor::GetNumberOfColors();
+    Int_t ind = TColor::GetColorPalette(0);
+    if (fColors) delete [] fColors;
+    fColors = new Int_t[fNColors];
+    for (UInt_t i = 0; i < fNColors; i++) fColors[i] = ind+i;
+  }
+  
+  Int_t           SetPalette(const char * name);
+  void            SetAlpha(Float_t alpha=1);
+
+  Int_t           GetColorIndex(UInt_t i=0) {
+    if(i<fNColors) {
+      return fColors[i];
+    } else
+      return -1;
+  }
   
 protected:
 

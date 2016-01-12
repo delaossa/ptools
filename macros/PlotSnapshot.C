@@ -94,6 +94,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(opt.Contains("gridy")) {
     gStyle->SetPadGridY(1);
   }
+  gStyle->SetNumberContours(64);
   
   // Some plasma constants
   Float_t n0 = pData->GetPlasmaDensity();
@@ -524,8 +525,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   
   // Dynamic plasma palette
-  const Int_t plasmaDNRGBs = 3;
-  const Int_t plasmaDNCont = 64;
+  const Int_t NRGBs = 3;
+  const Int_t NCont = 64;
   Float_t basePos = 0.5;
   Float_t localPos = basePos;
   if(Max[0]!=Min[0]) {
@@ -541,15 +542,24 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
   }
 
-  Double_t plasmaDStops[plasmaDNRGBs] = { 0.00, basePos, 1.00 };
-  Double_t plasmaDRed[plasmaDNRGBs]   = { 0.99, 0.90, 0.00 };
-  Double_t plasmaDGreen[plasmaDNRGBs] = { 0.99, 0.90, 0.00 };
-  Double_t plasmaDBlue[plasmaDNRGBs]  = { 0.99, 0.90, 0.00 };
+  Double_t Stops[NRGBs] = { 0.00, basePos, 1.00 };
+  Double_t Red[NRGBs]   = { 0.99, 0.90, 0.00 };
+  Double_t Green[NRGBs] = { 0.99, 0.90, 0.00 };
+  Double_t Blue[NRGBs]  = { 0.99, 0.90, 0.00 };
    
   PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
-  plasmaPalette->CreateGradientColorTable(plasmaDNRGBs, plasmaDStops, 
-					  plasmaDRed, plasmaDGreen, plasmaDBlue, plasmaDNCont,1.0);
+  if(!plasmaPalette) {
+    plasmaPalette = new PPalette("plasma");
+    plasmaPalette->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, 1.0);
+  } else {
+    plasmaPalette->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, 1.0);
+  }
 
+  cout << Form(" N colors = %i   Color index  = %i ", plasmaPalette->GetNColors(),
+	       plasmaPalette->GetColor(0)) << endl;
+	       
+	       
+	       
   // Redefines the ground color of the electron palette to match background plasmas.
   if(opt.Contains("mbeam")) {
     Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
@@ -560,17 +570,21 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     cout << Form(" N colors = %i   Base position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plasmaPalette->GetNColors(), basePos, rootcolorindex, r, g, b) << endl;
 
+    const Int_t elecNRGBs = 5;
+    const Int_t elecNCont = 64;
+    Double_t elecStops[elecNRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
+    Double_t elecRed[elecNRGBs] =   { r, 0.22, 0.39, 0.70, 1.00};
+    Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
+    Double_t elecBlue[elecNRGBs] =  { b, 0.58, 0.33, 0.30, 0.20};
+    
     PPalette * elecPalette = (PPalette*) gROOT->FindObject("redelectron");
-    if(elecPalette) {
-      const Int_t elecNRGBs = 5;
-      const Int_t elecNCont = 64;
-      Double_t elecStops[elecNRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
-      Double_t elecRed[elecNRGBs] =   { r, 0.22, 0.39, 0.70, 1.00};
-      Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
-      Double_t elecBlue[elecNRGBs] =  { b, 0.58, 0.33, 0.30, 0.20};
-      elecPalette->CreateGradientColorTable(elecNRGBs, elecStops, 
-					    elecRed, elecGreen, elecBlue, elecNCont,1.0);
+    if(!elecPalette) {
+      elecPalette = new PPalette("redelectron");
+      elecPalette->CreateGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, elecNCont,1.0);
+    } else {
+      elecPalette->ChangeGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, 1.0);
     }
+    
   }  
 
   
@@ -687,6 +701,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
    
   // Dynamic potential palette (blue values indicate trapping volume in respect to the minimum.
   if(binPotValueIni>0 && opt.Contains("trap")) {
+    
     { // Shift potential value in respect to the minimum
       Int_t NbinsX = hV2D->GetNbinsX(); 
       Int_t NbinsY = hV2D->GetNbinsY();
@@ -1188,7 +1203,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TExec *exHot    = new TExec("exHot","hotPalette->cd();");
   TExec *exField  = new TExec("exField","rbowwhitePalette->cd();");
   TExec *exFieldT = new TExec("exFieldT","red0Palette->cd();");
-  //TExec *exIonP   = new TExec("exIonP","grayPalette->cd();");
+  // TExec *exIonP   = new TExec("exIonP","grayPalette->cd();");
   TExec *exIonP   = new TExec("exIonP","redelectron0Palette->cd();");
   // TExec *exPot    = new TExec("exPot","rbowPalette->cd();");
   TExec *exPot    = new TExec("exPot","rbowwhitePalette->cd();");

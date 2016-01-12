@@ -7,6 +7,7 @@
 #include <TSystem.h>
 #include <TFile.h>
 #include <TExec.h>
+#include <TStopwatch.h>
 
 //#include "PData.hh"
 //#include "PDataHiP.hh"
@@ -74,7 +75,9 @@ int main(int argc,char *argv[]) {
 
   // Time looper
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
-
+    TStopwatch * stopwatch = new TStopwatch();
+    stopwatch->Start();
+    
     time = i;
 
     cout << Form("\nLooping %s at time step %i:\n",sim.Data(),time) << endl;
@@ -85,6 +88,10 @@ int main(int argc,char *argv[]) {
     
     cout << command << endl;
     gROOT->ProcessLine(command);
+
+
+    cout << "Time for iteration #" << i << ": "<< fixed 
+	 << stopwatch->RealTime() << "s" <<endl;
     
   }
 
