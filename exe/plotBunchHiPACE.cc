@@ -1262,9 +1262,13 @@ int main(int argc,char *argv[]) {
       C->Clear();
 
       // Set palette:
-      PPalette * pPalette = (PPalette*) gROOT->FindObject("electron");
-      pPalette->cd();
-
+      PPalette * pPalette = (PPalette*) gROOT->FindObject("electron0");
+      if(!pPalette) {
+	pPalette = new PPalette("electron0");
+	pPalette->SetPalette("electron0");
+	//pPalette->SetAlpha(1);
+      }
+      
       // Float_t Max  = hP1X1->GetMaximum();
       // Float_t Min  = hP1X1->GetMinimum();
 

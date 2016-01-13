@@ -1941,7 +1941,11 @@ int main(int argc,char *argv[]) {
 
       // Set palette:
       PPalette * pPalette = (PPalette*) gROOT->FindObject("electron0");
-      pPalette->cd();
+      if(!pPalette) {
+	pPalette = new PPalette("electron0");
+	pPalette->SetPalette("electron0");
+	//pPalette->SetAlpha(1);
+      }
 
       // Text objects
       TPaveText *textTime =  new TPaveText(0.55,0.76,0.80,0.86,"NDC");

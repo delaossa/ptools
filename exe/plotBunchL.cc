@@ -1118,9 +1118,12 @@ int main(int argc,char *argv[]) {
 
     // Set palette:
     PPalette * pPalette = (PPalette*) gROOT->FindObject("electron0");
-    pPalette->SetAlpha(1);
-    pPalette->cd();
-    
+    if(!pPalette) {
+      pPalette = new PPalette("electron0");
+      pPalette->SetPalette("electron0");
+      //pPalette->SetAlpha(1);
+    }
+       
     TString drawopt = "colz";
     TString drawopts = "colz same";
     

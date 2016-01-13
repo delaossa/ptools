@@ -24,7 +24,7 @@
 #include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PFunctions.hh"
-#include "PPalette.hh"
+//#include "PPalette.hh"
 #include "H5Cpp.h"
 
 using namespace std;

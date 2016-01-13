@@ -43,4 +43,11 @@
     ionPalette->SetPalette("rbow0");
   }
 
+  PPalette *defPalette = (PPalette*) gROOT->FindObject("def");
+  if(!defPalette) {
+    defPalette = new PPalette("def");
+    defPalette->SetPalette("oli");
+  }
+  
+  
 }

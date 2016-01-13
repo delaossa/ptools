@@ -283,6 +283,8 @@ void plotLotov( const TString &options="" ){
   fRsqrt2->SetLineColor(kGray+2);
 
   // Canvas
+  gStyle->SetNumberContours(255);
+ 
   Int_t sizex = 800;
   Int_t sizey = 600;
   char cName[32];
@@ -297,7 +299,7 @@ void plotLotov( const TString &options="" ){
 
   // Set palette:
   // PPalette * pPalette = (PPalette*) gROOT->FindObject("electron0");
-  PPalette * pPalette = (PPalette*) gROOT->FindObject("oli");
+  PPalette * pPalette = (PPalette*) gROOT->FindObject("def");
   pPalette->cd();
   // const Int_t nRGBs = 9;
   // Double_t stops[nRGBs] = { 0.0000, 0.1250, 0.2500, 0.3750, 0.5000, 0.6250, 0.7500, 0.8750, 1.0000};
