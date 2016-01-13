@@ -577,7 +577,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
     Double_t elecBlue[elecNRGBs] =  { b, 0.58, 0.33, 0.30, 0.20};
     
-    PPalette * elecPalette = (PPalette*) gROOT->FindObject("redelectron");
+    PPalette * elecPalette = (PPalette*) gROOT->FindObject("beam");
     if(!elecPalette) {
       elecPalette = new PPalette("redelectron");
       elecPalette->CreateGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, elecNCont,1.0);
@@ -697,7 +697,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
   }
 
-  PPalette * potPalette = (PPalette*) gROOT->FindObject("rbow");
+  PPalette * potPalette = (PPalette*) gROOT->FindObject("pot");
    
   // Dynamic potential palette (blue values indicate trapping volume in respect to the minimum.
   if(binPotValueIni>0 && opt.Contains("trap")) {
@@ -1190,23 +1190,18 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   cout << endl;
 
   // Access to color Palettes 
-  TExec *exPlasma;
   if(opt.Contains("alpha"))
-    exPlasma = new TExec("exPlasma","plasmaPalette->SetAlpha(0.8); plasmaPalette->cd();");
+    plasmaPalette->SetAlpha(0.8);
   else
-    exPlasma = new TExec("exPlasma","plasmaPalette->SetAlpha(1.0); plasmaPalette->cd();");
-    
-  //  TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
-  //  TExec *exElec   = new TExec("exElec","redelectronPalette->SetAlpha(0.8); redelectronPalette->cd();");
-  TExec *exElec   = new TExec("exElec","redelectronPalette->cd();");
-  //  TExec *exHot    = new TExec("exHot","hotPalette->SetAlpha(0.8); hotPalette->cd();");
-  TExec *exHot    = new TExec("exHot","hotPalette->cd();");
-  TExec *exField  = new TExec("exField","rbowwhitePalette->cd();");
-  TExec *exFieldT = new TExec("exFieldT","red0Palette->cd();");
-  // TExec *exIonP   = new TExec("exIonP","grayPalette->cd();");
-  TExec *exIonP   = new TExec("exIonP","redelectron0Palette->cd();");
-  // TExec *exPot    = new TExec("exPot","rbowPalette->cd();");
-  TExec *exPot    = new TExec("exPot","rbowwhitePalette->cd();");
+    plasmaPalette->SetAlpha(1.0);
+  
+  TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
+  TExec *exBeam   = new TExec("exBeam","beamPalette->cd();");
+  TExec *exBeam2  = new TExec("exBeam2","beam2Palette->cd();");
+  TExec *exField  = new TExec("exField","fieldPalette->cd();");
+  TExec *exFieldT = new TExec("exFieldT","fieldTPalette->cd();");
+  TExec *exPot    = new TExec("exPot","potPalette->cd();");
+  TExec *exIonP   = new TExec("exIonP","ionPalette->cd();");
         
   TString drawopt = "colz same";
 
@@ -1292,7 +1287,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
 	hDen2D[0]->GetZaxis()->SetTickLength(tylength);
 	exPlasma->Draw();
-	//exElec->Draw();
+	//exBeam->Draw();
 	
 	hDen2D[0]->Draw(drawopt);
       }
@@ -1309,15 +1304,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(hDen2D[1] && noIndex!=1) {
 	hDen2D[1]->GetZaxis()->SetNdivisions(503);
 	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
-	exElec->Draw();
+	exBeam->Draw();
 	hDen2D[1]->Draw(drawopt);
       }
     } else if (Nspecies==3) {
 
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
-	exHot->Draw();
-	//exElec->Draw();
+	exBeam2->Draw();
+	//exBeam->Draw();
 	hDen2D[2]->GetZaxis()->SetNdivisions(503);
 	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
 	hDen2D[2]->Draw(drawopt);
@@ -1336,7 +1331,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(hDen2D[1] && noIndex!=1) {
 	hDen2D[1]->GetZaxis()->SetNdivisions(503);
 	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
-	exElec->Draw();
+	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
       }
@@ -1356,14 +1351,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(hDen2D[1] && noIndex!=1) {
 	hDen2D[1]->GetZaxis()->SetNdivisions(503);
 	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
-	exElec->Draw();
+	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
       }
 
       // Injected electrons ?
       if(hDen2D[3] && noIndex!=2) {
-	exElec->Draw();
+	exBeam->Draw();
 	hDen2D[3]->GetZaxis()->SetNdivisions(503);
 	hDen2D[3]->GetZaxis()->SetTitleFont(fonttype);
 	hDen2D[3]->Draw(drawopt);
@@ -1371,8 +1366,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
-	exHot->Draw();
-	//exElec->Draw();
+	exBeam2->Draw();
+	//exBeam->Draw();
 	hDen2D[2]->GetZaxis()->SetNdivisions(503);
 	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
 	hDen2D[2]->Draw(drawopt);

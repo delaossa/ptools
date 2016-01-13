@@ -19,14 +19,14 @@ public:
 				  Double_t* Green,
 				  Double_t* Blue,
 				  UInt_t NColors,
-				  Float_t alpha=1);
+				  Float_t alpha=1.0);
 
   Int_t   ChangeGradientColorTable(UInt_t Number, 
 				  Double_t* Stops, 
 				  Double_t* Red, 
 				  Double_t* Green,
 				  Double_t* Blue,
-				  Float_t alpha=1);
+				  Float_t alpha=1.0);
 
   
   Int_t  GetColor(UInt_t i=0) {
@@ -54,6 +54,8 @@ public:
     fColors = new Int_t[fNColors];
     for (UInt_t i = 0; i < fNColors; i++) fColors[i] = ind+i;
   }
+
+  void            Invert();
   
   Int_t           SetPalette(const char * name);
   void            SetAlpha(Float_t alpha=1);
@@ -69,6 +71,8 @@ protected:
 
   UInt_t                      fNColors;
   Int_t                      *fColors;
+  Float_t                     fAlpha;         //Alpha (transparency)
+
 
   ClassDef(PPalette,0);
 };
