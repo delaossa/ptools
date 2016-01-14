@@ -2653,46 +2653,11 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
 //_______________________________________________________________________
 TH3F* PData::GetH3(const char *filename,const char *dataname) {
 
+  // Save memory and time with an specific range selection.
+
   // Open input HDF5 file
   H5File h5 = H5File(filename,H5F_ACC_RDONLY);
   
-  // Open "axis" group 
-  Group *axis = new Group(h5.openGroup("/AXIS"));
-
-  // Get axes
-  Double_t ax1lims[2];
-  DataSet  *ax1 = new DataSet(axis->openDataSet("AXIS1"));
-  hsize_t  *ax1Dims = new hsize_t[1];
-  ax1->getSpace().getSimpleExtentDims(ax1Dims,NULL);
-  DataSpace mem1(1,ax1Dims);
-  ax1->read(ax1lims,PredType::NATIVE_DOUBLE,mem1,ax1->getSpace());
-  ax1->close(); 
-  delete ax1Dims;
-  delete ax1;
-
-  Double_t ax2lims[2];
-  DataSet  *ax2 = new DataSet(axis->openDataSet("AXIS2"));
-  hsize_t  *ax2Dims = new hsize_t[1];
-  ax2->getSpace().getSimpleExtentDims(ax2Dims,NULL);
-  DataSpace mem2(1,ax2Dims);
-  ax2->read(ax2lims,PredType::NATIVE_DOUBLE,mem2,ax2->getSpace());
-  ax2->close();
-  delete ax2Dims;
-  delete ax2;
-
-  Double_t ax3lims[2];
-  DataSet  *ax3 = new DataSet(axis->openDataSet("AXIS3"));
-  hsize_t  *ax3Dims = new hsize_t[1];
-  ax3->getSpace().getSimpleExtentDims(ax3Dims,NULL);
-  DataSpace mem3(1,ax3Dims);
-  ax3->read(ax3lims,PredType::NATIVE_DOUBLE,mem3,ax3->getSpace());
-  ax3->close();
-  delete ax3Dims;
-  delete ax3;
-
-  axis->close();
-
-
   // Open main group for data reading
   Group *root = new Group(h5.openGroup("/"));
 
@@ -2700,52 +2665,63 @@ TH3F* PData::GetH3(const char *filename,const char *dataname) {
   // ----------
   DataSet  *dataSet = new DataSet(root->openDataSet(dataname));
   DataSpace dataSpace = dataSet->getSpace();
+  const DataType type = dataSet->getDataType();
+  
   Int_t rank = dataSpace.getSimpleExtentNdims();
   hsize_t  *dataDims = new hsize_t[rank];
   dataSpace.getSimpleExtentDims(dataDims,NULL);
   
-  UInt_t x1Dim = dataDims[2];
-  UInt_t x2Dim = dataDims[1];
-  UInt_t x3Dim = dataDims[0];
-
-  // This is for sequential access to the 3D array.
-  // The third coordinate work as the loop index
-  dataDims[0] = 1; 
-  hsize_t  *count  = new hsize_t[rank];
-  hsize_t  *offset = new hsize_t[rank];
-  for(Int_t j=0;j<rank;j++) {
-    offset[j] = 0;
-    count[j]  = dataDims[j];
-  }
+  //----------
+  UInt_t x1AvgFactor = GetNX(0)/dataDims[2];
+  UInt_t x1Dim = GetX1N()/x1AvgFactor;
+  Double_t x1Min = GetX1Min();
+  Double_t x1Max = GetX1Max();
   
-  const DataType type = dataSet->getDataType();
-  Float_t data[x2Dim][x1Dim];
-  DataSpace memSpace(rank,dataDims);
+  UInt_t x2AvgFactor = GetNX(1)/dataDims[1];
+  UInt_t x2Dim = GetX2N()/x2AvgFactor;
+  Double_t x2Min = GetX2Min();
+  Double_t x2Max = GetX2Max();
 
+  UInt_t x3AvgFactor = GetNX(2)/dataDims[0];
+  UInt_t x3Dim = GetX3N()/x3AvgFactor;
+  Double_t x3Min = GetX3Min();
+  Double_t x3Max = GetX3Max();
+
+  hsize_t  *count  = new hsize_t[rank];
+  count[0] = x3Dim;
+  count[1] = x2Dim;
+  count[2] = x1Dim;
+  
+  hsize_t  *offset = new hsize_t[rank];  
+  offset[0] = GetX3iMin()/x3AvgFactor;
+  offset[1] = GetX2iMin()/x2AvgFactor;
+  offset[2] = GetX1iMin()/x1AvgFactor;
+
+  Float_t *data = new Float_t[x3Dim * x2Dim * x1Dim];
+
+  DataSpace memSpace(rank,count);
+  dataSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
+  dataSet->read(data,PredType::NATIVE_FLOAT,memSpace,dataSpace);
+  dataSet->close();
+
+  root->close();
+  
   string sdata = dataname;
  
   TH3F *h3D = new TH3F();
-  h3D->SetBins(x1Dim,ax1lims[0],ax1lims[1],x2Dim,ax2lims[0],ax2lims[1],x3Dim,ax3lims[0],ax3lims[1]);
+  h3D->SetBins(x1Dim,x1Min,x1Max,x2Dim,x2Min,x2Max,x3Dim,x3Min,x3Max); 
   
-  offset[0] = 0;
   for(UInt_t i=0; i<x3Dim; i++) {
-    dataSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
-    dataSet->read(data,type,memSpace,dataSpace);
-    
     for(UInt_t j=0;j<x2Dim;j++) {
       for(UInt_t k=0;k<x1Dim;k++) {
+	UInt_t index = (long)i*(long)x2Dim*(long)x1Dim + (long)j*(long)x1Dim + (long)k;
 	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
-	  h3D->SetBinContent(i+1,j+1,k+1,-data[j][k]);
+	  h3D->SetBinContent(k+1,j+1,i+1,-data[index]);
 	else
-	  h3D->SetBinContent(i+1,j+1,k+1,data[j][k]);
+	  h3D->SetBinContent(k+1,j+1,i+1,data[index]);
       }
     }
-
-    offset[0]++;
   }
-  dataSet->close();
-  
-  root->close();
   
   delete count;
   delete offset;

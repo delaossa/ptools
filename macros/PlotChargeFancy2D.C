@@ -44,7 +44,16 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
   if(!pData->IsInit()) return;
 
   TString opt = options;
- 
+
+  gStyle->SetPadGridY(0);
+  if(opt.Contains("gridx")) {
+    gStyle->SetPadGridX(1);
+  }
+  if(opt.Contains("gridy")) {
+    gStyle->SetPadGridY(1);
+  }
+  gStyle->SetNumberContours(255);
+  
   // Some plasma constants
   Double_t n0 = pData->GetPlasmaDensity();
   Double_t kp = pData->GetPlasmaK();
@@ -399,8 +408,6 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
   }
   
   // Dynamic plasma palette
-  const Int_t plasmaDNRGBs = 3;
-  const Int_t plasmaDNCont = 64;
   Float_t basePos = 0.5;
   if(Max[0]!=Min[0]) {
     if(opt.Contains("logz")) {
@@ -414,36 +421,40 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
   }
 
   // FANCY palette for plasma
-  // Double_t plasmaDStops[plasmaDNRGBs] = { 0.00, basePos, 1.00 };
-  // Double_t plasmaDRed[plasmaDNRGBs]   = { 0.04, 0.09, 1.00 };
-  // Double_t plasmaDGreen[plasmaDNRGBs] = { 0.04, 0.17, 1.00 };
-  // Double_t plasmaDBlue[plasmaDNRGBs]  = { 0.04, 0.32, 1.00 };
-   
-  // PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
-  // plasmaPalette->CreateGradientColorTable(plasmaDNRGBs, plasmaDStops, 
-  // 					  plasmaDRed, plasmaDGreen, plasmaDBlue, plasmaDNCont);
+  const Int_t plasmaNRGBs = 3;
+  const Int_t plasmaNCont = 64;
+  Double_t plasmaStops[plasmaNRGBs] = { 0.00, basePos, 1.00 };
+  Double_t plasmaRed[plasmaNRGBs]   = { 0.04, 0.09, 1.00 };
+  Double_t plasmaGreen[plasmaNRGBs] = { 0.04, 0.17, 1.00 };
+  Double_t plasmaBlue[plasmaNRGBs]  = { 0.04, 0.32, 1.00 };
 
-  Double_t plasmaDStops[plasmaDNRGBs] = { 0.00, basePos, 1.00 };
-  Double_t plasmaDRed[plasmaDNRGBs]   = { 0.99, 0.90, 0.00 };
-  Double_t plasmaDGreen[plasmaDNRGBs] = { 0.99, 0.90, 0.00 };
-  Double_t plasmaDBlue[plasmaDNRGBs]  = { 0.99, 0.90, 0.00 };
+  // Double_t plasmaStops[plasmaNRGBs] = { 0.00, basePos, 1.00 };
+  // Double_t plasmaRed[plasmaNRGBs]   = { 0.99, 0.90, 0.00 };
+  // Double_t plasmaGreen[plasmaNRGBs] = { 0.99, 0.90, 0.00 };
+  // Double_t plasmaBlue[plasmaNRGBs]  = { 0.99, 0.90, 0.00 };
    
   PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
-  plasmaPalette->CreateGradientColorTable(plasmaDNRGBs, plasmaDStops, 
-					  plasmaDRed, plasmaDGreen, plasmaDBlue, plasmaDNCont);
+  if(!plasmaPalette) {
+    plasmaPalette = new PPalette("plasma");
+    plasmaPalette->CreateGradientColorTable(plasmaNRGBs, plasmaStops, plasmaRed, plasmaGreen, plasmaBlue, plasmaNCont);
+  } else {
+    plasmaPalette->ChangeGradientColorTable(plasmaNRGBs, plasmaStops, plasmaRed, plasmaGreen, plasmaBlue);
+  }
+ 
+  const Int_t beamNRGBs = 4;
+  const Int_t beamNCont = 64;
+  Double_t beamStops[beamNRGBs] = { 0.00, 0.20, 0.40, 1.00};
+  Double_t beamRed[beamNRGBs] =   { 0.09, 0.39, 0.70, 1.00};
+  Double_t beamGreen[beamNRGBs] = { 0.17, 0.05, 0.20, 1.00};
+  Double_t beamBlue[beamNRGBs] =  { 0.32, 0.33, 0.30, 0.20};
 
-
-  // const Int_t redelectronNRGBs = 4;
-  // const Int_t redelectronNCont = 64;
-  // Double_t redelectronStops[redelectronNRGBs] = { 0.30, 0.40, 0.60, 1.00};
-  // Double_t redelectronRed[redelectronNRGBs] =   { 0.09, 0.39, 0.70, 1.00};
-  // Double_t redelectronGreen[redelectronNRGBs] = { 0.17, 0.05, 0.20, 1.00};
-  // Double_t redelectronBlue[redelectronNRGBs] =  { 0.32, 0.33, 0.30, 0.20};
-
-  // PPalette * redelectronPalette = (PPalette*) gROOT->FindObject("redelectron");
-  // redelectronPalette->CreateGradientColorTable(redelectronNRGBs, redelectronStops, 
-  // 					       redelectronRed, redelectronGreen, redelectronBlue, redelectronNCont);
-  
+  PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
+  if(!beamPalette) {
+    beamPalette = new PPalette("beam");
+    beamPalette->CreateGradientColorTable(beamNRGBs, beamStops, beamRed, beamGreen, beamBlue, beamNCont);
+  } else {
+    beamPalette->ChangeGradientColorTable(beamNRGBs, beamStops, beamRed, beamGreen, beamBlue);
+  }
 
   // const Int_t hotNRGBs = 3;
   // const Int_t hotNCont = 64;
@@ -493,8 +504,8 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
  
   // Palettes setup
   TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
-  TExec *exDriver   = new TExec("exDriver","electronPalette->cd();");
-  TExec *exWitness    = new TExec("exWitness","hotPalette->cd();");
+  TExec *exDriver   = new TExec("exDriver","beamPalette->cd();");
+  TExec *exWitness    = new TExec("exWitness","beam2Palette->cd();");
      
   // Actual Plotting!
   // ------------------------------------------------------------
@@ -569,8 +580,8 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
   pad[0]->Draw();
   pad[0]->cd(); // <---------------------------------------------- Top Plot ---------
   
-  // Int_t backcolor = TColor::GetColor(10,10,10);
-  // pad[0]->SetFillColor(backcolor);
+  Int_t backcolor = TColor::GetColor(10,10,10);
+  pad[0]->SetFillColor(backcolor);
 
   if(opt.Contains("logz")) {
     pad[0]->SetLogz(1);

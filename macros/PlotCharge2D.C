@@ -79,10 +79,6 @@ void PlotCharge2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom
   Float_t zStartPlasma = pData->GetPlasmaStart()*kp;
   // z start of the beam in normalized units.
   Float_t zStartBeam = pData->GetBeamStart()*kp;
-  // z start of the neutral in normalized units.
-  Float_t zStartNeutral = pData->GetNeutralStart()*kp;
-  // z end of the neutral in normalized units.
-  Float_t zEndNeutral = pData->GetNeutralEnd()*kp;
   
   if(opt.Contains("center")) {
     Time -= zStartPlasma;
@@ -93,7 +89,7 @@ void PlotCharge2D( const TString &sim, Int_t time, Int_t index = 0, Float_t zoom
   //  cout << "Shift = " << shiftz << endl;
   
   // Calculate the "axis range" in number of bins. If Nbins==0 a RMS width is taken.
-  Double_t rms0 = pData->GetBeamRmsY() * kp;
+  Double_t rms0 = pData->GetBeamRmsX() * kp;
   if(pData->IsCyl())  rms0  = pData->GetBeamRmsR() * kp;
   
   Int_t FirstyBin = 0;
