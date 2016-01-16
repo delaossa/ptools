@@ -24,7 +24,7 @@
 #include "PGlobals.hh"
 #include "PPalette.hh"
 
-void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nbins=2, const TString &options="") {
+void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t NonBin=2, const TString &options="") {
   
 #ifdef __CINT__  
   gSystem->Load("libptools.so");
@@ -92,27 +92,51 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
   //  cout << "Shift = " << shiftz << endl;
   
 
-  // Calculate the "axis range" in number of bins. If Nbins==0 a RMS width is taken.
+  // Calculate the "axis range" in number of bins. If NonBin==0 a RMS width is taken.
   Double_t rms0 = pData->GetBeamRmsY() * kp;
   if(pData->IsCyl())  rms0  = pData->GetBeamRmsR() * kp;
-  
-  Int_t FirstyBin = 0;
-  Int_t LastyBin = 0;
-  if(Nbins==0) { 
+
+  // Calculate the "axis range" in number of bins. 
+  if(NonBin==0) {  // If NonBin==0 a RMS width is taken.
+      
     if(rms0>0.0)
-      Nbins =  TMath::Nint(rms0 / pData->GetDX(1));
+      NonBin =  TMath::Nint(rms0 / pData->GetDX(1));
     else
-      Nbins = 1;
+      NonBin = 1;
+    
+  } else if(NonBin<0) { // If negative, the number is taken in units of 10/kp
+    NonBin = -TMath::Nint(float(NonBin*0.1) / pData->GetDX(1));
+  }
+  
+  Int_t FirstxBin = 0;
+  Int_t LastxBin = 0;
+  if(NonBin==0) { 
+    if(rms0>0.0)
+      NonBin =  TMath::Nint(rms0 / pData->GetDX(1));
+    else
+      NonBin = 1;
   }
   
   // Slice width limits.
   if(!pData->IsCyl()) {
-    FirstyBin = pData->GetNX(1)/2 + 1 - Nbins;
-    LastyBin =  pData->GetNX(1)/2 + Nbins;
+    FirstxBin = pData->GetNX(1)/2 + 1 - NonBin;
+    LastxBin =  pData->GetNX(1)/2 + NonBin;
   } else {
-    FirstyBin = 1; 
-    LastyBin  = Nbins;
+    FirstxBin = 1; 
+    LastxBin  = NonBin;
   }
+
+  // Zoom window:  
+  Double_t xRange = (pData->GetXMax(1) - pData->GetXMin(1))/zoom;
+  Double_t xMid   = (pData->GetXMax(1) + pData->GetXMin(1))/2.;
+  Double_t xMin = xMid - xRange/2.0;
+  Double_t xMax = xMid + xRange/2.0;
+  if(pData->IsCyl()) {
+    xMin = pData->GetXMin(1);
+    xMax = xRange;
+  }
+  pData->SetX2Min(xMin);
+  pData->SetX2Max(xMax);
 
 
   // ----------------------------------------------------------------------------------
@@ -142,7 +166,7 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
     if(!pData->Is3D())
       hDen2D[i] = pData->GetCharge(i,opt);
     else
-      hDen2D[i] = pData->GetCharge2DSliceZY(i,-1,Nbins,opt+"avg");
+      hDen2D[i] = pData->GetCharge2DSliceZX(i,-1,NonBin,opt+"avg");
     
     hDen2D[i]->SetName(hName);
     hDen2D[i]->GetXaxis()->CenterTitle();
@@ -189,20 +213,20 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
     if(pData->Is3D()) {
       
       if(i==0) 
-	hE1D[i] = pData->GetH1SliceZ3D(pData->GetEfieldFileName(i)->c_str(),nam,-1,Nbins,-1,Nbins,opt+"avg");
+	hE1D[i] = pData->GetH1SliceZ3D(pData->GetEfieldFileName(i)->c_str(),nam,-1,NonBin,-1,NonBin,opt+"avg");
       else  
-	hE1D[i] = pData->GetH1SliceZ3D(pData->GetEfieldFileName(i)->c_str(),nam,-Nbins,Nbins,-Nbins,Nbins,opt+"avg");
+	hE1D[i] = pData->GetH1SliceZ3D(pData->GetEfieldFileName(i)->c_str(),nam,-NonBin,NonBin,-NonBin,NonBin,opt+"avg");
       
     } else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
       
-      hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,1,Nbins,opt+"avg");
+      hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,1,NonBin,opt+"avg");
       
     } else { // 2D cartesian
       
       if(i==0) 
-	hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,-1,Nbins,opt+"avg");
+	hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,-1,NonBin,opt+"avg");
       else 
-	hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,-Nbins,Nbins,opt+"avg");    
+	hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,-NonBin,NonBin,opt+"avg");    
     }
     
     hE1D[i]->SetName(hName);
@@ -226,7 +250,7 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
       if(!pData->Is3D())
 	hE2D[i] = pData->GetEField(i,opt);
       else
-	hE2D[i] = pData->GetEField2DSliceZY(i,-1,Nbins,opt+"avg");
+	hE2D[i] = pData->GetEField2DSliceZY(i,-1,NonBin,opt+"avg");
     } 
     
   }
@@ -352,29 +376,10 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
   
   // Tunning the Histograms
   // ---------------------
-  
-
-  // --------------------------------------------------- Vertical Zoom ------------
-  
-  Float_t yRange   = (hDen2D[0]->GetYaxis()->GetXmax() - hDen2D[0]->GetYaxis()->GetXmin())/zoom;
-  Float_t midPoint = (hDen2D[0]->GetYaxis()->GetXmax() + hDen2D[0]->GetYaxis()->GetXmin())/2.;
-  Float_t yMin = midPoint-yRange/2.0;
-  Float_t yMax = midPoint+yRange/2.0;
-  if(pData->IsCyl()) {
-    yMin = pData->GetXMin(1);
-    yMax = yRange;
-  }
-
-  //  cout << Form(" %f  %f   %f  %f",hDen2D[0]->GetYaxis()->GetXmin(),hDen2D[0]->GetYaxis()->GetXmax(),yMin,yMax) << endl;
-
-  for(Int_t i=0;i<Nspecies;i++) {
-    if(!hDen2D[i]) continue;
-    hDen2D[i]->GetYaxis()->SetRangeUser(yMin,yMax);
-  }
-  
-  Float_t xMin = hDen2D[0]->GetXaxis()->GetXmin();
-  Float_t xMax = hDen2D[0]->GetXaxis()->GetXmax();
-  Float_t xRange = xMax - xMin;
+    
+  Float_t zMin = hDen2D[0]->GetXaxis()->GetXmin();
+  Float_t zMax = hDen2D[0]->GetXaxis()->GetXmax();
+  // Float_t zRange = zMax - zMin;
 
   // ------------- z Zoom --------------------------------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
@@ -402,8 +407,19 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
       }
     }
         
-    if(i==1) Min[i] = 1.01E-1 * Base;
-    if(i==2) Min[i] = 1.01E-3 * Base;
+    if(i==1) Min[i] = 5.01E-1 * Base;
+    if(i==2) Min[i] = 1.01E-1 * Base;
+
+    if(pData->GetDenMax(i)>0)
+      Max[i] = pData->GetDenMax(i);
+    else if(pData->GetDenMax(i)==0) {
+      delete hDen2D[i];
+      hDen2D[i] = NULL;
+    }
+    
+    if(pData->GetDenMin(i)>=0)
+      Min[i] = pData->GetDenMin(i);
+    
     hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);
   }
   
@@ -420,53 +436,68 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
     }
   }
 
-  // FANCY palette for plasma
-  const Int_t plasmaNRGBs = 3;
-  const Int_t plasmaNCont = 64;
-  Double_t plasmaStops[plasmaNRGBs] = { 0.00, basePos, 1.00 };
-  Double_t plasmaRed[plasmaNRGBs]   = { 0.04, 0.09, 1.00 };
-  Double_t plasmaGreen[plasmaNRGBs] = { 0.04, 0.17, 1.00 };
-  Double_t plasmaBlue[plasmaNRGBs]  = { 0.04, 0.32, 1.00 };
-
-  // Double_t plasmaStops[plasmaNRGBs] = { 0.00, basePos, 1.00 };
-  // Double_t plasmaRed[plasmaNRGBs]   = { 0.99, 0.90, 0.00 };
-  // Double_t plasmaGreen[plasmaNRGBs] = { 0.99, 0.90, 0.00 };
-  // Double_t plasmaBlue[plasmaNRGBs]  = { 0.99, 0.90, 0.00 };
-   
+  // Palette for plasma
+  const Int_t NRGBs = 3;
+  const Int_t NCont = 64;
+  Double_t Stops[NRGBs] = { 0.00, basePos, 1.00 };
+  Int_t cindex[NRGBs];
+  if(opt.Contains("dark")) {
+    cindex[0] = TColor::GetColor("#141515"); // blackish
+    cindex[1] = TColor::GetColor("#1E2D78"); // lighter blue but dark
+    // cindex[1] = TColor::GetColor("#121F40"); // dark blue
+    cindex[2] = TColor::GetColor((Float_t) 1.00,(Float_t) 1.00,(Float_t) 1.00);
+  } else {
+    cindex[0] = TColor::GetColor("#FFFFFF"); // white
+    cindex[1] = TColor::GetColor((Float_t) 0.90,(Float_t) 0.90,(Float_t) 0.90); 
+    cindex[2] = TColor::GetColor((Float_t) 0.00,(Float_t) 0.00,(Float_t) 0.00);    
+  }
+  
   PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
   if(!plasmaPalette) {
     plasmaPalette = new PPalette("plasma");
-    plasmaPalette->CreateGradientColorTable(plasmaNRGBs, plasmaStops, plasmaRed, plasmaGreen, plasmaBlue, plasmaNCont);
+    plasmaPalette->CreateGradientColorTable(NRGBs, Stops, cindex, NCont);
   } else {
-    plasmaPalette->ChangeGradientColorTable(plasmaNRGBs, plasmaStops, plasmaRed, plasmaGreen, plasmaBlue);
+    plasmaPalette->ChangeGradientColorTable(NRGBs, Stops, cindex);
   }
- 
-  const Int_t beamNRGBs = 4;
-  const Int_t beamNCont = 64;
-  Double_t beamStops[beamNRGBs] = { 0.00, 0.20, 0.40, 1.00};
-  Double_t beamRed[beamNRGBs] =   { 0.09, 0.39, 0.70, 1.00};
-  Double_t beamGreen[beamNRGBs] = { 0.17, 0.05, 0.20, 1.00};
-  Double_t beamBlue[beamNRGBs] =  { 0.32, 0.33, 0.30, 0.20};
-
+  
+  if(opt.Contains("dark")) 
+    plasmaPalette->SetAlpha(0.7);
+  else
+    plasmaPalette->SetAlpha(0.9);
+    
+  
+  // Palette for beams
   PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
   if(!beamPalette) {
     beamPalette = new PPalette("beam");
-    beamPalette->CreateGradientColorTable(beamNRGBs, beamStops, beamRed, beamGreen, beamBlue, beamNCont);
-  } else {
-    beamPalette->ChangeGradientColorTable(beamNRGBs, beamStops, beamRed, beamGreen, beamBlue);
   }
+  const Int_t bNRGBs = 4;
+  const Int_t bNCont = 64;
+  Double_t bStops[bNRGBs] = { 0.00, 0.20, 0.40, 1.00};
+  Int_t bcindex[bNRGBs];
 
-  // const Int_t hotNRGBs = 3;
-  // const Int_t hotNCont = 64;
-  // Double_t hotStops[hotNRGBs] =  { 0.25, 0.5, 1.00 };
-  // Double_t hotRed[hotNRGBs] =   { 1.00, 1.000, 1.000 };
-  // Double_t hotGreen[hotNRGBs] = { 0.15, 0.984, 1.000 };
-  // Double_t hotBlue[hotNRGBs] =  { 0.00, 0.000, 1.000 };
-  // PPalette * hotPalette = (PPalette*) gROOT->FindObject("hot");
-  // hotPalette->CreateGradientColorTable(hotNRGBs, hotStops,hotRed, hotGreen, hotBlue, hotNCont);
-
+  if(opt.Contains("dark")) {
+    bcindex[0] = TColor::GetColor("#380A3C");
+    bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33);
+    bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30);
+    bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20);
+    beamPalette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
+  } else
+    beamPalette->SetPalette("elec");
   
-    
+  PPalette * beam2Palette = (PPalette*) gROOT->FindObject("beam2");
+  if(!beam2Palette) {
+    beam2Palette = new PPalette("beam2");
+  }
+  if(opt.Contains("dark")) {
+    //bcindex[0] = bcindex[0];
+    bcindex[1] = bcindex[2];    
+    bStops[1] = bStops[2] = 0.1;
+    beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
+  } else
+    beam2Palette->SetPalette("hot");
+
+      
   // Change the range of z axis for the fields to be symmetric.
   Float_t *Emax = new Float_t[Nfields];
   Float_t *Emin = new Float_t[Nfields];
@@ -483,8 +514,8 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
   
   
   // "Axis range" in Osiris units:
-  Double_t ylow  = hDen2D[0]->GetYaxis()->GetBinLowEdge(FirstyBin);
-  Double_t yup = hDen2D[0]->GetYaxis()->GetBinUpEdge(LastyBin);
+  Double_t ylow  = hDen2D[0]->GetYaxis()->GetBinLowEdge(FirstxBin);
+  Double_t yup = hDen2D[0]->GetYaxis()->GetBinUpEdge(LastxBin);
 
   zStartPlasma -= shiftz; 
   zStartNeutral -= shiftz; 
@@ -579,10 +610,12 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
   C->cd(0);
   pad[0]->Draw();
   pad[0]->cd(); // <---------------------------------------------- Top Plot ---------
-  
-  Int_t backcolor = TColor::GetColor(10,10,10);
-  pad[0]->SetFillColor(backcolor);
 
+  if(opt.Contains("dark")) {
+    Int_t backcolor = TColor::GetColor(10,10,10);
+    pad[0]->SetFillColor(backcolor);
+  }
+  
   if(opt.Contains("logz")) {
     pad[0]->SetLogz(1);
   } else {
@@ -613,21 +646,21 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
 
   if(!opt.Contains("etotal")) {
     // Fit the E1D in the pad:
-    Float_t y1 = yMin + yRange/80.;
-    Float_t y2 = y1 + yRange/2.8 - 2*yRange/80.;
-    Float_t slope = (y2-y1)/(Emax[0]-Emin[0]);
+    Float_t x1 = xMin + xRange/80.;
+    Float_t x2 = x1 + xRange/2.8 - 2*xRange/80.;
+    Float_t slope = (x2-x1)/(Emax[0]-Emin[0]);
   
     Int_t lineColor = TColor::GetColor(196,30,78);
     //Int_t lineColor = TColor::GetColor(236,78,35);
 
-    TLine *lineEzero = new TLine(xMin,(0.0-Emin[0])*slope + y1,xMax,(0.0-Emin[0])*slope + y1);
+    TLine *lineEzero = new TLine(zMin,(0.0-Emin[0])*slope + x1,zMax,(0.0-Emin[0])*slope + x1);
     lineEzero->SetLineColor(lineColor);
     lineEzero->SetLineStyle(2);
     lineEzero->SetLineWidth(1);
     lineEzero->Draw();
 
     for(Int_t j=0;j<hE1D[0]->GetNbinsX();j++) {
-      hE1D[0]->SetBinContent(j+1,(hE1D[0]->GetBinContent(j+1)-Emin[0])*slope + y1);
+      hE1D[0]->SetBinContent(j+1,(hE1D[0]->GetBinContent(j+1)-Emin[0])*slope + x1);
     }
     hE1D[0]->SetLineStyle(1);
     hE1D[0]->SetLineWidth(3);
@@ -645,27 +678,27 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t Nb
     // Fit the E1D in the pad:
     Float_t ETmin =  0.00;//hETotal1D->GetMinimum();
     Float_t ETmax =  hETotal1D->GetMaximum();
-    Float_t y1 = yMin + yRange/80.;
-    Float_t y2 = y1 + yRange/2.8 - 2*yRange/80.;
-    Float_t slope = (y2-y1)/(ETmax-ETmin);
+    Float_t x1 = xMin + xRange/80.;
+    Float_t x2 = x1 + xRange/2.8 - 2*xRange/80.;
+    Float_t slope = (x2-x1)/(ETmax-ETmin);
   
     Int_t lineColor = TColor::GetColor(196,30,78);
     //Int_t lineColor = TColor::GetColor(236,78,35);
 
-    TLine *lineEHe = new TLine(xMin,(HeIon-ETmin)*slope + y1,xMax,(HeIon-ETmin)*slope + y1);
+    TLine *lineEHe = new TLine(zMin,(HeIon-ETmin)*slope + x1,zMax,(HeIon-ETmin)*slope + x1);
     lineEHe->SetLineColor(lineColor);
     lineEHe->SetLineStyle(2);
     lineEHe->SetLineWidth(1);
     lineEHe->Draw();
 
-    TLine *lineEzero = new TLine(xMin,(0.0-ETmin)*slope + y1,xMax,(0.0-ETmin)*slope + y1);
+    TLine *lineEzero = new TLine(zMin,(0.0-ETmin)*slope + x1,zMax,(0.0-ETmin)*slope + x1);
     lineEzero->SetLineColor(kGray+1);
     lineEzero->SetLineStyle(2);
     lineEzero->SetLineWidth(1);
     lineEzero->Draw();
        
     for(Int_t j=0;j<hETotal1D->GetNbinsX();j++) {
-      hETotal1D->SetBinContent(j+1,(hETotal1D->GetBinContent(j+1)-ETmin)*slope + y1);
+      hETotal1D->SetBinContent(j+1,(hETotal1D->GetBinContent(j+1)-ETmin)*slope + x1);
     }
     hETotal1D->SetLineStyle(1);
     hETotal1D->SetLineWidth(2);

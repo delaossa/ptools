@@ -21,12 +21,24 @@ public:
 				  UInt_t NColors,
 				  Float_t alpha=1.0);
 
+  Int_t   CreateGradientColorTable(UInt_t Number,
+				   Double_t* Stops,
+				   Int_t* cindex,
+				   UInt_t NColors=64,
+				   Float_t alpha=1.0);
+
+  
   Int_t   ChangeGradientColorTable(UInt_t Number, 
 				  Double_t* Stops, 
 				  Double_t* Red, 
 				  Double_t* Green,
 				  Double_t* Blue,
 				  Float_t alpha=1.0);
+
+  Int_t   ChangeGradientColorTable(UInt_t Number,
+				   Double_t* Stops,
+				   Int_t* cindex,
+				   Float_t alpha=1.0);
 
   
   Int_t  GetColor(UInt_t i=0) {

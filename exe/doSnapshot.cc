@@ -221,32 +221,29 @@ int main(int argc,char *argv[]) {
 
     
     // Slice width limits.
-    Int_t FirstyBin = 0;
-    Int_t LastyBin = 0;
+    Int_t FirstxBin = 0;
+    Int_t LastxBin = 0;
     if(!pData->IsCyl()) {
-      FirstyBin = pData->GetNX(1)/2 + 1 - NonBin;
-      LastyBin =  pData->GetNX(1)/2 + NonBin;
+      FirstxBin = pData->GetNX(1)/2 + 1 - NonBin;
+      LastxBin =  pData->GetNX(1)/2 + NonBin;
     } else {
-      FirstyBin = 1; 
-      LastyBin  = NonBin;
+      FirstxBin = 1; 
+      LastxBin  = NonBin;
     }
-    Int_t FirstOffyBin = FirstyBin + NofBin;
-    Int_t LastOffyBin = LastyBin + NofBin;
+    Int_t FirstOffxBin = FirstxBin + NofBin;
+    Int_t LastOffxBin = LastxBin + NofBin;
 
-    // Zoom window:
-  
-    Double_t yRange = (pData->GetXMax(1) - pData->GetXMin(1))/zoom;
-    Double_t yMid   = (pData->GetXMax(1) + pData->GetXMin(1))/2.;
-    //Double_t yMin = pData->GetXMin(1);
-    //Double_t yMax = pData->GetXMax(1);
-    Double_t yMin = yMid - yRange/2.0;
-    Double_t yMax = yMid + yRange/2.0;
+    // Zoom window:  
+    Double_t xRange = (pData->GetXMax(1) - pData->GetXMin(1))/zoom;
+    Double_t xMid   = (pData->GetXMax(1) + pData->GetXMin(1))/2.;
+    Double_t xMin = xMid - xRange/2.0;
+    Double_t xMax = xMid + xRange/2.0;
     if(pData->IsCyl()) {
-      yMin = pData->GetXMin(1);
-      yMax = yRange;
+      xMin = pData->GetXMin(1);
+      xMax = xRange;
     }
-    pData->SetX2Min(yMin);
-    pData->SetX2Max(yMax);
+    pData->SetX2Min(xMin);
+    pData->SetX2Max(xMax);
   
     Double_t zMin = pData->GetX1Min();
     Double_t zMax = pData->GetX1Max();
@@ -256,7 +253,7 @@ int main(int argc,char *argv[]) {
 
     cout << Form(" --- doSnapshot ---\n") << endl;
   
-    cout << Form(" Plotting range:  %.2f < x1 < %.2f ,  %.2f < x2 < %.2f",zMin,zMax,yMin,yMax) << endl;
+    cout << Form(" Plotting range:  %.2f < x1 < %.2f ,  %.2f < x2 < %.2f",zMin,zMax,xMin,xMax) << endl;
 
     // ----------------------------------------------------------------------------------
   
@@ -329,8 +326,8 @@ int main(int argc,char *argv[]) {
       hDen1D[i]->SetName(hName); 
    
       // if(hDen1D[i]) delete hDen1D[i];
-      // hDen1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstyBin,LastyBin);
-      // hDen1D[i]->Scale(1.0/(LastyBin-FirstyBin+1));
+      // hDen1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstxBin,LastxBin);
+      // hDen1D[i]->Scale(1.0/(LastxBin-FirstxBin+1));
     
       if(opt.Contains("comov"))
 	hDen1D[i]->GetXaxis()->SetTitle("k_{p} #zeta");
@@ -454,11 +451,11 @@ int main(int argc,char *argv[]) {
 	} else { // Alternative
 	  cout << " Alternative! " << endl;
 	  if(i==0) {
-	    hE1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstyBin,LastyBin);
-	    hE1D[i]->Scale(1.0/(LastyBin-FirstyBin+1));
+	    hE1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstxBin,LastxBin);
+	    hE1D[i]->Scale(1.0/(LastxBin-FirstxBin+1));
 	  } else { // In case of transverse fields, the 1D line is taken off-axis 
-	    hE1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstOffyBin,LastOffyBin);
-	    hE1D[i]->Scale(1.0/(LastOffyBin-FirstOffyBin+1));
+	    hE1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstOffxBin,LastOffxBin);
+	    hE1D[i]->Scale(1.0/(LastOffxBin-FirstOffxBin+1));
 	  }
 	}
 	
@@ -489,8 +486,8 @@ int main(int argc,char *argv[]) {
 
       // Alternative
       // if(hE1D[i]) delete hE1D[i];
-      // hE1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstyBin,LastyBin);
-      // hE1D[i]->Scale(1.0/(LastyBin-FirstyBin+1));
+      // hE1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstxBin,LastxBin);
+      // hE1D[i]->Scale(1.0/(LastxBin-FirstxBin+1));
      
     }
 
@@ -566,11 +563,11 @@ int main(int argc,char *argv[]) {
 	} else {  // Alternative
 	  cout << " Alternative! " << endl;
 	  if(i==0) {
-	    hB1D[i] = (TH1F*) hB2D[i]->ProjectionX(hName,FirstyBin,LastyBin);
-	    hB1D[i]->Scale(1.0/(LastyBin-FirstyBin+1));
+	    hB1D[i] = (TH1F*) hB2D[i]->ProjectionX(hName,FirstxBin,LastxBin);
+	    hB1D[i]->Scale(1.0/(LastxBin-FirstxBin+1));
 	  } else { // In case of transverse fields, the 1D line is taken off-axis 
-	    hB1D[i] = (TH1F*) hB2D[i]->ProjectionX(hName,FirstOffyBin,LastOffyBin);
-	    hB1D[i]->Scale(1.0/(LastOffyBin-FirstOffyBin+1));
+	    hB1D[i] = (TH1F*) hB2D[i]->ProjectionX(hName,FirstOffxBin,LastOffxBin);
+	    hB1D[i]->Scale(1.0/(LastOffxBin-FirstOffxBin+1));
 	  }
 	}
 
@@ -955,7 +952,7 @@ int main(int argc,char *argv[]) {
     // RMS (vs z) of the beam's charge distribution: 
     TProfile *hDen2Dprof = NULL;
     TH1F *hRms = NULL;
-    Double_t axisPos = yMid;
+    Double_t axisPos = xMid;
     for(Int_t i=0;i<Nspecies;i++) {
       
       if(hDen2D[i] && hDen1D[i]) {

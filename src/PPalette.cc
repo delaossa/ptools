@@ -61,6 +61,26 @@ Int_t PPalette::CreateGradientColorTable(UInt_t Number,
   
 }
 
+Int_t PPalette::CreateGradientColorTable(UInt_t Number, Double_t* Stops, Int_t *cindex, UInt_t NColors, Float_t alpha)
+{
+
+  Double_t *red = new Double_t[Number];
+  Double_t *green = new Double_t[Number];
+  Double_t *blue = new Double_t[Number];
+  
+  for (UInt_t i = 0; i < Number; i++) {
+    Float_t r,g,b;
+    gROOT->GetColor(cindex[i])->GetRGB(r,g,b);
+    red[i] = r;
+    green[i] = g;
+    blue[i] = b;
+  }
+  
+  Int_t ind = PPalette::CreateGradientColorTable(Number,Stops,red,green,blue,NColors,alpha);
+  
+  return ind;
+}
+
 Int_t PPalette::ChangeGradientColorTable(UInt_t Number, 
 					 Double_t* Stops, 
 					 Double_t* Red, 
@@ -140,6 +160,27 @@ Int_t PPalette::ChangeGradientColorTable(UInt_t Number,
   return ind;
 
 }
+
+Int_t PPalette::ChangeGradientColorTable(UInt_t Number, Double_t* Stops, Int_t *cindex, Float_t alpha)
+{
+
+  Double_t *red = new Double_t[Number];
+  Double_t *green = new Double_t[Number];
+  Double_t *blue = new Double_t[Number];
+  
+  for (UInt_t i = 0; i < Number; i++) {
+    Float_t r,g,b;
+    gROOT->GetColor(cindex[i])->GetRGB(r,g,b);
+    red[i] = r;
+    green[i] = g;
+    blue[i] = b;
+  }
+  
+  Int_t ind = PPalette::ChangeGradientColorTable(Number,Stops,red,green,blue,alpha);
+  
+  return ind;
+}
+
 
 void PPalette::cd()
 {
@@ -221,12 +262,12 @@ Int_t PPalette::SetPalette(const char * name)
       return 1;
       
     } else if(strcmp(name,"electron1")==0) {
-      const Int_t NRGBs = 5;
+      const Int_t NRGBs = 6;
       const Int_t NCont = 64;
-      Double_t Stops[NRGBs] = { 0.00, 0.40, 0.55, 0.70, 1.00};
-      Double_t Red[NRGBs] =   { 0.52, 0.22, 0.39, 0.70, 1.00};
-      Double_t Green[NRGBs] = { 0.74, 0.34, 0.05, 0.20, 1.00};
-      Double_t Blue[NRGBs] =  { 0.80, 0.58, 0.33, 0.30, 0.20};
+      Double_t Stops[NRGBs] = { 0.00, 0.10, 0.40, 0.55, 0.70, 1.00};
+      Double_t Red[NRGBs] =   { 0.00, 0.52, 0.22, 0.39, 0.70, 1.00};
+      Double_t Green[NRGBs] = { 0.00, 0.74, 0.34, 0.05, 0.20, 1.00};
+      Double_t Blue[NRGBs] =  { 0.00, 0.80, 0.58, 0.33, 0.30, 0.20};
       if(!fColors)
 	this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
       else
@@ -246,26 +287,26 @@ Int_t PPalette::SetPalette(const char * name)
 	this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
       return 1;
       
-    } else if(strcmp(name,"redelectron0")==0) {
-      const Int_t NRGBs = 6;
+    } else if(strcmp(name,"elec0")==0) {
+      const Int_t NRGBs = 5;
       const Int_t NCont = 64;
-      Double_t Stops[NRGBs] = { 0.00, 0.20, 0.40, 0.50, 0.60, 1.00};
-      Double_t Red[NRGBs] =   { 1.00, 0.52, 0.22, 0.39, 0.70, 1.00};
-      Double_t Green[NRGBs] = { 1.00, 0.74, 0.34, 0.05, 0.20, 1.00};
-      Double_t Blue[NRGBs] =  { 1.00, 0.80, 0.58, 0.33, 0.30, 0.20};
+      Double_t Stops[NRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
+      Double_t Red[NRGBs] =   { 1.00, 0.22, 0.39, 0.70, 1.00};
+      Double_t Green[NRGBs] = { 1.00, 0.34, 0.05, 0.20, 1.00};
+      Double_t Blue[NRGBs] =  { 1.00, 0.58, 0.33, 0.30, 0.20};
       if(!fColors)
 	this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
       else
 	this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
       return 1;
       
-    } else if(strcmp(name,"redelectron")==0) {
-      const Int_t NRGBs = 6;
+    } else if(strcmp(name,"elec")==0) {
+      const Int_t NRGBs = 5;
       const Int_t NCont = 64;
-      Double_t Stops[NRGBs] = { 0.00, 0.20, 0.40, 0.50, 0.60, 1.00};
-      Double_t Red[NRGBs] =   { 0.90, 0.52, 0.22, 0.39, 0.70, 1.00};
-      Double_t Green[NRGBs] = { 0.90, 0.74, 0.34, 0.05, 0.20, 1.00};
-      Double_t Blue[NRGBs] =  { 0.90, 0.80, 0.58, 0.33, 0.30, 0.20};
+      Double_t Stops[NRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
+      Double_t Red[NRGBs] =   { 0.90, 0.22, 0.39, 0.70, 1.00};
+      Double_t Green[NRGBs] = { 0.90, 0.34, 0.05, 0.20, 1.00};
+      Double_t Blue[NRGBs] =  { 0.90, 0.58, 0.33, 0.30, 0.20};
       if(!fColors)
 	this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
       else
