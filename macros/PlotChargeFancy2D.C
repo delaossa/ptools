@@ -438,18 +438,19 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
 
   // Palette for plasma
   const Int_t NRGBs = 3;
-  const Int_t NCont = 64;
+  const Int_t NCont = 255;
   Double_t Stops[NRGBs] = { 0.00, basePos, 1.00 };
   Int_t cindex[NRGBs];
   if(opt.Contains("dark")) {
-    cindex[0] = TColor::GetColor("#141515"); // blackish
-    cindex[1] = TColor::GetColor("#1E2D78"); // lighter blue but dark
+    cindex[0] = TColor::GetColor("#141515"); // grey11
+    cindex[1] = TColor::GetColor("#303F4B");   // grey31
+    // cindex[1] = TColor::GetColor("#1E2D78"); // lighter blue but dark
     // cindex[1] = TColor::GetColor("#121F40"); // dark blue
-    cindex[2] = TColor::GetColor((Float_t) 1.00,(Float_t) 1.00,(Float_t) 1.00);
+    cindex[2] = TColor::GetColor("#FFFFFF"); // white
   } else {
     cindex[0] = TColor::GetColor("#FFFFFF"); // white
-    cindex[1] = TColor::GetColor((Float_t) 0.90,(Float_t) 0.90,(Float_t) 0.90); 
-    cindex[2] = TColor::GetColor((Float_t) 0.00,(Float_t) 0.00,(Float_t) 0.00);    
+    cindex[1] = TColor::GetColor((Float_t) 0.90,(Float_t) 0.90,(Float_t) 0.90);  // light gray
+    cindex[2] = TColor::GetColor((Float_t) 0.00,(Float_t) 0.00,(Float_t) 0.00);  // black
   }
   
   PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
@@ -472,15 +473,15 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     beamPalette = new PPalette("beam");
   }
   const Int_t bNRGBs = 4;
-  const Int_t bNCont = 64;
+  const Int_t bNCont = 255;
   Double_t bStops[bNRGBs] = { 0.00, 0.20, 0.40, 1.00};
   Int_t bcindex[bNRGBs];
 
   if(opt.Contains("dark")) {
-    bcindex[0] = TColor::GetColor("#380A3C");
-    bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33);
-    bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30);
-    bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20);
+    bcindex[0] = TColor::GetColor("#380A3C"); // deep purple
+    bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33); // dark magenta 
+    bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
+    bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
     beamPalette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
   } else
     beamPalette->SetPalette("elec");

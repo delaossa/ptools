@@ -210,7 +210,7 @@ Int_t PPalette::SetPalette(const char * name)
 
     if(strcmp(name,"gray")==0) {
       const Int_t NRGBs = 2;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 1.00 };
       Double_t Red[NRGBs] =   { 0.99, 0.1 };
       Double_t Green[NRGBs] = { 0.99, 0.1 };
@@ -224,7 +224,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"rbow0")==0) {
       const Int_t NRGBs = 6;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.40, 0.48, 0.5, 0.60, 1.00 };
       Double_t Red[NRGBs] =   { 0.106, 0.698, 1.0, 1.0, 0.965, 0.518 };
       Double_t Green[NRGBs] = { 0.078, 0.818, 1.0, 1.0, 0.925, 0.078 };
@@ -237,7 +237,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"rbow")==0) {
       const Int_t NRGBs = 6;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.40, 0.48, 0.5, 0.60, 1.00 };
       Double_t Red[NRGBs] =   { 0.106, 0.698, 0.90, 0.90, 0.965, 0.518 };
       Double_t Green[NRGBs] = { 0.078, 0.818, 0.90, 0.90, 0.925, 0.078 };
@@ -250,7 +250,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"electron0")==0) {
       const Int_t NRGBs = 6;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.10, 0.40, 0.55, 0.70, 1.00};
       Double_t Red[NRGBs] =   { 1.00, 0.52, 0.22, 0.39, 0.70, 1.00};
       Double_t Green[NRGBs] = { 1.00, 0.74, 0.34, 0.05, 0.20, 1.00};
@@ -263,7 +263,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"electron1")==0) {
       const Int_t NRGBs = 6;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.10, 0.40, 0.55, 0.70, 1.00};
       Double_t Red[NRGBs] =   { 0.00, 0.52, 0.22, 0.39, 0.70, 1.00};
       Double_t Green[NRGBs] = { 0.00, 0.74, 0.34, 0.05, 0.20, 1.00};
@@ -276,7 +276,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"electron")==0) {
       const Int_t NRGBs = 6;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.10, 0.40, 0.55, 0.70, 1.00};
       Double_t Red[NRGBs] =   { 0.90, 0.52, 0.22, 0.39, 0.70, 1.00};
       Double_t Green[NRGBs] = { 0.90, 0.74, 0.34, 0.05, 0.20, 1.00};
@@ -289,7 +289,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"elec0")==0) {
       const Int_t NRGBs = 5;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
       Double_t Red[NRGBs] =   { 1.00, 0.22, 0.39, 0.70, 1.00};
       Double_t Green[NRGBs] = { 1.00, 0.34, 0.05, 0.20, 1.00};
@@ -302,7 +302,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"elec")==0) {
       const Int_t NRGBs = 5;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
       Double_t Red[NRGBs] =   { 0.90, 0.22, 0.39, 0.70, 1.00};
       Double_t Green[NRGBs] = { 0.90, 0.34, 0.05, 0.20, 1.00};
@@ -315,7 +315,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"hot0")==0) {
       const Int_t NRGBs = 4;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.25, 0.75, 1.00 };
       Double_t Red[NRGBs] =   { 1.00, 1.000, 1.000, 1.000 };
       Double_t Green[NRGBs] = { 1.00, 0.149, 0.984, 1.000 };
@@ -328,7 +328,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"hot1")==0) {
       const Int_t NRGBs = 4;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.00, 0.25, 0.75, 1.00 };
       Double_t Red[NRGBs] =   { 0.90, 1.000, 1.000, 1.000 };
       Double_t Green[NRGBs] = { 0.90, 0.149, 0.984, 1.000 };
@@ -341,7 +341,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"hot")==0) {
       const Int_t NRGBs = 3;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.0, 0.75, 1.00 };
       Double_t Red[NRGBs] =   { 1.000, 1.000, 1.000 };
       Double_t Green[NRGBs] = { 0.149, 0.984, 1.000 };
@@ -367,7 +367,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"red0")==0) {
       const Int_t NRGBs = 3;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.0, 0.10, 1.00 };
       Double_t Red[NRGBs] =   { 1.00, 0.965, 0.518 };
       Double_t Green[NRGBs] = { 1.00, 0.925, 0.078 };
@@ -380,7 +380,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"red")==0) {
       const Int_t NRGBs = 3;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.0, 0.10, 1.00 };
       Double_t Red[NRGBs] =   { 0.90, 0.965, 0.518 };
       Double_t Green[NRGBs] = { 0.90, 0.925, 0.078 };
@@ -393,7 +393,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"blue")==0) {
       const Int_t NRGBs = 3;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.0, 0.10, 1.00 };
       Double_t Red[NRGBs] =   { 0.90, 0.498, 0.106};
       Double_t Green[NRGBs] = { 0.90, 0.718, 0.078};
@@ -406,7 +406,7 @@ Int_t PPalette::SetPalette(const char * name)
       
     } else if(strcmp(name,"oli")==0) {
       const Int_t NRGBs = 9;
-      const Int_t NCont = 64;
+      const Int_t NCont = 255;
       Double_t Stops[NRGBs] = { 0.0000, 0.1250, 0.2500, 0.3750, 0.5000, 0.6250, 0.7500, 0.8750, 1.0000};
       Double_t Red[NRGBs]   = { 0.2081, 0.0591, 0.0779, 0.0231, 0.1801, 0.5300, 0.8185, 0.9955, 0.9763};
       Double_t Green[NRGBs] = { 0.1663, 0.3598, 0.5040, 0.6418, 0.7177, 0.7491, 0.7327, 0.7861, 0.9831};
