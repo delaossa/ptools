@@ -10,7 +10,7 @@
   PPalette *beamPalette = (PPalette*) gROOT->FindObject("beam");
   if(!beamPalette) {
     beamPalette = new PPalette("beam");
-    beamPalette->SetPalette("redelectron");
+    beamPalette->SetPalette("electron");
   }
 
   PPalette *beam2Palette = (PPalette*) gROOT->FindObject("beam2");
@@ -46,7 +46,7 @@
   PPalette *defPalette = (PPalette*) gROOT->FindObject("def");
   if(!defPalette) {
     defPalette = new PPalette("def");
-    defPalette->SetPalette("oli");
+    defPalette->SetPalette("electron");
   }
   
   

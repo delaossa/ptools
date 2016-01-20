@@ -225,7 +225,7 @@ Int_t PPalette::SetPalette(const char * name)
     } else if(strcmp(name,"rbow0")==0) {
       const Int_t NRGBs = 6;
       const Int_t NCont = 255;
-      Double_t Stops[NRGBs] = { 0.00, 0.40, 0.48, 0.5, 0.60, 1.00 };
+      Double_t Stops[NRGBs] = { 0.00, 0.40, 0.48, 0.52, 0.60, 1.00 };
       Double_t Red[NRGBs] =   { 0.106, 0.698, 1.0, 1.0, 0.965, 0.518 };
       Double_t Green[NRGBs] = { 0.078, 0.818, 1.0, 1.0, 0.925, 0.078 };
       Double_t Blue[NRGBs] =  { 0.518, 0.880, 1.0, 1.0, 0.353, 0.106 };
@@ -238,7 +238,7 @@ Int_t PPalette::SetPalette(const char * name)
     } else if(strcmp(name,"rbow")==0) {
       const Int_t NRGBs = 6;
       const Int_t NCont = 255;
-      Double_t Stops[NRGBs] = { 0.00, 0.40, 0.48, 0.5, 0.60, 1.00 };
+      Double_t Stops[NRGBs] = { 0.00, 0.40, 0.48, 0.52, 0.60, 1.00 };
       Double_t Red[NRGBs] =   { 0.106, 0.698, 0.90, 0.90, 0.965, 0.518 };
       Double_t Green[NRGBs] = { 0.078, 0.818, 0.90, 0.90, 0.925, 0.078 };
       Double_t Blue[NRGBs] =  { 0.518, 0.880, 0.90, 0.90, 0.353, 0.106 };
