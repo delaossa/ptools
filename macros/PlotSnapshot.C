@@ -94,7 +94,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(opt.Contains("gridy")) {
     gStyle->SetPadGridY(1);
   }
-  gStyle->SetNumberContours(64);
+  gStyle->SetNumberContours(255);
   
   // Some plasma constants
   Float_t n0 = pData->GetPlasmaDensity();
@@ -948,7 +948,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t lxoffset = 0.015;
   Float_t tyoffset = 1.2 / (950/ysize);
   Float_t lyoffset = 0.01;
-  Float_t tzoffset = 1.4 / (950/ysize);
+  Float_t tzoffset = 1.3 / (950/ysize);
   Float_t lzoffset = 0.01;
   Float_t tylength = 0.015;
   Float_t txlength = 0.04;
@@ -1211,7 +1211,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   C->cd(0);
 
   Float_t x1,x2,y1,y2;
-  Float_t gap = 0.005;
+  Float_t gap = 0.00;
   TPaletteAxis *palette = NULL;
   UInt_t ip = NPad-1;
 
@@ -1450,7 +1450,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(palette) {
 	palette->SetY1NDC(y1 + i*pvsize + gap);
 	palette->SetY2NDC(y1 + (i+1)*pvsize - gap);
-	palette->SetX1NDC(x2 + 0.005);
+	palette->SetX1NDC(x2 + 0.01);
 	palette->SetX2NDC(x2 + 0.03);
 	palette->SetTitleOffset(tzoffset);
 	//	palette->SetTitleOffset(999.9);
@@ -1463,6 +1463,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  palette->SetLabelOffset(lyoffset);
 	palette->SetBorderSize(2);
 	palette->SetLineColor(1);
+
+	TPave *pFrame = new TPave((x2 + 0.01),(y1 + i*pvsize + gap),(x2 + 0.03),(y1 + (i+1)*pvsize - gap),1,"NDCL");
+	pFrame->SetFillStyle(0);
+	pFrame->SetLineColor(kBlack);
+	pFrame->SetShadowColor(0);
+	pFrame->Draw();
+	
       } 
     }
 
@@ -1890,7 +1897,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(palette) {
       palette->SetY2NDC(y2 - gap);
       palette->SetY1NDC(y1 + gap);
-      palette->SetX1NDC(x2 + 0.005);
+      palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
       palette->SetTitleOffset(tzoffset);
       palette->SetTitleSize(tzsize);
@@ -1899,6 +1906,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
     }
 
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
@@ -2058,7 +2072,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(palette) {
       palette->SetY2NDC(y2 - gap);
       palette->SetY1NDC(y1 + gap);
-      palette->SetX1NDC(x2 + 0.005);
+      palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
       palette->SetTitleOffset(tzoffset);
       palette->SetTitleSize(tzsize);
@@ -2067,6 +2081,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
     }
 
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
@@ -2175,7 +2196,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(palette) {
       palette->SetY2NDC(y2 - gap);
       palette->SetY1NDC(y1 + gap);
-      palette->SetX1NDC(x2 + 0.005);
+      palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
       palette->SetTitleOffset(tzoffset);
       palette->SetTitleSize(tzsize);
@@ -2184,6 +2205,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
     }
 
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
@@ -2324,7 +2352,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(palette) {
       palette->SetY2NDC(y2 - gap);
       palette->SetY1NDC(y1 + gap);
-      palette->SetX1NDC(x2 + 0.005);
+      palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
       palette->SetTitleOffset(tzoffset);
       palette->SetTitleSize(tzsize);
@@ -2333,6 +2361,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
     }
 
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
@@ -2537,7 +2572,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(palette) {
       palette->SetY2NDC(y2 - gap);
       palette->SetY1NDC(y1 + gap);
-      palette->SetX1NDC(x2 + 0.005);
+      palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
       palette->SetTitleOffset(tzoffset);
       palette->SetTitleSize(tzsize);
@@ -2546,6 +2581,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
     }
 
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
@@ -2708,7 +2750,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(palette) {
       palette->SetY2NDC(y2 - gap);
       palette->SetY1NDC(y1 + gap);
-      palette->SetX1NDC(x2 + 0.005);
+      palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
       palette->SetTitleOffset(tzoffset);
       // palette->SetTitleOffset(999.9);
@@ -2718,6 +2760,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
     }
 
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
@@ -2839,7 +2888,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(palette) {
       palette->SetY2NDC(y2 - gap);
       palette->SetY1NDC(y1 + gap);
-      palette->SetX1NDC(x2 + 0.005);
+      palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
       palette->SetTitleOffset(tzoffset);
       palette->SetTitleSize(tzsize);
@@ -2848,6 +2897,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
     }
 
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
