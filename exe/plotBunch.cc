@@ -348,10 +348,6 @@ int main(int argc,char *argv[]) {
     Double_t x1BinMin = -4.5;
     Double_t x1BinMax = -4.0;
 
-
-    curUnit = PUnits::ampere;
-    curSUnit = "A";
-    
     // Specific initializations:
     if(opt.Contains("autop"))
       InitRange(sim,x1Min,x1Max,SNbin,x1BinMin,x1BinMax);
