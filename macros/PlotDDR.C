@@ -28,7 +28,7 @@
 
 
 Float_t ntop0 = 15.63;
-Float_t sigmal0 = 37.64;
+Float_t sigmal0 = 68.49;
 
 Double_t DenGauss(Double_t z, Double_t sigmal, Double_t ntop) {
   
@@ -84,6 +84,7 @@ void PlotDDR(const TString &sim, const TString &options="png") {
   gStyle->SetPadTickX(0);
   gStyle->SetPadTickY(0);
 
+  gStyle->SetNumberContours(255);
 
   if(opt.Contains("grid")) {
     gStyle->SetPadGridX(1);
@@ -141,14 +142,16 @@ void PlotDDR(const TString &sim, const TString &options="png") {
       
       // 1D field at certain timestep "it".
       TH1F *hE1D = (TH1F*) hEvsTime[i]->ProjectionY("_py",it,it);
-      
+
+      Float_t x1max = hE1D->GetXaxis()->GetXmax();
+
       Int_t MAXCROSS = 2;
       Float_t *Cross = new Float_t[MAXCROSS];
       Float_t *Extr = new Float_t[MAXCROSS];
       memset(Cross,0,sizeof(Float_t)*MAXCROSS);
       memset(Extr,0,sizeof(Float_t)*MAXCROSS);
 
-      Int_t auxNcross = PGlobals::HCrossings(hE1D,Cross,Extr,MAXCROSS,0.,0.);
+      Int_t auxNcross = PGlobals::HCrossings(hE1D,Cross,Extr,MAXCROSS,0.,x1max/2);
       // cout << Form("  -> Number of crossings for histogram \"%s\" : %i ",hE1D->GetName(),auxNcross) << endl;
       // for(Int_t ic=0;ic<auxNcross;ic++) {
       // 	cout << Form(" %2i:  cross = %6.4f  extreme = %6.4f", ic, Cross[ic], Extr[ic]) << endl; 
@@ -389,9 +392,12 @@ void PlotDDR(const TString &sim, const TString &options="png") {
   
 
   // palettes for drawing
-  PPalette * rbowwhitePalette = (PPalette*) gROOT->FindObject("rbowwhite");
-
-  
+  PPalette *fieldPalette = (PPalette*) gROOT->FindObject("field");
+  if(!fieldPalette) {
+    fieldPalette = new PPalette("field");
+  }
+  fieldPalette->SetPalette("rbow0");
+    
   // Canvas setup
   Int_t sizex = 1024;
   Int_t sizey = 640;
@@ -437,7 +443,7 @@ void PlotDDR(const TString &sim, const TString &options="png") {
   hEvsTime[0]->GetZaxis()->SetTitleSize(36);
   hEvsTime[0]->GetZaxis()->SetTitleOffset(0.9);
 
-  rbowwhitePalette->cd();
+  fieldPalette->cd();
   
   hEvsTime[0]->Draw("colz");
 
@@ -615,7 +621,7 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     hVvsTime->GetZaxis()->SetTitleSize(36);
     hVvsTime->GetZaxis()->SetTitleOffset(0.9);
 
-    rbowwhitePalette->cd();
+    fieldPalette->cd();
   
     // Float_t Vmax = hVvsTime->GetMaximum();
     // Float_t Vmin = hVvsTime->GetMinimum();
@@ -924,8 +930,8 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     Double_t *zarray = new Double_t[Np];
     Double_t *denarray = new Double_t[Np];
     Double_t *betapharray = new Double_t[Np];
-    Double_t ntop   = 5;
-    Double_t sigmal = 1.10;
+    Double_t ntop   = 10;
+    Double_t sigmal = 2.0;
     Double_t phase = -TMath::TwoPi();
 
     Float_t dMin = -0.5;

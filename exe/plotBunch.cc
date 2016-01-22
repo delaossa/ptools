@@ -30,6 +30,8 @@
 using namespace std;
 using namespace H5;
 
+void InitRange(const TString &, Double_t &, Double_t &, Int_t &, Double_t &, Double_t &);
+
 void FindLimits(TH1F *h,Double_t &xmin, Double_t &xmax, Double_t factor = 0.11) {
   Double_t maxValue = h->GetBinContent(h->GetMaximumBin());
   Int_t   lBin = -1;
@@ -345,178 +347,32 @@ int main(int argc,char *argv[]) {
     Int_t SNbin = 100;
     Double_t x1BinMin = -4.5;
     Double_t x1BinMax = -4.0;
+
+
+    curUnit = PUnits::ampere;
+    curSUnit = "A";
     
     // Specific initializations:
-    if(sim.Contains("flash")) {
-    
-      x1Min = -5.5;
-      x1Max = -3.2; 
+    if(opt.Contains("autop"))
+      InitRange(sim,x1Min,x1Max,SNbin,x1BinMin,x1BinMax);
 
-      SNbin = 50;
-      x1BinMin = -4.80;
-      x1BinMax = -3.70;
-    
-      if(sim.Contains("v8.0kA.C.DDR")) {
-
-	x1Min = -5.69;
-	x1Max = -2.81; 
-
-	SNbin = 50;
-	x1BinMin = -5.1;
-	x1BinMax = -3.2;
-      }
-
-     if(sim.Contains("v7.5kA.T.BI")) {
-
-       x1Min = -4.3;
-       x1Max = -3.9;
-       
-       SNbin = 20;
-       x1BinMin = -4.15;
-       x1BinMax = -4.02;
-       
-     }
-
-     if(sim.Contains("v7.5kA.G.BI")) {
-
-	x1Min = -6.5;
-	x1Max = -5.0; 
-
-	SNbin = 20;
-	x1BinMin = -5.9;
-	x1BinMax = -5.3;
-      }
-    
-     if(sim.Contains("v2.5kA.G.JG.DDR")) {
-
-       x1Nbin = 300;
-       p1Nbin = 200;
-       x2Nbin = 200;
-       p2Nbin = 200;
-       
-       x1Min = -5.2;
-       x1Max = -3.2; 
-       
-       SNbin = 100;
-       x1BinMin = -4.70;
-       x1BinMax = -3.60;
-      
-     }
-     
-     if(sim.Contains("v2.5kA.G.ZH.DDR")) {
-       
-       x1Nbin = 300;
-       p1Nbin = 200;
-       x2Nbin = 200;
-       p2Nbin = 200;
-       
-       x1Min = -5.4;
-       x1Max = -2.5; 
-       
-       SNbin = 100;
-       x1BinMin = -4.65;
-       x1BinMax = -3.40;
-      
-     }
-     
-
-    } else if(sim.Contains("facet")) {
-      
-      if(sim.Contains("v23kA.G.RI")) {
-	x1Min = -7.75;
-	x1Max = -7.0;
-	
-	SNbin = 40;
-	x1BinMin = -7.54;
-	x1BinMax = -7.14;
-
-	if(sim.Contains("n20")) {
-	  SNbin = 37;
-	  x1BinMin = -7.51;
-	  x1BinMax = -7.14;
-
-	}
-
-      }	else if (sim.Contains("v10kA.G.DDR")) {
-	
-	x1Min = -7.99;
-	x1Max = -3.01; 
-	
-	SNbin = 50;
-	x1BinMin = -6.40;
-	x1BinMax = -4.15;
-	
-      } else if (sim.Contains("DDR")) {
-	
-	x1Min = -5.80;
-	x1Max = -5.0; 
-	
-	SNbin = 40;
-	x1BinMin = -5.65;
-	x1BinMax = -5.1;
-	
-      }
-      
-    } else if (sim.Contains("rake-v10kA.G.SR2.RI.3D")) {
-      
-      x1Min = -6.4;
-      x1Max = -5.9; 
-      
-      //      SNbin = 76;
-      SNbin = 38;
-      x1BinMin = -6.23;
-      x1BinMax = -6.05;
-      
-    } else if (sim.Contains("FACET_5x1016_PP20140415_webBeam")) {
-      
-      x1Min = -6.5;
-      x1Max = -4.5; 
-      
-      SNbin = 40;
-      x1BinMin = -6.2;
-      x1BinMax = -4.9;
-      
-    } else if (sim.Contains("BOND-24TW")) {
-      
-      x1Min = -8.0;
-      x1Max = -4.30; 
-      
-      SNbin = 100;
-      x1BinMin = -6.8;
-      x1BinMax = -5.7;
-      
-    } else if (sim.Contains("BOND_betatron")) {
-      
-      x1Min = -9.2;
-      x1Max = -8.0; 
-      
-      SNbin = 80;
-      x1BinMin = -8.90;
-      x1BinMax = -8.55;
-      
-    } else if (sim.Contains("pitz")) {
-      x1Min = -55.0;
-      x1Max = 25.0; 
-      
-      SNbin = 100;
-      x1BinMin = -32.0;
-      x1BinMax =   2.0;
-
+    if (sim.Contains("pitz")) {
       curUnit = PUnits::ampere;
       curSUnit = "A";
-
+      
       eneUnit = PUnits::MeV;
       eneSUnit = "MeV";
-
+      
       ermsUnit = PUnits::perMillion; 
       ermsSUnit = "0.01 %";
-
     }
-
+    
     // Command line input
     if(zmax>zmin) {
       x1Min = zmin;
       x1Max = zmax;
+      x1BinMin = zmin + (zmax-zmin)/4.0;
+      x1BinMax = zmin + 3.0*(zmax-zmin)/4.0;
     }
     
     // dummy shift
@@ -546,7 +402,7 @@ int main(int argc,char *argv[]) {
     // Scan histogram
     Int_t NX1 = pData->GetX1N()*(x1Max-x1Min)/(pData->GetX1Max()-pData->GetX1Min());
 
-    cout << Form(" NBINS = %i  x1Min = %f x1Max = %f",NX1,x1Min ,x1Max) << endl;
+    cout << Form(" NBINS = %i  x1Min = %f x1Max = %f  [%.2f,%.2f] ", NX1, x1Min, x1Max, x1BinMin, x1BinMax) << endl;
     
     TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
     if(hScanX1) delete hScanX1;
@@ -718,8 +574,7 @@ int main(int argc,char *argv[]) {
       x1Max = MaxX1 + rfactor*(MaxX1-MinX1);
       x2Min = MinX2 - rfactor*(MaxX2-MinX2);
       x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
-
-      cout << Form(" NBINS = %i  x1Min = %f x1Max = %f",NX1,x1Min ,x1Max) << endl;     
+    
       if(Nvar==7) {
 	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
 	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
@@ -731,9 +586,14 @@ int main(int argc,char *argv[]) {
       
       Double_t x1min = -999;
       Double_t x1max = -999;
+
+      cout << Form(" NBINS = %i  x1Min = %f x1Max = %f",NX1,x1Min ,x1Max) << endl; 
+
       FindLimits(hScanX1,x1min,x1max,peakFactor);
 
-      cout << Form(" NBINS = %i  x1Min = %f x1Max = %f",NX1,x1min ,x1max) << endl;     
+      cout << Form(" NBINS = %i  x1min = %f x1max = %f",NX1,
+		   hScanX1->GetXaxis()->GetXmin(),
+		   x1max) << endl;     
       
       x1BinMin = x1min;
       x1BinMax = x1max;
@@ -3251,3 +3111,152 @@ int main(int argc,char *argv[]) {
     // end time looper
   }
 }
+
+void InitRange(const TString &sim, Double_t &x1Min, Double_t &x1Max, Int_t &SNbin, Double_t &x1BinMin, Double_t &x1BinMax) {
+
+  if(sim.Contains("flash")) {
+    
+    x1Min = -5.5;
+    x1Max = -3.2; 
+
+    SNbin = 50;
+    x1BinMin = -4.80;
+    x1BinMax = -3.70;
+    
+    if(sim.Contains("v8.0kA.C.DDR")) {
+
+      x1Min = -5.69;
+      x1Max = -2.81; 
+
+      SNbin = 50;
+      x1BinMin = -5.1;
+      x1BinMax = -3.2;
+    }
+
+    if(sim.Contains("v7.5kA.T.BI")) {
+
+      x1Min = -4.3;
+      x1Max = -3.9;
+       
+      SNbin = 20;
+      x1BinMin = -4.15;
+      x1BinMax = -4.02;
+       
+    }
+
+    if(sim.Contains("v7.5kA.G.BI")) {
+
+      x1Min = -6.5;
+      x1Max = -5.0; 
+
+      SNbin = 20;
+      x1BinMin = -5.9;
+      x1BinMax = -5.3;
+    }
+    
+    if(sim.Contains("v2.5kA.G.JG.DDR")) {
+      x1Min = -5.2;
+      x1Max = -3.2; 
+       
+      SNbin = 100;
+      x1BinMin = -4.70;
+      x1BinMax = -3.60;
+    }
+     
+    if(sim.Contains("v2.5kA.G.ZH.DDR")) {
+      x1Min = -5.4;
+      x1Max = -2.5; 
+       
+      SNbin = 100;
+      x1BinMin = -4.65;
+      x1BinMax = -3.40;      
+    }
+     
+
+  } else if(sim.Contains("facet")) {
+      
+    if(sim.Contains("v23kA.G.RI")) {
+      x1Min = -7.75;
+      x1Max = -7.0;
+	
+      SNbin = 40;
+      x1BinMin = -7.54;
+      x1BinMax = -7.14;
+
+      if(sim.Contains("n20")) {
+	SNbin = 37;
+	x1BinMin = -7.51;
+	x1BinMax = -7.14;
+
+      }
+
+    }	else if (sim.Contains("v10kA.G.DDR")) {
+	
+      x1Min = -7.99;
+      x1Max = -3.01; 
+	
+      SNbin = 50;
+      x1BinMin = -6.40;
+      x1BinMax = -4.15;
+	
+    } else if (sim.Contains("DDR")) {
+	
+      x1Min = -5.80;
+      x1Max = -5.0; 
+	
+      SNbin = 40;
+      x1BinMin = -5.65;
+      x1BinMax = -5.1;
+	
+    }
+      
+  } else if (sim.Contains("rake-v10kA.G.SR2.RI.3D")) {
+      
+    x1Min = -6.4;
+    x1Max = -5.9; 
+      
+    //      SNbin = 76;
+    SNbin = 38;
+    x1BinMin = -6.23;
+    x1BinMax = -6.05;
+      
+  } else if (sim.Contains("FACET_5x1016_PP20140415_webBeam")) {
+      
+    x1Min = -6.5;
+    x1Max = -4.5; 
+      
+    SNbin = 40;
+    x1BinMin = -6.2;
+    x1BinMax = -4.9;
+      
+  } else if (sim.Contains("BOND-24TW")) {
+      
+    x1Min = -8.0;
+    x1Max = -4.30; 
+      
+    SNbin = 100;
+    x1BinMin = -6.8;
+    x1BinMax = -5.7;
+      
+  } else if (sim.Contains("BOND_betatron")) {
+      
+    x1Min = -9.2;
+    x1Max = -8.0; 
+      
+    SNbin = 80;
+    x1BinMin = -8.90;
+    x1BinMax = -8.55;
+      
+  } else if (sim.Contains("pitz")) {
+    x1Min = -55.0;
+    x1Max = 25.0; 
+      
+    SNbin = 100;
+    x1BinMin = -32.0;
+    x1BinMax =   2.0;
+
+  }
+}
+
+
+

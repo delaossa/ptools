@@ -49,6 +49,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   gStyle->SetPadTickX(0);
   gStyle->SetPadTickY(0);
 
+  gStyle->SetNumberContours(255);
 
   if(opt.Contains("grid")) {
     gStyle->SetPadGridX(1);
@@ -122,6 +123,8 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
       
       // 1D field at certain timestep "it".
       TH1F *hE1D = (TH1F*) hEvsTime[i]->ProjectionY("_py",it,it);
+
+      Float_t x1max = hE1D->GetXaxis()->GetXmax();
       
       Int_t MAXCROSS = 2;
       Float_t *Cross = new Float_t[MAXCROSS];
@@ -129,7 +132,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
       memset(Cross,0,sizeof(Float_t)*MAXCROSS);
       memset(Extr,0,sizeof(Float_t)*MAXCROSS);
 
-      Int_t auxNcross = PGlobals::HCrossings(hE1D,Cross,Extr,MAXCROSS,0.,0.);
+      Int_t auxNcross = PGlobals::HCrossings(hE1D,Cross,Extr,MAXCROSS,0.,x1max/2);
       // cout << Form("  -> Number of crossings for histogram \"%s\" : %i ",hE1D->GetName(),auxNcross) << endl;
       // for(Int_t ic=0;ic<auxNcross;ic++) {
       // 	cout << Form(" %2i:  cross = %6.4f  extreme = %6.4f", ic, Cross[ic], Extr[ic]) << endl; 
@@ -139,7 +142,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
 	NCross[i] = auxNcross;
 	
 	gEcross[i] = new TGraph*[NCross[i]];
-	gEextr[i] = new TGraph*[NCross[i]];
+	gEextr[i]  = new TGraph*[NCross[i]];
 
 	for(Int_t ic = 0;ic<NCross[i];ic++) {
 	  gEcross[i][ic] = new TGraph(NTBins);
@@ -588,12 +591,30 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   }
   
 
-  // palettes for drawing
-  PPalette * redPalette = (PPalette*) gROOT->FindObject("red0");
-  PPalette * rbowwhitePalette = (PPalette*) gROOT->FindObject("rbowwhite");
-  PPalette * electronPalette = (PPalette*) gROOT->FindObject("oli");
-  PPalette * electroninvPalette = (PPalette*) gROOT->FindObject("oli");
-  PPalette * barsaPalette = (PPalette*) gROOT->FindObject("barsa");
+  // Palettes
+  PPalette *beamPalette = (PPalette*) gROOT->FindObject("beam");
+  if(!beamPalette) {
+    beamPalette = new PPalette("beam");
+  }
+  beamPalette->SetPalette("elec0");
+ 
+  PPalette *beamrPalette = (PPalette*) gROOT->FindObject("beamr");
+  if(!beamrPalette) {
+    beamrPalette = new PPalette("beamr");
+  }
+  beamrPalette->SetPalette("elec0");
+  
+  PPalette *fieldPalette = (PPalette*) gROOT->FindObject("field");
+  if(!fieldPalette) {
+    fieldPalette = new PPalette("field");
+  }
+  fieldPalette->SetPalette("rbow0");
+
+  PPalette *fieldTPalette = (PPalette*) gROOT->FindObject("fieldT");
+  if(!fieldTPalette) {
+    fieldTPalette = new PPalette("fieldT");
+  }
+  fieldTPalette->SetPalette("red0");
   
   // Canvas setup
   Int_t sizex = 1024;
@@ -640,7 +661,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   hEvsTime[0]->GetZaxis()->SetTitleSize(36);
   hEvsTime[0]->GetZaxis()->SetTitleOffset(0.9);
 
-  rbowwhitePalette->cd();
+  fieldPalette->cd();
   
   hEvsTime[0]->Draw("colz");
 
@@ -694,10 +715,16 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   Double_t exPGreen[exPNRGBs] = { 0.078, 0.818, 0.90, 0.90, 0.925, 0.078 };
   Double_t exPBlue[exPNRGBs]  = { 0.518, 0.880, 0.90, 0.90, 0.353, 0.106 };
    
-  PPalette * exPalette = (PPalette*) gROOT->FindObject("rbowwhite");
-  exPalette->CreateGradientColorTable(exPNRGBs, exPStops, 
-				      exPRed, exPGreen, exPBlue, exPNCont);
 
+  PPalette * exPalette = (PPalette*) gROOT->FindObject("ex");
+  if(!exPalette) {
+    exPalette = new PPalette("ex");
+    exPalette->CreateGradientColorTable(exPNRGBs, exPStops, 
+					exPRed, exPGreen, exPBlue, exPNCont);
+  } else {
+    exPalette->ChangeGradientColorTable(exPNRGBs, exPStops, 
+					exPRed, exPGreen, exPBlue);
+  }
   
   hEvsTime[1]->Draw("colz");
 
@@ -874,7 +901,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     hVvsTime->GetZaxis()->SetTitleSize(36);
     hVvsTime->GetZaxis()->SetTitleOffset(0.9);
 
-    rbowwhitePalette->cd();
+    fieldPalette->cd();
   
     // Float_t Vmax = hVvsTime->GetMaximum();
     // Float_t Vmin = hVvsTime->GetMinimum();
@@ -1087,9 +1114,15 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     Double_t focPGreen[focPNRGBs] = { 0.078, 0.818, 0.90, 0.90, 0.925, 0.078 };
     Double_t focPBlue[focPNRGBs]  = { 0.518, 0.880, 0.90, 0.90, 0.353, 0.106 };
    
-    PPalette * focusPalette = (PPalette*) gROOT->FindObject("rbowwhite");
-    focusPalette->CreateGradientColorTable(focPNRGBs, focPStops, 
-					   focPRed, focPGreen, focPBlue, focPNCont);
+    PPalette * focPalette = (PPalette*) gROOT->FindObject("focus");
+    if(!focPalette) {
+      focPalette = new PPalette("foc");
+      focPalette->CreateGradientColorTable(focPNRGBs, focPStops, 
+					  focPRed, focPGreen, focPBlue, focPNCont);
+    } else {
+      focPalette->ChangeGradientColorTable(focPNRGBs, focPStops, 
+					  focPRed, focPGreen, focPBlue);
+    }
   
     hFvsTime->Draw("colz");
 
@@ -1162,7 +1195,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     hETvsTime->GetZaxis()->SetTitleOffset(0.9);
 
     
-    redPalette->cd();
+    fieldTPalette->cd();
     hETvsTime->Draw("colz");
 
     gPad->Update();
@@ -1262,8 +1295,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   //   hGvsTime->GetZaxis()->SetRangeUser(minGamma,maxGamma); 
   //   PGlobals::SetH1LabelSize(hGvsTime);
   
-  //   // barsaPalette->cd();
-  //   rbowwhitePalette->cd();
+  //   fieldPalette->cd();
     
   //   hGvsTime->Draw("colz");
 
@@ -1300,7 +1332,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   
     Float_t Rmsmax = hRmsvsTime->GetMaximum();
   
-    electroninvPalette->cd();
+    beamrPalette->cd();
 
     hRmsvsTime->GetZaxis()->SetRangeUser(0,Rmsmax);   
     PGlobals::SetH1LabelSize(hRmsvsTime);
@@ -1339,7 +1371,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
 
     Float_t Denmax = hDen1DvsTime->GetMaximum();
   
-    electronPalette->cd();
+    beamPalette->cd();
 
     hDen1DvsTime->GetZaxis()->SetRangeUser(0,Denmax);   
     PGlobals::SetH1LabelSize(hDen1DvsTime); 
@@ -1381,7 +1413,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
 
       PGlobals::SetH1LabelSize(hIonProbvsTime[i]);
  
-      redPalette->cd();
+      fieldTPalette->cd();
       hIonProbvsTime[i]->Draw("colz");
     
       // Plot ionzization limits

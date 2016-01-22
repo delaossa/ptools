@@ -10,7 +10,7 @@
   PPalette *beamPalette = (PPalette*) gROOT->FindObject("beam");
   if(!beamPalette) {
     beamPalette = new PPalette("beam");
-    beamPalette->SetPalette("electron");
+    beamPalette->SetPalette("elec");
   }
 
   PPalette *beam2Palette = (PPalette*) gROOT->FindObject("beam2");
@@ -49,5 +49,5 @@
     defPalette->SetPalette("electron");
   }
   
-  
+  gStyle->SetNumberContours(255);
 }
