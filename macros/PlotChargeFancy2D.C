@@ -461,11 +461,12 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     plasmaPalette->ChangeGradientColorTable(NRGBs, Stops, cindex);
   }
   
-  if(opt.Contains("dark")) 
-    plasmaPalette->SetAlpha(0.7);
-  else
-    plasmaPalette->SetAlpha(0.9);
-    
+  if(opt.Contains("alpha")) {
+    if(opt.Contains("dark")) 
+      plasmaPalette->SetAlpha(0.7);
+    else
+      plasmaPalette->SetAlpha(0.9);
+  }
   
   // Palette for beams
   PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
@@ -479,12 +480,19 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
 
   if(opt.Contains("dark")) {
     bcindex[0] = TColor::GetColor("#380A3C"); // deep purple
+    bcindex[0] = cindex[1];
     bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33); // dark magenta 
     bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
     bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
     beamPalette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
-  } else
-    beamPalette->SetPalette("elec");
+  } else {
+    bcindex[0] = cindex[1];
+    bcindex[1] = TColor::GetColor("#386EA5"); // steel blue
+    bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
+    bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
+    beamPalette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
+    //    beamPalette->SetPalette("elec");
+  }
   
   PPalette * beam2Palette = (PPalette*) gROOT->FindObject("beam2");
   if(!beam2Palette) {
