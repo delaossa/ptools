@@ -344,7 +344,10 @@ void PData::LoadFileNames(Int_t t) {
 
   // Fishing the pieces ...
   for(UInt_t i=0;i<files.size();i++) {
-  
+
+    if(files[i].find("slice") != string::npos)
+      continue;
+    
     // Get species files:
     for(UInt_t j=0;j<NSpecies();j++) {
 

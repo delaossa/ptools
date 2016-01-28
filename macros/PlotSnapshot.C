@@ -1190,10 +1190,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   cout << endl;
 
   // Access to color Palettes 
-  if(opt.Contains("alpha"))
-    plasmaPalette->SetAlpha(0.8);
-  else
-    plasmaPalette->SetAlpha(1.0);
   
   TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
   TExec *exBeam   = new TExec("exBeam","beamPalette->cd();");
@@ -1202,7 +1198,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TExec *exFieldT = new TExec("exFieldT","fieldTPalette->cd();");
   TExec *exPot    = new TExec("exPot","potPalette->cd();");
   TExec *exIonP   = new TExec("exIonP","ionPalette->cd();");
-        
+
+  if(opt.Contains("alpha0"))
+    plasmaPalette->SetAlpha(0.8);
+  else if(opt.Contains("alpha1"))
+    beamPalette->SetAlpha(0.8);
+  else if(opt.Contains("alpha2"))
+    beam2Palette->SetAlpha(0.8);
+   
+  
   TString drawopt = "colz same";
 
   // Actual Plotting!
@@ -1309,6 +1313,24 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
 
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	hDen2D[0]->GetZaxis()->SetNdivisions(503);
+	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
+	//plasmaPalette->SetAlpha(1.0);  
+	exPlasma->Draw();
+	hDen2D[0]->Draw("colz same");
+      }
+
+      // Beam driver.
+      if(hDen2D[1] && noIndex!=1) {
+	hDen2D[1]->GetZaxis()->SetNdivisions(503);
+	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
+	exBeam->Draw();
+	//exPlasma->Draw();
+	hDen2D[1]->Draw(drawopt);
+      }
+
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
@@ -1318,23 +1340,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[2]->Draw(drawopt);
       }
 
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	hDen2D[0]->GetZaxis()->SetNdivisions(503);
-	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
-	//plasmaPalette->SetAlpha(1.0);  
-	exPlasma->Draw();
-	hDen2D[0]->Draw("colz same");
-      }
-      
-      // Beam driver.
-      if(hDen2D[1] && noIndex!=1) {
-	hDen2D[1]->GetZaxis()->SetNdivisions(503);
-	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
-	exBeam->Draw();
-	//exPlasma->Draw();
-	hDen2D[1]->Draw(drawopt);
-      }
+
       
     } else if (Nspecies==4) {
 
