@@ -142,6 +142,8 @@ int main(int argc,char *argv[]) {
       opt += "bw"; 
     } else if(arg.Contains("--nospec")){
       opt += "nospec"; 
+    } else if(arg.Contains("--fwhm")){
+      opt += "fwhm"; 
     } else if(arg.Contains("-index")) {
       char ss[6];
       sscanf(arg,"%6s%i",ss,&index);
@@ -263,6 +265,8 @@ int main(int argc,char *argv[]) {
   emitSUnit = "#mum";
   // emitUnit = 10 * PUnits::um;
   // emitSUnit = "10 #mum";
+  // emitUnit = 100 * PUnits::nm;
+  // emitSUnit = "10^{2} nm";
 
   // beta units
   betaUnit = PUnits::um;
@@ -1852,8 +1856,10 @@ int main(int argc,char *argv[]) {
       textInfo->AddText(ctext);
       sprintf(ctext,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
       textInfo->AddText(ctext);
-      // sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
-      sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
+      if(opt.Contains("fwhm"))
+	sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
+      else
+	sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
       textInfo->AddText(ctext);
       sprintf(ctext,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
       textInfo->AddText(ctext);
@@ -1966,13 +1972,14 @@ int main(int argc,char *argv[]) {
       TLine pzminline(hP1X1->GetXaxis()->GetXmin(),pzmin,hP1X1->GetXaxis()->GetXmax(),pzmin);
       pzminline.SetLineColor(kGray+1);
       pzminline.SetLineStyle(3);
-      pzminline.Draw();
       
       TLine pzmaxline(hP1X1->GetXaxis()->GetXmin(),pzmax,hP1X1->GetXaxis()->GetXmax(),pzmax);
       pzmaxline.SetLineColor(kGray+1);
       pzmaxline.SetLineStyle(3);
-      pzmaxline.Draw();
-
+      if(opt.Contains("fwhm")) {
+	pzmaxline.Draw();
+	pzminline.Draw();
+      }
 
       hP1X1->GetZaxis()->SetTitleFont(fonttype);
       hP1X1->GetZaxis()->SetTickLength(0.01);      

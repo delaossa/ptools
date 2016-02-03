@@ -451,7 +451,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hETotal2D->GetYaxis()->SetRangeUser(yMin,yMax);
     hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
   }
-
+  
   // ----- z Zoom ---------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
   // using a dynamic palette that adjusts the base value to a certain color.
@@ -473,7 +473,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     Max[i] = hDen2D[i]->GetMaximum();
     Min[i] = 1.01E-1 * baseden;
-    if(Min[i]>Max[i]) Min[i] = 1.01E-1 * Max[i];
+    if(Max[i]==0) {
+      Min[i]=0;
+      continue;
+    } else if(Min[i]>Max[i]) Min[i] = 1.01E-1 * Max[i];
     
     if(i==0) {
       if(Max[i]<baseden) { 
@@ -561,6 +564,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	       
 	       
   // Redefines the ground color of the electron palette to match background plasmas.
+  PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
+  if(!beamPalette) {
+    beamPalette = new PPalette("beam");
+    beamPalette->SetPalette("elec");
+  }
+  
   if(opt.Contains("mbeam")) {
     Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
     Int_t rootcolorindex = plasmaPalette->GetColor(localcolorindex);
@@ -577,16 +586,20 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
     Double_t elecBlue[elecNRGBs] =  { b, 0.58, 0.33, 0.30, 0.20};
     
-    PPalette * elecPalette = (PPalette*) gROOT->FindObject("beam");
-    if(!elecPalette) {
-      elecPalette = new PPalette("redelectron");
-      elecPalette->CreateGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, elecNCont,1.0);
+    if(!beamPalette) {
+      beamPalette = new PPalette("redelectron");
+      beamPalette->CreateGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, elecNCont,1.0);
     } else {
-      elecPalette->ChangeGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, 1.0);
+      beamPalette->ChangeGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, 1.0);
     }
     
   }  
 
+  PPalette * beam2Palette = (PPalette*) gROOT->FindObject("beam2");
+  if(!beam2Palette) {
+    beam2Palette = new PPalette("beam2");
+    beam2Palette->SetPalette("hot");
+  }
   
   // Change the range of z axis for the fields to be symmetric.
   Float_t *Emax = new Float_t[Nfields];

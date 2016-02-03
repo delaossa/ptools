@@ -468,17 +468,18 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
       plasmaPalette->SetAlpha(0.9);
   }
   
-  // Palette for beams
+  // Palette for beam
   PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
   if(!beamPalette) {
     beamPalette = new PPalette("beam");
   }
-  const Int_t bNRGBs = 4;
-  const Int_t bNCont = 255;
-  Double_t bStops[bNRGBs] = { 0.00, 0.20, 0.40, 1.00};
-  Int_t bcindex[bNRGBs];
 
   if(opt.Contains("dark")) {
+    const Int_t bNRGBs = 4;
+    const Int_t bNCont = 255;
+    Double_t bStops[bNRGBs] = { 0.00, 0.20, 0.40, 1.00};
+    Int_t bcindex[bNRGBs];
+    
     bcindex[0] = TColor::GetColor("#380A3C"); // deep purple
     bcindex[0] = cindex[1];
     bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33); // dark magenta 
@@ -486,10 +487,15 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
     beamPalette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
   } else {
+    const Int_t bNRGBs = 5;
+    const Int_t bNCont = 255;
+    Double_t bStops[bNRGBs] = { 0.00, 0.30, 0.45, 0.55, 1.00};
+    Int_t bcindex[bNRGBs];
     bcindex[0] = cindex[1];
     bcindex[1] = TColor::GetColor("#386EA5"); // steel blue
-    bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
-    bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
+    bcindex[2] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33); // dark magenta
+    bcindex[3] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
+    bcindex[4] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
     beamPalette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
     //    beamPalette->SetPalette("elec");
   }
@@ -497,14 +503,15 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
   PPalette * beam2Palette = (PPalette*) gROOT->FindObject("beam2");
   if(!beam2Palette) {
     beam2Palette = new PPalette("beam2");
-  }
-  if(opt.Contains("dark")) {
-    //bcindex[0] = bcindex[0];
-    bcindex[1] = bcindex[2];    
-    bStops[1] = bStops[2] = 0.1;
-    beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
-  } else
     beam2Palette->SetPalette("hot");
+  }
+  // if(opt.Contains("dark")) {
+  //   //bcindex[0] = bcindex[0];
+  //   bcindex[1] = bcindex[2];    
+  //   bStops[1] = bStops[2] = 0.1;
+  //   beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
+  // } else
+  //   beam2Palette->SetPalette("hot");
 
       
   // Change the range of z axis for the fields to be symmetric.
@@ -536,6 +543,25 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     zEndNeutral *= skindepth / PUnits::um;
   }
 
+  //  cout << "Start plasma = " << zStartPlasma << endl;
+  TLine *lineStartPlasma = new TLine(zStartPlasma,xMin,zStartPlasma,xMax);
+  lineStartPlasma->SetLineColor(kGray+2);
+  lineStartPlasma->SetLineStyle(2);
+  lineStartPlasma->SetLineWidth(3);
+
+  //  cout << "Start neutral = " << zStartNeutral << endl;
+  TLine *lineStartNeutral = new TLine(zStartNeutral,xMin,zStartNeutral,xMax);
+  lineStartNeutral->SetLineColor(kGray+3);
+  lineStartNeutral->SetLineStyle(3);
+  lineStartNeutral->SetLineWidth(2);
+
+  //  cout << "End neutral = " << zEndNeutral << endl;
+  TLine *lineEndNeutral = new TLine(zEndNeutral,xMin,zEndNeutral,xMax);
+  lineEndNeutral->SetLineColor(kGray+3);
+  lineEndNeutral->SetLineStyle(3);
+  lineEndNeutral->SetLineWidth(2);
+  
+
   // Plotting
   // -----------------------------------------------
 
@@ -546,7 +572,14 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
   TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
   TExec *exDriver   = new TExec("exDriver","beamPalette->cd();");
   TExec *exWitness    = new TExec("exWitness","beam2Palette->cd();");
-     
+
+  if(opt.Contains("alpha0"))
+    plasmaPalette->SetAlpha(0.8);
+  else if(opt.Contains("alpha1"))
+    beamPalette->SetAlpha(0.8);
+  else if(opt.Contains("alpha2"))
+    beam2Palette->SetAlpha(0.8);
+  
   // Actual Plotting!
   // ------------------------------------------------------------
 
@@ -725,6 +758,15 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
       gr->Draw("C");
       
     }
+  }
+
+  if(opt.Contains("sline")) {
+    if(zStartPlasma>zMin && zStartPlasma<zMax)
+      lineStartPlasma->Draw();
+    if(zStartNeutral>zMin && zStartNeutral<zMax)
+      lineStartNeutral->Draw();
+    if(zEndNeutral>zMin && zEndNeutral<zMax)
+      lineEndNeutral->Draw();
   }
   
   pad[0]->RedrawAxis(); 
