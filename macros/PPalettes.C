@@ -40,7 +40,7 @@
   PPalette *ionPalette = (PPalette*) gROOT->FindObject("ion");
   if(!ionPalette) {
     ionPalette = new PPalette("ion");
-    ionPalette->SetPalette("rbow0");
+    ionPalette->SetPalette("elec0");
   }
 
   PPalette *defPalette = (PPalette*) gROOT->FindObject("def");
