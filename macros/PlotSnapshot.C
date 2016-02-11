@@ -802,14 +802,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Float_t Vzero = hV1D->GetBinContent(binPotValueIni);
     // cout << Form(" VZERO = %f",Vzero) << endl;
     
-    const Int_t potPNRGBs = 6;
-    const Int_t potPNCont = 64;
+    const Int_t potPNRGBs = 5;
+    const Int_t potPNCont = 255;
     Float_t zeroPos = (Vzero-Vmin)/(Vmax-Vmin);
 
-    Double_t potPStops[potPNRGBs] = { 0.00, zeroPos-6.0/potPNCont,zeroPos-1.0/potPNCont, zeroPos, zeroPos+3.0/potPNCont, 1.00 };
-    Double_t potPRed[potPNRGBs]   = { 0.518, 0.965, 0.90, 0.90, 0.498, 0.106 };
-    Double_t potPGreen[potPNRGBs] = { 0.078, 0.925, 0.90, 0.90, 0.718, 0.078 };
-    Double_t potPBlue[potPNRGBs]  = { 0.106, 0.353, 0.90, 0.90, 0.780, 0.518 };
+    Double_t potPStops[potPNRGBs] = { 0.00,zeroPos-0.05, zeroPos, zeroPos+0.05, 1.00 };
+    Double_t potPRed[potPNRGBs]   = { 0.518, 0.965, 0.90, 0.498, 0.106 };
+    Double_t potPGreen[potPNRGBs] = { 0.078, 0.925, 0.90, 0.718, 0.078 };
+    Double_t potPBlue[potPNRGBs]  = { 0.106, 0.353, 0.90, 0.780, 0.518 };
    
     potPalette->CreateGradientColorTable(potPNRGBs, potPStops, 
 					 potPRed, potPGreen, potPBlue, potPNCont);
@@ -1171,7 +1171,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t ESlopeInjBeam = -999;
 
 
-  if(Nspecies>2 && opt.Contains("curInj")) {
+  if(Nspecies>2) {
     if(hCur1D[2] && noIndex!=2) {
       hCur1D[2]->ResetStats();
       zInjBeam = hCur1D[2]->GetMean();
@@ -1333,12 +1333,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if(opt.Contains("cont")) {
 	
-      // // ADK contours  
-      // for(Int_t i=0;i<graphsI2D->GetEntriesFast();i++) {
-      // 	TGraph *gr = (TGraph*) graphsI2D_main->At(i);
-      // 	if(!gr) continue;
-      //   gr->Draw("C");
-      // }
+      // ADK contours  
+      for(Int_t i=0;i<graphsI2D_main->GetEntriesFast();i++) {
+       	TGraph *gr = (TGraph*) graphsI2D_main->At(i);
+       	if(!gr) continue;
+	gr->Draw("C");
+      }
       
       // PSI MAIN contour  
       for(Int_t i=0;i<graphsV2D_main.GetEntriesFast();i++) {
@@ -1397,6 +1397,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
 
+      // Injected electrons ?
+      if(hDen2D[2] && noIndex!=2) {
+	exBeam2->Draw();
+	//exBeam->Draw();
+	hDen2D[2]->GetZaxis()->SetNdivisions(503);
+	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
+	hDen2D[2]->Draw(drawopt);
+      }
+
       // Plasma
       if(hDen2D[0] && noIndex!=0) {
 	hDen2D[0]->GetZaxis()->SetNdivisions(503);
@@ -1414,16 +1423,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
       }
-
-      // Injected electrons ?
-      if(hDen2D[2] && noIndex!=2) {
-	exBeam2->Draw();
-	//exBeam->Draw();
-	hDen2D[2]->GetZaxis()->SetNdivisions(503);
-	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
-	hDen2D[2]->Draw(drawopt);
-      }
-
 
       
     } else if (Nspecies==4) {
