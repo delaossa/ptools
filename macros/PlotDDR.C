@@ -931,7 +931,7 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     Double_t *denarray = new Double_t[Np];
     Double_t *betapharray = new Double_t[Np];
     Double_t ntop   = 10;
-    Double_t sigmal = 2.0;
+    Double_t sigmal = 2.5;
     Double_t phase = -TMath::TwoPi();
 
     Float_t dMin = -0.5;
@@ -983,7 +983,7 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     // Draw beta from simulation 
     Double_t *betaarray = new Double_t[Np];
     Double_t *den0array = new Double_t[Np];
-    Double_t nfactor = (ntop0 - 1 + TMath::Exp(1./2.)) / (ntop - 1 + TMath::Exp(1./2.));
+    Double_t nfactor = (ntop0 - 1 + TMath::Exp(2.)) / (ntop - 1 + TMath::Exp(2.));
     //    Double_t nfactor = 4;
 
     Int_t Npp = gVminvsDen->GetN();

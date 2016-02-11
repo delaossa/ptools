@@ -263,7 +263,71 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   sprintf(hName,"hV1D"); 
   TH1F *hV1D = (TH1F*) ifile->Get(hName);
 
-  cout << Form(" done. ") << endl; 
+  cout << Form(" done. ") << endl;
+
+  // Rescaling box limits:
+  if(opt.Contains("rscal") && hDen2D[0]) {
+
+    Float_t xMin, xMax, yMin, yMax;
+    Int_t NbinsX, NbinsY;
+    NbinsX = hDen2D[0]->GetNbinsX();
+    xMin = hDen2D[0]->GetXaxis()->GetXmin();
+    xMax = hDen2D[0]->GetXaxis()->GetXmax();
+    NbinsY = hDen2D[0]->GetNbinsY();
+    yMin = hDen2D[0]->GetYaxis()->GetXmin();
+    yMax = hDen2D[0]->GetYaxis()->GetXmax();
+
+    // Local value of the density at \zeta = 0 and y = a quarter of the yRange.
+    Int_t binx = hDen2D[0]->GetXaxis()->FindBin(0.);
+    Int_t biny = hDen2D[0]->GetYaxis()->FindBin(yMax - ((yMax-yMin)/8.0));
+    
+    Float_t localden = hDen2D[0]->GetBinContent(binx,biny);
+    Float_t kfactor = TMath::Sqrt(localden);
+
+    xMin *= kfactor;
+    xMax *= kfactor;
+    yMin *= kfactor;
+    yMax *= kfactor;
+ 
+    
+    for(Int_t i=0;i<Nspecies;i++) {
+      if(i==noIndex) continue;
+      
+      if(hDen2D[i]) 
+	hDen2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
+      
+      if(hDen1D[i]) 
+	hDen1D[i]->SetBins(NbinsX,xMin,xMax);
+
+      if(hCur1D[i]) 
+	hCur1D[i]->SetBins(NbinsX,xMin,xMax);
+      
+    }
+
+    for(Int_t i=0;i<Nfields;i++) {
+      
+      if(hE2D[i])
+	hE2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
+
+      if(hB2D[i])
+	hB2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
+
+      if(hE1D[i])
+	hE1D[i]->SetBins(NbinsX,xMin,xMax);
+      
+      if(hB1D[i])
+	hB1D[i]->SetBins(NbinsX,xMin,xMax);
+      
+    }
+
+    if(hV2D)
+      hV2D->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
+
+    if(hV1D)
+      hV1D->SetBins(NbinsX,xMin,xMax);
+  }
+  
+  
 
   
   // Ionization probability rates (ADK)
@@ -458,12 +522,19 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   Float_t Base  = 1;
 
-  // Local value of the density at the right edge of the simulation box:
-  Float_t localden = hDen1D[0]->GetBinContent(hDen1D[0]->GetNbinsX()-1);
+  // Local value of the density at \zeta = 0 and y = a quarter of the yRange.
+  Int_t binx = hDen2D[0]->GetXaxis()->FindBin(0.);
+  Int_t biny = hDen2D[0]->GetYaxis()->FindBin(yMax - ((yMax-yMin)/8.0));
+  Float_t localden = hDen2D[0]->GetBinContent(binx,biny);
+
+  cout << Form(" Local density = %.2f n0",localden) << endl;
 
   Float_t baseden = Base;
   if(baseden<Base) baseden = Base;
-    
+
+  if(opt.Contains("lden"))
+    baseden = localden;
+  
   Float_t *Max = new Float_t[Nspecies];
   Float_t *Min = new Float_t[Nspecies];
   
