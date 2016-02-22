@@ -1973,8 +1973,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hE1D[0]->SetLineWidth(2);
     hE1D[0]->SetLineColor(lineColor);
 
-    hE1D[0]->Draw("sameL");    
-  
+    if(!opt.Contains("no1d"))
+      hE1D[0]->Draw("sameL");    
+    
     pad[ip]->Update();
   
     y1 = pad[ip]->GetBottomMargin();
@@ -2148,7 +2149,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hE1D[1]->SetLineWidth(2);
     hE1D[1]->SetLineColor(lineColor);
 
-    hE1D[1]->Draw("sameL");
+    if(!opt.Contains("no1d"))
+      hE1D[1]->Draw("sameL");
   
     pad[ip]->Update();
   
@@ -2272,7 +2274,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hE1D[2]->SetLineWidth(2);
     hE1D[2]->SetLineColor(lineColor);
 
-    hE1D[2]->Draw("sameL");
+    if(!opt.Contains("no1d"))
+      hE1D[2]->Draw("sameL");
   
     pad[ip]->Update();
   
@@ -2392,7 +2395,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
 
 
-    if(opt.Contains("off")) {
+    if(opt.Contains("off") && !opt.Contains("no1d")) {
       TLine *lineOff = new TLine(xMin,xoff,xMax,xoff);
       lineOff->SetLineColor(lineColor);
       lineOff->SetLineStyle(2);
@@ -2428,7 +2431,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hFocus1D->SetLineWidth(2);
     hFocus1D->SetLineColor(lineColor);
 
-    hFocus1D->Draw("sameL");
+    if(!opt.Contains("no1d"))
+      hFocus1D->Draw("sameL");
   
     pad[ip]->Update();
   

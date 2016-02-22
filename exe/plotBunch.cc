@@ -83,6 +83,10 @@ int main(int argc,char *argv[]) {
   Float_t zmin =  99999.;
   Float_t zmax = -99999.;
 
+  // Slices range
+  Float_t zsmin =  99999.;
+  Float_t zsmax = -99999.;
+
   // Options for Spectrum
   Float_t Pmin =  99999.;
   Float_t Pmax = -99999.;
@@ -171,6 +175,12 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-zmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&zmax);
+    } else if(arg.Contains("-zsmin")) {
+      char ss[6];
+      sscanf(arg,"%6s%f",ss,&zsmin);
+    } else if(arg.Contains("-zsmax")) {
+      char ss[6];
+      sscanf(arg,"%6s%f",ss,&zsmax);
     } else if(arg.Contains("-pmin")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmin);
@@ -182,8 +192,7 @@ int main(int argc,char *argv[]) {
       return 0;
     }
   }
-  
-  
+
   PGlobals::Initialize();
 
   // Palettes!
@@ -276,6 +285,17 @@ int main(int argc,char *argv[]) {
   ermsUnit = PUnits::perCent; 
   ermsSUnit = "%";
 
+  if (sim.Contains("pitz")) {
+    curUnit = PUnits::ampere;
+    curSUnit = "A";
+    
+    eneUnit = PUnits::MeV;
+    eneSUnit = "MeV";
+    
+    ermsUnit = PUnits::perMillion; 
+    ermsSUnit = "0.01 %";
+  }
+  
   
   // Time looper
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
@@ -352,39 +372,36 @@ int main(int argc,char *argv[]) {
     Double_t x1BinMin = -4.5;
     Double_t x1BinMax = -4.0;
 
-    // Specific initializations:
-    if(opt.Contains("autop"))
-      InitRange(sim,x1Min,x1Max,SNbin,x1BinMin,x1BinMax);
-
-    if (sim.Contains("pitz")) {
-      curUnit = PUnits::ampere;
-      curSUnit = "A";
-      
-      eneUnit = PUnits::MeV;
-      eneSUnit = "MeV";
-      
-      ermsUnit = PUnits::perMillion; 
-      ermsSUnit = "0.01 %";
-    }
-    
-    // Command line input
-    if(zmax>zmin) {
-      x1Min = zmin;
-      x1Max = zmax;
-      x1BinMin = zmin + (zmax-zmin)/4.0;
-      x1BinMax = zmin + 3.0*(zmax-zmin)/4.0;
-    }
-    
     // dummy shift
     Double_t dshiftz = pData->Shift("centercomov");
-    if(opt.Contains("autop") || (zmax>zmin) ) {
+
+    // Specific initializations:
+    if(opt.Contains("autop")) {
+      InitRange(sim,x1Min,x1Max,SNbin,x1BinMin,x1BinMax);
+      
       x1Min += dshiftz;
       x1Max += dshiftz;
       x1BinMin += dshiftz;
       x1BinMax += dshiftz;
     }
     
+
     
+    // Command line input
+    if(zmax>zmin) {
+      x1Min = zmin + dshiftz;
+      x1Max = zmax + dshiftz;
+      x1BinMin = zmin + (zmax-zmin)/4.0;
+      x1BinMax = zmin + 3.0*(zmax-zmin)/4.0;
+    }
+
+    if(zsmax>zsmin) {
+      x1BinMin = zsmin + dshiftz;
+      x1BinMax = zsmax + dshiftz;
+    }
+    
+
+        
     // --------------------------------------------------
     
     cout << Form("\n 1. Reading file : ") << pData->GetRawFileName(index)->c_str() << endl;
@@ -402,8 +419,6 @@ int main(int argc,char *argv[]) {
     // Scan histogram
     Int_t NX1 = pData->GetX1N()*(x1Max-x1Min)/(pData->GetX1Max()-pData->GetX1Min());
 
-    cout << Form(" NBINS = %i  x1Min = %f x1Max = %f  [%.2f,%.2f] ", NX1, x1Min, x1Max, x1BinMin, x1BinMax) << endl;
-    
     TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
     if(hScanX1) delete hScanX1;
     hScanX1 = new TH1F("hScanX1","",NX1,x1Min,x1Max);
@@ -587,17 +602,9 @@ int main(int argc,char *argv[]) {
       Double_t x1min = -999;
       Double_t x1max = -999;
 
-      cout << Form(" NBINS = %i  x1Min = %f x1Max = %f",NX1,x1Min ,x1Max) << endl; 
-
-      FindLimits(hScanX1,x1min,x1max,peakFactor);
-
-      cout << Form(" NBINS = %i  x1min = %f x1max = %f",NX1,
-		   hScanX1->GetXaxis()->GetXmin(),
-		   x1max) << endl;     
-      
+      FindLimits(hScanX1,x1min,x1max,peakFactor);      
       x1BinMin = x1min;
       x1BinMax = x1max;
-
       
       peakFactor = 0.05;
       FindLimits(hScanX1,x1min,x1max,peakFactor);
@@ -649,16 +656,20 @@ int main(int argc,char *argv[]) {
 
     // Overrides auto z ranging if specified in command line
     if(zmax>zmin) {
-      x1Min = zmin;
-      x1Max = zmax;
-
-      x1Min += dshiftz;
-      x1Max += dshiftz;
+      x1Min = zmin + dshiftz;
+      x1Max = zmax + dshiftz;
     }
-        
-    // Adjust the binning to match simulation grid
+
+    if(zsmax>zsmin) {
+      x1BinMin = zsmin + dshiftz;
+      x1BinMax = zsmax + dshiftz;
+    }
+    
+    
+    // Adjust the binning to match the simulation grid
     // -----
-    cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
+    // cout << Form(" x1 range (N = %i) :  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
+    // cout << Form(" x1-slices (N = %i):  x1Min = %f  x1Max = %f  Dx1 = %f", SNbin, x1BinMin, x1BinMax, (x1BinMax-x1BinMin)/SNbin) << endl;
 
 
     x1Min = floor((x1Min-X1MIN)/dx1) * dx1 + X1MIN;  
@@ -673,6 +684,15 @@ int main(int argc,char *argv[]) {
     x1BinMax = floor((x1BinMax-X1MIN)/dx1) * dx1 + X1MIN;
     
     SNbin  = ceil ((x1BinMax - x1BinMin)/(ddx1));
+
+    x1Min -= shiftz;
+    x1Max -= shiftz;
+    x1BinMin -= shiftz;
+    x1BinMax -= shiftz;
+    
+    // cout << Form("\n x1 range (N = %i) :  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
+    // cout << Form(" x1-slices (N = %i):  x1Min = %f  x1Max = %f  Dx1 = %f", SNbin, x1BinMin, x1BinMax, (x1BinMax-x1BinMin)/SNbin) << endl;
+
     
     Double_t ddx2 = dxf * dx2;      
     x2Min = floor((x2Min-X2MIN)/dx2) * dx2 + X2MIN;  
@@ -690,11 +710,6 @@ int main(int argc,char *argv[]) {
     }
     p3Nbin = x3Nbin;
     
-    x1Min -= shiftz;
-    x1Max -= shiftz;
-    x1BinMin -= shiftz;
-    x1BinMax -= shiftz;
-
     if(p1Min < 0.0) p1Min = 0.01;
     // if(x1Nbin < 100) x1Nbin = 100;
     // if(x2Nbin < 100) x2Nbin = 100;
@@ -743,7 +758,30 @@ int main(int argc,char *argv[]) {
     hP1X1->GetYaxis()->SetTitle("p_{z}/mc");
     hP1X1->GetZaxis()->SetTitle("Charge [n_{0}dV]");
     hP1X1->GetZaxis()->CenterTitle();
-  
+
+    sprintf(hName,"hP1range");
+    TH1F *hP1range = (TH1F*) gROOT->FindObject(hName);
+    if(hP1range) delete hP1range;
+    hP1range = new TH1F(hName,"",p1Nbin,p1Min,p1Max);
+    hP1range->GetYaxis()->SetTitle("p_{z}/mc");
+    if(opt.Contains("comov"))
+      hP1range->GetXaxis()->SetTitle("k_{p}#zeta");
+    else
+      hP1range->GetXaxis()->SetTitle("k_{p}z");
+
+    sprintf(hName,"hP1X1range");
+    TH2F *hP1X1range = (TH2F*) gROOT->FindObject(hName);
+    if(hP1X1range) delete hP1X1range;
+    hP1X1range = new TH2F(hName,"",x1Nbin,x1Min,x1Max,p1Nbin,p1Min,p1Max);
+    if(opt.Contains("comov"))
+      hP1X1range->GetXaxis()->SetTitle("k_{p}#zeta");
+    else
+      hP1X1range->GetXaxis()->SetTitle("k_{p}z");
+    hP1X1range->GetYaxis()->SetTitle("p_{z}/mc");
+    hP1X1range->GetZaxis()->SetTitle("Charge [n_{0}dV]");
+    hP1X1range->GetZaxis()->CenterTitle();
+
+    
     sprintf(hName,"hP2X2");
     TH2F *hP2X2 =  (TH2F*) gROOT->FindObject(hName);
     if(hP2X2) delete hP2X2;
@@ -868,7 +906,10 @@ int main(int argc,char *argv[]) {
       }
       if(iBin<0) continue;
 
-      // Projected emittance in the bunch range. (skip the tails to "match" the sliced ones)
+      // Fill points in range
+      hP1range->Fill(var[0][i],TMath::Abs(var[3][i]));
+      hP1X1range->Fill(var[4][i],var[0][i],TMath::Abs(var[3][i]));
+      
       hP2X2->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
       hP2X2sl[iBin]->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
 
@@ -917,8 +958,8 @@ int main(int argc,char *argv[]) {
     Double_t zrms = xrms;
     Double_t pzmean = ymean;
     Double_t pzrms = yrms;
-    // Double_t zpzcorr = xyrms;
-    // Double_t zpzcorrrel = xyrms/pzmean;
+    Double_t zpzcorr = xyrms;
+    Double_t zpzcorrrel = xyrms/pzmean;
     
     // Total relative energy spread within FWHM:
     sprintf(hName,"hP1cut");
@@ -955,7 +996,27 @@ int main(int argc,char *argv[]) {
     //  hP1cut->ResetStats();
     Double_t pzmeanFWHM = hP1cut->GetMean();
     Double_t pzrmsFWHM = hP1cut->GetRMS();
-        
+
+
+    // Basically the same, but in longitudinal range
+    hP1X1range->GetStats(stats);
+
+    xmean  = stats[2]/stats[0];
+    xrms2  = stats[3]/stats[0] - xmean * xmean;
+    xrms   = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
+    ymean  = stats[4]/stats[0];
+    yrms2  = stats[5]/stats[0] - ymean * ymean;
+    yrms   = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+    xyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+    xyrms  = (xyrms2>0.0) ? TMath::Sqrt(xyrms2) : 0.0 ;
+    emit2 = xrms2*yrms2 - xyrms2*xyrms2;
+    emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ;
+
+    pzmean = ymean;
+    pzrms = yrms;
+    zpzcorr = xyrms;
+    zpzcorrrel = xyrms/pzmean;
+    
     // cout << Form("  zMean = %7.3f   pzMean = %7.3f",zmean,pzmean) << endl;
     // cout << Form("  zRms  = %7.3f   pzRms  = %7.3f",zrms,pzrms) << endl;
     // cout << Form("  zEmittance = %7.3f",emitz) << endl;
@@ -1430,27 +1491,26 @@ int main(int argc,char *argv[]) {
 
       Int_t nPoints = 0;
       char gName[32];
-      sprintf(gName,"gEmitxvsTime");     
-      TGraph *gEmitxvsTime = NULL;
-      gEmitxvsTime = (TGraph*) ifile->Get(gName);
-      if(gEmitxvsTime==NULL) {
-	gEmitxvsTime = new TGraph();
-	gEmitxvsTime->SetName(gName);
+      sprintf(gName,"gChargevsTime");     
+      TGraph *gChargevsTime = NULL;
+      gChargevsTime = (TGraph*) ifile->Get(gName);
+      if(gChargevsTime==NULL) {
+	gChargevsTime = new TGraph();
+	gChargevsTime->SetName(gName);
 	nPoints = 0;
 	// Some cosmetics at creation time:
-	gEmitxvsTime->SetLineWidth(3);
-	gEmitxvsTime->SetLineColor(PGlobals::fieldLine);
-	gEmitxvsTime->SetMarkerStyle(20);
-	gEmitxvsTime->SetMarkerSize(0.4);
-	gEmitxvsTime->SetMarkerColor(PGlobals::fieldLine);	
+	gChargevsTime->SetLineWidth(3);
+	gChargevsTime->SetLineColor(PGlobals::fieldLine);
+	gChargevsTime->SetMarkerStyle(20);
+	gChargevsTime->SetMarkerSize(0.4);
+	gChargevsTime->SetMarkerColor(PGlobals::fieldLine);	
       } else {
-	nPoints = gEmitxvsTime->GetN(); 
+	nPoints = gChargevsTime->GetN(); 
       }  
 
-      gEmitxvsTime->Set(nPoints+1);
-      gEmitxvsTime->SetPoint(nPoints,Time,emitx);
-      gEmitxvsTime->Write(gName,TObject::kOverwrite);
-
+      gChargevsTime->Set(nPoints+1);
+      gChargevsTime->SetPoint(nPoints,Time,fabs(Charge));
+      gChargevsTime->Write(gName,TObject::kOverwrite);
 
       sprintf(gName,"gPzmeanvsTime");     
       TGraph *gPzmeanvsTime = NULL;
@@ -1494,6 +1554,28 @@ int main(int argc,char *argv[]) {
       gPzrmsvsTime->Set(nPoints+1);
       gPzrmsvsTime->SetPoint(nPoints,Time,pzrms);
       gPzrmsvsTime->Write(gName,TObject::kOverwrite);
+
+      
+      sprintf(gName,"gPzcorrrelvsTime");     
+      TGraph *gPzcorrrelvsTime = NULL;
+      gPzcorrrelvsTime = (TGraph*) ifile->Get(gName);
+      if(gPzcorrrelvsTime==NULL) {
+	gPzcorrrelvsTime = new TGraph();
+	gPzcorrrelvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gPzcorrrelvsTime->SetLineWidth(3);
+	gPzcorrrelvsTime->SetLineColor(PGlobals::fieldLine);
+	gPzcorrrelvsTime->SetMarkerStyle(20);
+	gPzcorrrelvsTime->SetMarkerSize(0.4);
+	gPzcorrrelvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gPzcorrrelvsTime->GetN(); 
+      }  
+
+      gPzcorrrelvsTime->Set(nPoints+1);
+      gPzcorrrelvsTime->SetPoint(nPoints,Time,zpzcorrrel);
+      gPzcorrrelvsTime->Write(gName,TObject::kOverwrite);
 
 
       sprintf(gName,"gZmeanvsTime");     
@@ -1624,27 +1706,136 @@ int main(int argc,char *argv[]) {
       gXrmsvsTime->SetPoint(nPoints,Time,x_rms);
       gXrmsvsTime->Write(gName,TObject::kOverwrite);
 
-
-      sprintf(gName,"gChargevsTime");     
-      TGraph *gChargevsTime = NULL;
-      gChargevsTime = (TGraph*) ifile->Get(gName);
-      if(gChargevsTime==NULL) {
-	gChargevsTime = new TGraph();
-	gChargevsTime->SetName(gName);
+      sprintf(gName,"gEmitxvsTime");     
+      TGraph *gEmitxvsTime = NULL;
+      gEmitxvsTime = (TGraph*) ifile->Get(gName);
+      if(gEmitxvsTime==NULL) {
+	gEmitxvsTime = new TGraph();
+	gEmitxvsTime->SetName(gName);
 	nPoints = 0;
 	// Some cosmetics at creation time:
-	gChargevsTime->SetLineWidth(3);
-	gChargevsTime->SetLineColor(PGlobals::fieldLine);
-	gChargevsTime->SetMarkerStyle(20);
-	gChargevsTime->SetMarkerSize(0.4);
-	gChargevsTime->SetMarkerColor(PGlobals::fieldLine);	
+	gEmitxvsTime->SetLineWidth(3);
+	gEmitxvsTime->SetLineColor(PGlobals::fieldLine);
+	gEmitxvsTime->SetMarkerStyle(20);
+	gEmitxvsTime->SetMarkerSize(0.4);
+	gEmitxvsTime->SetMarkerColor(PGlobals::fieldLine);	
       } else {
-	nPoints = gChargevsTime->GetN(); 
+	nPoints = gEmitxvsTime->GetN(); 
       }  
 
-      gChargevsTime->Set(nPoints+1);
-      gChargevsTime->SetPoint(nPoints,Time,fabs(Charge));
-      gChargevsTime->Write(gName,TObject::kOverwrite);
+      gEmitxvsTime->Set(nPoints+1);
+      gEmitxvsTime->SetPoint(nPoints,Time,emitx);
+      gEmitxvsTime->Write(gName,TObject::kOverwrite);
+
+      
+     
+      sprintf(gName,"gPymeanvsTime");     
+      TGraph *gPymeanvsTime = NULL;
+      gPymeanvsTime = (TGraph*) ifile->Get(gName);
+      if(gPymeanvsTime==NULL) {
+	gPymeanvsTime = new TGraph();
+	gPymeanvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gPymeanvsTime->SetLineWidth(3);
+	gPymeanvsTime->SetLineColor(PGlobals::fieldLine);
+	gPymeanvsTime->SetMarkerStyle(20);
+	gPymeanvsTime->SetMarkerSize(0.4);
+	gPymeanvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gPymeanvsTime->GetN(); 
+      }  
+
+      gPymeanvsTime->Set(nPoints+1);
+      gPymeanvsTime->SetPoint(nPoints,Time,py_mean);
+      gPymeanvsTime->Write(gName,TObject::kOverwrite);
+
+      sprintf(gName,"gPyrmsvsTime");     
+      TGraph *gPyrmsvsTime = NULL;
+      gPyrmsvsTime = (TGraph*) ifile->Get(gName);
+      if(gPyrmsvsTime==NULL) {
+	gPyrmsvsTime = new TGraph();
+	gPyrmsvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gPyrmsvsTime->SetLineWidth(3);
+	gPyrmsvsTime->SetLineColor(PGlobals::fieldLine);
+	gPyrmsvsTime->SetMarkerStyle(20);
+	gPyrmsvsTime->SetMarkerSize(0.4);
+	gPyrmsvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gPyrmsvsTime->GetN(); 
+      }  
+
+      gPyrmsvsTime->Set(nPoints+1);
+      gPyrmsvsTime->SetPoint(nPoints,Time,py_rms);
+      gPyrmsvsTime->Write(gName,TObject::kOverwrite);
+
+
+      sprintf(gName,"gYmeanvsTime");     
+      TGraph *gYmeanvsTime = NULL;
+      gYmeanvsTime = (TGraph*) ifile->Get(gName);
+      if(gYmeanvsTime==NULL) {
+	gYmeanvsTime = new TGraph();
+	gYmeanvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gYmeanvsTime->SetLineWidth(3);
+	gYmeanvsTime->SetLineColor(PGlobals::fieldLine);
+	gYmeanvsTime->SetMarkerStyle(20);
+	gYmeanvsTime->SetMarkerSize(0.4);
+	gYmeanvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gYmeanvsTime->GetN(); 
+      }  
+
+      gYmeanvsTime->Set(nPoints+1);
+      gYmeanvsTime->SetPoint(nPoints,Time,y_mean);
+      gYmeanvsTime->Write(gName,TObject::kOverwrite);
+
+      sprintf(gName,"gYrmsvsTime");     
+      TGraph *gYrmsvsTime = NULL;
+      gYrmsvsTime = (TGraph*) ifile->Get(gName);
+      if(gYrmsvsTime==NULL) {
+	gYrmsvsTime = new TGraph();
+	gYrmsvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gYrmsvsTime->SetLineWidth(3);
+	gYrmsvsTime->SetLineColor(PGlobals::fieldLine);
+	gYrmsvsTime->SetMarkerStyle(20);
+	gYrmsvsTime->SetMarkerSize(0.4);
+	gYrmsvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gYrmsvsTime->GetN(); 
+      }  
+
+      gYrmsvsTime->Set(nPoints+1);
+      gYrmsvsTime->SetPoint(nPoints,Time,y_rms);
+      gYrmsvsTime->Write(gName,TObject::kOverwrite);
+
+      sprintf(gName,"gEmityvsTime");     
+      TGraph *gEmityvsTime = NULL;
+      gEmityvsTime = (TGraph*) ifile->Get(gName);
+      if(gEmityvsTime==NULL) {
+	gEmityvsTime = new TGraph();
+	gEmityvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gEmityvsTime->SetLineWidth(3);
+	gEmityvsTime->SetLineColor(PGlobals::fieldLine);
+	gEmityvsTime->SetMarkerStyle(20);
+	gEmityvsTime->SetMarkerSize(0.4);
+	gEmityvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gEmityvsTime->GetN(); 
+      }  
+
+      gEmityvsTime->Set(nPoints+1);
+      gEmityvsTime->SetPoint(nPoints,Time,emity);
+      gEmityvsTime->Write(gName,TObject::kOverwrite);
+
+
 
       ifile->Close();
     }
