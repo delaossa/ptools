@@ -35,7 +35,7 @@ int main(int argc,char *argv[]) {
     printf("      <-index(species index)>\n");
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
     printf("      <--ast> <--ele> <--hip>\n");
-    printf("      <--comov> <--center>\n");
+    printf("      <--comov> <--center> <--eqw> \n");
     printf("      <--png> <--pdf> <--eps>\n");
     return 0;
   }
@@ -185,13 +185,16 @@ int main(int argc,char *argv[]) {
     cout << Form("    with options = %s\n",opt.Data()) << endl;
     
     // Float_t **var = NULL;
-    const UInt_t Nvar = 8;
-    Float_t *var[Nvar];  
-    char varname[Nvar][4] = {{"ene"},{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+    UInt_t Nvar = 7;
+    if(!pData->Is3D()) Nvar = 6;
+    Float_t **var;
+    var = new Float_t*[Nvar];
+    //  char varname[Nvar][4] = {{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
     UInt_t Np = pData->GetRawArray(pData->GetRawFileName(index)->c_str(),var);  
     UInt_t Npout = 0;
 
- 
+    cout << Form(" Number of macroparticles = %i",Np) << endl;
+    
     // -------------------------------------------------------------------------------
 
     // First loop to analyze the data sample:
@@ -218,23 +221,23 @@ int main(int argc,char *argv[]) {
     Float_t qSum  = 0.0;
     
     for(UInt_t i=0;i<Np;i++) {
-      if(var[1][i]<MinP1) MinP1 = var[1][i];
-      if(var[1][i]>MaxP1) MaxP1 = var[1][i];
-      if(var[2][i]<MinP2) MinP2 = var[2][i];
-      if(var[2][i]>MaxP2) MaxP2 = var[2][i];
-      if(var[3][i]<MinP3) MinP3 = var[3][i];
-      if(var[3][i]>MaxP3) MaxP3 = var[3][i];
-      if(fabs(var[4][i])<MinQ) MinQ = fabs(var[4][i]);
-      if(fabs(var[4][i])>MaxQ) MaxQ = fabs(var[4][i]);
-      if((var[5][i]-shiftz)<MinX1) MinX1 = var[5][i]-shiftz;
-      if((var[5][i]-shiftz)>MaxX1) MaxX1 = var[5][i]-shiftz;
-      if(var[6][i]<MinX2) MinX2 = var[6][i];
-      if(var[6][i]>MaxX2) MaxX2 = var[6][i];
-      if(var[7][i]<MinX3) MinX3 = var[7][i];
-      if(var[7][i]>MaxX3) MaxX3 = var[7][i];
+      if(var[0][i]<MinP1) MinP1 = var[0][i];
+      if(var[0][i]>MaxP1) MaxP1 = var[0][i];
+      if(var[1][i]<MinP2) MinP2 = var[1][i];
+      if(var[1][i]>MaxP2) MaxP2 = var[1][i];
+      if(var[2][i]<MinP3) MinP3 = var[2][i];
+      if(var[2][i]>MaxP3) MaxP3 = var[2][i];
+      if(fabs(var[3][i])<MinQ) MinQ = fabs(var[3][i]);
+      if(fabs(var[3][i])>MaxQ) MaxQ = fabs(var[3][i]);
+      if((var[4][i]-shiftz)<MinX1) MinX1 = var[4][i]-shiftz;
+      if((var[4][i]-shiftz)>MaxX1) MaxX1 = var[4][i]-shiftz;
+      if(var[5][i]<MinX2) MinX2 = var[5][i];
+      if(var[5][i]>MaxX2) MaxX2 = var[5][i];
+      if(var[6][i]<MinX3) MinX3 = var[6][i];
+      if(var[6][i]>MaxX3) MaxX3 = var[6][i];
     
-      x1Mean += (var[5][i]-shiftz) * fabs(var[4][i]);
-      qSum  += fabs(var[4][i]);
+      x1Mean += (var[4][i]-shiftz) * fabs(var[3][i]);
+      qSum  += fabs(var[3][i]);
     }
     x1Mean /= qSum;
     
@@ -349,76 +352,83 @@ int main(int argc,char *argv[]) {
 	cout << Form(" %8i macroparticles processed ",i) << endl;
 
       // z coordinate shift according with the options
-      var[5][i] -= shiftz;
+      var[4][i] -= shiftz;
       
-      QTotal += var[4][i] * Q0 * PConst::ElectronCharge/PUnits::picocoulomb;
+      QTotal += var[3][i] * Q0 * PConst::ElectronCharge/PUnits::picocoulomb;
 
       // Fills histogram from original distribution:
       if(hP1X1)
-	hP1X1->Fill(var[5][i],var[1][i],TMath::Abs(var[4][i]));
+	hP1X1->Fill(var[4][i],var[0][i],TMath::Abs(var[3][i]));
       if(hP2X2)
-	hP2X2->Fill(var[6][i],var[2][i],TMath::Abs(var[4][i]));
+	hP2X2->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
 
       if(opt.Contains("eqw")) {
 	// Macro-particle charge equalizer:
 	Float_t rw = ran->Uniform(MaxQ);  // Random number between 0. and "q".
-	// cout << Form(" wi = %f    rw = %f   MaxQ = %f ",var[4][i],rw,MaxQ) << endl;
-	if(rw>fabs(var[4][i])) continue;  
+	// cout << Form(" wi = %f    rw = %f   MaxQ = %f ",var[3][i],rw,MaxQ) << endl;
+	if(rw>fabs(var[3][i])) continue;  
             
-	var[4][i] = -MaxQ;
+	var[3][i] = -MaxQ;
       }
 
-      QTotalOut += var[4][i] * Q0 * PConst::ElectronCharge/PUnits::picocoulomb;
+      QTotalOut += var[3][i] * Q0 * PConst::ElectronCharge/PUnits::picocoulomb;
     
       // Fills histogram from new distribution:
       if(hP1X1out)
-	hP1X1out->Fill(var[5][i],var[1][i],TMath::Abs(var[4][i]));
+	hP1X1out->Fill(var[4][i],var[0][i],TMath::Abs(var[3][i]));
       if(hP2X2out)
-	hP2X2out->Fill(var[6][i],var[2][i],TMath::Abs(var[4][i]));
+	hP2X2out->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
       
       // Dumping to ASCII file:
       if(opt.Contains("astra")) {
 	fData << Form("%12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f ",
-		      var[7][i] * skindepth / PUnits::um,
 		      var[6][i] * skindepth / PUnits::um,
 		      var[5][i] * skindepth / PUnits::um,
-		      var[3][i] * pData->GetBeamMass() / PUnits::MeV,
+		      var[4][i] * skindepth / PUnits::um,
 		      var[2][i] * pData->GetBeamMass() / PUnits::MeV,
 		      var[1][i] * pData->GetBeamMass() / PUnits::MeV,
+		      var[0][i] * pData->GetBeamMass() / PUnits::MeV,
 		      -999.0,
-		      var[4][i] * Q0 * PConst::ElectronCharge/PUnits::femptocoulomb,
+		      var[3][i] * Q0 * PConst::ElectronCharge/PUnits::femptocoulomb,
 		      0.0) << endl;
     
       } else if(opt.Contains("elegant")) {
-	fData << Form("%e   %e   %e   %e   %e   %e   %e",
+	// fData << Form("%e   %e   %e   %e   %e   %e   %e",
+	// 	      var[5][i] * skindepth / PUnits::m,
+	// 	      var[1][i]/var[0][i],
+	// 	      var[6][i] * skindepth / PUnits::m,
+	// 	      var[2][i]/var[0][i],
+	// 	      (var[4][i] * skindepth / PConst::c_light) / PUnits::second,
+	// 	      var[0][i],
+	// 	      var[3][i] * Q0 * PConst::ElectronCharge/PUnits::coulomb) << endl;
+	fData << Form("%14e   %14e   %14e   %14e   %14e   %14e",
+		      var[5][i] * skindepth / PUnits::m,
+		      var[1][i]/var[0][i],
 		      var[6][i] * skindepth / PUnits::m,
-		      var[2][i]/var[1][i],
-		      var[7][i] * skindepth / PUnits::m,
-		      var[3][i]/var[1][i],
-		      (var[5][i] * skindepth / PConst::c_light) / PUnits::second,
-		      var[1][i],
-		      var[4][i] * Q0 * PConst::ElectronCharge/PUnits::coulomb) << endl;
+		      var[2][i]/var[0][i],
+		      (var[4][i] * skindepth / PConst::c_light) / PUnits::second,
+		      var[0][i]) << endl;
       
       } else if(opt.Contains("hipace")) {
-	buffer[0] = (double) var[5][i];
-	buffer[1] = (double) var[6][i];
-	buffer[2] = (double) var[7][i];
-	buffer[3] = (double) var[1][i];
-	buffer[4] = (double) var[2][i];
-	buffer[5] = (double) var[3][i];
-	buffer[6] = (double) var[4][i];
+	buffer[0] = (double) var[4][i];
+	buffer[1] = (double) var[5][i];
+	buffer[2] = (double) var[6][i];
+	buffer[3] = (double) var[0][i];
+	buffer[4] = (double) var[1][i];
+	buffer[5] = (double) var[2][i];
+	buffer[6] = (double) var[3][i];
 
 
 	fData.write((char*)&buffer,sizeof(buffer));
 	
       } else {
-	if(Npout ==0 ) {
-	  // Header
-	  for(UInt_t j=0;j<Nvar;j++) {
-	    fData << Form("%10s ",varname[j]); 
-	  }
-	  fData << endl << Form(" --------------------------------------------------------------------------------------- ") << endl;
-	}
+	// if(Npout ==0 ) {
+	//   // Header
+	//   for(UInt_t j=0;j<Nvar;j++) {
+	//     fData << Form("%10s ",varname[j]); 
+	//   }
+	//   fData << endl << Form(" --------------------------------------------------------------------------------------- ") << endl;
+	// }
 	for(UInt_t j=0;j<Nvar;j++) {
 	  fData << Form("%10.4f ",var[j][i]);
 	}
@@ -428,11 +438,15 @@ int main(int argc,char *argv[]) {
 
       Npout++;
     }
+
+
     cout << endl;
     
     fData.close();
     
 
+    cout << "\n End of data writing " << endl;
+    
     // Plotting Section
     // -----------------------------------------------
     

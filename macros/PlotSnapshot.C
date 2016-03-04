@@ -585,6 +585,25 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     else if(pData->GetDenMax(i)==0) {
       delete hDen2D[i];
       hDen2D[i] = NULL;
+
+      delete hDen1D[i];
+      hDen1D[i] = NULL;
+
+      delete hCur1D[i];
+      hCur1D[i] = NULL;
+
+    }
+
+    if( hDen2D[i]->GetMaximum() < pData->GetDenMin(i)) {
+      delete hDen2D[i];
+      hDen2D[i] = NULL;
+
+      delete hDen1D[i];
+      hDen1D[i] = NULL;
+
+      delete hCur1D[i];
+      hCur1D[i] = NULL;
+
     }
     
     if(pData->GetDenMin(i)>=0)
@@ -1032,7 +1051,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t lxoffset = 0.015;
   Float_t tyoffset = 1.2 / (950/ysize);
   Float_t lyoffset = 0.01;
-  Float_t tzoffset = 1.3 / (950/ysize);
+  Float_t tzoffset = 1.45 / (950/ysize);
   Float_t lzoffset = 0.01;
   Float_t tylength = 0.015;
   Float_t txlength = 0.04;
@@ -1285,11 +1304,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   if(opt.Contains("alpha0"))
     plasmaPalette->SetAlpha(0.8);
-  else if(opt.Contains("alpha1"))
+  if(opt.Contains("alpha1"))
     beamPalette->SetAlpha(0.8);
-  else if(opt.Contains("alpha2"))
+  if(opt.Contains("alpha2"))
     beam2Palette->SetAlpha(0.8);
-   
+  
   
   TString drawopt = "colz same";
 
@@ -1397,6 +1416,16 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
 
+
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	hDen2D[0]->GetZaxis()->SetNdivisions(503);
+	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
+	//plasmaPalette->SetAlpha(1.0);  
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
+      }
+
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
@@ -1405,16 +1434,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
 	hDen2D[2]->Draw(drawopt);
       }
-
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	hDen2D[0]->GetZaxis()->SetNdivisions(503);
-	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
-	//plasmaPalette->SetAlpha(1.0);  
-	exPlasma->Draw();
-	hDen2D[0]->Draw("colz same");
-      }
-
+      
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
 	hDen2D[1]->GetZaxis()->SetNdivisions(503);
@@ -1593,7 +1613,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
 	hDen1D[i]->SetLineWidth(2);
 	hDen1D[i]->SetLineColor(PGlobals::elecLine);
-	hDen1D[i]->Draw("same C");
+	hDen1D[i]->Draw("same L");
       }
     } else if(opt.Contains("cur1d")) {
 
@@ -1610,11 +1630,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
       for(Int_t i=0;i<Nspecies;i++) {
 	if(i==noIndex) continue;
-	if(!hCur1D[i] || i==0 ) continue;
+	if(!hCur1D[i] || !hDen2D[i] || i==0 ) continue;
 	hCur1D[i]->ResetStats();
 
-	Float_t curmin = 0.0;
+	Float_t curmin = 0.00101;
 	Float_t curmax = hCur1D[i]->GetMaximum();
+	if(curmax<curmin) continue;
 	// Round for better plotting
 	// if(curmax>0.1) {
 	//   if(curmax < 1)
@@ -1643,7 +1664,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	else if(i==3)
 	  hCur1D[i]->SetLineColor(kBlue-1);
 	  
-	hCur1D[i]->Draw("same C");
+	hCur1D[i]->Draw("same L");
 
 	if(!opt.Contains("noaxis")) {
 	
@@ -1672,7 +1693,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  axis[i]->Draw();
 	}
       }
-    } else if(opt.Contains("ez1d")) {
+    }
+
+    if(opt.Contains("ez1d")) {
       // Fit the E1D in the pad:
       Float_t y1 = yMin + yRange/80.;
       Float_t y2 = y1 + yRange/2.8 - 2*yRange/80.;
