@@ -22,7 +22,7 @@
 #include <TRandom3.h>
 
 #include "PData.hh"
-#include "PlasmaGlob.hh"
+#include "PGlobals.hh"
 #include "PPalette.hh"
 
 void PlotRawConvertHiPace( const TString &sim, Double_t time, Int_t index = 0, Float_t factor = 1.0, const TString &options="") {
@@ -31,7 +31,7 @@ void PlotRawConvertHiPace( const TString &sim, Double_t time, Int_t index = 0, F
   gSystem->Load("libplasma.so");
 #endif
 
-  PlasmaGlob::Initialize();
+  PGlobals::Initialize();
 
   TString opt = options;
  
@@ -205,7 +205,7 @@ void PlotRawConvertHiPace( const TString &sim, Double_t time, Int_t index = 0, F
   // Info for the plots
   char ctext[128];
   TPaveText *textInfo = new TPaveText(0.55,0.55,0.82,0.8,"NDC");
-  PlasmaGlob::SetPaveTextStyle(textInfo,32); 
+  PGlobals::SetPaveTextStyle(textInfo,32); 
   textInfo->SetTextColor(kGray+2);
   textInfo->SetTextFont(42);
   sprintf(ctext,"Integral = %5.2f",integral);
@@ -358,7 +358,7 @@ void PlotRawConvertHiPace( const TString &sim, Double_t time, Int_t index = 0, F
   
   
   TPaveText *textInfoNew = new TPaveText(0.55,0.55,0.82,0.8,"NDC");
-  PlasmaGlob::SetPaveTextStyle(textInfoNew,32); 
+  PGlobals::SetPaveTextStyle(textInfoNew,32); 
   textInfoNew->SetTextColor(kGray+2);
   textInfoNew->SetTextFont(42);
   sprintf(ctext,"Integral = %5.2f",integral);
@@ -385,7 +385,7 @@ void PlotRawConvertHiPace( const TString &sim, Double_t time, Int_t index = 0, F
     
   // Text objects
   TPaveText *textTime = new TPaveText(0.55,0.85,0.82,0.9,"NDC");
-  PlasmaGlob::SetPaveTextStyle(textTime,32); 
+  PGlobals::SetPaveTextStyle(textTime,32); 
   if(opt.Contains("units") && n0) 
     sprintf(ctext,"z = %5.1f mm", Time * skindepth / PUnits::mm);
   else
@@ -394,13 +394,13 @@ void PlotRawConvertHiPace( const TString &sim, Double_t time, Int_t index = 0, F
 
 
   TPaveText *textLabel = new TPaveText(0.20,0.20,0.40,0.30,"NDC");
-  PlasmaGlob::SetPaveTextStyle(textLabel,32); 
+  PGlobals::SetPaveTextStyle(textLabel,32); 
   sprintf(ctext,"Original distribution.");
   textLabel->AddText(ctext);
 
 
   TPaveText *textLabelNew = new TPaveText(0.20,0.20,0.40,0.30,"NDC");
-  PlasmaGlob::SetPaveTextStyle(textLabelNew,32); 
+  PGlobals::SetPaveTextStyle(textLabelNew,32); 
   textLabelNew->SetTextColor(kRed);
   sprintf(ctext,"New distribution.");
   textLabelNew->AddText(ctext);
@@ -464,7 +464,7 @@ void PlotRawConvertHiPace( const TString &sim, Double_t time, Int_t index = 0, F
   C->cd();
 
   // Print to a file
-  PlasmaGlob::imgconv(C,fOutName,opt);
+  PGlobals::imgconv(C,fOutName,opt);
   // ---------------------------------------------------------
 
 

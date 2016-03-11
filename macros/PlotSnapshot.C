@@ -688,7 +688,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   PPalette * beam2Palette = (PPalette*) gROOT->FindObject("beam2");
   if(!beam2Palette) {
     beam2Palette = new PPalette("beam2");
-    beam2Palette->SetPalette("hot");
   }
   
   // Change the range of z axis for the fields to be symmetric.
@@ -1019,7 +1018,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   C->SetFillStyle(4000);
 
   UInt_t lineColor = kOrange+10;
-  //UInt_t lineColor =  TColor::GetColor(196,30,78);
+  UInt_t lineColor2 =  TColor::GetColor(196,30,78);
   
   // Setup Pad layout:
   TPad **pad = new TPad*[NPad];
@@ -1071,7 +1070,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     sprintf(name,"hFrame_%i",i);
     hFrame[i] = (TH2F*) gROOT->FindObject(name);
     if(hFrame[i]) delete hFrame[i];
-    hFrame[i] = (TH2F*) hDen2D[0]->Clone(name);
+
+    if(hDen2D[0]) 
+      hFrame[i] = (TH2F*) hDen2D[0]->Clone(name);
+    else if(hDen2D[1])
+      hFrame[i] = (TH2F*) hDen2D[1]->Clone(name);
+      
     hFrame[i]->Reset();
     
     Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
@@ -1416,16 +1420,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
 
-
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	hDen2D[0]->GetZaxis()->SetNdivisions(503);
-	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
-	//plasmaPalette->SetAlpha(1.0);  
-	exPlasma->Draw();
-	hDen2D[0]->Draw(drawopt);
-      }
-
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
@@ -1435,6 +1429,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[2]->Draw(drawopt);
       }
       
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	hDen2D[0]->GetZaxis()->SetNdivisions(503);
+	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
+	//plasmaPalette->SetAlpha(1.0);  
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
+      }
+
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
 	hDen2D[1]->GetZaxis()->SetNdivisions(503);
@@ -1702,7 +1705,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Float_t slope = (y2-y1)/(Emax[0]-Emin[0]);
       
       TLine *lineEzero = new TLine(xMin,(0.0-Emin[0])*slope + y1,xMax,(0.0-Emin[0])*slope + y1);
-      lineEzero->SetLineColor(lineColor);
+      lineEzero->SetLineColor(lineColor2);
       lineEzero->SetLineStyle(2);
       lineEzero->SetLineWidth(1);
       lineEzero->Draw();
@@ -1713,10 +1716,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hE1Dclone->SetBinContent(j+1,(hE1Dclone->GetBinContent(j+1)-Emin[0])*slope + y1);
       }
       hE1Dclone->SetLineStyle(1);
-      // hE1Dclone->SetLineWidth(3);
-      hE1Dclone->SetLineWidth(2);
-        
-      hE1Dclone->SetLineColor(lineColor);
+      hE1Dclone->SetLineWidth(3);
+      //hE1Dclone->SetLineWidth(2);
+
+      hE1Dclone->SetLineColor(lineColor2);
 
       hE1Dclone->Draw("sameL");
     } else if (opt.Contains("et1d")) {

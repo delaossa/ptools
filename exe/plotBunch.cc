@@ -1258,7 +1258,13 @@ int main(int argc,char *argv[]) {
     // Charge
     Double_t dV = dx1*dx2*dx3 * skindepth * skindepth * skindepth;
     Double_t Q0 = rawf * fabs(n0 * dV * PConst::ElectronCharge);
+
+    if(!pData->Is3D()) {
+      Q0 *= (5./3.); 
+    }
+    
     Double_t Charge = hX1->Integral() * Q0;
+    
     if(opt.Contains("best")) {
       PUnits::BestUnit bchargeSUnit(Charge,"Charge");
       bchargeSUnit.GetBestUnits(chargeUnit,chargeSUnit);
@@ -2142,6 +2148,10 @@ int main(int argc,char *argv[]) {
 
       hFrame[1]->Draw();
 
+      hP1X1->GetZaxis()->SetTitleFont(fonttype);
+      hP1X1->GetZaxis()->SetTickLength(0.01);      
+      hP1X1->Draw("colzsame");
+
       gP1->SetLineWidth(2);
       if(!opt.Contains("nospec")) {
 	gP1->Draw("F");
@@ -2171,10 +2181,6 @@ int main(int argc,char *argv[]) {
 	pzmaxline.Draw();
 	pzminline.Draw();
       }
-
-      hP1X1->GetZaxis()->SetTitleFont(fonttype);
-      hP1X1->GetZaxis()->SetTickLength(0.01);      
-      hP1X1->Draw("colzsame");
 
       // hP1X1prof->SetMarkerStyle(1);
       // hP1X1prof->SetLineWidth(2);

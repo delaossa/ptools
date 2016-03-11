@@ -6,7 +6,7 @@ export LD_LIBRARY_PATH=$ROOTSYS/lib:$LD_LIBRARY_PATH
 export PATH=$ROOTSYS/bin:$PATH
 
 # HDF5: C++ interface
-export HDF5CPP=/home/hhh23/hhh231/plasma/software/hdf5-1.8.13
+export HDF5CPP=/home/hhh23/hhh231/plasma/software/hdf5-1.8.14
 export LD_LIBRARY_PATH=$HDF5CPP/lib:$LD_LIBRARY_PATH
 
 # ptools environment:

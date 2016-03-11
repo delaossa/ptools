@@ -527,7 +527,7 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
     hFrame[0]->GetYaxis()->SetRangeUser(yMin,yMax);
     hFrame[0]->GetYaxis()->SetTitle("#varepsilon_{x} [#mum]");
 
-    hFrame[0]->GetXaxis()->SetTitle("z [#mum]");
+    hFrame[0]->GetXaxis()->SetTitle("z [mm]");
     hFrame[0]->Draw("axis");    
 
   
