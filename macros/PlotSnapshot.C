@@ -1623,12 +1623,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       TLine *lineCurUp = new TLine(xMin,xint,xMax,xint);
       lineCurUp->SetLineColor(kGray+1);
       lineCurUp->SetLineStyle(2);
-      //      lineCurUp->Draw();
+      lineCurUp->Draw();
 
       TLine *lineCurDo = new TLine(xMin,-xint,xMax,-xint);
       lineCurDo->SetLineColor(kGray+1);
       lineCurDo->SetLineStyle(2);
-      //      lineCurDo->Draw();
+      lineCurDo->Draw();
       
       
       for(Int_t i=0;i<Nspecies;i++) {
@@ -1636,13 +1636,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	if(!hCur1D[i] || !hDen2D[i] || i==0 ) continue;
 	hCur1D[i]->ResetStats();
 
-	Float_t curmin = 0.00101;
+	Float_t curmin = 0.0;
 	Float_t curmax = hCur1D[i]->GetMaximum();
 	if(curmax<curmin) continue;
 	// Round for better plotting
+	curmax = TMath::CeilNint(10*curmax)/10.0;
 	// if(curmax>0.1) {
 	//   if(curmax < 1)
-	//     curmax = TMath::CeilNint(10*curmax)/10.0;
 	//   else {
 	//     curmax = TMath::CeilNint(curmax);
 	//   }
@@ -1692,7 +1692,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
 	  axis[i]->CenterTitle();
 	  axis[i]->SetNdivisions(503);
-    
+	  // axis[i]->SetMaxDigits(2);
 	  axis[i]->Draw();
 	}
       }
