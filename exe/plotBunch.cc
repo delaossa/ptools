@@ -1017,7 +1017,7 @@ int main(int argc,char *argv[]) {
     zpzcorr = xyrms;
     zpzcorrrel = xyrms/pzmean;
     
-    // cout << Form("  zMean = %7.3f   pzMean = %7.3f",zmean,pzmean) << endl;
+    cout << Form("  zMean = %7.3f   pzMean = %7.3f",zmean,pzmean) << endl;
     // cout << Form("  zRms  = %7.3f   pzRms  = %7.3f",zrms,pzrms) << endl;
     // cout << Form("  zEmittance = %7.3f",emitz) << endl;
     

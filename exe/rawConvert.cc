@@ -92,6 +92,8 @@ int main(int argc,char *argv[]) {
       opt += "center";
     } else if(arg.Contains("--units")){
       opt += "units";
+    } else if(arg.Contains("--zmean")){
+      opt += "zmean";
     } else if(arg.Contains("--grid")){
       opt += "grid"; 
     } else if(arg.Contains("--logz")){
@@ -429,13 +431,27 @@ int main(int argc,char *argv[]) {
 	//   }
 	//   fData << endl << Form(" --------------------------------------------------------------------------------------- ") << endl;
 	// }
-	for(UInt_t j=0;j<Nvar;j++) {
-	  fData << Form("%10.4f ",var[j][i]);
-	}
-	fData << endl;
+	// for(UInt_t j=0;j<Nvar;j++) {
+	//   fData << Form("%10.4f ",var[j][i]);
+	// }
+
+	// if(opt.Contains("zmean"))
+	//   var[4][i] -= zMean;
+	   
+	fData << Form("%14e   %14e   %14e   %14e   %14e   %14e   %i",
+		      var[4][i] * skindepth / PUnits::m,
+		      var[5][i] * skindepth / PUnits::m,
+		      var[6][i] * skindepth / PUnits::m,
+		      var[0][i],
+		      var[1][i],
+		      var[2][i],
+		      -1) << endl;
+	//		      var[3][i]) << endl;
+	
+	//	fData << endl;
 	
       }
-
+      
       Npout++;
     }
 
