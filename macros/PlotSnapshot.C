@@ -351,6 +351,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // UInt_t ii = 5; // Ne4
   // UInt_t ii = 6; // Custom
 
+  if(opt.Contains("Ne")) {
+    ii = 3;
+  }
+  
   if( (mask & 0x80) && hETotal2D) { // only if ionization bit is selected
     cout << Form("\n Calculating ionization probability rates (ADK) ... ") ; 
     
@@ -2940,6 +2944,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hIonProb1D[ii]->SetBinContent(j+1,slope*(hIonProb1D[ii]->GetBinContent(j+1)-rightmin)+yMin);
       }
     }
+
+    if(opt.Contains("off")) {
+      TLine *lineOff = new TLine(xMin,xoff,xMax,xoff);
+      lineOff->SetLineColor(lineColor);
+      lineOff->SetLineStyle(2);
+      lineOff->Draw();
+    }
+
     
     hIonProb1D[ii]->SetLineStyle(1);
     hIonProb1D[ii]->SetLineWidth(2);
