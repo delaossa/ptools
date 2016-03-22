@@ -360,7 +360,7 @@ Double_t PDataHiP::GetRealTimeFromFile(const char *filename) {
   
   // Get time info from its attributes
   // ---------------------------------
-  Attribute *att = new Attribute(root->openAttribute("T"));
+  Attribute *att = new Attribute(root->openAttribute("TIME"));
   Float_t rtime;
   att->read(PredType::NATIVE_FLOAT,&rtime); 
   att->close();

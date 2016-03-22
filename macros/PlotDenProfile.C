@@ -20,7 +20,7 @@
 #include "PPalette.hh"
 
 
-Double_t Density(Double_t *x, Double_t *par) {
+Double_t DensityGauss(Double_t *x, Double_t *par) {
   Double_t f;
 
   Double_t n0 = par[0];
@@ -41,8 +41,8 @@ Double_t Density(Double_t *x, Double_t *par) {
   return f;
 }
 
-Double_t DensitySum(Double_t *x, Double_t *par) {
-  Double_t f = Density(x,par) +  Density(x,&par[9]);
+Double_t DensityGaussSum(Double_t *x, Double_t *par) {
+  Double_t f = DensityGauss(x,par) +  DensityGauss(x,&par[9]);
 
   
   return f;
@@ -80,7 +80,7 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
   Double_t np  = pData->GetPlasmaDensity() / (1E17/PUnits::cm3);
   Double_t skd = pData->GetPlasmaSkinDepth() / PUnits::mm;
 
-  Double_t shiftz = 55.08;
+  Double_t shiftz = 26.91;
   zmin -= shiftz; 
   zmax -= shiftz; 
 
@@ -91,14 +91,14 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
   
   cout << Form("  Plasma density = %.2e cm^{-3}", np) << endl;
   
-  Double_t n0 = 5.0;
-  Double_t z0 = 55.08 - shiftz;
-  Double_t sigma0 = 7.98;
+  Double_t n0 = 15.63;
+  Double_t z0 = 16.91 - shiftz;
+  Double_t sigma0 = 0.94;
   Double_t n1 = 1.0;
-  Double_t z1 = 55.08 - shiftz;
-  Double_t sigma1 = 7.98;
-  Double_t n2 = 0;
-  Double_t z2 = 321.2 - shiftz;
+  Double_t z1 = 26.91 - shiftz;
+  Double_t sigma1 = 37.64;
+  Double_t n2 = 1;
+  Double_t z2 = 1000 - shiftz;
   Double_t sigma2 = 13.31;
 
   if(opt.Contains("units")) {
@@ -113,11 +113,11 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
     sigma2 *= skd;
   }
 
-  TF1 *fDenHe = new TF1("fDenHe",Density,zmin,zmax,9);
+  TF1 *fDenHe = new TF1("fDenHe",DensityGauss,zmin,zmax,9);
   fDenHe->SetParameters(n0,z0,sigma0,n1,z1,sigma1,n2,z2,sigma2);
-  fDenHe->SetNpx(1000);
+  fDenHe->SetNpx(10000);
 
-  Double_t n0p = 0.35;
+  Double_t n0p = 0.0;
   Double_t z0p = 401.4 - shiftz;
   Double_t sigma0p = 13.31;
   Double_t n1p = 0.0;
@@ -139,11 +139,11 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
     sigma2p *= skd;
   }
 
-  TF1 *fDenH = new TF1("fDenH",Density,zmin,zmax,9);
+  TF1 *fDenH = new TF1("fDenH",DensityGauss,zmin,zmax,9);
   fDenH->SetParameters(n0p,z0p,sigma0p,n1p,z1p,sigma1p,n2p,z2p,sigma2p);
   fDenH->SetNpx(1000);
   
-  TF1 *fDenSum = new TF1("fDenSum",DensitySum,zmin,zmax,18);
+  TF1 *fDenSum = new TF1("fDenSum",DensityGaussSum,zmin,zmax,18);
 
   Double_t pars[18] = {n0,z0,sigma0,n1,z1,sigma1,n2,z2,sigma2,
 		      n0p,z0p,sigma0p,n1p,z1p,sigma1p,n2p,z2p,sigma2p};

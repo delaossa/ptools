@@ -362,7 +362,11 @@ int main(int argc,char *argv[]) {
       
 	// Normalized current:
 	Double_t dV = skindepth * skindepth * skindepth;
-	hCur1D[i]->Scale(TMath::Abs(n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
+	if(!pData->Is3D()) {
+	  hCur1D[i]->Scale(TMath::Abs( (5./3.) * n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
+	} else {
+	  hCur1D[i]->Scale(TMath::Abs(n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
+	}
 	
 	hCur1D[i]->GetYaxis()->SetTitle("#Lambda_{b}");  
 	if(opt.Contains("comov")) {
