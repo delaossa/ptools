@@ -18,6 +18,7 @@
     beam2Palette = new PPalette("beam2");
     beam2Palette->SetPalette("hot");
     //beam2Palette->SetPalette("red");
+    //beam2Palette->SetPalette("elec");
   }
 
   PPalette *fieldPalette = (PPalette*) gROOT->FindObject("field");

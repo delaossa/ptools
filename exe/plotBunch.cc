@@ -270,12 +270,12 @@ int main(int argc,char *argv[]) {
   tspaSUnit = "#mum";
   
   // Emittance units
-  emitUnit = PUnits::um;
-  emitSUnit = "#mum";
+  // emitUnit = PUnits::um;
+  // emitSUnit = "#mum";
   // emitUnit = 10 * PUnits::um;
   // emitSUnit = "10 #mum";
-  // emitUnit = 100 * PUnits::nm;
-  // emitSUnit = "10^{2} nm";
+  emitUnit = 100 * PUnits::nm;
+  emitSUnit = "10^{2} nm";
 
   // beta units
   betaUnit = PUnits::um;
@@ -1287,6 +1287,7 @@ int main(int argc,char *argv[]) {
       
       hP1X1->SetBins(x1Nbin,x1Min,x1Max,p1Nbin,p1Min,p1Max);
       hP1X1->Scale(Q0 / chargeUnit);
+      hP1X1->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
       
       // Converting electron density
       hP1->Scale(Q0 / chargeUnit);

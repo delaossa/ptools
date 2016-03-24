@@ -355,7 +355,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     ii = 3;
   }
   
-  if( (mask & 0x80) && hETotal2D) { // only if ionization bit is selected
+  if( ((mask & 0x80) || (mask == 0) ) && hETotal2D) { // only if ionization bit is selected
     cout << Form("\n Calculating ionization probability rates (ADK) ... ") ; 
     
     for(UInt_t iat=0;iat<NAtoms;iat++) {
@@ -1424,6 +1424,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
 
+      // Injected electrons ?
+      if(hDen2D[2] && noIndex!=2) {
+	exBeam2->Draw();
+	//exBeam->Draw();
+	hDen2D[2]->GetZaxis()->SetNdivisions(503);
+	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
+	hDen2D[2]->Draw(drawopt);
+      }
       
       // Plasma
       if(hDen2D[0] && noIndex!=0) {
@@ -1434,14 +1442,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[0]->Draw(drawopt);
       }
 
-      // Injected electrons ?
-      if(hDen2D[2] && noIndex!=2) {
-	exBeam2->Draw();
-	//exBeam->Draw();
-	hDen2D[2]->GetZaxis()->SetNdivisions(503);
-	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
-	hDen2D[2]->Draw(drawopt);
-      }
 
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
@@ -1628,12 +1628,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       TLine *lineCurUp = new TLine(xMin,xint,xMax,xint);
       lineCurUp->SetLineColor(kGray+1);
       lineCurUp->SetLineStyle(2);
-      lineCurUp->Draw();
 
       TLine *lineCurDo = new TLine(xMin,-xint,xMax,-xint);
       lineCurDo->SetLineColor(kGray+1);
       lineCurDo->SetLineStyle(2);
-      lineCurDo->Draw();
+
+      if(opt.Contains("cur1dl")) {
+	lineCurUp->Draw();
+	lineCurDo->Draw();
+      }
       
       
       for(Int_t i=0;i<Nspecies;i++) {
@@ -1679,8 +1682,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  // Current axis
 	  axis[i] = new TGaxis(zPos,yMin,
 			       zPos,yaxismax,
-			       curmin,curmax,505,"+LS");
+			       curmin,curmax,2,"+LS");
 	  // axis[i]->SetNdivisions(0);
+	  axis[i]->SetNdivisions(502);
 	  
 	  axis[i]->SetLineWidth(1);
 	  axis[i]->SetLineColor(kGray+3);//PGlobals::elecLine);
@@ -1696,7 +1700,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  axis[i]->SetTitle(hCur1D[i]->GetYaxis()->GetTitle());
 
 	  axis[i]->CenterTitle();
-	  axis[i]->SetNdivisions(503);
 	  // axis[i]->SetMaxDigits(2);
 	  axis[i]->Draw();
 	}
