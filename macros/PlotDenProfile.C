@@ -91,13 +91,13 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
   
   cout << Form("  Plasma density = %.2e cm^{-3}", np) << endl;
   
-  Double_t n0 = 15.63;
-  Double_t z0 = 16.91 - shiftz;
-  Double_t sigma0 = 0.94;
-  Double_t n1 = 1.0;
-  Double_t z1 = 26.91 - shiftz;
-  Double_t sigma1 = 37.64;
-  Double_t n2 = 1;
+  Double_t n0 = 0.1;
+  Double_t z0 = 34.85 - shiftz;
+  Double_t sigma0 = 0.1;
+  Double_t n1 = 0.0;
+  Double_t z1 = 47.42 - shiftz;
+  Double_t sigma1 = 0.1;
+  Double_t n2 = 0;
   Double_t z2 = 1000 - shiftz;
   Double_t sigma2 = 13.31;
 
@@ -117,13 +117,13 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
   fDenHe->SetParameters(n0,z0,sigma0,n1,z1,sigma1,n2,z2,sigma2);
   fDenHe->SetNpx(10000);
 
-  Double_t n0p = 0.0;
-  Double_t z0p = 401.4 - shiftz;
-  Double_t sigma0p = 13.31;
-  Double_t n1p = 0.0;
+  Double_t n0p = 1.0;
+  Double_t z0p = 28.6 - shiftz;
+  Double_t sigma0p = 3.8;
+  Double_t n1p = 1.0;
   Double_t z1p = 1000 - shiftz;
   Double_t sigma1p = 0;
-  Double_t n2p = 0;
+  Double_t n2p = 1.0;
   Double_t z2p = 1000 - shiftz;
   Double_t sigma2p = 0;
 

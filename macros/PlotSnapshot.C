@@ -1680,7 +1680,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	if(!opt.Contains("noaxis")) {
 	
 	  // Current axis
-	  axis[i] = new TGaxis(zPos,yMin,
+	  axis[i] = new TGaxis(zPos,yaxismin,
 			       zPos,yaxismax,
 			       curmin,curmax,2,"+LS");
 	  // axis[i]->SetNdivisions(0);
