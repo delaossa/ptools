@@ -126,19 +126,19 @@ void PDataHiP::LoadFileNames(Int_t t) {
 
   // Fishing the pieces ...
   for(UInt_t i=0;i<files.size();i++) {
-  
+        
     // Get species files:
     for(UInt_t j=0;j<NSpecies();j++) {
-
-      if(files[i].find(species[j]) != string::npos) {
+      string filename = between(files[i],simPath,".h5");
+      if(filename.find(species[j]) != string::npos) {
 	
-	if( (files[i].find("density") != string::npos) ) {
+	if( (filename.find("density") != string::npos) ) {
 	  sCHG->at(j) = new string(files[i]);
-	  
-	} else if(files[i].find("pha") != string::npos) {
+	  continue;
+	} else if(filename.find("pha") != string::npos) {
 	  // Loop over Phase spaces
 	  for(UInt_t ip=0;ip<NPhaseSpaces();ip++) {
-	    if( files[i].find(pspaces[ip].c_str()) != string::npos ) {
+	    if( filename.find(pspaces[ip].c_str()) != string::npos ) {
 	      sPHA->at(j).at(ip) = new string(files[i]);
 	      continue;
 	    }
@@ -216,13 +216,29 @@ void PDataHiP::LoadFileNames(Int_t t) {
   ReadOutputSummary();
   ThreeD = kTRUE;
   HiP = kTRUE;
-  
-  if(species.size()) {
-    rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
-    cout << Form(" - Time from start = %6.2f ",rtime) << endl;
-    
-  }
 
+  Bool_t tfound = kFALSE;
+  if(NSpecies()) {
+    for(UInt_t j=0;j<NSpecies();j++) {
+      if(GetChargeFileName(j)) {
+	rtime = GetRealTimeFromFile(GetChargeFileName(j)->c_str());
+	tfound = kTRUE;
+	cout << Form(" - Time from start = %6.2f ",rtime) << endl;
+    	continue;
+      }
+    }
+  }
+  
+  if(NRawSpecies() && !tfound) {
+    for(UInt_t j=0;j<NRawSpecies();j++) {
+      if(GetRawFileName(j)) {
+	rtime = GetRealTimeFromFile(GetRawFileName(j)->c_str());
+	cout << Form(" - Time from start = %6.2f ",rtime) << endl;
+    	continue;
+      }
+    }
+  }
+  
   // Defines the sub-range for the analysis.
   // Here at initialization, it is set to the whole simulation range.
   Double_t shiftx1 = Shift("comov");  

@@ -74,7 +74,7 @@ int main(int argc,char *argv[]) {
   Int_t    iEnd = -1;
   Int_t   iStep = 1;
   TString   opt = "";
-  Int_t   index = 1;
+  Int_t   indexi = 1;
 
   // Option for raw fraction correction
   Float_t rawf = 1;
@@ -150,7 +150,7 @@ int main(int argc,char *argv[]) {
       opt += "fwhm"; 
     } else if(arg.Contains("-index")) {
       char ss[6];
-      sscanf(arg,"%6s%i",ss,&index);
+      sscanf(arg,"%6s%i",ss,&indexi);
     } else if(arg.Contains("-t")) {
       char ss[2];
       sscanf(arg,"%2s%i",ss,&time);
@@ -306,10 +306,12 @@ int main(int argc,char *argv[]) {
     
     if(!pData->IsInit()) continue;
 
-    Int_t Nspecies = pData->NSpecies();
-    if(index>Nspecies-1) {
-      return 0;
+    Int_t Nspecies = pData->NRawSpecies();
+    Int_t index = indexi; 
+    if(indexi>Nspecies-1) {
+      index = Nspecies-1;
     }
+    
     if(!pData->GetRawFileName(index)) {
       return 0;    
     }
@@ -317,6 +319,8 @@ int main(int argc,char *argv[]) {
     // Time in OU
     Double_t Time = pData->GetRealTime();
     Time += pData->ShiftT(opt);
+
+    
     
     // Centering time and z position:
     Double_t shiftz = pData->Shift(opt);
