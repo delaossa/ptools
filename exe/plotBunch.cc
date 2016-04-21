@@ -389,6 +389,12 @@ int main(int argc,char *argv[]) {
     
     // Command line input
     if(zmax>zmin) {
+
+      if(opt.Contains("units")) {
+	zmin *= spaUnit * kp;
+	zmax *= spaUnit * kp;
+      }
+      
       x1Min = zmin + dshiftz;
       x1Max = zmax + dshiftz;
       x1BinMin = x1Min + (x1Max-x1Min)/4.0;
@@ -396,6 +402,11 @@ int main(int argc,char *argv[]) {
     }
 
     if(zsmax>zsmin) {
+      if(opt.Contains("units")) {
+	zsmin *= spaUnit * kp;
+	zsmax *= spaUnit * kp;
+      }
+      
       x1BinMin = zsmin + dshiftz;
       x1BinMax = zsmax + dshiftz;
     }
@@ -1163,19 +1174,20 @@ int main(int argc,char *argv[]) {
     Double_t dV = dx1*dx2*dx3 * skindepth * skindepth * skindepth;
     Double_t Q0 = rawf * fabs(n0 * dV * PConst::ElectronCharge);
 
+    Double_t Charge = hX1->Integral();
     if(!pData->Is3D()) {
-      Q0 *= (5./3.); 
+      Charge *= (5./3.); 
     }
-    
-    Double_t Charge = hX1->Integral() * Q0;
-    
-    if(opt.Contains("best")) {
-      PUnits::BestUnit bchargeSUnit(Charge,"Charge");
-      bchargeSUnit.GetBestUnits(chargeUnit,chargeSUnit);
-    }
-    Charge /= chargeUnit;
-    
+        
     if(opt.Contains("units") && n0) {
+      Charge *= Q0;
+      
+      if(opt.Contains("best")) {
+	PUnits::BestUnit bchargeSUnit(Charge,"Charge");
+	bchargeSUnit.GetBestUnits(chargeUnit,chargeSUnit);
+      }
+      
+      Charge /= chargeUnit;
 
       Time *= skindepth / propUnit;
 
@@ -1963,19 +1975,35 @@ int main(int argc,char *argv[]) {
       PGlobals::SetPaveTextStyle(textInfo,32); 
       textInfo->SetTextColor(kGray+2);
       textInfo->SetTextFont(42);
-      sprintf(ctext,"Q = %5.2f %s",Charge,chargeSUnit.c_str());
+      if(opt.Contains("units")) 
+	sprintf(ctext,"Q = %5.2f %s",Charge,chargeSUnit.c_str());
+      else
+	sprintf(ctext,"Q = %5.2f Q_{0}",Charge);
+      
       textInfo->AddText(ctext);
-      sprintf(ctext,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
+      if(opt.Contains("units")) 
+	sprintf(ctext,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
+      else
+	sprintf(ctext,"k_{p} #Delta#zeta = %5.2f",zrms);
+      
       textInfo->AddText(ctext);
       if(opt.Contains("fwhm"))
 	sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
       else
 	sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
       textInfo->AddText(ctext);
-      sprintf(ctext,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
+      if(opt.Contains("units"))
+	sprintf(ctext,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
+      else
+	sprintf(ctext,"k_{p} #varepsilon_{n,x} = %5.2f",emitx);
+	
       textInfo->AddText(ctext);
       if(pData->Is3D()) {
-	sprintf(ctext,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
+	if(opt.Contains("units"))
+	  sprintf(ctext,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
+	else
+	  sprintf(ctext,"k_{p} #varepsilon_{n,y} = %5.2f",emity);
+	  
 	textInfo->AddText(ctext);
       }
       
@@ -2001,8 +2029,8 @@ int main(int argc,char *argv[]) {
       Double_t lxoffset = 0.02;
       Double_t tyoffset = 1.3;
       Double_t lyoffset = 0.01;
-      Double_t tylength = 0.02;
-      Double_t txlength = 0.04;
+      Double_t tylength = 0.015;
+      Double_t txlength = 0.025;
       for(Int_t i=0;i<NPad;i++) {
 	char name[16];
 	sprintf(name,"pad_%i",i);
@@ -2117,7 +2145,6 @@ int main(int argc,char *argv[]) {
       // hP1X1prof->Draw("zsame");
 
       gPad->Update();
-
       TPaletteAxis *palette = (TPaletteAxis*)hP1X1->GetListOfFunctions()->FindObject("palette");
       if(palette) {
 	Double_t y1 = gPad->GetBottomMargin();
@@ -2197,20 +2224,34 @@ int main(int argc,char *argv[]) {
       Leg->SetFillStyle(0); // Hollow
 
       char sleg[16];
-      sprintf(sleg,"Current [%s]",curSUnit.c_str());
-      Leg->AddEntry(hX1  ,sleg,"L");	
-      //sprintf(sleg,"Energy spread [%s]",ermsUnit.c_str());
-      sprintf(sleg,"E. spread [%s]",ermsSUnit.c_str());
-      Leg->AddEntry(gErms,sleg,"PL");
-      //      sprintf(sleg,"Emittance [%s]",emitUnit.c_str());
-      sprintf(sleg,"Emitt. x [%s]",emitSUnit.c_str());
-      Leg->AddEntry(gEmitx,sleg,"PL");
-      if(pData->Is3D()) {
-	sprintf(sleg,"Emitt. y [%s]",emitSUnit.c_str());
-	Leg->AddEntry(gEmity,sleg,"PL");
+      if(opt.Contains("units")) {
+	sprintf(sleg,"Current [%s]",curSUnit.c_str());
+	Leg->AddEntry(hX1  ,sleg,"L");	
+	//sprintf(sleg,"Energy spread [%s]",ermsUnit.c_str());
+	sprintf(sleg,"E. spread [%s]",ermsSUnit.c_str());
+	Leg->AddEntry(gErms,sleg,"PL");
+	//      sprintf(sleg,"Emittance [%s]",emitUnit.c_str());
+	sprintf(sleg,"Emitt. x [%s]",emitSUnit.c_str());
+	Leg->AddEntry(gEmitx,sleg,"PL");
+	if(pData->Is3D()) {
+	  sprintf(sleg,"Emitt. y [%s]",emitSUnit.c_str());
+	  Leg->AddEntry(gEmity,sleg,"PL");
+	}
+	//Leg->AddEntry(gXrms,"Bunch width [#mum]","PL");
+      } else {
+	sprintf(sleg,"Current");
+	Leg->AddEntry(hX1  ,sleg,"L");	
+	sprintf(sleg,"E. spread [%s]",ermsSUnit.c_str());
+	Leg->AddEntry(gErms,sleg,"PL");
+	sprintf(sleg,"k_{p} Emitt. x");
+	Leg->AddEntry(gEmitx,sleg,"PL");
+	if(pData->Is3D()) {
+	  sprintf(sleg,"k_{p} Emitt. y");
+	  Leg->AddEntry(gEmity,sleg,"PL");
+	}
+	
       }
-      //Leg->AddEntry(gXrms,"Bunch width [#mum]","PL");
-
+      
       hFrame[0]->GetYaxis()->SetTitle("");
       hFrame[0]->GetYaxis()->SetRangeUser(0.0,1.1*yMax);
       hFrame[0]->Draw();
@@ -2347,8 +2388,11 @@ int main(int argc,char *argv[]) {
 	  sprintf(name,"pad_%i",i);
 	  pad[i] = (TPad*) gROOT->FindObject(name);
 	  pad[i]->SetFrameLineWidth(2);  
-	  pad[i]->SetTickx(1);
-	  pad[i]->SetTicky(1);
+	  pad[i]->SetTickx(0);
+	  pad[i]->SetTicky(0);
+	  if(opt.Contains("trans"))
+	    pad[i]->SetFillStyle(4000);
+	  pad[i]->SetFrameFillStyle(4000);
 	  
 	  sprintf(name,"hFrame_%i",i);
 	  hFrame[i] = (TH1F*) gROOT->FindObject(name);
@@ -2465,22 +2509,38 @@ int main(int argc,char *argv[]) {
 	  
 	}
 
-	TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.30*yrange,x1+0.20*xrange,y2-0.05*yrange,"NDC");
+	TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.40*yrange,
+						x1+0.20*xrange,y2-0.05*yrange,"NDC");
 	PGlobals::SetPaveTextStyle(textInfoX2X1,12); 
 	textInfoX2X1->SetTextColor(kGray+3);
 	textInfoX2X1->SetTextFont(42);
 
 	char text[64];
-	sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
-	textInfoX2X1->AddText(text);
-	sprintf(text,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
-	textInfoX2X1->AddText(text);
-	sprintf(text,"#Deltax = %5.2f %s",x_rms,tspaSUnit.c_str());
-	textInfoX2X1->AddText(text);
-	// sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
-	// textInfoX2X1->AddText(text);
-	// sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
-	// textInfoX2X1->AddText(text);
+	if(opt.Contains("units")) {
+	  sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
+	  textInfoX2X1->AddText(text);
+	  sprintf(text,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
+	  textInfoX2X1->AddText(text);
+	  sprintf(text,"#Deltax = %5.2f %s",x_rms,tspaSUnit.c_str());
+	  textInfoX2X1->AddText(text);
+	  sprintf(text,"#varepsilon_{x} = %5.2f %s",emitx,emitSUnit.c_str());
+	  textInfoX2X1->AddText(text);
+	  sprintf(text,"#beta_{x} = %5.2f %s",betax,betaSUnit.c_str());
+	  textInfoX2X1->AddText(text);
+	} else {
+	  sprintf(text,"Q = %5.1f Q_{0}",Charge);
+	  textInfoX2X1->AddText(text);
+	  sprintf(text,"k_{p}#Delta#zeta = %5.2f",zrms);
+	  textInfoX2X1->AddText(text);
+	  sprintf(text,"k_{p}#Deltax = %5.2f",x_rms);
+	  textInfoX2X1->AddText(text);
+	  sprintf(text,"k_{p}#varepsilon_{x} = %5.2f",emitx);
+	  textInfoX2X1->AddText(text);
+	  sprintf(text,"k_{p}#beta_{x} = %5.2f",betax);
+	  textInfoX2X1->AddText(text);
+	  
+	}
+	  
 	textInfoX2X1->Draw();
 
 	gPad->RedrawAxis(); 
@@ -2563,21 +2623,37 @@ int main(int argc,char *argv[]) {
 	  pFrame->Draw();
 	}
 
-	TPaveText *textInfoX3X1 =  new TPaveText(x1+0.02*xrange,y2-0.30*yrange,x1+0.20*xrange,y2-0.05*yrange,"NDC");
+	TPaveText *textInfoX3X1 =  new TPaveText(x1+0.02*xrange,y2-0.40*yrange,
+						 x1+0.20*xrange,y2-0.05*yrange,"NDC");
 	PGlobals::SetPaveTextStyle(textInfoX3X1,12); 
 	textInfoX3X1->SetTextColor(kGray+3);
 	textInfoX3X1->SetTextFont(42);
-	
-	sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
-	textInfoX3X1->AddText(text);
-	sprintf(text,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
-	textInfoX3X1->AddText(text);
-	sprintf(text,"#Deltay = %5.2f %s",y_rms,tspaSUnit.c_str());
-	textInfoX3X1->AddText(text);
-	// sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
-	// textInfoX3X1->AddText(text);
-	// sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
-	// textInfoX3X1->AddText(text);
+
+	if(opt.Contains("units")) {
+	  sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
+	  textInfoX3X1->AddText(text);
+	  sprintf(text,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
+	  textInfoX3X1->AddText(text);
+	  sprintf(text,"#Deltay = %5.2f %s",y_rms,tspaSUnit.c_str());
+	  textInfoX3X1->AddText(text);
+	  sprintf(text,"#varepsilon_{y} = %5.2f %s",emity,emitSUnit.c_str());
+	  textInfoX3X1->AddText(text);
+	  sprintf(text,"#beta_{y} = %5.2f %s",betay,betaSUnit.c_str());
+	  textInfoX3X1->AddText(text);
+	} else {
+	  sprintf(text,"Q = %5.1f Q_{0}",Charge);
+	  textInfoX3X1->AddText(text);
+	  sprintf(text,"k_{p}#Delta#zeta = %5.2f",zrms);
+	  textInfoX3X1->AddText(text);
+	  sprintf(text,"k_{p}#Deltay = %5.2f",y_rms);
+	  textInfoX3X1->AddText(text);
+	  sprintf(text,"k_{p}#varepsilon_{y} = %5.2f",emity);
+	  textInfoX3X1->AddText(text);
+	  sprintf(text,"k_{p}#beta_{y} = %5.2f",betay);
+	  textInfoX3X1->AddText(text);
+	  
+	}
+	  
 	textInfoX3X1->Draw();
 
 	gPad->RedrawAxis(); 
@@ -2766,9 +2842,12 @@ int main(int argc,char *argv[]) {
 	  char name[16];
 	  sprintf(name,"pad_%i",i);
 	  pad[i] = (TPad*) gROOT->FindObject(name);
-	  pad[i]->SetFrameLineWidth(2);  
-	  pad[i]->SetTickx(1);
-	  pad[i]->SetTicky(1);
+	  pad[i]->SetFrameLineWidth(2);
+	  pad[i]->SetTickx(0);
+	  pad[i]->SetTicky(0);
+	  if(opt.Contains("trans"))
+	    pad[i]->SetFillStyle(4000);
+	  pad[i]->SetFrameFillStyle(4000);
 
 	  sprintf(name,"hFrame_%i",i);
 	  hFrame[i] = (TH1F*) gROOT->FindObject(name);
@@ -2829,10 +2908,46 @@ int main(int argc,char *argv[]) {
 
 
 	TH2F *hX3X2cl = (TH2F*) hX3X2->Clone("hX3X2cl");
+	hX3X2cl->GetZaxis()->CenterTitle();
+	hX3X2cl->GetZaxis()->SetTitleFont(fonttype);
+	hX3X2cl->GetZaxis()->SetTitleOffset(tyoffset);
+	hX3X2cl->GetZaxis()->SetTitleSize(tfontsize);
+	hX3X2cl->GetZaxis()->SetLabelFont(fonttype);
+	hX3X2cl->GetZaxis()->SetLabelSize(fontsize);
+	if(opt.Contains("logz")) 
+	  hX3X2cl->GetZaxis()->SetLabelOffset(0);
+	else
+	  hX3X2cl->GetZaxis()->SetLabelOffset(lyoffset);
+	
+	hX3X2cl->GetZaxis()->SetTickLength(0.01);      
 
 	hX3X2cl->Draw("colz 0 same");
-	hX3X2cl->GetZaxis()->CenterTitle();
-    
+	
+	gPad->Update();
+	palette = (TPaletteAxis*)hX3X2cl->GetListOfFunctions()->FindObject("palette");
+	if(palette) {
+	  Double_t y1 = gPad->GetBottomMargin();
+	  Double_t y2 = 1 - gPad->GetTopMargin();
+	  Double_t x1 = 1 - gPad->GetRightMargin();
+	  
+	  Double_t x1b = x1 + 0.01;
+	  Double_t x2b = x1 + 0.035;
+	  Double_t y1b = y1 + 0.03;
+	  Double_t y2b = y2 - 0.03;
+	  palette->SetX1NDC(x1b);
+	  palette->SetY1NDC(y1b);
+	  palette->SetX2NDC(x2b);
+	  palette->SetY2NDC(y2b);
+	  palette->SetBorderSize(2);
+	  palette->SetLineColor(1);
+	  
+	  TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	  pFrame->SetFillStyle(0);
+	  pFrame->SetLineColor(kBlack);
+	  pFrame->SetShadowColor(0);
+	  pFrame->Draw();
+	}
+
 	y1 = gPad->GetBottomMargin();
 	y2 = 1 - gPad->GetTopMargin();
 	x1 = gPad->GetLeftMargin();
@@ -2840,18 +2955,43 @@ int main(int argc,char *argv[]) {
 	yrange = y2-y1; 
 	xrange = x2-x1; 
     
-	TPaveText *textStatX3X2 =  new TPaveText(x1+0.02*xrange,y2-0.20*yrange,x1+0.30*xrange,y2-0.05*yrange,"NDC");
+	TPaveText *textStatX3X2 =  new TPaveText(x1+0.02*xrange,y2-0.40*yrange,x1+0.30*xrange,y2-0.05*yrange,"NDC");
 	PGlobals::SetPaveTextStyle(textStatX3X2,12); 
 	textStatX3X2->SetTextColor(kGray+3);
 	textStatX3X2->SetTextFont(42);
 
 	char text[64];
-	sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
-	textStatX3X2->AddText(text);
-	sprintf(text,"#Deltax = %5.2f %s",x_rms,tspaSUnit.c_str());
-	textStatX3X2->AddText(text);
-	sprintf(text,"#Deltay = %5.2f %s",y_rms,tspaSUnit.c_str());
-	textStatX3X2->AddText(text);
+	if(opt.Contains("units")) {
+	  sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"#Deltax = %5.2f %s",x_rms,tspaSUnit.c_str());
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"#Deltay = %5.2f %s",y_rms,tspaSUnit.c_str());
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"#varepsilon_{x} = %5.2f %s",emitx,emitSUnit.c_str());
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"#varepsilon_{y} = %5.2f %s",emity,emitSUnit.c_str());
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"#beta_{x} = %5.2f %s",betax,betaSUnit.c_str());
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"#beta_{y} = %5.2f %s",betay,betaSUnit.c_str());
+	  textStatX3X2->AddText(text);
+	} else {
+	  sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"k_{p}#Deltax = %5.2f",x_rms);
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"k_{p}#Deltay = %5.2f",y_rms);
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"k_{p}#varepsilon_{x} = %5.2f",emitx);
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"k_{p}#varepsilon_{y} = %5.2f",emity);
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"k_{p}#beta_{x} = %5.2f",betax);
+	  textStatX3X2->AddText(text);
+	  sprintf(text,"k_{p}#beta_{y} = %5.2f",betay);
+	  textStatX3X2->AddText(text);	  
+	}
 	textStatX3X2->Draw();
     
 	gPad->RedrawAxis(); 
@@ -2881,9 +3021,13 @@ int main(int argc,char *argv[]) {
 	char name[16];
 	sprintf(name,"pad_%i",i);
 	pad[i] = (TPad*) gROOT->FindObject(name);
-	pad[i]->SetFrameLineWidth(2);  
-	pad[i]->SetTickx(1);
-	pad[i]->SetTicky(1);
+	pad[i]->SetFrameLineWidth(2);
+	pad[i]->SetTickx(0);
+	pad[i]->SetTicky(0);
+	if(opt.Contains("trans"))
+	  pad[i]->SetFillStyle(4000);
+	pad[i]->SetFrameFillStyle(4000);
+	
 
 	sprintf(name,"hFrame_%i",i);
 	hFrame[i] = (TH1F*) gROOT->FindObject(name);
@@ -2941,9 +3085,23 @@ int main(int argc,char *argv[]) {
       lPxmean.SetLineColor(kGray+2);
       lPxmean.SetLineStyle(2);
       lPxmean.Draw();
-
+      
 
       TH2F *hP2X2cl = (TH2F*) hP2X2->Clone("hP2X2cl");
+
+      hP2X2cl->GetZaxis()->CenterTitle();
+      hP2X2cl->GetZaxis()->SetTitleFont(fonttype);
+      hP2X2cl->GetZaxis()->SetTitleOffset(tyoffset);
+      hP2X2cl->GetZaxis()->SetTitleSize(tfontsize);
+      hP2X2cl->GetZaxis()->SetLabelFont(fonttype);
+      hP2X2cl->GetZaxis()->SetLabelSize(fontsize);
+      if(opt.Contains("logz")) 
+	hP2X2cl->GetZaxis()->SetLabelOffset(0);
+      else
+	hP2X2cl->GetZaxis()->SetLabelOffset(lyoffset);
+            
+      hP2X2cl->GetZaxis()->SetTickLength(0.01);      
+      
       hP2X2cl->Draw("colz same");
     
       if(opt.Contains("elli") ) 
@@ -2951,22 +3109,61 @@ int main(int argc,char *argv[]) {
 	  if(sellipP2X2[k] != NULL)
 	    sellipP2X2[k]->Draw();
 
-      TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+      gPad->Update();
+      palette = (TPaletteAxis*)hP2X2cl->GetListOfFunctions()->FindObject("palette");
+      if(palette) {
+	Double_t y1 = gPad->GetBottomMargin();
+	Double_t y2 = 1 - gPad->GetTopMargin();
+	Double_t x1 = 1 - gPad->GetRightMargin();
+	
+	Double_t x1b = x1 + 0.01;
+	Double_t x2b = x1 + 0.035;
+	Double_t y1b = y1 + 0.03;
+	Double_t y2b = y2 - 0.03;
+	palette->SetX1NDC(x1b);
+	palette->SetY1NDC(y1b);
+	palette->SetX2NDC(x2b);
+	palette->SetY2NDC(y2b);
+	palette->SetBorderSize(2);
+	palette->SetLineColor(1);
+
+	TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	pFrame->SetFillStyle(0);
+	pFrame->SetLineColor(kBlack);
+	pFrame->SetShadowColor(0);
+	pFrame->Draw();
+      }
+
+      TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.30,x1+0.20,y2-0.05,"NDC");
       PGlobals::SetPaveTextStyle(textStatInt,12); 
       textStatInt->SetTextColor(kGray+3);
       textStatInt->SetTextFont(42);
 
       char text[64];
-      sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
-      textStatInt->AddText(text);
-      sprintf(text,"#Deltax = %5.2f %s",x_rms,tspaSUnit.c_str());
-      textStatInt->AddText(text);
-      sprintf(text,"#Deltap_{x} = %5.2f %s",px_rms,teneSUnit.c_str());
-      textStatInt->AddText(text);
-      sprintf(text,"#varepsilon_{x} = %5.2f %s",emitx,emitSUnit.c_str());
-      textStatInt->AddText(text);
-      sprintf(text,"#beta_{x} = %5.2f %s",betax,betaSUnit.c_str());
-      textStatInt->AddText(text);
+      if(opt.Contains("units")) {
+	sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
+	textStatInt->AddText(text);
+	sprintf(text,"#Deltax = %5.2f %s",x_rms,tspaSUnit.c_str());
+	textStatInt->AddText(text);
+	sprintf(text,"#Deltap_{x} = %5.2f %s",px_rms,teneSUnit.c_str());
+	textStatInt->AddText(text);
+	sprintf(text,"#varepsilon_{x} = %5.2f %s",emitx,emitSUnit.c_str());
+	textStatInt->AddText(text);
+	sprintf(text,"#beta_{x} = %5.2f %s",betax,betaSUnit.c_str());
+	textStatInt->AddText(text);
+      } else {
+	sprintf(text,"Q = %5.1f Q_{0}",Charge);
+	textStatInt->AddText(text);
+	sprintf(text,"k_{p}#Deltax = %5.2f",x_rms);
+	textStatInt->AddText(text);
+	sprintf(text,"#Deltap_{x} = %5.2f mc",px_rms);
+	textStatInt->AddText(text);
+	sprintf(text,"k_{p}#varepsilon_{x} = %5.2f",emitx);
+	textStatInt->AddText(text);
+	sprintf(text,"k_{p}#beta_{x} = %5.2f",betax);
+	textStatInt->AddText(text);
+      }
+      
       textStatInt->Draw();
 
       gPad->RedrawAxis(); 
@@ -2996,10 +3193,13 @@ int main(int argc,char *argv[]) {
 	  char name[16];
 	  sprintf(name,"pad_%i",i);
 	  pad[i] = (TPad*) gROOT->FindObject(name);
-	  pad[i]->SetFrameLineWidth(2);  
-	  pad[i]->SetTickx(1);
-	  pad[i]->SetTicky(1);
-
+	  pad[i]->SetFrameLineWidth(2);
+	  pad[i]->SetTickx(0);
+	  pad[i]->SetTicky(0);
+	  if(opt.Contains("trans"))
+	    pad[i]->SetFillStyle(4000);
+	  pad[i]->SetFrameFillStyle(4000);
+	  
 	  sprintf(name,"hFrame_%i",i);
 	  hFrame[i] = (TH1F*) gROOT->FindObject(name);
 	  if(hFrame[i]) delete hFrame[i];
@@ -3059,6 +3259,19 @@ int main(int argc,char *argv[]) {
 
 
 	TH2F *hP3X3cl = (TH2F*) hP3X3->Clone("hP3X3cl");
+	hP3X3cl->GetZaxis()->CenterTitle();
+	hP3X3cl->GetZaxis()->SetTitleFont(fonttype);
+	hP3X3cl->GetZaxis()->SetTitleOffset(tyoffset);
+	hP3X3cl->GetZaxis()->SetTitleSize(tfontsize);
+	hP3X3cl->GetZaxis()->SetLabelFont(fonttype);
+	hP3X3cl->GetZaxis()->SetLabelSize(fontsize);
+	if(opt.Contains("logz")) 
+	  hP3X3cl->GetZaxis()->SetLabelOffset(0);
+	else
+	  hP3X3cl->GetZaxis()->SetLabelOffset(lyoffset);
+	
+	hP3X3cl->GetZaxis()->SetTickLength(0.01);      
+	
 	hP3X3cl->Draw("colz same");
         
 	if(opt.Contains("elli") ) 
@@ -3066,22 +3279,62 @@ int main(int argc,char *argv[]) {
 	    if(sellipP3X3[k] != NULL)
 	      sellipP3X3[k]->Draw();
 
-	textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+	gPad->Update();
+	palette = (TPaletteAxis*)hP3X3cl->GetListOfFunctions()->FindObject("palette");
+	if(palette) {
+	  Double_t y1 = gPad->GetBottomMargin();
+	  Double_t y2 = 1 - gPad->GetTopMargin();
+	  Double_t x1 = 1 - gPad->GetRightMargin();
+	
+	  Double_t x1b = x1 + 0.01;
+	  Double_t x2b = x1 + 0.035;
+	  Double_t y1b = y1 + 0.03;
+	  Double_t y2b = y2 - 0.03;
+	  palette->SetX1NDC(x1b);
+	  palette->SetY1NDC(y1b);
+	  palette->SetX2NDC(x2b);
+	  palette->SetY2NDC(y2b);
+	  palette->SetBorderSize(2);
+	  palette->SetLineColor(1);
+
+	  TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	  pFrame->SetFillStyle(0);
+	  pFrame->SetLineColor(kBlack);
+	  pFrame->SetShadowColor(0);
+	  pFrame->Draw();
+	}
+
+	textStatInt = new TPaveText(x1+0.02,y2-0.30,x1+0.20,y2-0.05,"NDC");
 	PGlobals::SetPaveTextStyle(textStatInt,12); 
 	textStatInt->SetTextColor(kGray+3);
 	textStatInt->SetTextFont(42);
 
-	sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
-	textStatInt->AddText(text);
-	sprintf(text,"#Deltay = %5.2f %s",y_rms,tspaSUnit.c_str());
-	textStatInt->AddText(text);
-	sprintf(text,"#Deltap_{y} = %5.2f %s",py_rms,teneSUnit.c_str());
-	textStatInt->AddText(text);
-	sprintf(text,"#varepsilon_{y} = %5.2f %s",emity,emitSUnit.c_str());
-	textStatInt->AddText(text);
-	sprintf(text,"#beta_{y} = %5.2f %s",betay,betaSUnit.c_str());
-	textStatInt->AddText(text);
-	textStatInt->Draw();
+	if(opt.Contains("units")) {
+	  sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
+	  textStatInt->AddText(text);
+	  sprintf(text,"#Deltay = %5.2f %s",y_rms,tspaSUnit.c_str());
+	  textStatInt->AddText(text);
+	  sprintf(text,"#Deltap_{y} = %5.2f %s",py_rms,teneSUnit.c_str());
+	  textStatInt->AddText(text);
+	  sprintf(text,"#varepsilon_{y} = %5.2f %s",emity,emitSUnit.c_str());
+	  textStatInt->AddText(text);
+	  sprintf(text,"#beta_{y} = %5.2f %s",betay,betaSUnit.c_str());
+	  textStatInt->AddText(text);
+	} else {
+	  sprintf(text,"Q = %5.1f Q_{0}",Charge);
+	  textStatInt->AddText(text);
+	  sprintf(text,"k_{p}#Deltay = %5.2f",y_rms);
+	  textStatInt->AddText(text);
+	  sprintf(text,"#Deltap_{y} = %5.2f mc",py_rms);
+	  textStatInt->AddText(text);
+	  sprintf(text,"k_{p}#varepsilon_{y} = %5.2f",emity);
+	  textStatInt->AddText(text);
+	  sprintf(text,"k_{p}#beta_{y} = %5.2f",betay);
+	  textStatInt->AddText(text);
+
+	}
+
+	  textStatInt->Draw();
 
 	gPad->RedrawAxis(); 
     

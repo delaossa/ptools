@@ -169,8 +169,8 @@ PUnits::UnitsTable::UnitsTable()
   AddUnit("Centiampere", "cA", "Current", centiampere);
   AddUnit("Deciampere", "dA", "Current", deciampere);
   AddUnit("Ampere",  "A", "Current", ampere);
-  // AddUnit("Decaampere", "10 A", "Current", decaampere);
-  // AddUnit("Hectoampere","10^{2} A", "Current", hectoampere);
+  AddUnit("Decaampere", "10 A", "Current", decaampere);
+  AddUnit("Hectoampere","10^{2} A", "Current", hectoampere);
   AddUnit("Kiloampere", "kA", "Current", kA);
   AddUnit("Decakiloampere", "10 kA", "Current", decakA);
 
@@ -178,7 +178,7 @@ PUnits::UnitsTable::UnitsTable()
   AddUnit("Percent", "%", "Percentage", perCent);
   AddUnit("Perten", "10 %", "Percentage", perTen);
   AddUnit("Permille", "0.1 %", "Percentage", perThousand);
-  // AddUnit("Permillion", "0.01 %", "Percentage", perMillion);
+  AddUnit("Permillion", "0.01 %", "Percentage", perMillion);
 
 }
 
