@@ -49,7 +49,7 @@ Double_t DensityGaussSum(Double_t *x, Double_t *par) {
 }
 
 
-void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zmax = 100, const TString &options="pdf") { 
+void PlotDenProfile(const TString &sim, const Float_t zmin0 = 0, const Float_t zmax0 = 100, const TString &options="pdf") { 
   
 #ifdef __CINT__  
   gSystem->Load("libptools.so");
@@ -80,16 +80,16 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
   Double_t np  = pData->GetPlasmaDensity() / (1E17/PUnits::cm3);
   Double_t skd = pData->GetPlasmaSkinDepth() / PUnits::mm;
 
-  Double_t shiftz = 26.91;
-  zmin -= shiftz; 
-  zmax -= shiftz; 
+  Double_t shiftz = 60.0;
+  Double_t  zmin = zmin0 - shiftz; 
+  Double_t  zmax = zmax0 - shiftz; 
 
   if(opt.Contains("units")) {
     zmin *= skd;
     zmax *= skd;
   }
   
-  cout << Form("  Plasma density = %.2e cm^{-3}", np) << endl;
+  cout << Form("  Plasma density = %.2f E17 cm^{-3}", np) << endl;
   
   Double_t n0 = 0.1;
   Double_t z0 = 34.85 - shiftz;
@@ -117,14 +117,14 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
   fDenHe->SetParameters(n0,z0,sigma0,n1,z1,sigma1,n2,z2,sigma2);
   fDenHe->SetNpx(10000);
 
-  Double_t n0p = 1.0;
-  Double_t z0p = 28.6 - shiftz;
-  Double_t sigma0p = 3.8;
+  Double_t n0p = 10.0;
+  Double_t z0p = 60 - shiftz;
+  Double_t sigma0p = 1.88;
   Double_t n1p = 1.0;
-  Double_t z1p = 1000 - shiftz;
-  Double_t sigma1p = 0;
+  Double_t z1p = 60 - shiftz;
+  Double_t sigma1p = 2.5;
   Double_t n2p = 1.0;
-  Double_t z2p = 1000 - shiftz;
+  Double_t z2p = 10000 - shiftz;
   Double_t sigma2p = 0;
 
   if(opt.Contains("units")) {    
@@ -232,11 +232,11 @@ void PlotDenProfile(const TString &sim, const Float_t zmin = 0, const Float_t zm
 
   fDenSum->SetLineColor(kGray+2);
   fDenSum->SetLineWidth(1);
-  fDenSum->Draw("same C");
+  //  fDenSum->Draw("same C");
 
   fDenHe->SetLineColor(myNaranja);
   fDenHe->SetLineWidth(2);
-  fDenHe->Draw("same C");
+  // fDenHe->Draw("same C");
 
   fDenH->SetLineColor(myBlue);
   fDenH->SetLineWidth(2);

@@ -126,16 +126,14 @@ int main(int argc,char *argv[]) {
       opt += "grid"; 
     } else if(arg.Contains("--logz")){
       opt += "logz"; 
-    } else if(arg.Contains("--autop")){
-      opt += "autop"; 
-    } else if(arg.Contains("--auto")){
-      opt += "auto"; 
     } else if(arg.Contains("--loop")){
       opt += "loop"; 
     } else if(arg.Contains("--file")){
       opt += "file"; 
     } else if(arg.Contains("--smooth")){
       opt += "smooth"; 
+    } else if(arg.Contains("--autop")){
+      opt += "autop"; 
     } else if(arg.Contains("--trans")){
       opt += "trans"; 
     } else if(arg.Contains("--notext")){
@@ -389,14 +387,12 @@ int main(int argc,char *argv[]) {
       x1BinMax += dshiftz;
     }
     
-
-    
     // Command line input
     if(zmax>zmin) {
       x1Min = zmin + dshiftz;
       x1Max = zmax + dshiftz;
-      x1BinMin = zmin + (zmax-zmin)/4.0;
-      x1BinMax = zmin + 3.0*(zmax-zmin)/4.0;
+      x1BinMin = x1Min + (x1Max-x1Min)/4.0;
+      x1BinMax = x1Min + 3.0*(x1Max-x1Min)/4.0;
     }
 
     if(zsmax>zsmin) {
@@ -404,8 +400,6 @@ int main(int argc,char *argv[]) {
       x1BinMax = zsmax + dshiftz;
     }
     
-
-        
     // --------------------------------------------------
     
     cout << Form("\n 1. Reading file : ") << pData->GetRawFileName(index)->c_str() << endl;
@@ -450,204 +444,114 @@ int main(int argc,char *argv[]) {
     // auto ranges factor
     Double_t rfactor = 0.3;
     
-    if(opt.Contains("autop")) {
-
-      cout << Form("\n Auto ranging everything but x1...") << endl;
-
-      Double_t MinP1 = 999999;
-      Double_t MaxP1 = -999999;
-      Double_t MinP2 = 999999;
-      Double_t MaxP2 = -999999;
-      Double_t MinP3 = 999999;
-      Double_t MaxP3 = -999999;
-
-      Double_t MinX2 = 999999;
-      Double_t MaxX2 = -999999;
-      Double_t MinX3 = 999999;
-      Double_t MaxX3 = -999999;
-
-      for(UInt_t i=0;i<Np;i++) {
-
-	// if(var[4][i]-shiftz<x1BinMin || var[4][i]-shiftz>x1BinMax ) continue; 
-	// if(var[4][i]-shiftz<x1Min || var[4][i]-shiftz>x1Max ) continue; 
-	if(var[4][i]<x1Min || var[4][i]>x1Max ) continue; 
-
-	if(var[0][i]<MinP1) MinP1 = var[0][i];
-	if(var[0][i]>MaxP1) MaxP1 = var[0][i];
-	if(var[1][i]<MinP2) MinP2 = var[1][i];
-	if(var[1][i]>MaxP2) MaxP2 = var[1][i];
-	if(var[2][i]<MinP3) MinP3 = var[2][i];
-	if(var[2][i]>MaxP3) MaxP3 = var[2][i];
-	if(var[5][i]<MinX2) MinX2 = var[5][i];
-	if(var[5][i]>MaxX2) MaxX2 = var[5][i];
-	if(Nvar==7) {
-	  if(var[6][i]<MinX3) MinX3 = var[6][i];
-	  if(var[6][i]>MaxX3) MaxX3 = var[6][i];
-	}
-
-	hScanX1->Fill(var[4][i],TMath::Abs(var[3][i]));
-	hScanX2->Fill(var[5][i],TMath::Abs(var[3][i]));
-	if(Nvar==7)
-	  hScanX3->Fill(var[6][i],TMath::Abs(var[3][i]));
-	
-	hScanP2->Fill(var[1][i],TMath::Abs(var[3][i]));
-	hScanP3->Fill(var[2][i],TMath::Abs(var[3][i]));
-      }
+    cout << Form("\n Auto ranging...") << endl;
       
-      p1Min = MinP1 - rfactor*(MaxP1-MinP1);
-      p1Max = MaxP1 + rfactor*(MaxP1-MinP1);
-      p2Min = MinP2 - rfactor*(MaxP2-MinP2);
-      p2Max = MaxP2 + rfactor*(MaxP2-MinP2);
-      p3Min = MinP3 - rfactor*(MaxP3-MinP3);
-      p3Max = MaxP3 + rfactor*(MaxP3-MinP3);
+    Double_t MinP1 = 999999;
+    Double_t MaxP1 = -999999;
+    Double_t MinP2 = 999999;
+    Double_t MaxP2 = -999999;
+    Double_t MinP3 = 999999;
+    Double_t MaxP3 = -999999;
 
-      x2Min = MinX2 - rfactor*(MaxX2-MinX2);
-      x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
+    Double_t MinX1 = 999999;
+    Double_t MaxX1 = -999999;
+    Double_t MinX2 = 999999;
+    Double_t MaxX2 = -999999;
+    Double_t MinX3 = 999999;
+    Double_t MaxX3 = -999999;
+
+    for(UInt_t i=0;i<Np;i++) {
+      if(var[0][i]<MinP1) MinP1 = var[0][i];
+      if(var[0][i]>MaxP1) MaxP1 = var[0][i];
+      if(var[1][i]<MinP2) MinP2 = var[1][i];
+      if(var[1][i]>MaxP2) MaxP2 = var[1][i];
+      if(var[2][i]<MinP3) MinP3 = var[2][i];
+      if(var[2][i]>MaxP3) MaxP3 = var[2][i];
+      if(var[4][i]<MinX1) MinX1 = var[4][i];
+      if(var[4][i]>MaxX1) MaxX1 = var[4][i];
+      if(var[5][i]<MinX2) MinX2 = var[5][i];
+      if(var[5][i]>MaxX2) MaxX2 = var[5][i];
       if(Nvar==7) {
-	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
-	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
+	if(var[6][i]<MinX3) MinX3 = var[6][i];
+	if(var[6][i]>MaxX3) MaxX3 = var[6][i];
       }
 
-      // Set limits using Scan histograms
-      Double_t peakFactor = 0.05;
-      Double_t rfactor2 = 1.0;
-
-      Double_t x2min = -999;
-      Double_t x2max = -999;
-      FindLimits(hScanX2,x2min,x2max,peakFactor);
-      x2Min = x2min - rfactor2*(x2max-x2min);
-      x2Max = x2max + rfactor2*(x2max-x2min);
-
-      Double_t x3min = -999;
-      Double_t x3max = -999;
+      hScanX1->Fill(var[4][i],TMath::Abs(var[3][i]));
+      hScanX2->Fill(var[5][i],TMath::Abs(var[3][i]));
       if(Nvar==7)
-	FindLimits(hScanX3,x3min,x3max,peakFactor);
-      x3Min = x3min - rfactor2*(x3max-x3min);
-      x3Max = x3max + rfactor2*(x3max-x3min);
+	hScanX3->Fill(var[6][i],TMath::Abs(var[3][i]));
 
-      Double_t p2min = -999;
-      Double_t p2max = -999;
-      FindLimits(hScanP2,p2min,p2max,peakFactor);
-      p2Min = p2min - rfactor2*(p2max-p2min);
-      p2Max = p2max + rfactor2*(p2max-p2min);
-
-      Double_t p3min = -999;
-      Double_t p3max = -999;
-      FindLimits(hScanP3,p3min,p3max,peakFactor);
-      p3Min = p3min - rfactor2*(p3max-p3min);
-      p3Max = p3max + rfactor2*(p3max-p3min);
-
-      
-    } else if(opt.Contains("auto")) {
-
-      cout << Form("\n Auto ranging...") << endl;
-      
-      Double_t MinP1 = 999999;
-      Double_t MaxP1 = -999999;
-      Double_t MinP2 = 999999;
-      Double_t MaxP2 = -999999;
-      Double_t MinP3 = 999999;
-      Double_t MaxP3 = -999999;
-
-      Double_t MinX1 = 999999;
-      Double_t MaxX1 = -999999;
-      Double_t MinX2 = 999999;
-      Double_t MaxX2 = -999999;
-      Double_t MinX3 = 999999;
-      Double_t MaxX3 = -999999;
-
-      for(UInt_t i=0;i<Np;i++) {
-	if(var[0][i]<MinP1) MinP1 = var[0][i];
-	if(var[0][i]>MaxP1) MaxP1 = var[0][i];
-	if(var[1][i]<MinP2) MinP2 = var[1][i];
-	if(var[1][i]>MaxP2) MaxP2 = var[1][i];
-	if(var[2][i]<MinP3) MinP3 = var[2][i];
-	if(var[2][i]>MaxP3) MaxP3 = var[2][i];
-	if(var[4][i]<MinX1) MinX1 = var[4][i];
-	if(var[4][i]>MaxX1) MaxX1 = var[4][i];
-	if(var[5][i]<MinX2) MinX2 = var[5][i];
-	if(var[5][i]>MaxX2) MaxX2 = var[5][i];
-	if(Nvar==7) {
-	  if(var[6][i]<MinX3) MinX3 = var[6][i];
-	  if(var[6][i]>MaxX3) MaxX3 = var[6][i];
-	}
-
-	hScanX1->Fill(var[4][i],TMath::Abs(var[3][i]));
-	hScanX2->Fill(var[5][i],TMath::Abs(var[3][i]));
-	if(Nvar==7)
-	  hScanX3->Fill(var[6][i],TMath::Abs(var[3][i]));
-
-	hScanP2->Fill(var[1][i],TMath::Abs(var[3][i]));
-	hScanP3->Fill(var[2][i],TMath::Abs(var[3][i]));
+      hScanP2->Fill(var[1][i],TMath::Abs(var[3][i]));
+      hScanP3->Fill(var[2][i],TMath::Abs(var[3][i]));
 	
-      }
+    }
       
-      p1Min = MinP1 - rfactor*(MaxP1-MinP1);
-      p1Max = MaxP1 + rfactor*(MaxP1-MinP1);
-      p2Min = MinP2 - rfactor*(MaxP2-MinP2);
-      p2Max = MaxP2 + rfactor*(MaxP2-MinP2);
-      p3Min = MinP3 - rfactor*(MaxP3-MinP3);
-      p3Max = MaxP3 + rfactor*(MaxP3-MinP3);
+    p1Min = MinP1 - rfactor*(MaxP1-MinP1);
+    p1Max = MaxP1 + rfactor*(MaxP1-MinP1);
+    p2Min = MinP2 - rfactor*(MaxP2-MinP2);
+    p2Max = MaxP2 + rfactor*(MaxP2-MinP2);
+    p3Min = MinP3 - rfactor*(MaxP3-MinP3);
+    p3Max = MaxP3 + rfactor*(MaxP3-MinP3);
 
-      x1Min = MinX1 - rfactor*(MaxX1-MinX1);
-      x1Max = MaxX1 + rfactor*(MaxX1-MinX1);
-      x2Min = MinX2 - rfactor*(MaxX2-MinX2);
-      x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
+    x1Min = MinX1 - rfactor*(MaxX1-MinX1);
+    x1Max = MaxX1 + rfactor*(MaxX1-MinX1);
+    x2Min = MinX2 - rfactor*(MaxX2-MinX2);
+    x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
     
-      if(Nvar==7) {
-	x3Min = MinX3 - rfactor*(MaxX3-MinX3);
-	x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
-      }
-
-      // Set limits using Scan histograms
-      Double_t peakFactor = 0.2;
-      Double_t rfactor2 = 1.5;
-      
-      Double_t x1min = -999;
-      Double_t x1max = -999;
-
-      FindLimits(hScanX1,x1min,x1max,peakFactor);      
-      x1BinMin = x1min;
-      x1BinMax = x1max;
-      
-      peakFactor = 0.05;
-      FindLimits(hScanX1,x1min,x1max,peakFactor);
-      x1Min = x1min - rfactor*(x1max-x1min);
-      x1Max = x1max + rfactor*(x1max-x1min);
-
-      Double_t x2min = -999;
-      Double_t x2max = -999;
-      FindLimits(hScanX2,x2min,x2max,peakFactor);
-      if( x2max-x2min < 0.1) {
-	x2min -= 0.1;
-	x2max += 0.1;
-      }
-      x2Min = x2min - rfactor2*(x2max-x2min);
-      x2Max = x2max + rfactor2*(x2max-x2min);
-      //      cout << Form("  x2Min = %f  x2Max = %f ",x2min,x2max) << endl;
-      
-      Double_t x3min = -999;
-      Double_t x3max = -999;
-      if(Nvar==7) {
-	FindLimits(hScanX3,x3min,x3max,peakFactor);
-	x3Min = x3min - rfactor2*(x3max-x3min);
-	x3Max = x3max + rfactor2*(x3max-x3min);
-      }
-      
-      Double_t p2min = -999;
-      Double_t p2max = -999;
-      FindLimits(hScanP2,p2min,p2max,peakFactor);
-      p2Min = p2min - rfactor2*(p2max-p2min);
-      p2Max = p2max + rfactor2*(p2max-p2min);
-
-      Double_t p3min = -999;
-      Double_t p3max = -999;
-      FindLimits(hScanP3,p3min,p3max,peakFactor);
-      p3Min = p3min - rfactor2*(p3max-p3min);
-      p3Max = p3max + rfactor2*(p3max-p3min);
-                  
+    if(Nvar==7) {
+      x3Min = MinX3 - rfactor*(MaxX3-MinX3);
+      x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
     }
 
+    // Set limits using Scan histograms
+    Double_t peakFactor = 0.2;
+    Double_t rfactor2 = 1.5;
+      
+    Double_t x1min = -999;
+    Double_t x1max = -999;
+
+    FindLimits(hScanX1,x1min,x1max,peakFactor);
+    
+    x1BinMin = x1min;
+    x1BinMax = x1max;
+      
+    peakFactor = 0.05;
+    FindLimits(hScanX1,x1min,x1max,peakFactor);
+    
+    x1Min = x1min - rfactor*(x1max-x1min);
+    x1Max = x1max + rfactor*(x1max-x1min);
+
+    Double_t x2min = -999;
+    Double_t x2max = -999;
+    FindLimits(hScanX2,x2min,x2max,peakFactor);
+    if( x2max-x2min < 0.1) {
+      x2min -= 0.1;
+      x2max += 0.1;
+    }
+    x2Min = x2min - rfactor2*(x2max-x2min);
+    x2Max = x2max + rfactor2*(x2max-x2min);
+    //      cout << Form("  x2Min = %f  x2Max = %f ",x2min,x2max) << endl;
+      
+    Double_t x3min = -999;
+    Double_t x3max = -999;
+    if(Nvar==7) {
+      FindLimits(hScanX3,x3min,x3max,peakFactor);
+      x3Min = x3min - rfactor2*(x3max-x3min);
+      x3Max = x3max + rfactor2*(x3max-x3min);
+    }
+      
+    Double_t p2min = -999;
+    Double_t p2max = -999;
+    FindLimits(hScanP2,p2min,p2max,peakFactor);
+    p2Min = p2min - rfactor2*(p2max-p2min);
+    p2Max = p2max + rfactor2*(p2max-p2min);
+
+    Double_t p3min = -999;
+    Double_t p3max = -999;
+    FindLimits(hScanP3,p3min,p3max,peakFactor);
+    p3Min = p3min - rfactor2*(p3max-p3min);
+    p3Max = p3max + rfactor2*(p3max-p3min);
+                  
     // Prevent range limits to go out of the box
     if(x1Min<X1MIN) x1Min = X1MIN;
     if(x1Max>X1MAX) x1Max = X1MAX;
@@ -895,9 +799,16 @@ int main(int argc,char *argv[]) {
 
       hX1->Fill(var[4][i],TMath::Abs(var[3][i]));
       hP1->Fill(var[0][i],TMath::Abs(var[3][i]));
-
       hP1X1->Fill(var[4][i],var[0][i],TMath::Abs(var[3][i]));
+      hP2X2->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
+      hX2X1->Fill(var[4][i],var[5][i],TMath::Abs(var[3][i]));
 
+      if(Nvar==7){
+	hP3X3->Fill(var[6][i],var[2][i],TMath::Abs(var[3][i]));
+	hX3X1->Fill(var[4][i],var[6][i],TMath::Abs(var[3][i]));
+	hX3X2->Fill(var[5][i],var[6][i],TMath::Abs(var[3][i]));      
+      }
+      
       // Slices    
       if(var[4][i]<sBinLim[0] || var[4][i]>sBinLim[SNbin]) continue;
       Int_t iBin = -1;
@@ -914,22 +825,14 @@ int main(int argc,char *argv[]) {
       hP1range->Fill(var[0][i],TMath::Abs(var[3][i]));
       hP1X1range->Fill(var[4][i],var[0][i],TMath::Abs(var[3][i]));
       
-      hP2X2->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
       hP2X2sl[iBin]->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
 
-      if(Nvar==7){
-	hP3X3->Fill(var[6][i],var[2][i],TMath::Abs(var[3][i]));
+      if(Nvar==7)
 	hP3X3sl[iBin]->Fill(var[6][i],var[2][i],TMath::Abs(var[3][i]));
-
-	hX3X1->Fill(var[4][i],var[6][i],TMath::Abs(var[3][i]));
-	hX3X2->Fill(var[5][i],var[6][i],TMath::Abs(var[3][i]));      
-      }
-
-      hX2X1->Fill(var[4][i],var[5][i],TMath::Abs(var[3][i]));
       
       hP1sl[iBin]->Fill(var[0][i],TMath::Abs(var[3][i]));
       //      cout << Form("  iBin = %i   p1 = %7.3f",iBin,var[0][i]) << endl;
-    
+      
       
     }
     // cout << " done! " << endl;
@@ -941,7 +844,7 @@ int main(int argc,char *argv[]) {
     // --
 
     Double_t stats[7];  // { sumw, sumw2, sumwx, sumwx2, sumwy, sumwy2, sumwxy }
-    Double_t xmean,xrms2,xrms,ymean,yrms2,yrms,xyrms2,xyrms,emit2,emit;
+    Double_t xmean,xrms2,xrms,ymean,yrms2,yrms,xyrms,emit2,emit;
 
     // P1X1 Phasespace
     hP1X1->GetStats(stats);
@@ -952,9 +855,8 @@ int main(int argc,char *argv[]) {
     ymean  = stats[4]/stats[0];
     yrms2  = stats[5]/stats[0] - ymean * ymean;
     yrms   = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
-    xyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
-    xyrms  = (xyrms2>0.0) ? TMath::Sqrt(xyrms2) : 0.0 ;
-    emit2 = xrms2*yrms2 - xyrms2*xyrms2;
+    xyrms = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+    emit2 = xrms2*yrms2 - xyrms*xyrms;
     emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ;
     
     Double_t emitz = emit;
@@ -964,6 +866,7 @@ int main(int argc,char *argv[]) {
     Double_t pzrms = yrms;
     Double_t zpzcorr = xyrms;
     Double_t zpzcorrrel = xyrms/pzmean;
+    Double_t zpzcorrrelb = 100 * xyrms/(pzmean * xrms2 );
     
     // Total relative energy spread within FWHM:
     sprintf(hName,"hP1cut");
@@ -1011,9 +914,8 @@ int main(int argc,char *argv[]) {
     ymean  = stats[4]/stats[0];
     yrms2  = stats[5]/stats[0] - ymean * ymean;
     yrms   = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
-    xyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
-    xyrms  = (xyrms2>0.0) ? TMath::Sqrt(xyrms2) : 0.0 ;
-    emit2 = xrms2*yrms2 - xyrms2*xyrms2;
+    xyrms = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+    emit2 = xrms2*yrms2 - xyrms*xyrms;
     emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ;
 
     pzmean = ymean;
@@ -1039,8 +941,8 @@ int main(int argc,char *argv[]) {
 
     xrms2  = stats[3]/stats[0] - stats[2]*stats[2]/(stats[0]*stats[0]);
     yrms2  = stats[5]/stats[0] - stats[4]*stats[4]/(stats[0]*stats[0]);
-    xyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
-    emit2 = xrms2*yrms2 - xyrms2*xyrms2;
+    xyrms = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+    emit2 = xrms2*yrms2 - xyrms*xyrms;
     emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ; 
 
     Double_t emitx = emit;
@@ -1051,7 +953,7 @@ int main(int argc,char *argv[]) {
 
     Double_t beta = xrms2 / emit;
     Double_t gamma = yrms2 / emit;
-    Double_t alpha = -xyrms2 / emit;
+    Double_t alpha = -xyrms / emit;
   
     //    Double_t grel = hP1->GetMean() * eneUnit/PConst::ElectronMassE;
     Double_t grel = hP1->GetMean();
@@ -1084,8 +986,8 @@ int main(int argc,char *argv[]) {
 
       xrms2  = stats[3]/stats[0] - stats[2]*stats[2]/(stats[0]*stats[0]);
       yrms2  = stats[5]/stats[0] - stats[4]*stats[4]/(stats[0]*stats[0]);
-      xyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
-      emit2 = xrms2*yrms2 - xyrms2*xyrms2;
+      xyrms = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+      emit2 = xrms2*yrms2 - xyrms*xyrms;
       emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ; 
       
       emity = emit;
@@ -1096,7 +998,7 @@ int main(int argc,char *argv[]) {
       
       beta = xrms2 / emit;
       gamma = yrms2 / emit;
-      alpha = -xyrms2 / emit;
+      alpha = -xyrms / emit;
       
       betay = beta * grel;
 
@@ -1156,7 +1058,7 @@ int main(int argc,char *argv[]) {
     
     for(Int_t k=0;k<SNbin;k++) {
 
-      Double_t sxmean = 0, sxrms2 = 0, sxrms = 0, symean = 0, syrms2 = 0, syrms = 0, sxyrms2 = 0, sxyrms = 0, semit = 0, semit2 = 0;
+      Double_t sxmean = 0, sxrms2 = 0, sxrms = 0, symean = 0, syrms2 = 0, syrms = 0, sxyrms = 0, semit = 0, semit2 = 0;
       
       // P2X2 slices
       sellipP2X2[k] = NULL;            
@@ -1168,9 +1070,8 @@ int main(int argc,char *argv[]) {
       symean  = stats[4]/stats[0];
       syrms2  = stats[5]/stats[0] - symean * symean;
       syrms   = (syrms2>0.0) ? TMath::Sqrt(syrms2) : 0.0 ;
-      sxyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
-      sxyrms  = (sxyrms2>0.0) ? TMath::Sqrt(sxyrms2) : 0.0 ;
-      semit2 = sxrms2*syrms2 - sxyrms2*sxyrms2;
+      sxyrms = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+      semit2 = sxrms2*syrms2 - sxyrms*sxyrms;
       semit = (semit2>0.0) ? TMath::Sqrt(semit2) : 0.0 ;
 
       zbin[k] = (sBinLim[k] + sBinLim[k+1])/2.;
@@ -1190,7 +1091,7 @@ int main(int argc,char *argv[]) {
       
       beta = sxrms2 / semit;
       gamma = syrms2 / semit ;
-      alpha = - sxyrms2 / semit;
+      alpha = - sxyrms / semit;
 
       sbetax[k] = beta * sEmean[k];
       
@@ -1220,9 +1121,8 @@ int main(int argc,char *argv[]) {
 	symean  = stats[4]/stats[0];
 	syrms2  = stats[5]/stats[0] - symean * symean;
 	syrms   = (syrms2>0.0) ? TMath::Sqrt(syrms2) : 0.0 ;
-	sxyrms2 = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
-	sxyrms  = (sxyrms2>0.0) ? TMath::Sqrt(sxyrms2) : 0.0 ;
-	semit2 = sxrms2*syrms2 - sxyrms2*sxyrms2;
+	sxyrms = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+	semit2 = sxrms2*syrms2 - sxyrms*sxyrms;
 	semit = (semit2>0.0) ? TMath::Sqrt(semit2) : 0.0 ;
 	
 	sy_mean[k] = sxmean;
@@ -1234,7 +1134,7 @@ int main(int argc,char *argv[]) {
 	// Ellipse calculation
 	beta = sxrms2 / semit;
 	gamma = syrms2 / semit ;
-	alpha = - sxyrms2 / semit;
+	alpha = - sxyrms / semit;
 	
 	sbetay[k] = beta * sEmean[k];
       
@@ -1309,7 +1209,6 @@ int main(int argc,char *argv[]) {
       hX1->Scale(1/curUnit);
       
       hX1->GetYaxis()->SetTitle(Form("I[%s]",curSUnit.c_str()));
-      hX1->GetYaxis()->SetTitle("");
       if(opt.Contains("comov"))
 	hX1->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
       else
@@ -1326,7 +1225,10 @@ int main(int argc,char *argv[]) {
       pzmin  *= PConst::ElectronMassE / eneUnit;
       pzmax  *= PConst::ElectronMassE / eneUnit;
       emitz *= (skindepth / spaUnit);
-
+      zpzcorr *= (PConst::ElectronMassE/eneUnit) * (skindepth / spaUnit);
+      zpzcorrrel *= (skindepth / spaUnit);
+      zpzcorrrelb /= (skindepth / spaUnit);
+      
       // Transverse phase-space
       x_mean *= skindepth / tspaUnit;
       x_rms  *= skindepth / tspaUnit;
@@ -1585,7 +1487,7 @@ int main(int argc,char *argv[]) {
       }  
 
       gPzcorrrelvsTime->Set(nPoints+1);
-      gPzcorrrelvsTime->SetPoint(nPoints,Time,zpzcorrrel);
+      gPzcorrrelvsTime->SetPoint(nPoints,Time,zpzcorrrelb);
       gPzcorrrelvsTime->Write(gName,TObject::kOverwrite);
 
 
@@ -2043,10 +1945,17 @@ int main(int argc,char *argv[]) {
       PGlobals::SetPaveTextStyle(textMom,32); 
       textMom->SetTextColor(kGray+3);
       textMom->SetTextFont(62);
-      if(opt.Contains("units") && pData->GetPlasmaDensity())
-	sprintf(ctext,"#LTp_{z}#GT = %5.2f %s/c", pzmeanFWHM, eneSUnit.c_str());
-      else
-	sprintf(ctext,"#LTp_{z}#GT = %5.2f mc", pzmeanFWHM);    
+      if(opt.Contains("fwhm")) {
+	if(opt.Contains("units") && pData->GetPlasmaDensity())
+	  sprintf(ctext,"#LTp_{z}#GT = %5.2f %s/c", pzmeanFWHM, eneSUnit.c_str());
+	else
+	  sprintf(ctext,"#LTp_{z}#GT = %5.2f mc", pzmeanFWHM);    
+      } else {
+	if(opt.Contains("units") && pData->GetPlasmaDensity())
+	  sprintf(ctext,"#LTp_{z}#GT = %5.2f %s/c", pzmean, eneSUnit.c_str());
+	else
+	  sprintf(ctext,"#LTp_{z}#GT = %5.2f mc", pzmean);    
+      }
       textMom->AddText(ctext);
 
 
@@ -2150,13 +2059,25 @@ int main(int argc,char *argv[]) {
 
       if(opt.Contains("units"))
 	hFrame[1]->GetYaxis()->SetTitle("p_{z} [GeV/c]");
-
+      else
+	hFrame[1]->GetYaxis()->SetTitle("p_{z}/mc");
+      
       hFrame[1]->Draw();
 
       hP1X1->GetZaxis()->SetTitleFont(fonttype);
+      hP1X1->GetZaxis()->SetTitleOffset(tyoffset);
+      hP1X1->GetZaxis()->SetTitleSize(tfontsize);
+      hP1X1->GetZaxis()->SetLabelFont(fonttype);
+      hP1X1->GetZaxis()->SetLabelSize(fontsize);
+      if(opt.Contains("logz")) 
+	hP1X1->GetZaxis()->SetLabelOffset(0);
+      else
+	hP1X1->GetZaxis()->SetLabelOffset(lyoffset);
+            
       hP1X1->GetZaxis()->SetTickLength(0.01);      
-      hP1X1->Draw("colzsame");
 
+      hP1X1->Draw("colzsame");
+      
       gP1->SetLineWidth(2);
       if(!opt.Contains("nospec")) {
 	gP1->Draw("F");
@@ -2168,7 +2089,11 @@ int main(int argc,char *argv[]) {
       lZmean.SetLineStyle(2);
       lZmean.Draw();
 
-      TLine lPmean(hP1X1->GetXaxis()->GetXmin(),pzmeanFWHM,hP1X1->GetXaxis()->GetXmax(),pzmeanFWHM);
+      Float_t emean = pzmean;
+      if(opt.Contains("fwhm"))
+	emean = pzmeanFWHM;
+      
+      TLine lPmean(hP1X1->GetXaxis()->GetXmin(),emean,hP1X1->GetXaxis()->GetXmax(),emean);
       lPmean.SetLineColor(kGray+2);
       lPmean.SetLineStyle(2);
       lPmean.Draw();
@@ -2198,20 +2123,25 @@ int main(int argc,char *argv[]) {
 	Double_t y1 = gPad->GetBottomMargin();
 	Double_t y2 = 1 - gPad->GetTopMargin();
 	Double_t x1 = 1 - gPad->GetRightMargin();
-	palette->SetY2NDC(y2 - 0.04);
-	palette->SetY1NDC(y1 + 0.04);
-	palette->SetX1NDC(x1 + 0.01);
-	palette->SetX2NDC(x1 + 0.04);
-	palette->SetTitleOffset(tyoffset);
-	palette->SetTitleSize(tfontsize);
-	palette->SetLabelFont(fonttype);
-	palette->SetLabelSize(fontsize);
-	if(opt.Contains("logz")) 
-	  palette->SetLabelOffset(0);
-	else
-	  palette->SetLabelOffset(lyoffset);
+
+	Double_t x1b = x1 + 0.01;
+	Double_t x2b = x1 + 0.035;
+	Double_t y1b = y1 + 0.03;
+	Double_t y2b = y2 - 0.03;
+	palette->SetX1NDC(x1b);
+	palette->SetY1NDC(y1b);
+	palette->SetX2NDC(x2b);
+	palette->SetY2NDC(y2b);
 	palette->SetBorderSize(2);
 	palette->SetLineColor(1);
+
+	TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	pFrame->SetFillStyle(0);
+	pFrame->SetLineColor(kBlack);
+	pFrame->SetShadowColor(0);
+	pFrame->Draw();
+
+	
       }
 
 
@@ -2281,7 +2211,7 @@ int main(int argc,char *argv[]) {
       }
       //Leg->AddEntry(gXrms,"Bunch width [#mum]","PL");
 
-
+      hFrame[0]->GetYaxis()->SetTitle("");
       hFrame[0]->GetYaxis()->SetRangeUser(0.0,1.1*yMax);
       hFrame[0]->Draw();
 
@@ -2309,6 +2239,19 @@ int main(int argc,char *argv[]) {
       gXrms->SetLineWidth(lineWidth);
       //gXrms->Draw("PL");
 
+      gErms->SetMarkerStyle(20);
+      gErms->SetMarkerSize(markerSize);
+      gErms->SetMarkerColor(kOrange+10);
+      gErms->SetLineColor(kOrange+10);
+      gErms->SetLineWidth(lineWidth);
+      gErms->Draw("PL");
+
+      if(opt.Contains("bw")) {
+	gErms->SetMarkerStyle(21);
+	gErms->SetMarkerSize(markerSize-0.2);
+      }
+
+
       if(pData->Is3D()) {
 	gEmity->SetMarkerStyle(20);
 	gEmity->SetMarkerColor(kGray+2);
@@ -2324,19 +2267,6 @@ int main(int argc,char *argv[]) {
       gEmitx->SetLineWidth(lineWidth);
       gEmitx->SetLineColor(kGray+3);
       gEmitx->Draw("PL");
-
-
-      gErms->SetMarkerStyle(20);
-      gErms->SetMarkerSize(markerSize);
-      gErms->SetMarkerColor(kOrange+10);
-      gErms->SetLineColor(kOrange+10);
-      gErms->SetLineWidth(lineWidth);
-      gErms->Draw("PL");
-
-      if(opt.Contains("bw")) {
-	gErms->SetMarkerStyle(21);
-	gErms->SetMarkerSize(markerSize-0.2);
-      }
    
       Leg->Draw();
 
@@ -2484,13 +2414,23 @@ int main(int argc,char *argv[]) {
 
 
 	TH2F *hX2X1cl = (TH2F*) hX2X1->Clone("hX2X1cl");
-	hX2X1cl->Draw("colz same");
-	hX2X1cl->GetZaxis()->CenterTitle();
-	hX2X1cl->GetZaxis()->SetTitleFont(fonttype);
 	Float_t xFactor = pad[0]->GetAbsWNDC()/pad[0]->GetAbsWNDC();
 	Float_t yFactor = pad[0]->GetAbsHNDC()/pad[0]->GetAbsHNDC();
+
+	hX2X1cl->GetZaxis()->CenterTitle();
+	hX2X1cl->GetZaxis()->SetTitleFont(fonttype);
 	hX2X1cl->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
-  
+	hX2X1cl->GetZaxis()->SetTitleOffset(tyoffset);
+	hX2X1cl->GetZaxis()->SetTitleSize(tfontsize);
+	hX2X1cl->GetZaxis()->SetLabelFont(fonttype);
+	hX2X1cl->GetZaxis()->SetLabelSize(fontsize);
+	if(opt.Contains("logz")) 
+	  hX2X1cl->GetZaxis()->SetLabelOffset(0);
+	else
+	  hX2X1cl->GetZaxis()->SetLabelOffset(lyoffset);
+	
+	hX2X1cl->Draw("colz same");
+
 	gPad->Update();
     
 	y1 = gPad->GetBottomMargin();
@@ -2505,20 +2445,24 @@ int main(int argc,char *argv[]) {
 	  Double_t y1 = gPad->GetBottomMargin();
 	  Double_t y2 = 1 - gPad->GetTopMargin();
 	  Double_t x1 = 1 - gPad->GetRightMargin();
-	  palette->SetY2NDC(y2 - 0.04);
-	  palette->SetY1NDC(y1 + 0.04);
-	  palette->SetX1NDC(x1 + 0.01);
-	  palette->SetX2NDC(x1 + 0.04);
-	  palette->SetTitleOffset(tyoffset);
-	  palette->SetTitleSize(tfontsize);
-	  palette->SetLabelFont(fonttype);
-	  palette->SetLabelSize(fontsize);
-	  if(opt.Contains("logz")) 
-	    palette->SetLabelOffset(0);
-	  else
-	    palette->SetLabelOffset(lyoffset);
+
+	  Double_t x1b = x1 + 0.01;
+	  Double_t x2b = x1 + 0.035;
+	  Double_t y1b = y1 + 0.03;
+	  Double_t y2b = y2 - 0.03;
+	  palette->SetX1NDC(x1b);
+	  palette->SetY1NDC(y1b);
+	  palette->SetX2NDC(x2b);
+	  palette->SetY2NDC(y2b);
 	  palette->SetBorderSize(2);
 	  palette->SetLineColor(1);
+	  
+	  TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	  pFrame->SetFillStyle(0);
+	  pFrame->SetLineColor(kBlack);
+	  pFrame->SetShadowColor(0);
+	  pFrame->Draw();
+	  
 	}
 
 	TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.30*yrange,x1+0.20*xrange,y2-0.05*yrange,"NDC");
@@ -2538,7 +2482,9 @@ int main(int argc,char *argv[]) {
 	// sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
 	// textInfoX2X1->AddText(text);
 	textInfoX2X1->Draw();
-    
+
+	gPad->RedrawAxis(); 
+
 	C1->cd(0);
 
 	pad[1]->Draw();
@@ -2567,11 +2513,21 @@ int main(int argc,char *argv[]) {
 	lX3mean.Draw();
 	
 	TH2F *hX3X1cl = (TH2F*) hX3X1->Clone("hX3X1cl");
-	hX3X1cl->GetZaxis()->CenterTitle();
-	hX3X1cl->GetZaxis()->SetTitleFont(fonttype);
 	xFactor = pad[0]->GetAbsWNDC()/pad[1]->GetAbsWNDC();
 	yFactor = pad[0]->GetAbsHNDC()/pad[1]->GetAbsHNDC();
+
+	hX3X1cl->GetZaxis()->CenterTitle();
+	hX3X1cl->GetZaxis()->SetTitleFont(fonttype);
 	hX3X1cl->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
+	hX3X1cl->GetZaxis()->SetTitleOffset(tyoffset);
+	hX3X1cl->GetZaxis()->SetTitleSize(tfontsize);
+	hX3X1cl->GetZaxis()->SetLabelFont(fonttype);
+	hX3X1cl->GetZaxis()->SetLabelSize(fontsize);
+	if(opt.Contains("logz")) 
+	  hX3X1cl->GetZaxis()->SetLabelOffset(0);
+	else
+	  hX3X1cl->GetZaxis()->SetLabelOffset(lyoffset);
+	
 	hX3X1cl->Draw("colz same");
 	
 	gPad->Update();
@@ -2588,20 +2544,23 @@ int main(int argc,char *argv[]) {
 	  Double_t y1 = gPad->GetBottomMargin();
 	  Double_t y2 = 1 - gPad->GetTopMargin();
 	  Double_t x1 = 1 - gPad->GetRightMargin();
-	  palette->SetY2NDC(y2 - 0.04);
-	  palette->SetY1NDC(y1 + 0.04);
-	  palette->SetX1NDC(x1 + 0.01);
-	  palette->SetX2NDC(x1 + 0.04);
-	  palette->SetTitleOffset(tyoffset);
-	  palette->SetTitleSize(tfontsize);
-	  palette->SetLabelFont(fonttype);
-	  palette->SetLabelSize(fontsize);
-	  if(opt.Contains("logz")) 
-	    palette->SetLabelOffset(0);
-	  else
-	    palette->SetLabelOffset(lyoffset);
+
+	  Double_t x1b = x1 + 0.01;
+	  Double_t x2b = x1 + 0.035;
+	  Double_t y1b = y1 + 0.03;
+	  Double_t y2b = y2 - 0.03;
+	  palette->SetX1NDC(x1b);
+	  palette->SetY1NDC(y1b);
+	  palette->SetX2NDC(x2b);
+	  palette->SetY2NDC(y2b);
 	  palette->SetBorderSize(2);
 	  palette->SetLineColor(1);
+	  
+	  TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	  pFrame->SetFillStyle(0);
+	  pFrame->SetLineColor(kBlack);
+	  pFrame->SetShadowColor(0);
+	  pFrame->Draw();
 	}
 
 	TPaveText *textInfoX3X1 =  new TPaveText(x1+0.02*xrange,y2-0.30*yrange,x1+0.20*xrange,y2-0.05*yrange,"NDC");
@@ -2620,7 +2579,9 @@ int main(int argc,char *argv[]) {
 	// sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
 	// textInfoX3X1->AddText(text);
 	textInfoX3X1->Draw();
-      
+
+	gPad->RedrawAxis(); 
+	
 	C1->cd();
       
 	TString fOutName1 =  fOutName + Form("-%s_%i","x2x3x1",time);
@@ -2716,13 +2677,23 @@ int main(int argc,char *argv[]) {
 
 
 	TH2F *hX2X1cl = (TH2F*) hX2X1->Clone("hX2X1cl");
-	hX2X1cl->Draw("colz same");
-	hX2X1cl->GetZaxis()->CenterTitle();
-	hX2X1cl->GetZaxis()->SetTitleFont(fonttype);
 	Float_t xFactor = pad[0]->GetAbsWNDC()/pad[0]->GetAbsWNDC();
 	Float_t yFactor = pad[0]->GetAbsHNDC()/pad[0]->GetAbsHNDC();
+
+  	hX2X1cl->GetZaxis()->CenterTitle();
+	hX2X1cl->GetZaxis()->SetTitleFont(fonttype);
 	hX2X1cl->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
-  
+	hX2X1cl->GetZaxis()->SetTitleOffset(tyoffset);
+	hX2X1cl->GetZaxis()->SetTitleSize(tfontsize);
+	hX2X1cl->GetZaxis()->SetLabelFont(fonttype);
+	hX2X1cl->GetZaxis()->SetLabelSize(fontsize);
+	if(opt.Contains("logz")) 
+	  hX2X1cl->GetZaxis()->SetLabelOffset(0);
+	else
+	  hX2X1cl->GetZaxis()->SetLabelOffset(lyoffset);
+
+	hX2X1cl->Draw("colz same");
+
 	gPad->Update();
     
 	y1 = gPad->GetBottomMargin();
@@ -2741,14 +2712,6 @@ int main(int argc,char *argv[]) {
 	  palette->SetY1NDC(y1 + 0.04);
 	  palette->SetX1NDC(x1 + 0.01);
 	  palette->SetX2NDC(x1 + 0.04);
-	  palette->SetTitleOffset(tyoffset);
-	  palette->SetTitleSize(tfontsize);
-	  palette->SetLabelFont(fonttype);
-	  palette->SetLabelSize(fontsize);
-	  if(opt.Contains("logz")) 
-	    palette->SetLabelOffset(0);
-	  else
-	    palette->SetLabelOffset(lyoffset);
 	  palette->SetBorderSize(2);
 	  palette->SetLineColor(1);
 	}
@@ -2770,7 +2733,9 @@ int main(int argc,char *argv[]) {
 	// sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
 	// textInfoX2X1->AddText(text);
 	textInfoX2X1->Draw();
-    
+
+	gPad->RedrawAxis(); 
+	
 	C1->cd();
 
 	TString fOutName1 =  fOutName + Form("-%s_%i","x2x1",time);
@@ -2889,7 +2854,8 @@ int main(int argc,char *argv[]) {
 	textStatX3X2->AddText(text);
 	textStatX3X2->Draw();
     
-    
+	gPad->RedrawAxis(); 
+	
 	TString fOutNameX3X2 = fOutName + Form("-%s_%i","x3x2",time);
 	PGlobals::imgconv(CX3X2,fOutNameX3X2,opt);
       }
@@ -3002,7 +2968,8 @@ int main(int argc,char *argv[]) {
       sprintf(text,"#beta_{x} = %5.2f %s",betax,betaSUnit.c_str());
       textStatInt->AddText(text);
       textStatInt->Draw();
-    
+
+      gPad->RedrawAxis(); 
     
       TString fOutName2 = fOutName + Form("-%s_%i","p2x2",time);
       PGlobals::imgconv(C2,fOutName2,opt);
@@ -3115,6 +3082,8 @@ int main(int argc,char *argv[]) {
 	sprintf(text,"#beta_{y} = %5.2f %s",betay,betaSUnit.c_str());
 	textStatInt->AddText(text);
 	textStatInt->Draw();
+
+	gPad->RedrawAxis(); 
     
 	TString fOutName3 = fOutName + Form("-%s_%i","p3x3",time);
 	PGlobals::imgconv(C3,fOutName3,opt);

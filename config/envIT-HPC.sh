@@ -13,7 +13,7 @@ export HDF5CPP=$SOFT/hdf5-1.8.11-noparallel
 export LD_LIBRARY_PATH=$HDF5CPP/lib:$LD_LIBRARY_PATH
 
 # ptools environment:
-export PTOOLS=$SOFT/ptools-dev
+export PTOOLS=$SOFT/ptools-A
 export LD_LIBRARY_PATH=$PTOOLS/lib:$LD_LIBRARY_PATH
 export PATH=$PTOOLS/bin:$PTOOLS/scripts:$PATH
 

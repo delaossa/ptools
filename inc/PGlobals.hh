@@ -370,6 +370,7 @@ namespace PGlobals {
       } else if(i == N-1) {
 	vposd = vposu;
 	vposu = vposd + vStepA + 0.5 * mMargin + tMargin;
+	if(vposu>1) vposu = 1.0;
 	vfactor = vposu-vposd;   
 	vmard = 0.5 * mMargin / vfactor;
 	vmaru = tMargin / vfactor;

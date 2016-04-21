@@ -1093,7 +1093,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hFrame[i]->GetYaxis()->SetTitleSize(tysize);
     hFrame[i]->GetYaxis()->SetTitleOffset(tyoffset);
 
-    hFrame[i]->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
+    if(i==NPad-1) hFrame[i]->GetYaxis()->SetTickLength(xFactor*tylength/(yFactor*pfactor));
+    else  hFrame[i]->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
 
     // Format for x axis
     hFrame[i]->GetXaxis()->SetLabelFont(fonttype);
@@ -1326,7 +1327,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   C->cd(0);
 
   Float_t x1,x2,y1,y2;
-  Float_t gap = 0.00;
+  Float_t gap = 0.02;
   TPaletteAxis *palette = NULL;
   UInt_t ip = NPad-1;
 
@@ -1393,32 +1394,51 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     hFrame[ip]->Draw();   
 
+    // Set the z-axis properties
+
+    // Count the species to be plot
+    Int_t Ns = 0;
+    for(Int_t i=0;i<Nspecies;i++) {
+      if(i==noIndex) continue;
+      if(!hDen2D[i]) continue;
+      Ns++;
+    }
+    
+    for(Int_t i=0;i<Nspecies;i++) {
+      if(i==noIndex) continue;
+      if(!hDen2D[i]) continue;
+      
+      //  hDen2D[i]->GetZaxis()->SetNdivisions(503);
+      hDen2D[i]->GetZaxis()->SetTitleFont(fonttype);
+      hDen2D[i]->GetZaxis()->SetTitleOffset(tzoffset);
+      hDen2D[i]->GetZaxis()->SetTitleSize(tzsize);
+      hDen2D[i]->GetZaxis()->SetLabelFont(fonttype);
+      hDen2D[i]->GetZaxis()->SetLabelSize(lzsize);
+      hDen2D[i]->GetZaxis()->SetTickLength(Ns*xFactor*tylength/(yFactor*pfactor));     
+      if(opt.Contains("logz")) { 
+	hDen2D[i]->GetZaxis()->SetLabelOffset(-lyoffset * (250/ypadsize));
+      } else
+	hDen2D[i]->GetZaxis()->SetLabelOffset(lyoffset);
+      
+    }
+        
     // cout << Form(" N species = %i",Nspecies) << endl;
 
     if(Nspecies==1) {
       // Just plasma
       if(hDen2D[0] && noIndex!=0) {
-	hDen2D[0]->GetZaxis()->SetNdivisions(503);
-	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
-	hDen2D[0]->GetZaxis()->SetTickLength(tylength);
 	exPlasma->Draw();
-	//exBeam->Draw();
-	
 	hDen2D[0]->Draw(drawopt);
       }
     } else if(Nspecies==2) {
       // Plasma
       if(hDen2D[0] && noIndex!=0) {
-	hDen2D[0]->GetZaxis()->SetNdivisions(503);
-	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
 	exPlasma->Draw();
 	hDen2D[0]->Draw(drawopt);
       }
 
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
-	hDen2D[1]->GetZaxis()->SetNdivisions(503);
-	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
 	exBeam->Draw();
 	hDen2D[1]->Draw(drawopt);
       }
@@ -1428,16 +1448,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
 	//exBeam->Draw();
-	hDen2D[2]->GetZaxis()->SetNdivisions(503);
-	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
 	hDen2D[2]->Draw(drawopt);
       }
       
       // Plasma
       if(hDen2D[0] && noIndex!=0) {
-	hDen2D[0]->GetZaxis()->SetNdivisions(503);
-	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
-	//plasmaPalette->SetAlpha(1.0);  
 	exPlasma->Draw();
 	hDen2D[0]->Draw(drawopt);
       }
@@ -1445,8 +1460,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
-	hDen2D[1]->GetZaxis()->SetNdivisions(503);
-	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
 	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
@@ -1457,17 +1470,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
       // Plasma
       if(hDen2D[0] && noIndex!=0) {
-	hDen2D[0]->GetZaxis()->SetNdivisions(503);
-	hDen2D[0]->GetZaxis()->SetTitleFont(fonttype);
-	//plasmaPalette->SetAlpha(1.0);  
 	exPlasma->Draw();
 	hDen2D[0]->Draw(drawopt);
       }
       
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
-	hDen2D[1]->GetZaxis()->SetNdivisions(503);
-	hDen2D[1]->GetZaxis()->SetTitleFont(fonttype);
 	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
@@ -1476,8 +1484,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       // Injected electrons ?
       if(hDen2D[3] && noIndex!=2) {
 	exBeam->Draw();
-	hDen2D[3]->GetZaxis()->SetNdivisions(503);
-	hDen2D[3]->GetZaxis()->SetTitleFont(fonttype);
 	hDen2D[3]->Draw(drawopt);
       }
       
@@ -1485,8 +1491,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
 	//exBeam->Draw();
-	hDen2D[2]->GetZaxis()->SetNdivisions(503);
-	hDen2D[2]->GetZaxis()->SetTitleFont(fonttype);
 	hDen2D[2]->Draw(drawopt);
       }
 
@@ -1552,41 +1556,55 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
     
     // Palettes re-arrangement
+    // Count the species to be plot
+    Int_t Ns = 0;
+    for(Int_t i=0;i<Nspecies;i++) {
+      if(i==noIndex) continue;
+      if(!hDen2D[i]) continue;
+      Ns++;
+    }
+        
     pad[ip]->Update();
     y1 = pad[ip]->GetBottomMargin();
     y2 = 1 - pad[ip]->GetTopMargin();
     x1 = pad[ip]->GetLeftMargin();
     x2 = 1 - pad[ip]->GetRightMargin();
-    Float_t pvsize = (y2-y1)/float(Nspecies);
-    if(noIndex>=0 && Nspecies>2) pvsize = (y2-y1)/float(Nspecies-1);
-    
+    Float_t pvsize = (y2-y1)/float(Ns);
+
+    Int_t j = 0;
     for(Int_t i=0;i<Nspecies;i++) {
       if(i==noIndex) continue;
       if(!hDen2D[i]) continue;
+      
       palette = (TPaletteAxis*)hDen2D[i]->GetListOfFunctions()->FindObject("palette");
       if(palette) {
-	palette->SetY1NDC(y1 + i*pvsize + gap);
-	palette->SetY2NDC(y1 + (i+1)*pvsize - gap);
+	Float_t y1b,y2b;
+
+	if(j==0)
+	  y1b = y1 + i*pvsize;
+	else
+	  y1b = y1 + i*pvsize + gap/2.0;
+
+	if(j==Ns-1)  
+	  y2b = y1 + (i+1)*pvsize;
+	else
+	  y2b = y1 + (i+1)*pvsize - gap/2.0;
+
+	palette->SetY1NDC(y1b);
+	palette->SetY2NDC(y2b);
+
 	palette->SetX1NDC(x2 + 0.01);
 	palette->SetX2NDC(x2 + 0.03);
-	palette->SetTitleOffset(tzoffset);
-	//	palette->SetTitleOffset(999.9);
-	palette->SetTitleSize(tzsize);
-	palette->SetLabelFont(fonttype);
-	palette->SetLabelSize(lzsize);
-	if(opt.Contains("logz")) { 
-	  palette->SetLabelOffset(-lyoffset * (250/ypadsize));
-	} else
-	  palette->SetLabelOffset(lyoffset);
 	palette->SetBorderSize(2);
 	palette->SetLineColor(1);
 
-	TPave *pFrame = new TPave((x2 + 0.01),(y1 + i*pvsize + gap),(x2 + 0.03),(y1 + (i+1)*pvsize - gap),1,"NDCL");
+	TPave *pFrame = new TPave((x2 + 0.01),y1b,(x2 + 0.03),y2b,1,"NDCL");
 	pFrame->SetFillStyle(0);
 	pFrame->SetLineColor(kBlack);
 	pFrame->SetShadowColor(0);
 	pFrame->Draw();
-	
+
+	j++;
       } 
     }
 
@@ -1596,16 +1614,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     TGaxis **axis = new TGaxis*[Nspecies];
     if(opt.Contains("den1d")) {
 
-      Float_t denmin = Min[1];
-      Float_t denmax = Max[1];
-      if(opt.Contains("logz")) {
-	denmin = TMath::Log10(denmin);
-	denmax = TMath::Log10(denmax);
-      }
       
       for(Int_t i=0;i<Nspecies;i++) {
+	Float_t denmin = Min[i];
+	Float_t denmax = Max[i];
+	if(opt.Contains("logz")) {
+	  denmin = TMath::Log10(denmin);
+	  denmax = TMath::Log10(denmax);
+	}
+
 	if(i==noIndex) continue;
-	if(!hDen1D[i] || i!=1) continue;
+	//if(!hDen1D[i] || i!=1) continue;
     
 	Float_t slope = (yaxismax - yaxismin)/(denmax - denmin);
     
@@ -1620,7 +1639,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	}
 
 	hDen1D[i]->SetLineWidth(2);
-	hDen1D[i]->SetLineColor(PGlobals::elecLine);
+	if(i==0)
+	  hDen1D[i]->SetLineColor(kGray+2);
+	else 
+	  hDen1D[i]->SetLineColor(PGlobals::elecLine);
+
 	hDen1D[i]->Draw("same L");
       }
     } else if(opt.Contains("cur1d")) {
@@ -1648,7 +1671,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	Float_t curmax = hCur1D[i]->GetMaximum();
 	if(curmax<curmin) continue;
 	// Round for better plotting
-	curmax = TMath::CeilNint(10*curmax)/10.0;
+	// curmax = TMath::CeilNint(10*curmax)/10.0;
+	curmax = TMath::Nint(curmax);
 	// if(curmax>0.1) {
 	//   if(curmax < 1)
 	//   else {
@@ -1832,12 +1856,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     hFrame[ip]->Draw("col");
 
-    //  hE2D[0]->GetZaxis()->SetNdivisions(503);
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    // hE2D[0]->GetZaxis()->SetNdivisions(503);
     hE2D[0]->GetZaxis()->SetTitleFont(fonttype);
-    Float_t xFactor = pad[0]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
-    Float_t yFactor = pad[0]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    hE2D[0]->GetZaxis()->SetTitleOffset(tzoffset);
+    hE2D[0]->GetZaxis()->SetTitleSize(tzsize);
+    hE2D[0]->GetZaxis()->SetLabelFont(fonttype);
+    hE2D[0]->GetZaxis()->SetLabelSize(lzsize);
+    hE2D[0]->GetZaxis()->SetLabelOffset(lyoffset);
     hE2D[0]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
-  
+    
     exField->Draw();
     hE2D[0]->Draw(drawopt);
 
@@ -2019,19 +2048,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
     palette = (TPaletteAxis*) hE2D[0]->GetListOfFunctions()->FindObject("palette");  
     if(palette) {
-      palette->SetY2NDC(y2 - gap);
-      palette->SetY1NDC(y1 + gap);
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
       palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
-      palette->SetTitleOffset(tzoffset);
-      palette->SetTitleSize(tzsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(lzsize);
-      palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
 
-      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
       pFrame->SetFillStyle(0);
       pFrame->SetLineColor(kBlack);
       pFrame->SetShadowColor(0);
@@ -2113,10 +2137,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     hFrame[ip]->Draw("col");
 
-    //  hE2D[0]->GetZaxis()->SetNdivisions(503);
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    // hE2D[1]->GetZaxis()->SetNdivisions(503);
     hE2D[1]->GetZaxis()->SetTitleFont(fonttype);
-    Float_t xFactor = pad[0]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
-    Float_t yFactor = pad[0]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    hE2D[1]->GetZaxis()->SetTitleOffset(tzoffset);
+    hE2D[1]->GetZaxis()->SetTitleSize(tzsize);
+    hE2D[1]->GetZaxis()->SetLabelFont(fonttype);
+    hE2D[1]->GetZaxis()->SetLabelSize(lzsize);
+    hE2D[1]->GetZaxis()->SetLabelOffset(lyoffset);
     hE2D[1]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
   
     exField->Draw();
@@ -2195,19 +2224,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
     palette = (TPaletteAxis*) hE2D[1]->GetListOfFunctions()->FindObject("palette");  
     if(palette) {
-      palette->SetY2NDC(y2 - gap);
-      palette->SetY1NDC(y1 + gap);
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
       palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
-      palette->SetTitleOffset(tzoffset);
-      palette->SetTitleSize(tzsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(lzsize);
-      palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
 
-      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
       pFrame->SetFillStyle(0);
       pFrame->SetLineColor(kBlack);
       pFrame->SetShadowColor(0);
@@ -2255,11 +2279,16 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     hFrame[ip]->Draw("col");
 
-    //  hE2D[2]->GetZaxis()->SetNdivisions(503);
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    // hE2D[2]->GetZaxis()->SetNdivisions(503);
     hE2D[2]->GetZaxis()->SetTitleFont(fonttype);
-    Float_t xFactor = pad[0]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
-    Float_t yFactor = pad[0]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
-    hE2D[2]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
+    hE2D[2]->GetZaxis()->SetTitleOffset(tzoffset);
+    hE2D[2]->GetZaxis()->SetTitleSize(tzsize);
+    hE2D[2]->GetZaxis()->SetLabelFont(fonttype);
+    hE2D[2]->GetZaxis()->SetLabelSize(lzsize);
+    hE2D[2]->GetZaxis()->SetLabelOffset(lyoffset);
+    hE2D[2]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);  
   
     exField->Draw();
     hE2D[2]->Draw(drawopt);
@@ -2320,19 +2349,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
     palette = (TPaletteAxis*) hE2D[2]->GetListOfFunctions()->FindObject("palette");  
     if(palette) {
-      palette->SetY2NDC(y2 - gap);
-      palette->SetY1NDC(y1 + gap);
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
       palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
-      palette->SetTitleOffset(tzoffset);
-      palette->SetTitleSize(tzsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(lzsize);
-      palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
 
-      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
       pFrame->SetFillStyle(0);
       pFrame->SetLineColor(kBlack);
       pFrame->SetShadowColor(0);
@@ -2380,12 +2404,19 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     hFrame[ip]->Draw("col");
 
-    //  hFocus2D->GetZaxis()->SetNdivisions(503);
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    //   hFocus2D->GetZaxis()->SetNdivisions(503);
     hFocus2D->GetZaxis()->SetTitleFont(fonttype);
-    Float_t xFactor = pad[0]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
-    Float_t yFactor = pad[0]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    hFocus2D->GetZaxis()->SetTitleOffset(tzoffset);
+    hFocus2D->GetZaxis()->SetTitleSize(tzsize);
+    hFocus2D->GetZaxis()->SetLabelFont(fonttype);
+    hFocus2D->GetZaxis()->SetLabelSize(lzsize);
+    hFocus2D->GetZaxis()->SetLabelOffset(lyoffset);
     hFocus2D->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
-  
+
+    //    hFocus2D->GetZaxis()->SetTitle("E_{z} [GV/m]");
+    
     exField->Draw();
     hFocus2D->Draw(drawopt);
 
@@ -2477,19 +2508,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
     palette = (TPaletteAxis*) hFocus2D->GetListOfFunctions()->FindObject("palette");  
     if(palette) {
-      palette->SetY2NDC(y2 - gap);
-      palette->SetY1NDC(y1 + gap);
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
       palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
-      palette->SetTitleOffset(tzoffset);
-      palette->SetTitleSize(tzsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(lzsize);
-      palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
 
-      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
       pFrame->SetFillStyle(0);
       pFrame->SetLineColor(kBlack);
       pFrame->SetShadowColor(0);
@@ -2539,11 +2565,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     hFrame[ip]->Draw("col");
 
-    //  hETotal2D->GetZaxis()->SetNdivisions(503);
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    // hETotal2D->GetZaxis()->SetNdivisions(503);
     hETotal2D->GetZaxis()->SetTitleFont(fonttype);
-    Float_t xFactor = pad[0]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
-    Float_t yFactor = pad[0]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    hETotal2D->GetZaxis()->SetTitleOffset(tzoffset);
+    hETotal2D->GetZaxis()->SetTitleSize(tzsize);
+    hETotal2D->GetZaxis()->SetLabelFont(fonttype);
+    hETotal2D->GetZaxis()->SetLabelSize(lzsize);
+    hETotal2D->GetZaxis()->SetLabelOffset(lyoffset);
     hETotal2D->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
+
 
     exFieldT->Draw();
   
@@ -2697,19 +2729,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
     palette = (TPaletteAxis*) hETotal2D->GetListOfFunctions()->FindObject("palette");  
     if(palette) {
-      palette->SetY2NDC(y2 - gap);
-      palette->SetY1NDC(y1 + gap);
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
       palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
-      palette->SetTitleOffset(tzoffset);
-      palette->SetTitleSize(tzsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(lzsize);
-      palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
 
-      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
       pFrame->SetFillStyle(0);
       pFrame->SetLineColor(kBlack);
       pFrame->SetShadowColor(0);
@@ -2738,10 +2765,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
  
     hFrame[ip]->Draw("col");
 
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    // hV2D->GetZaxis()->SetNdivisions(503);
     hV2D->GetZaxis()->SetTitleFont(fonttype);
-    Float_t xFactor = pad[0]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
-    Float_t yFactor = pad[0]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    hV2D->GetZaxis()->SetTitleOffset(tzoffset);
+    hV2D->GetZaxis()->SetTitleSize(tzsize);
+    hV2D->GetZaxis()->SetLabelFont(fonttype);
+    hV2D->GetZaxis()->SetLabelSize(lzsize);
+    hV2D->GetZaxis()->SetLabelOffset(lyoffset);
     hV2D->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
+
  
     exPot->Draw();
   
@@ -2875,20 +2909,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
  
     palette = (TPaletteAxis*)hV2D->GetListOfFunctions()->FindObject("palette");
     if(palette) {
-      palette->SetY2NDC(y2 - gap);
-      palette->SetY1NDC(y1 + gap);
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
       palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
-      palette->SetTitleOffset(tzoffset);
-      // palette->SetTitleOffset(999.9);
-      palette->SetTitleSize(tzsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(lzsize);
-      palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
 
-      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
       pFrame->SetFillStyle(0);
       pFrame->SetLineColor(kBlack);
       pFrame->SetShadowColor(0);
@@ -2921,11 +2949,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     hFrame[ip]->Draw("col");
 
-    hIonProb2D[ii]->GetZaxis()->SetNdivisions(503);
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    // hIonProb2D[ii]->GetZaxis()->SetNdivisions(503);
     hIonProb2D[ii]->GetZaxis()->SetTitleFont(fonttype);
-    Float_t xFactor = pad[0]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
-    Float_t yFactor = pad[0]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    hIonProb2D[ii]->GetZaxis()->SetTitleOffset(tzoffset);
+    hIonProb2D[ii]->GetZaxis()->SetTitleSize(tzsize);
+    hIonProb2D[ii]->GetZaxis()->SetLabelFont(fonttype);
+    hIonProb2D[ii]->GetZaxis()->SetLabelSize(lzsize);
+    hIonProb2D[ii]->GetZaxis()->SetLabelOffset(lyoffset);
     hIonProb2D[ii]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
+
   
     exIonP->Draw();
     hIonProb2D[ii]->Draw(drawopt);
@@ -3021,19 +3055,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
     palette = (TPaletteAxis*) hIonProb2D[ii]->GetListOfFunctions()->FindObject("palette");  
     if(palette) {
-      palette->SetY2NDC(y2 - gap);
-      palette->SetY1NDC(y1 + gap);
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
       palette->SetX1NDC(x2 + 0.01);
       palette->SetX2NDC(x2 + 0.03);
-      palette->SetTitleOffset(tzoffset);
-      palette->SetTitleSize(tzsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(lzsize);
-      palette->SetLabelOffset(lyoffset);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
 
-      TPave *pFrame = new TPave((x2 + 0.01),y1 + gap,(x2 + 0.03),y2 - gap,2,"NDC");
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
       pFrame->SetFillStyle(0);
       pFrame->SetLineColor(kBlack);
       pFrame->SetShadowColor(0);

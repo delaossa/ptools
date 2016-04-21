@@ -13,7 +13,7 @@ setenv HDF5CPP $SOFT/hdf5-1.8.11-noparallel
 setenv LD_LIBRARY_PATH $HDF5CPP/lib:$LD_LIBRARY_PATH
 
 # ptools environment:
-setenv PTOOLS $SOFT/ptools-dev
+setenv PTOOLS $SOFT/ptools-A
 setenv LD_LIBRARY_PATH $PTOOLS/lib:$LD_LIBRARY_PATH
 setenv PATH $PTOOLS/bin:$PTOOLS/scripts:$PATH
 
