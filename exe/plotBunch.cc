@@ -2334,7 +2334,7 @@ int main(int argc,char *argv[]) {
       C->cd();
       
       // Output file
-      TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-%s",sim.Data(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
+      TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
 
       TString fOutNamep1x1 = fOutName + Form("-%s_%i","p1x1",time);
       PGlobals::imgconv(C,fOutNamep1x1,opt);
@@ -3358,7 +3358,7 @@ int main(int argc,char *argv[]) {
 	Int_t ndiv = 4;
 	CA4->Divide(1,ndiv);
 	
-	TString fOutName2 = Form("./%s/Plots/Bunch/%s/Bunch-%s-slp2x2_%i",sim.Data(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
+	TString fOutName2 = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s-slp2x2_%i",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
 	
 	CA4->Print(fOutName2 + ".ps[","Portrait");
 	
@@ -3480,7 +3480,7 @@ int main(int argc,char *argv[]) {
     }
     
     if(opt.Contains("file")) {
-      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-%s_%i.root",sim.Data(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
+      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s_%i.root",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
       TFile *ofile = new TFile(filename,"RECREATE");
 
       hX1->SetLineWidth(1);
