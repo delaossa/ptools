@@ -40,7 +40,13 @@ namespace PGlobals {
   static Int_t fieldLine = kOrange+10;
   static Int_t energyLine = kOrange+7;
   static Int_t energyFill = energyLine;
-  static Int_t frameColor = kGray+3; 
+  // static Int_t frameColor = kGray+3; 
+  // static Int_t fontColor = kGray+3; 
+  static Int_t frameColor = kBlack; 
+  static Int_t fontColor = kBlack; 
+  static Int_t fontType = 43; 
+  static Int_t titleSize = 28; 
+  static Int_t labelSize = 22; 
   static Int_t frameWidth = 2; 
 
 
@@ -111,12 +117,12 @@ namespace PGlobals {
     PlasmaStyle->SetPadTickY(0);
 
     // Fonts
-    PlasmaStyle->SetTextColor(kGray+3);
-    PlasmaStyle->SetTitleFont(42);
-    PlasmaStyle->SetStatFont(42);
-    PlasmaStyle->SetTextFont(42);
-    PlasmaStyle->SetTitleFont(42,"xyz");
-    PlasmaStyle->SetLabelFont(42,"xyz");
+    PlasmaStyle->SetTextColor(fontColor);
+    PlasmaStyle->SetTitleFont(fontType);
+    PlasmaStyle->SetStatFont(fontType);
+    PlasmaStyle->SetTextFont(fontType);
+    PlasmaStyle->SetTitleFont(fontType,"xyz");
+    PlasmaStyle->SetLabelFont(fontType,"xyz");
 
     // axis's title and label sizes
     PlasmaStyle->SetLabelOffset(0.008, "x");
@@ -124,13 +130,13 @@ namespace PGlobals {
     PlasmaStyle->SetLabelOffset(0.008, "z");
     PlasmaStyle->SetLabelSize(0.05, "xy");
     PlasmaStyle->SetLabelSize(0.045, "z");
-    PlasmaStyle->SetLabelColor(kGray+3, "xyz");
-    PlasmaStyle->SetTitleFontSize(0.05);
+    PlasmaStyle->SetLabelColor(fontColor, "xyz");
+    PlasmaStyle->SetTitleFontSize(titleSize);
     PlasmaStyle->SetTitleOffset(1.4,"x");
     PlasmaStyle->SetTitleOffset(1.2,"y");
     PlasmaStyle->SetTitleOffset(1.2,"z");
     PlasmaStyle->SetTitleSize(0.05, "xyz");
-    PlasmaStyle->SetTitleColor(kGray+3, "xyz");
+    PlasmaStyle->SetTitleColor(fontColor, "xyz");
     PlasmaStyle->SetNdivisions(505,"x");
     PlasmaStyle->SetNdivisions(505,"y");
     PlasmaStyle->SetNdivisions(505,"z");
@@ -176,8 +182,8 @@ namespace PGlobals {
     histo->GetYaxis()->CenterTitle();
     histo->GetZaxis()->CenterTitle();
 
-    histo->SetTitleFont(42,"xyz");
-    histo->SetLabelFont(42,"xyz");
+    histo->SetTitleFont(fontType,"xyz");
+    histo->SetLabelFont(fontType,"xyz");
     
     histo->SetNdivisions(505,"xyz");
   }

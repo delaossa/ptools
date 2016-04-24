@@ -353,6 +353,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   if(opt.Contains("Ne")) {
     ii = 3;
+  } else if(opt.Contains("He2")) {
+    ii = 2;
   }
   
   if( ((mask & 0x80) || (mask == 0) ) && hETotal2D) { // only if ionization bit is selected
@@ -693,7 +695,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(!beam2Palette) {
     beam2Palette = new PPalette("beam2");
   }
-  
+
+  PPalette * beam3Palette = (PPalette*) gROOT->FindObject("beam3");
+  if(!beam3Palette) {
+    beam3Palette = new PPalette("beam3");
+  }
+
   // Change the range of z axis for the fields to be symmetric.
   Float_t *Emax = new Float_t[Nfields];
   Float_t *Emin = new Float_t[Nfields];
@@ -1306,6 +1313,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
   TExec *exBeam   = new TExec("exBeam","beamPalette->cd();");
   TExec *exBeam2  = new TExec("exBeam2","beam2Palette->cd();");
+  TExec *exBeam3  = new TExec("exBeam3","beam3Palette->cd();");
   TExec *exField  = new TExec("exField","fieldPalette->cd();");
   TExec *exFieldT = new TExec("exFieldT","fieldTPalette->cd();");
   TExec *exPot    = new TExec("exPot","potPalette->cd();");
@@ -1317,6 +1325,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     beamPalette->SetAlpha(0.8);
   if(opt.Contains("alpha2"))
     beam2Palette->SetAlpha(0.8);
+  if(opt.Contains("alpha3"))
+    beam3Palette->SetAlpha(0.8);
   
   
   TString drawopt = "colz same";
@@ -1474,24 +1484,24 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[0]->Draw(drawopt);
       }
       
+      // Injected electrons ?
+      if(hDen2D[2] && noIndex!=2) {
+	exBeam3->Draw();
+	//exBeam->Draw();
+	hDen2D[2]->Draw(drawopt);
+      }
+
+      // Injected electrons ?
+      if(hDen2D[3] && noIndex!=2) {
+	exBeam2->Draw();
+	hDen2D[3]->Draw(drawopt);
+      }
+
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
 	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
-      }
-
-      // Injected electrons ?
-      if(hDen2D[3] && noIndex!=2) {
-	exBeam->Draw();
-	hDen2D[3]->Draw(drawopt);
-      }
-      
-      // Injected electrons ?
-      if(hDen2D[2] && noIndex!=2) {
-	exBeam2->Draw();
-	//exBeam->Draw();
-	hDen2D[2]->Draw(drawopt);
       }
 
     }

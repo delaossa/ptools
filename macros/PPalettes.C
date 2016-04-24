@@ -21,6 +21,14 @@
     //beam2Palette->SetPalette("elec");
   }
 
+  PPalette *beam3Palette = (PPalette*) gROOT->FindObject("beam3");
+  if(!beam3Palette) {
+    beam3Palette = new PPalette("beam3");
+    //beam3Palette->SetPalette("hot");
+    beam3Palette->SetPalette("red");
+    //beam3Palette->SetPalette("elec");
+  }
+
   PPalette *fieldPalette = (PPalette*) gROOT->FindObject("field");
   if(!fieldPalette) {
     fieldPalette = new PPalette("field");

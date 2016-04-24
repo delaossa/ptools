@@ -1925,14 +1925,17 @@ int main(int argc,char *argv[]) {
 
       // Text objects
       TPaveText *textTime =  new TPaveText(0.55,0.76,0.80,0.86,"NDC");
-      PGlobals::SetPaveTextStyle(textTime,32); 
+      PGlobals::SetPaveTextStyle(textTime,32);
+      textTime->SetTextFont(43);
+      textTime->SetTextSize(22);
       textTime->SetTextColor(kGray+2);
-      char ctext[128];
-      if(opt.Contains("units") && pData->GetPlasmaDensity()) 
-	// sprintf(ctext,"z = %5.1f um", Time);
+      char ctext[256];
+      if(opt.Contains("units") && pData->GetPlasmaDensity()) { 
 	sprintf(ctext,"z = %5.1f %s", Time, propSUnit.c_str());
-      else
+      } else {
 	sprintf(ctext,"k_{p}z = %5.1f",Time);
+      }
+      // cout << Form("z = %5.1f %s", Time, propSUnit.c_str()) << endl;
       textTime->AddText(ctext);
  
       TPaveText *textDen = new TPaveText(0.15,0.85,0.48,0.9,"NDC");
@@ -1953,10 +1956,11 @@ int main(int argc,char *argv[]) {
 	sprintf(ctext,"Q = %5.2f n0#timeskp^{-3}", Charge);    
       textCharge->AddText(ctext);
 
-      TPaveText *textMom = new TPaveText(0.55,0.035,0.80,0.14,"NDC");
+      TPaveText *textMom = new TPaveText(0.55,0.07,0.80,0.17,"NDC");
       PGlobals::SetPaveTextStyle(textMom,32); 
       textMom->SetTextColor(kGray+3);
-      textMom->SetTextFont(62);
+      textMom->SetTextFont(63);
+      textMom->SetTextSize(22);
       if(opt.Contains("fwhm")) {
 	if(opt.Contains("units") && pData->GetPlasmaDensity())
 	  sprintf(ctext,"#LTp_{z}#GT = %5.2f %s/c", pzmeanFWHM, eneSUnit.c_str());
@@ -2019,7 +2023,7 @@ int main(int argc,char *argv[]) {
       Double_t bMargin = 0.15;
       Double_t tMargin = 0.04;
       Double_t factor = 1.0;    
-      PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor,0.00);
+      PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor,0.028);
 
       // Define the frames for plotting
       Int_t fonttype = 43;
@@ -2090,7 +2094,7 @@ int main(int argc,char *argv[]) {
       else
 	hFrame[1]->GetYaxis()->SetTitle("p_{z}/mc");
       
-      hFrame[1]->Draw();
+      hFrame[1]->Draw("axis");
 
       hP1X1->GetZaxis()->SetTitleFont(fonttype);
       hP1X1->GetZaxis()->SetTitleOffset(tyoffset);
@@ -2104,7 +2108,7 @@ int main(int argc,char *argv[]) {
             
       hP1X1->GetZaxis()->SetTickLength(0.01);      
 
-      hP1X1->Draw("colzsame");
+      hP1X1->Draw("colz 0 same");
       
       gP1->SetLineWidth(2);
       if(!opt.Contains("nospec")) {
@@ -2167,8 +2171,6 @@ int main(int argc,char *argv[]) {
 	pFrame->SetLineColor(kBlack);
 	pFrame->SetShadowColor(0);
 	pFrame->Draw();
-
-	
       }
 
 
@@ -2197,6 +2199,13 @@ int main(int argc,char *argv[]) {
       textLabel[1]->AddText(sLabels[1]);
       // textLabel[1]->Draw();
 
+      TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			      gPad->GetUxmax(), gPad->GetUymax());
+      lFrame->SetFillStyle(0);
+      lFrame->SetLineColor(PGlobals::frameColor);
+      lFrame->SetLineWidth(PGlobals::frameWidth);
+      lFrame->Draw();
+      
       gPad->RedrawAxis(); 
 
 
@@ -2323,6 +2332,13 @@ int main(int argc,char *argv[]) {
       textLabel[0]->SetTextFont(42);
       textLabel[0]->AddText(sLabels[0]);
       // textLabel[0]->Draw();
+
+      TBox *lFrame2 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			      gPad->GetUxmax(), gPad->GetUymax());
+      lFrame2->SetFillStyle(0);
+      lFrame2->SetLineColor(PGlobals::frameColor);
+      lFrame2->SetLineWidth(PGlobals::frameWidth);
+      lFrame2->Draw();
 
       gPad->RedrawAxis(); 
 
