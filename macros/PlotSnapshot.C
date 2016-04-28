@@ -199,7 +199,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // Skip one of the species
   Int_t noIndex = -1;
     
-  char hName[24];
+  char hName[36];
 
   // Get charge density histos
   Int_t Nspecies = pData->NSpecies();
@@ -214,13 +214,30 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     sprintf(hName,"hDen2D_%i",i); 
     hDen2D[i] = (TH2F*) ifile->Get(hName);
-
+    if(hDen2D[i]) {
+      if(hDen2D[i]->GetMaximum() < 1E-4) {
+	delete hDen2D[i];
+	hDen2D[i] = NULL;
+      }
+    }
+    
     sprintf(hName,"hDen1D_%i",i); 
     hDen1D[i] = (TH1F*) ifile->Get(hName);
+    if(hDen1D[i]) {
+      if(hDen1D[i]->GetMaximum() < 1E-4) {
+	delete hDen1D[i];
+	hDen1D[i] = NULL;
+      }
+    }
 
     sprintf(hName,"hCur1D_%i",i); 
     hCur1D[i] = (TH1F*) ifile->Get(hName);
-    
+    if(hCur1D[i]) {
+      if(hCur1D[i]->GetMaximum() < 1E-6) {
+	delete hCur1D[i];
+	hCur1D[i] = NULL;
+      }
+    }
   }
   
   
@@ -390,7 +407,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  Float_t E = hETotal2D->GetBinContent(k,j);
 	  if(opt.Contains("units")) E *= eUnit;
 	  else E *= E0;
-	  if(E<10) continue;
+	  if(E/(PUnits::GV/PUnits::m)<10) continue;
 		
 	  Float_t IonRate = PFunc::ADK_ENG(E,Eion0[iat],Z[iat]);	
 	  hIonRate2D[iat]->SetBinContent(k,j,IonRate);
@@ -427,7 +444,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  Float_t E = hETotal1D->GetBinContent(j);
 	  if(opt.Contains("units")) E *= eUnit;
 	  else E *= E0;
-	  if(E<10) continue;
+	  if(E/(PUnits::GV/PUnits::m)<10) continue;
 
 	  Float_t IonRate = PFunc::ADK_ENG(E,Eion0[iat],Z[iat]);
 	  hIonRate1D[iat]->SetBinContent(j,IonRate);
@@ -449,7 +466,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     // axis labels
     if(opt.Contains("units")) {
-      char axName[24];
+      char axName[36];
       sprintf(axName,"W_{%s} [fs^{-1}]",atAxNames[ii]);
       hIonRate2D[ii]->GetZaxis()->SetTitle(axName);
       sprintf(axName,"#Gamma_{%s} [fs^{-1}]",atAxNames[ii]);
@@ -461,7 +478,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       hIonProb1D[ii]->GetZaxis()->SetTitle(axName);
       
     } else {
-      char axName[24];
+      char axName[36];
       sprintf(axName,"W_{%s} #omega_{p}",atAxNames[ii]);
       hIonRate2D[ii]->GetZaxis()->SetTitle(axName);
       sprintf(axName,"#Gamma_{%s} #omega_{p}",atAxNames[ii]);
@@ -952,7 +969,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     IPmax = hIonProb2D[ii]->GetMaximum();
 
     const Int_t NcontI = 1;
-    Double_t contI[NcontI] = {0.3*IPmax};
+    Double_t contI[NcontI] = {0.1*IPmax};
     // Double_t contI[NcontI] = {0.1*IPmax};
     //const Int_t NcontI = 1;
     //Float_t contI[NcontI] = {0.1};
@@ -1308,8 +1325,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   cout << endl;
 
-  // Access to color Palettes 
-  
+  // Access to color Palettes   
   TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
   TExec *exBeam   = new TExec("exBeam","beamPalette->cd();");
   TExec *exBeam2  = new TExec("exBeam2","beam2Palette->cd();");
@@ -1328,6 +1344,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(opt.Contains("alpha3"))
     beam3Palette->SetAlpha(0.8);
   
+  // Current lines colors
+  Int_t cBeam = PGlobals::elecLine;
+  Int_t cBeam1 = kOrange+8;
+  Int_t cBeam2 = kOrange+8;
+
+  if(Nspecies==4) {
+    beam2Palette->SetPalette("red");
+    cBeam1 = TColor::GetColor("#FFCC66"); 
+  }
+
+
   
   TString drawopt = "colz same";
 
@@ -1406,7 +1433,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     // Set the z-axis properties
 
-    // Count the species to be plot
+    // Count the species to plot
     Int_t Ns = 0;
     for(Int_t i=0;i<Nspecies;i++) {
       if(i==noIndex) continue;
@@ -1424,7 +1451,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       hDen2D[i]->GetZaxis()->SetTitleSize(tzsize);
       hDen2D[i]->GetZaxis()->SetLabelFont(fonttype);
       hDen2D[i]->GetZaxis()->SetLabelSize(lzsize);
-      hDen2D[i]->GetZaxis()->SetTickLength(Ns*xFactor*tylength/(yFactor*pfactor));     
+      hDen2D[i]->GetZaxis()->SetTickLength(Ns*tylength/(pfactor));     
       if(opt.Contains("logz")) { 
 	hDen2D[i]->GetZaxis()->SetLabelOffset(-lyoffset * (250/ypadsize));
       } else
@@ -1486,14 +1513,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
-	exBeam3->Draw();
+	exBeam2->Draw();
 	//exBeam->Draw();
 	hDen2D[2]->Draw(drawopt);
       }
 
       // Injected electrons ?
-      if(hDen2D[3] && noIndex!=2) {
-	exBeam2->Draw();
+      if(hDen2D[3] && noIndex!=3) {
+	exBeam3->Draw();
 	hDen2D[3]->Draw(drawopt);
       }
 
@@ -1567,7 +1594,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     // Palettes re-arrangement
     // Count the species to be plot
-    Int_t Ns = 0;
+    Ns = 0;
     for(Int_t i=0;i<Nspecies;i++) {
       if(i==noIndex) continue;
       if(!hDen2D[i]) continue;
@@ -1591,14 +1618,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	Float_t y1b,y2b;
 
 	if(j==0)
-	  y1b = y1 + i*pvsize;
+	  y1b = y1 + j*pvsize;
 	else
-	  y1b = y1 + i*pvsize + gap/2.0;
+	  y1b = y1 + j*pvsize + gap/2.0;
 
 	if(j==Ns-1)  
-	  y2b = y1 + (i+1)*pvsize;
+	  y2b = y1 + (j+1)*pvsize;
 	else
-	  y2b = y1 + (i+1)*pvsize - gap/2.0;
+	  y2b = y1 + (j+1)*pvsize - gap/2.0;
 
 	palette->SetY1NDC(y1b);
 	palette->SetY2NDC(y2b);
@@ -1621,7 +1648,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     // 1D plots
     Float_t yaxismin  =  pad[ip]->GetUymin();
     Float_t yaxismax  =  pad[ip]->GetUymin() + 0.3*(pad[ip]->GetUymax() - pad[ip]->GetUymin()) - 0.00;
-    TGaxis **axis = new TGaxis*[Nspecies];
+    //    TGaxis **axis = new TGaxis*[Nspecies];
+    TGaxis *axis = NULL;
     if(opt.Contains("den1d")) {
 
       
@@ -1670,31 +1698,35 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	lineCurUp->Draw();
 	lineCurDo->Draw();
       }
-      
-      
+
+      Float_t maxCur = -999.0;
+      Int_t imaxCur = -1;
+
       for(Int_t i=0;i<Nspecies;i++) {
 	if(i==noIndex) continue;
 	if(!hCur1D[i] || !hDen2D[i] || i==0 ) continue;
 	hCur1D[i]->ResetStats();
 
-	Float_t curmin = 0.0;
-	Float_t curmax = hCur1D[i]->GetMaximum();
-	if(curmax<curmin) continue;
-	// Round for better plotting
-	// curmax = TMath::CeilNint(10*curmax)/10.0;
-	curmax = TMath::Nint(curmax);
-	// if(curmax>0.1) {
-	//   if(curmax < 1)
-	//   else {
-	//     curmax = TMath::CeilNint(curmax);
-	//   }
-	// } else if(curmax<0.01)
-	//   // continue;
+	if(hCur1D[i]->GetMaximum()>maxCur) {
+	  maxCur = hCur1D[i]->GetMaximum();
+	  imaxCur = i;
+	}
 	
-	Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
-	Float_t zPos = hCur1D[i]->GetMean() + 1.5 * hCur1D[i]->GetRMS();
-	//if(hCur1D[i]->GetRMS()<1) zPos = hCur1D[i]->GetMean() + 3 * hCur1D[i]->GetRMS();
+      }
+
+      Float_t curmin = 0.0;
+      Float_t curmax = maxCur;
+      // Round for better axis
+      curmax = TMath::Nint(curmax);
       
+      Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
+      Float_t zPos = xMax - (xMax-xMin) * 0.14;
+	
+      for(Int_t i=0;i<Nspecies;i++) {
+	if(i==noIndex) continue;
+	if(!hCur1D[i] || !hDen2D[i] || i==0 ) continue;
+	hCur1D[i]->ResetStats();
+
 	for(Int_t j=0;j<hCur1D[i]->GetNbinsX();j++) {
 	  Float_t content = hCur1D[i]->GetBinContent(j+1);
 	  
@@ -1703,41 +1735,44 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	
 	hCur1D[i]->SetLineWidth(2);
 	if(i==1)
-	  hCur1D[i]->SetLineColor(PGlobals::elecLine);
+	  hCur1D[i]->SetLineColor(cBeam);
 	else if(i==2)
-	  hCur1D[i]->SetLineColor(kOrange+8);
+	  hCur1D[i]->SetLineColor(cBeam1);
 	else if(i==3)
-	  hCur1D[i]->SetLineColor(kBlue-1);
+	  hCur1D[i]->SetLineColor(cBeam2);
 	  
 	hCur1D[i]->Draw("same L");
-
-	if(!opt.Contains("noaxis")) {
 	
-	  // Current axis
-	  axis[i] = new TGaxis(zPos,yaxismin,
-			       zPos,yaxismax,
-			       curmin,curmax,2,"+LS");
-	  // axis[i]->SetNdivisions(0);
-	  axis[i]->SetNdivisions(502);
-	  
-	  axis[i]->SetLineWidth(1);
-	  axis[i]->SetLineColor(kGray+3);//PGlobals::elecLine);
-	  axis[i]->SetLabelColor(kGray+3);//PGlobals::elecLine);
-	  axis[i]->SetLabelFont(fonttype);
-	  axis[i]->SetLabelSize(lzsize-10);
-	  axis[i]->SetLabelOffset(lyoffset);
-	  axis[i]->SetTitleColor(kGray+3);//PGlobals::elecLine);
-	  axis[i]->SetTitleFont(fonttype);
-	  axis[i]->SetTitleSize(tzsize-14);
-	  axis[i]->SetTitleOffset(tyoffset);
-	  axis[i]->SetTickSize(0.03);
-	  axis[i]->SetTitle(hCur1D[i]->GetYaxis()->GetTitle());
-
-	  axis[i]->CenterTitle();
-	  // axis[i]->SetMaxDigits(2);
-	  axis[i]->Draw();
-	}
       }
+
+      if(!opt.Contains("noaxis")) {
+	
+	// Current axis
+	axis = new TGaxis(zPos,yaxismin,
+			     zPos,yaxismax,
+			     curmin,curmax,2,"+LS");
+	// axis->SetNdivisions(0);
+	axis->SetNdivisions(502);
+	
+	axis->SetLineWidth(1);
+	axis->SetLineColor(kGray+3);//PGlobals::elecLine);
+	axis->SetLabelColor(kGray+3);//PGlobals::elecLine);
+	axis->SetLabelFont(fonttype);
+	axis->SetLabelSize(lzsize-10);
+	axis->SetLabelOffset(lyoffset);
+	axis->SetTitleColor(kGray+3);//PGlobals::elecLine);
+	axis->SetTitleFont(fonttype);
+	axis->SetTitleSize(tzsize-14);
+	axis->SetTitleOffset(tyoffset);
+	axis->SetTickSize(0.03);
+	axis->SetTitle(hCur1D[imaxCur]->GetYaxis()->GetTitle());
+	
+	axis->CenterTitle();
+	// axis->SetMaxDigits(2);
+	axis->Draw();
+      }
+
+      
     }
 
     if(opt.Contains("ez1d")) {
@@ -3099,7 +3134,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   PGlobals::imgconv(C,fOutName,opt);
   // ---------------------------------------------------------
 
-  //  PGlobals::DestroyCanvases();
+  // PGlobals::DestroyCanvases();
 }
  
  

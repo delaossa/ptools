@@ -260,6 +260,9 @@ int main(int argc,char *argv[]) {
 
     cout << Form("\n Reading simulation data: ") << endl; 
 
+    Float_t maxCur = -999.0;
+    Int_t imaxCur = -1;
+    
     // Get charge density histos
     Int_t Nspecies = pData->NSpecies();
     TH2F **hDen2D = new TH2F*[Nspecies];
@@ -366,6 +369,11 @@ int main(int argc,char *argv[]) {
 	  hCur1D[i]->Scale(TMath::Abs( (5./3.) * n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
 	} else {
 	  hCur1D[i]->Scale(TMath::Abs(n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
+	}
+
+	if(hCur1D[i]->GetMaximum()>maxCur) {
+	  maxCur = hCur1D[i]->GetMaximum();
+	  imaxCur = i;
 	}
 	
 	hCur1D[i]->GetYaxis()->SetTitle("#Lambda_{b}");  
@@ -691,7 +699,9 @@ int main(int argc,char *argv[]) {
 	  Double_t Charge = hCur1D[i]->Integral() * binSize * PConst::I0 / PConst::c_light;
 	  cout << Form(" Integrated charge of specie %3i = %8f pC",i,Charge/PUnits::picocoulomb) << endl;
 	  
-	  PUnits::BestUnit bcurSUnit(hCur1D[i]->GetMaximum() * PConst::I0,"Current");
+	  // PUnits::BestUnit bcurSUnit(hCur1D[i]->GetMaximum() * PConst::I0,"Current");
+	  // bcurSUnit.GetBestUnits(curUnit,curSUnit);
+	  PUnits::BestUnit bcurSUnit(maxCur * PConst::I0,"Current");
 	  bcurSUnit.GetBestUnits(curUnit,curSUnit);
 	  
 	  hCur1D[i]->Scale(PConst::I0 / curUnit);
@@ -1014,11 +1024,15 @@ int main(int argc,char *argv[]) {
 
     // Now, combine the electric field components into the total |E|
     TH2F *hETotal2D = NULL;
-    if(pData->Is3D() && hE2D[0] && hE2D[1] && hE2D[2])
+    // if(pData->Is3D() && hE2D[0] && hE2D[1] && hE2D[2])
+    //   hETotal2D = (TH2F*) hE2D[0]->Clone("hETotal2D");
+    // else if(!pData->Is3D() && hE2D[0] && hE2D[1])
+    //   hETotal2D = (TH2F*) hE2D[0]->Clone("hETotal2D");
+
+    if(hE2D[0] && hE2D[1])
       hETotal2D = (TH2F*) hE2D[0]->Clone("hETotal2D");
-    else if(!pData->Is3D() && hE2D[0] && hE2D[1])
-      hETotal2D = (TH2F*) hE2D[0]->Clone("hETotal2D");
-        
+
+    
     if(hETotal2D) {
       hETotal2D->Reset();
     
@@ -1049,7 +1063,7 @@ int main(int argc,char *argv[]) {
     }
   
     TH1F *hETotal1D = NULL;
-    if(hE1D[0] && hE1D[1] && hE1D[2])
+    if(hE1D[0] && hE1D[1])
       hETotal1D = (TH1F*) hE1D[0]->Clone("hETotal1D");
 
     if(hETotal1D) {
