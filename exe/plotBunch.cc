@@ -80,12 +80,12 @@ int main(int argc,char *argv[]) {
   Float_t rawf = 1;
   
   // Longitudinal range
-  Float_t zmin =  99999.;
-  Float_t zmax = -99999.;
+  Float_t zmin0 =  99999.;
+  Float_t zmax0 = -99999.;
 
   // Slices range
-  Float_t zsmin =  99999.;
-  Float_t zsmax = -99999.;
+  Float_t zsmin0 =  99999.;
+  Float_t zsmax0 = -99999.;
 
   // Options for Spectrum
   Float_t Pmin =  99999.;
@@ -171,16 +171,16 @@ int main(int argc,char *argv[]) {
       sscanf(arg,"%4s%f",ss,&dxf);
     } else if(arg.Contains("-zmin")) {
       char ss[5];
-      sscanf(arg,"%5s%f",ss,&zmin);
+      sscanf(arg,"%5s%f",ss,&zmin0);
     } else if(arg.Contains("-zmax")) {
       char ss[5];
-      sscanf(arg,"%5s%f",ss,&zmax);
+      sscanf(arg,"%5s%f",ss,&zmax0);
     } else if(arg.Contains("-zsmin")) {
       char ss[6];
-      sscanf(arg,"%6s%f",ss,&zsmin);
+      sscanf(arg,"%6s%f",ss,&zsmin0);
     } else if(arg.Contains("-zsmax")) {
       char ss[6];
-      sscanf(arg,"%6s%f",ss,&zsmax);
+      sscanf(arg,"%6s%f",ss,&zsmax0);
     } else if(arg.Contains("-pmin")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmin);
@@ -388,9 +388,14 @@ int main(int argc,char *argv[]) {
       x1BinMin += dshiftz;
       x1BinMax += dshiftz;
     }
-    
+
     // Command line input
-    if(zmax>zmin) {
+    Double_t zmin = zmin0;
+    Double_t zmax = zmax0;
+    Double_t zsmin = zsmin0;
+    Double_t zsmax = zsmax0;
+    
+    if(zmax0>zmin0) {
 
       if(opt.Contains("units")) {
 	zmin *= spaUnit * kp;
@@ -403,7 +408,7 @@ int main(int argc,char *argv[]) {
       x1BinMax = x1Min + 3.0*(x1Max-x1Min)/4.0;
     }
 
-    if(zsmax>zsmin) {
+    if(zsmax0>zsmin0) {
       if(opt.Contains("units")) {
 	zsmin *= spaUnit * kp;
 	zsmax *= spaUnit * kp;
@@ -532,7 +537,7 @@ int main(int argc,char *argv[]) {
     FindLimits(hScanX1,x1min,x1max,peakFactor);
     
     x1Min = x1min - rfactor*(x1max-x1min);
-    x1Max = x1max + rfactor*(x1max-x1min);
+    x1Max = x1max + 2*rfactor*(x1max-x1min);
 
     Double_t x2min = -999;
     Double_t x2max = -999;
@@ -2228,7 +2233,8 @@ int main(int argc,char *argv[]) {
       PGlobals::SetPaveStyle(Leg);
       Leg->SetTextAlign(12);
       Leg->SetTextColor(kGray+3);
-      Leg->SetTextFont(42);
+      Leg->SetTextFont(43);
+      Leg->SetTextSize(16);
       Leg->SetLineColor(1);
       Leg->SetBorderSize(0);
       Leg->SetFillColor(0);
@@ -2323,6 +2329,8 @@ int main(int argc,char *argv[]) {
    
       Leg->Draw();
 
+      gPad->Update();
+
       y1 = gPad->GetBottomMargin();
       y2 = 1 - gPad->GetTopMargin();
       x1 = gPad->GetLeftMargin();
@@ -2345,7 +2353,6 @@ int main(int argc,char *argv[]) {
 
       gPad->RedrawAxis(); 
 
-      gPad->Update();
 
 
       // Print to file --------------------------------------
