@@ -183,9 +183,9 @@ int main(int argc,char *argv[]) {
     cout << Form(" -------------------------\n") << endl;
 
     pData->LoadFileNames(time);    
-    if(time==iStart) pData->PrintData();
-    
+
     if(!pData->IsInit()) continue;
+    if(time==iStart) pData->PrintData();   
 
     // Time in OU
     Float_t Time = pData->GetRealTime();

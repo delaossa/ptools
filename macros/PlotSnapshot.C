@@ -1631,7 +1631,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     if(opt.Contains("zero")) {
       TLine *lineZero = new TLine(xMin,0,xMax,0);
-      lineZero->SetLineColor(lineColor);
+      // lineZero->SetLineColor(lineColor);
+      lineZero->SetLineColor(kGray);
       lineZero->SetLineStyle(2);
       lineZero->Draw();
     }
@@ -1834,7 +1835,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     if(opt.Contains("zero")) {
       TLine *lineZero = new TLine(xMin,0,xMax,0);
-      lineZero->SetLineColor(lineColor);
+      // lineZero->SetLineColor(lineColor);
+      lineZero->SetLineColor(kGray);
       lineZero->SetLineStyle(2);
       lineZero->Draw();
     }
@@ -1945,7 +1947,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     if(opt.Contains("zero")) {
       TLine *lineZero = new TLine(xMin,0,xMax,0);
-      lineZero->SetLineColor(lineColor);
+      //lineZero->SetLineColor(lineColor);
+      lineZero->SetLineColor(kGray);
       lineZero->SetLineStyle(2);
       lineZero->Draw();
     }
@@ -2188,12 +2191,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
 
 
-    // if(opt.Contains("zero")) {
-    //   TLine *lineZero = new TLine(xMin,0,xMax,0);
-    //   lineZero->SetLineColor(lineColor);
-    //   lineZero->SetLineStyle(2);
-    //   lineZero->Draw();
-    // }
+    if(opt.Contains("zero")) {
+      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      //lineZero->SetLineColor(lineColor);
+      lineZero->SetLineColor(kGray);
+      lineZero->SetLineStyle(2);
+      lineZero->Draw();
+    }
 
     if(opt.Contains("off")) {
       TLine *lineOff = new TLine(xMin,xoff,xMax,xoff);
@@ -2385,7 +2389,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	lineT = new TLine(xMin,psi0,xMax,psi0);
 
 	
-	lineT->SetLineColor(lineColor);
+	//lineT->SetLineColor(lineColor);
+	lineT->SetLineColor(kGray);
 	lineT->SetLineStyle(2);
 	lineT->Draw();
       }
