@@ -20,7 +20,7 @@
 using namespace std;
 
 int main(int argc,char *argv[]) {
-  if(argc<=3) {
+  if(argc<=2) {
     printf("\n Usage: %s <source simulation> <initial time> <final time> <time step> <options: --rev >\n\n",argv[0]);
     return 0;
   }
@@ -56,6 +56,8 @@ int main(int argc,char *argv[]) {
       break;
     }
   }
+
+  if(iStart>iEnd) iEnd = iStart;
   
   // The Data manager
   PData *pData = PData::Get(sim.Data());
@@ -75,8 +77,8 @@ int main(int argc,char *argv[]) {
     pData->LoadFileNames(time);
     
     if(pData->IsInit()) {
-      cout << Form("\nDeleting files for simulation %s at time step %i:\n",sim.Data(),time) << endl;
-      pData->Delete();
+      //      cout << Form("\nDeleting files for simulation %s at time step %i:\n",sim.Data(),time) << endl;
+      pData->PrintData();
     } else {
       cout << Form("\nNo files for simulation %s at time step %i:\n",sim.Data(),time) << endl;
       continue;
