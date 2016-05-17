@@ -21,7 +21,7 @@ using namespace std;
 
 int main(int argc,char *argv[]) {
   if(argc<=2) {
-    printf("\n Usage: %s <source simulation> <initial time> <final time> <time step> <options: --rev >\n\n",argv[0]);
+    printf("\n Usage: %s <simulation> <initial time> <final time> <time step> <options: --rev >\n\n",argv[0]);
     return 0;
   }
 

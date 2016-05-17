@@ -21,7 +21,7 @@ using namespace std;
 
 int main(int argc,char *argv[]) {
   if(argc<=4) {
-    printf("\n Usage: %s <source simulation> <target dir> <initial time> <final time> <time step>\n\n",argv[0]);
+    printf("\n Usage: %s <simulation> <target dir> <initial time> <final time> <time step>\n\n",argv[0]);
     return 0;
   }
 
@@ -54,14 +54,28 @@ int main(int argc,char *argv[]) {
     case 5:
       iStep = arg.Atoi();
       break;
+    default:
+      if(arg.Contains("--rev"))
+	opt += "rev";
+      break;
+      
     }
   }
-  
+
+  if(iStart>iEnd) iEnd = iStart;
+
   // The Data manager
   PData *pData = PData::Get(sim.Data());
   
   // Time looper
-  for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
+  for(Int_t i=iStart; i<=iEnd; i++) {
+    Int_t id = (i-iStart)%iStep;  
+
+    if(opt.Contains("rev")) {
+      if(id==0)	continue;
+    } else {
+      if(id!=0) continue;
+    }
     
     time = i;
     pData->LoadFileNames(time);
