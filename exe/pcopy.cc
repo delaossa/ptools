@@ -20,13 +20,14 @@
 using namespace std;
 
 int main(int argc,char *argv[]) {
-  if(argc<=3) {
-    printf("\n Usage: %s <source simulation> <initial time> <final time> <time step> <options: --rev >\n\n",argv[0]);
+  if(argc<=4) {
+    printf("\n Usage: %s <simulation> <target dir> <initial time> <final time> <time step>\n\n",argv[0]);
     return 0;
   }
 
   // General options
   TString  sim  = "";
+  TString  simo = "";
   Int_t    time = 0;
   Int_t  iStart = 0;
   Int_t    iEnd = 0;
@@ -42,21 +43,27 @@ int main(int argc,char *argv[]) {
       sim = arg;
       break;
     case 2:
-      iStart = arg.Atoi();
+      simo = arg;
       break;
     case 3:
-      iEnd = arg.Atoi();
+      iStart = arg.Atoi();
       break;
     case 4:
+      iEnd = arg.Atoi();
+      break;
+    case 5:
       iStep = arg.Atoi();
       break;
     default:
       if(arg.Contains("--rev"))
 	opt += "rev";
       break;
+      
     }
   }
-  
+
+  if(iStart>iEnd) iEnd = iStart;
+
   // The Data manager
   PData *pData = PData::Get(sim.Data());
   
@@ -69,23 +76,20 @@ int main(int argc,char *argv[]) {
     } else {
       if(id!=0) continue;
     }
-      
-  
+    
     time = i;
     pData->LoadFileNames(time);
     
     if(pData->IsInit()) {
-      cout << Form("\nDeleting files for simulation %s at time step %i:\n",sim.Data(),time) << endl;
-      pData->Delete();
+      cout << Form("\nCopying files for simulation %s at time step %i:\n",sim.Data(),time) << endl;
+      
+      pData->CopyData(simo.Data());
+      
     } else {
-      cout << Form("\nNo files for simulation %s at time step %i:\n",sim.Data(),time) << endl;
       continue;
     }
     
   }
-
-  
-
   
   if(pData)
     delete pData;
