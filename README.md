@@ -1,11 +1,9 @@
-# PTOOLS viewer
+# PTOOLS
 
 ## Overview
 
-PTOOLS is a software package written in C++ that allows for a direct handling,
-analysis and plotting of the output data from Osiris and HiPACE simulations.
-In addition to the standard C++ libraries, PTOOLS uses [HDF5](http://www.hdfgroup.org/HDF5)
-to read data files and [ROOT](https://root.cern.ch) for data analysis and plotting.
+PTOOLS is a software package written in C++ that allows for a direct handling, analysis and plotting of the output data from Osiris and HiPACE simulations.
+In addition to the standard C++ libraries, PTOOLS uses [HDF5](http://www.hdfgroup.org/HDF5) to read data files and [ROOT](https://root.cern.ch) for data analysis and plotting.
 
 ## Installation
 
@@ -14,33 +12,15 @@ to read data files and [ROOT](https://root.cern.ch) for data analysis and plotti
 To install this package :
 
 - Clone this repository using `git`
-```
-git clone https://github.com/openPMD/openPMD-viewer.git
+---
+
+git clone git@flauser1.desy.de:delaossa/ptools.git
 ```
 
-- `cd` into the directory `openPMD-viewer` and run
+- `cd` into the directory `ptools` and run
 ```
 python setup.py install
 ```
-
-### Installing the interactive GUI
-
-The **interactive GUI** for IPython Notebook is not
-operational by default.  
-This is because it requires dependencies that may be difficult to
-install on some systems. If you wish to have the interactive GUI
-working, install the
-[IPython Notebook](http://ipython.org/notebook.html)
-(now part of the [Jupyter project](http://jupyter.org/)) by hand:  
-`conda install jupyter` (for the
-[Anaconda](https://www.continuum.io/downloads)
-distribution) or `pip install jupyter` (for the other Python distributions)
-
-NB: For [NERSC](http://www.nersc.gov/) users, it is not necessary to
-install the above package, as NERSC provides it when logging to
-[https://ipython.nersc.gov](https://ipython.nersc.gov).
-Therefore, NERSC users only need to install the `openPMD-viewer`
-package itself.
 
 ## Usage
 
