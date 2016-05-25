@@ -1,10 +1,11 @@
-# openPMD viewer
+# PTOOLS viewer
 
 ## Overview
 
-This package contains a set of tools to load and visualize the
-contents of a set of [openPMD](http://www.openpmd.org/#/start) files
-(typically, a timeseries).
+PTOOLS is a software package written in C++ that allows for a direct handling,
+analysis and plotting of the output data from Osiris and HiPACE simulations.
+In addition to the standard C++ libraries, PTOOLS uses [HDF5](http://www.hdfgroup.org/HDF5)
+to read data files and [ROOT](https://root.cern.ch) for data analysis and plotting.
 
 ## Installation
 
