@@ -15,12 +15,3 @@ One can fork the project to a local copy of the source code by doing:
 ```git clone git@flauser1.desy.de:delaossa/ptools.git
 ```
 
-## Usage
-
-The routines of openPMD viewer can be used in two ways :
-
-- Use the **Python API**, in order to write a script that loads the
-  data and produces a set of pre-defined plots.
-
-- Use the **interactive GUI inside the IPython Notebook**, in order to interactively
-visualize the data.
