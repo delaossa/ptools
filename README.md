@@ -8,10 +8,12 @@ In addition to the standard C++ libraries, PTOOLS uses [HDF5](http://www.hdfgrou
 ## Installation
 
 The PTOOLS source code is stored and maintained through this git repository :
-```https://flauser1.desy.de/gitlab/delaossa/ptools.git
+```
+https://flauser1.desy.de/gitlab/delaossa/ptools.git
 ```
 
 One can fork the project to a local copy of the source code by doing:
-```git clone git@flauser1.desy.de:delaossa/ptools.git
+```
+git clone git@flauser1.desy.de:delaossa/ptools.git
 ```
 
