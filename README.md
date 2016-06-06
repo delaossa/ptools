@@ -8,6 +8,8 @@ In addition to the standard C++ libraries, PTOOLS uses [HDF5](http://www.hdfgrou
 ![Ptools Logo](https://github.com/delaossa/ptools/blob/develop/figs/ptools-logo.png)
 Format: ![Alt Text](url)
 
+<img src="https://github.com/delaossa/ptools/blob/develop/figs/ptools-logo.png" width="100">
+
 ## Installation
 
 The PTOOLS source code is stored and maintained through this git repository :
