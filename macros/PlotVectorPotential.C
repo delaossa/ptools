@@ -72,6 +72,12 @@ void PlotVectorPotential( const TString &sim, Int_t timestep, const TString &opt
   if(hDen2D_2)
     hDen2D->Add(hDen2D_2,1);
 
+  // Electron density species 4 (if any)
+  sprintf(hName,"hDen2D_3"); 
+  TH2F *hDen2D_3 = (TH2F*) ifile->Get(hName);
+  if(hDen2D_3)
+    hDen2D->Add(hDen2D_3,1);
+
   
   cout << Form(" done!" ) << endl;
 
@@ -89,16 +95,16 @@ void PlotVectorPotential( const TString &sim, Int_t timestep, const TString &opt
   // cout << Form(" Creating 2D histos..." );
   // cout << Form(" done!" ) << endl;
 
-  cout << Form(" Allocating array with real data..." );
+  cout << Form(" Allocating data array ..." );
 
   Int_t dims[2] = {NBinsZ,NBinsX};
-  Double_t *data = new Double_t[NBinsZ*NBinsX];
-  
-  // TVirtualFFT::SetTransform(0);
+  //  Double_t *data = new Double_t[NBinsZ*NBinsX];
+  Double_t *data = new Double_t[NBinsZ*2*(NBinsX/2+1)];
+  // Extra padding! (see http://www.fftw.org/fftw3_doc/Multi_002dDimensional-DFTs-of-Real-Data.html#Multi_002dDimensional-DFTs-of-Real-Data) 
   
   cout << Form(" done!" ) << endl;
 
-  cout << Form(" Filling data aray..." );
+  cout << Form(" Filling data aray ..." );
   for(Int_t i=0; i<NBinsZ; i++) {
     
     for(Int_t j=0; j<NBinsX; j++) {
@@ -115,47 +121,41 @@ void PlotVectorPotential( const TString &sim, Int_t timestep, const TString &opt
   cout << Form("   done!" ) << endl;
   
   cout << Form(" Fourier transform ..." );
-
-  // TH2F *hFFTREb = new TH2F("hFFTREb","",NBinsZ,kzmin,kzmax,NBinsX,kxmin,kxmax);
-  // TH2F *hFFTIMb = new TH2F("hFFTIMb","",NBinsZ,kzmin,kzmax,NBinsX,kxmin,kxmax);
-  // TH2F *hFFTREb = new TH2F("hFFTREb","",NBinsZ,0.,NBinsZ,NBinsX,0.,NBinsX);
-  // TH2F *hFFTIMb = new TH2F("hFFTIMb","",NBinsZ,0.,NBinsZ,NBinsX,0.,NBinsX);
-  
-  // TH2F *hFFTRE = 0;
-  // hFFTRE = (TH2F*) TH1::TransformHisto(fft, hFFTRE, "RE");
-  // hFFTRE->SetName("hFFTRE");
-  // TH2F *hFFTIM = 0;
-  // hFFTIM = (TH2F*) TH1::TransformHisto(fft, hFFTIM, "IM");
-  // hFFTIM->SetName("hFFTIM");
-
   TVirtualFFT *fft = TVirtualFFT::FFT(2, dims, "R2C ES K");
   fft->SetPoints(data);
   fft->Transform();  
   cout << Form("   done!" ) << endl;
-  
-   cout << Form(" Solving equation for potential in fourier space" )  << endl;
-  // \phi(kz,kx) = 1/(kz^2 + kx^2) 
+
+  TH2F *hFFTRE = 0;
+  hFFTRE = (TH2F*) TH1::TransformHisto(fft, hFFTRE, "RE");
+  hFFTRE->SetName("hFFTRE");
+  TH2F *hFFTIM = 0;
+  hFFTIM = (TH2F*) TH1::TransformHisto(fft, hFFTIM, "IM");
+  hFFTIM->SetName("hFFTIM");
+
+  cout << Form(" Solving equation for potential in fourier space" )  << endl;
+  // Equation: \phi(kz,kx) = \rho(kz,kx)/(kz^2 + kx^2) 
   
   fft->GetPoints(data);    
   for(Int_t i=0; i<dims[0]; i++) {
     for(Int_t j=0; j<(dims[1]/2+1); j++) {
 
       Int_t index =  2 * (i * (dims[1]/2+1)  + j);
+      //      cout << Form(" i = %4i  j = %4i  index = %10i",i,j,index) << endl;
       
       Float_t kz;
       if(i<dims[0]/2)
-	kz = TMath::Pi() * (i+0.5) / zrange;
+	kz = (TMath::Pi() / zrange) * (i+0.5);
       else
-	kz = -TMath::Pi() * (dims[0]-i+0.5) / zrange;     
-      Float_t kx = TMath::TwoPi() * (j+0.5) / xrange;
+	kz = -(TMath::Pi() / zrange) * (dims[0]-i+0.5);     
+
+      Float_t kx = (TMath::TwoPi() / xrange) * (j+0.5) ;
       
       Float_t k2 = kx*kx + kz*kz;
       
       data[index] /= k2;
-      data[index+1] /= k2;
-      
-    }
-    
+      data[index+1] /= k2;      
+    } 
   }
   cout << Form("   done!" ) << endl;
   
@@ -163,12 +163,12 @@ void PlotVectorPotential( const TString &sim, Int_t timestep, const TString &opt
   // backward transform:
   TVirtualFFT *fft_back = TVirtualFFT::FFT(2, dims, "C2R ES K");
   fft_back->SetPoints(data);
-  fft_back->Transform();
-  
+  fft_back->Transform();  
   cout << Form(" done!" ) << endl;
 
   Double_t *re_back = fft_back->GetPointsReal();
   
+  cout << Form(" Take the gradient of the potential ..." );
   TH2F *hPhi2D = new TH2F("hPhi2D","",NBinsZ,zmin,zmax,NBinsX,xmin,xmax);
   TH2F *hE2D_1_ifft = new TH2F("hE2D_1_ifft","",NBinsZ,zmin,zmax,NBinsX,xmin,xmax);
   Double_t dx = hPhi2D->GetYaxis()->GetBinWidth(1);
@@ -202,14 +202,14 @@ void PlotVectorPotential( const TString &sim, Int_t timestep, const TString &opt
   for(Int_t j=0; j<NBinsX; j++) {
     for(Int_t i=0; i<NBinsZ; i++) {
       Double_t der = 0.;
-      if(i>2 && j<=NBinsZ-2) {
+      if(i>2 && i<=NBinsZ-2) {
 	Int_t indip1 =  (i+1) * NBinsX + j;
 	Int_t indip2 =  (i+2) * NBinsX + j;
 	Int_t indim1 =  (i-1) * NBinsX + j;
 	Int_t indim2 =  (i-2) * NBinsX + j;
 	
 	der =  ( 4.0 / 3.0 * (re_back[indip1] - re_back[indim1]) / (2.0 * dz)
-		 - 1.0 / 3.0 * (re_back[indip2] - re_back[indim2]) / (4.0 * dz) );
+               - 1.0 / 3.0 * (re_back[indip2] - re_back[indim2]) / (4.0 * dz) );
 	
       }
       
@@ -217,6 +217,7 @@ void PlotVectorPotential( const TString &sim, Int_t timestep, const TString &opt
     }
   }
   hE2D_0_ifft->Scale(1.0/(NBinsZ*NBinsX));
+  cout << Form("   done!" ) << endl;
   
   
   // TH2F *hPhi2D = 0;

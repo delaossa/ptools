@@ -1715,7 +1715,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Float_t curmin = 0.0;
       Float_t curmax = maxCur;
       // Round for better axis
-      curmax = TMath::Nint(curmax);
+      //  curmax = TMath::Nint(curmax);
       
       Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
       Float_t zPos = xMax - (xMax-xMin) * 0.14;
