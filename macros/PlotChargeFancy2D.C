@@ -481,7 +481,7 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     Int_t bcindex[bNRGBs];
     
     bcindex[0] = TColor::GetColor("#380A3C"); // deep purple
-    bcindex[0] = cindex[1];
+    //bcindex[0] = cindex[1];
     bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33); // dark magenta 
     bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
     bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
@@ -505,14 +505,12 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     beam2Palette = new PPalette("beam2");
     beam2Palette->SetPalette("hot");
   }
-  // if(opt.Contains("dark")) {
-  //   //bcindex[0] = bcindex[0];
-  //   bcindex[1] = bcindex[2];    
-  //   bStops[1] = bStops[2] = 0.1;
-  //   beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
-  // } else
-  //   beam2Palette->SetPalette("hot");
-
+  if(opt.Contains("dark")) {
+    bcindex[0] = bcindex[0];
+    bcindex[1] = bcindex[2];    
+    bStops[1] = bStops[2] = 0.1;
+    beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
+  } 
       
   // Change the range of z axis for the fields to be symmetric.
   Float_t *Emax = new Float_t[Nfields];

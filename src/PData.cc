@@ -1589,9 +1589,9 @@ TH2F* PData::GetH2(const char *filename,const char *dataname, const char *option
     for(UInt_t j=0;j<x2Dim;j++) {
       UInt_t index = (long)j*(long)x1Dim + (long)i;
       if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
-      	h2D->SetBinContent(iavg,j,-data[index]);
+      	h2D->SetBinContent(iavg+1,j+1,-data[index]);
       else
-	h2D->SetBinContent(iavg,j,data[index]);
+	h2D->SetBinContent(iavg+1,j+1,data[index]);
       
     } 
   }
