@@ -20,6 +20,7 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   pspaces.clear();
 
   sCHG = sEF = sBF = sRAW = NULL;
+  sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
   XMINR = XMAXR = NULL;
@@ -51,6 +52,7 @@ PData::PData(const char * name) : TNamed(name,name) {
   pspaces.clear();
 
   sCHG = sEF = sBF = sRAW = NULL;
+  sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
   XMINR = XMAXR = NULL;
@@ -82,6 +84,7 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   pspaces.clear();
   
   sCHG = sEF = sBF = sRAW = NULL;
+  sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
   XMINR = XMAXR = NULL;
@@ -342,6 +345,10 @@ void PData::LoadFileNames(Int_t t) {
   sRAW = new vector<string*>(NSpecies(),NULL);
   sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
 
+  for(UInt_t i=0;i<3;i++) {
+    sJ[i] = new vector<string*>(NSpecies(),NULL);    
+  }
+  
   // Fishing the pieces ...
   for(UInt_t i=0;i<files.size();i++) {
 
@@ -358,6 +365,24 @@ void PData::LoadFileNames(Int_t t) {
 	    sCHG->at(j) = new string(files[i]);
 	  else if(!sCHG->at(j))
 	    sCHG->at(j) = new string(files[i]);
+	  
+	} else if( (files[i].find("DENSITY") != string::npos) && ( files[i].find("j1") != string::npos)) {
+	  if(files[i].find("savg") == string::npos)
+	    sJ[0]->at(j) = new string(files[i]);
+	  else if(!sCHG->at(j))
+	    sJ[0]->at(j) = new string(files[i]);
+	  
+	} else if( (files[i].find("DENSITY") != string::npos) && ( files[i].find("j2") != string::npos)) {
+	  if(files[i].find("savg") == string::npos)
+	    sJ[1]->at(j) = new string(files[i]);
+	  else if(!sCHG->at(j))
+	    sJ[1]->at(j) = new string(files[i]);
+	  
+	} else if( (files[i].find("DENSITY") != string::npos) && ( files[i].find("j3") != string::npos)) {
+	  if(files[i].find("savg") == string::npos)
+	    sJ[2]->at(j) = new string(files[i]);
+	  else if(!sCHG->at(j))
+	    sJ[2]->at(j) = new string(files[i]);
 	  
 	} else if((files[i].find("RAW") != string::npos) && (files[i].find(".h5") != string::npos)) {
 	  sRAW->at(j) = new string(files[i]);
@@ -494,6 +519,11 @@ void PData::PrintData(Option_t *option) {
 
     if(sCHG->at(is)) 
       cout << " - " << sCHG->at(is)->c_str() << endl;
+    
+    for(UInt_t i=0;i<3;i++) {
+      if(sJ[i]->at(is)) 
+	cout << " - " << sJ[i]->at(is)->c_str() << endl;
+    }
     
     for(UInt_t ip=0;ip<NPhaseSpaces();ip++) {
       if(sPHA->at(is).at(ip))

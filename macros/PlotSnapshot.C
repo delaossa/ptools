@@ -1485,6 +1485,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[0]->Draw(drawopt);
       }
 
+      // Injected electrons ?
+      if(hDen2D[2] && noIndex!=2) {
+	exBeam2->Draw();
+	//exBeam->Draw();
+	hDen2D[2]->Draw(drawopt);
+      }
+
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
 	exBeam->Draw();
@@ -1492,12 +1499,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[1]->Draw(drawopt);
       }
 
-      // Injected electrons ?
-      if(hDen2D[2] && noIndex!=2) {
-	exBeam2->Draw();
-	//exBeam->Draw();
-	hDen2D[2]->Draw(drawopt);
-      }
       
     } else if (Nspecies==4) {
 
