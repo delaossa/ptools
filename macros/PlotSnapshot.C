@@ -81,9 +81,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   PGlobals::Initialize();
   
-  // Palettes!
-  gROOT->Macro("PPalettes.C");
-  
   TString opt = options;
   
   // More makeup
@@ -305,7 +302,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     xMax *= kfactor;
     yMin *= kfactor;
     yMax *= kfactor;
- 
+
+    xint *= kfactor;
     
     for(Int_t i=0;i<Nspecies;i++) {
       if(i==noIndex) continue;
@@ -663,16 +661,16 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Double_t Green[NRGBs] = { 0.99, 0.90, 0.00 };
   Double_t Blue[NRGBs]  = { 0.99, 0.90, 0.00 };
    
-  PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
-  if(!plasmaPalette) {
-    plasmaPalette = new PPalette("plasma");
-    plasmaPalette->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, 1.0);
+  PPalette * plaPalette = (PPalette*) gROOT->FindObject("plasma");
+  if(!plaPalette) {
+    plaPalette = new PPalette("plasma");
+    plaPalette->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, 1.0);
   } else {
-    plasmaPalette->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, 1.0);
+    plaPalette->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, 1.0);
   }
 
-  cout << Form(" N colors = %i   Color index  = %i ", plasmaPalette->GetNColors(),
-	       plasmaPalette->GetColor(0)) << endl;
+  cout << Form(" N colors = %i   Color index  = %i ", plaPalette->GetNColors(),
+	       plaPalette->GetColor(0)) << endl;
 	       
 	       
 	       
@@ -684,13 +682,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   }
   
   if(opt.Contains("mbeam")) {
-    Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
-    Int_t rootcolorindex = plasmaPalette->GetColor(localcolorindex);
+    Int_t localcolorindex =  TMath::Nint(localPos * plaPalette->GetNColors());
+    Int_t rootcolorindex = plaPalette->GetColor(localcolorindex);
     TColor *localcolor = gROOT->GetColor(rootcolorindex);
     Float_t r,g,b;
     localcolor->GetRGB(r,g,b);
 
-    cout << Form(" N colors = %i   Base position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plasmaPalette->GetNColors(), basePos, rootcolorindex, r, g, b) << endl;
+    cout << Form(" N colors = %i   Base position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plaPalette->GetNColors(), basePos, rootcolorindex, r, g, b) << endl;
 
     const Int_t elecNRGBs = 5;
     const Int_t elecNCont = 64;
@@ -1151,7 +1149,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   char ctext[128];
   if(opt.Contains("units") && n0) 
-    sprintf(ctext,Form("z = %5.2f %s", Time * skindepth / propUnit,propSUnit->c_str()));
+    sprintf(ctext,"z = %5.2f %s", Time * skindepth / propUnit,propSUnit->c_str());
   else
     sprintf(ctext,"k_{p}z = %5.1f",Time);
   
@@ -1161,7 +1159,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   textTime->SetTextSize(fontsize-10);
 
   if(opt.Contains("units") && n0) 
-    sprintf(ctext,Form("n_{0} = %5.2f x %s", n0/denUnit,denSUnit->c_str()));
+    sprintf(ctext,"n_{0} = %5.2f x %s", n0/denUnit,denSUnit->c_str());
    
   TLatex *textDen = new TLatex(xMin + (xMax-xMin)/20.,yMax - (yMax-yMin)/10.,ctext);
   textDen->SetTextAlign(12);
@@ -1336,7 +1334,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TExec *exIonP   = new TExec("exIonP","ionPalette->cd();");
 
   if(opt.Contains("alpha0"))
-    plasmaPalette->SetAlpha(0.8);
+    plaPalette->SetAlpha(0.8);
   if(opt.Contains("alpha1"))
     beamPalette->SetAlpha(0.8);
   if(opt.Contains("alpha2"))

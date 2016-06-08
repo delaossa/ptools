@@ -132,8 +132,12 @@ namespace PGlobals {
     PlasmaStyle->SetTitleOffset(1.2,"xyz");
 
     PlasmaStyle->SetNdivisions(505,"xyz");
-  }
 
+
+    // palettes
+    gROOT->Macro("PPalettes.C");
+  }
+  
   // More styling functions
   // ---------------------------------------------
  

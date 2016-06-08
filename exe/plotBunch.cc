@@ -191,9 +191,6 @@ int main(int argc,char *argv[]) {
 
   PGlobals::Initialize();
 
-  // Palettes!
-  gROOT->Macro("PPalettes.C");
-
   if(opt.Contains("grid")) {
     gStyle->SetPadGridX(1);
     gStyle->SetPadGridY(1);
@@ -658,6 +655,10 @@ int main(int argc,char *argv[]) {
       hX1->GetXaxis()->SetTitle("k_{p}#zeta");
     else
       hX1->GetXaxis()->SetTitle("k_{p}z");
+
+    hX1->SetFillStyle(1001);
+    hX1->SetFillColor(PGlobals::elecFill);
+    hX1->SetLineWidth(2);
     
     sprintf(hName,"hP1");
     TH1F *hP1 = (TH1F*) gROOT->FindObject(hName);
@@ -2268,15 +2269,11 @@ int main(int argc,char *argv[]) {
       
       hFrame[0]->GetYaxis()->SetTitle("");
       hFrame[0]->GetYaxis()->SetRangeUser(0.0,1.1*yMax);
-      hFrame[0]->Draw();
+      hFrame[0]->Draw("axis");
 
-      hX1->GetYaxis()->SetNdivisions(503);
-      hX1->SetLineWidth(2);
-      hX1->SetFillStyle(1001);
-      hX1->SetFillColor(PGlobals::elecFill);
       if(opt.Contains("smooth"))
 	hX1->Smooth(3);
-      hX1->Draw("FL same");
+      hX1->Draw("hist LF2 same");
 
       TLine lZmean2(zmean,0.0,zmean,1.1*yMax);
       lZmean2.SetLineColor(kGray+2);
