@@ -117,6 +117,7 @@ public:
   virtual UInt_t  NRawSpecies() { return species.size(); }  
   string  GetSpeciesName(UInt_t i) { return species.at(i); }
   string *GetChargeFileName(UInt_t i) { return sCHG->at(i); }
+  string *GetCurrentFileName(UInt_t i, UInt_t j=0) { return sJ[j]->at(i); }
   string *GetEfieldFileName(UInt_t i) { return sEF->at(i); }
   string *GetBfieldFileName(UInt_t i) { return sBF->at(i); }
   string *GetRawFileName(UInt_t i) { return sRAW->at(i); }
@@ -428,6 +429,7 @@ protected:
 
   vector<string>           species;   // vector of species names.
   vector<string*>            *sCHG;   // vector of files with the Charge density.
+  vector<string*>           *sJ[3];   // vector of files with the Currents.
   vector<string*>             *sEF;   // vector of files with the Electric field.
   vector<string*>             *sBF;   // vector of files with the Magnetic field. 
   vector<string*>            *sRAW;   // vector of files with RAW data.
