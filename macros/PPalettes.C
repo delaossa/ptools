@@ -33,8 +33,9 @@
   if(!fieldPalette) {
     fieldPalette = new PPalette("field");
     fieldPalette->SetPalette("rbow0");
+    //   fieldPalette->SetPalette(kBird);
   }
-
+  
   PPalette *fieldTPalette = (PPalette*) gROOT->FindObject("fieldT");
   if(!fieldTPalette) {
     fieldTPalette = new PPalette("fieldT");

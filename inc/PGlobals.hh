@@ -139,10 +139,10 @@ namespace PGlobals {
  
   void SetH1Style(TH1 *histo, Int_t index=0) {
     // Lines and colors for 1D Histos
-    UInt_t Colors1D[]  = {kGray+2,elecLine,kOrange+8,kGray};
-    UInt_t Colors1Db[] = {kGray+1,elecFill,kOrange+8,kGray};
-    UInt_t Lines1D[]   = {2,2,2,2};
-    UInt_t Fill1D[]    = {3002,3001,3001,3001};
+    Int_t Colors1D[4]  = {kGray+2,elecLine,kOrange+8,kGray};
+    Int_t Colors1Db[4] = {kGray+1,elecFill,kOrange+8,kGray};
+    Int_t Lines1D[4]   = {2,2,2,2};
+    Int_t Fill1D[4]    = {3002,3001,3001,3001};
 
     histo->SetLineColor(Colors1D[index%4]);
     histo->SetLineWidth(Lines1D[index%4]);
@@ -182,8 +182,8 @@ namespace PGlobals {
 
   void SetGraphStyle(TGraph *graph, Int_t index=0) {
     // Lines and colors for 1D Histos
-    UInt_t Colors1D[]  = {kGray+2,elecLine,kOrange+8,kGray};
-    UInt_t Colors1Db[] = {kGray+1,elecFill,kOrange+8,kGray};
+    Int_t Colors1D[]  = {kGray+2,elecLine,kOrange+8,kGray};
+    Int_t Colors1Db[] = {kGray+1,elecFill,kOrange+8,kGray};
     UInt_t Lines1D[]   = {2,2,2,2};
     UInt_t Fill1D[]    = {3002,1001,3001,3001};
 

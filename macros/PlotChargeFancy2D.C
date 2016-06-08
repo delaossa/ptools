@@ -505,12 +505,12 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     beam2Palette = new PPalette("beam2");
     beam2Palette->SetPalette("hot");
   }
-  if(opt.Contains("dark")) {
-    bcindex[0] = bcindex[0];
-    bcindex[1] = bcindex[2];    
-    bStops[1] = bStops[2] = 0.1;
-    beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
-  } 
+  // if(opt.Contains("dark")) {
+  //   bcindex[0] = bcindex[0];
+  //   bcindex[1] = bcindex[2];    
+  //   bStops[1] = bStops[2] = 0.1;
+  //   beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
+  // } 
       
   // Change the range of z axis for the fields to be symmetric.
   Float_t *Emax = new Float_t[Nfields];

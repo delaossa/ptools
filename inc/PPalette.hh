@@ -46,10 +46,10 @@ public:
       std::cout << "Color index out of range. Returning last color." << std::endl;
       return fColors[fNColors-1];
     }
-    else if(i<0) {
-      std::cout << "Color index out of range. Returning first color." << std::endl;
-      return fColors[0];
-    }
+    // else if(i<0) {
+    //   std::cout << "Color index out of range. Returning first color." << std::endl;
+    //   return fColors[0];
+    // }
     return fColors[i];
   };
 

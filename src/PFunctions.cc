@@ -98,11 +98,9 @@ Double_t PFunc::Nefoldings(Double_t z, Double_t zg, Double_t r0, Double_t gamma,
  */
 Double_t PFunc::PhaseGamma(Double_t z, Double_t zg, Double_t r0, Double_t gamma, Double_t nb, Double_t n0) {
   
-  Double_t kp = 1.0;
-  if(n0!=1.0) { 
+  if(n0!=1.0) 
     nb /= n0;
-    kp = PlasmaWavenumber(n0);
-  }
+  
   Double_t nu = Nu(r0,n0);
   Double_t massratio = ElectronMassE/ElectronMassE;
   return TMath::Power((z/fabs(zg)) * gamma/(massratio * nu * nb),1./6.);

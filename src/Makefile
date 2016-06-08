@@ -48,14 +48,14 @@ endif
 
 libmap: $(LIBDIR)/lib$(LIB).rootmap 
 
-$(LIBDIR)/lib$(LIB).rootmap: $(LIBDIR)/lib$(LIB).so 
+$(LIBDIR)/lib$(LIB).rootmap: $(LIBDIR)/lib$(LIB).so
 	@echo "Creating library rootmap $@"
-	rlibmap -f -o $@ -d $(SHLIBFILE) $(RLIBDEP) -c $(INCDIR)/LinkDef.hh
+	rootcling -f $(LIB)Dict.cc -rml $< -rmf $@ $(addprefix $(INCDIR)/,$(addsuffix .hh,$(MODULES))) $(INCDIR)/LinkDef.hh 
 
 $(LIB)Dict.cc: 
 	@echo "Generating dictionary $@"
-	rootcint -f $(LIB)Dict.cc -c -m64 -p $(addprefix $(INCDIR)/,$(addsuffix .hh,$(MODULES))) $(INCDIR)/LinkDef.hh 
-
+	rootcling $(LIB)Dict.cc $(addprefix $(INCDIR)/,$(addsuffix .hh,$(MODULES))) $(INCDIR)/LinkDef.hh
+	cp $(LIB)Dict_rdict.pcm $(LIBDIR)/
 
 %.d: %.c
 	@echo Making dependency for file $< ...

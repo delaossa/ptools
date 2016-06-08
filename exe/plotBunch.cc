@@ -34,21 +34,17 @@ void InitRange(const TString &, Double_t &, Double_t &, Int_t &, Double_t &, Dou
 
 void FindLimits(TH1F *h,Double_t &xmin, Double_t &xmax, Double_t factor = 0.11) {
   Double_t maxValue = h->GetBinContent(h->GetMaximumBin());
-  Int_t   lBin = -1;
   for(Int_t i=1;i<=h->GetNbinsX();i++) {
     Double_t binValue = h->GetBinContent(i);
     if(binValue>maxValue*factor) {
-      lBin = i;
       xmin = h->GetBinCenter(i);
       break;
     }
   }
   
-  Int_t rBin = -1;	
   for(Int_t i=h->GetNbinsX();i>0;i--) {
     Double_t binValue = h->GetBinContent(i);
     if(binValue>maxValue*factor) {
-      rBin = i;
       xmax = h->GetBinCenter(i);
       break;
     }
