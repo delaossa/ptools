@@ -521,6 +521,7 @@ void PData::PrintData(Option_t *option) {
       cout << " - " << sCHG->at(is)->c_str() << endl;
     
     for(UInt_t i=0;i<3;i++) {
+      if(!sJ[i]) continue;
       if(sJ[i]->at(is)) 
 	cout << " - " << sJ[i]->at(is)->c_str() << endl;
     }

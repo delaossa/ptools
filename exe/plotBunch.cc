@@ -626,6 +626,7 @@ int main(int argc,char *argv[]) {
       x3Min = floor((x3Min-X3MIN)/dx3) * dx3 + X3MIN;  
       x3Max = floor((x3Max-X3MIN)/dx3) * dx3 + X3MIN;  
       x3Nbin = ceil ((x3Max - x3Min)/(ddx3));
+      if(x3Nbin<50) x3Nbin = 50;
     }
     p3Nbin = x3Nbin;
     
