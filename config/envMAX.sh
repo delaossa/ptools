@@ -4,7 +4,7 @@
 export SOFT=/afs/desy.de/group/fla/plasma/data002/SOFTWARE
 
 # Setting up Root environment....
-export ROOTSYS=$SOFT/root
+export ROOTSYS=$SOFT/root-6.06.02
 export LD_LIBRARY_PATH=$ROOTSYS/lib:$LD_LIBRARY_PATH
 export PATH=$ROOTSYS/bin:$PATH
 
@@ -13,7 +13,7 @@ export HDF5CPP=$SOFT/hdf5-1.8.14-c++
 export LD_LIBRARY_PATH=$HDF5CPP/lib:$LD_LIBRARY_PATH
 
 # ptools environment:
-export PTOOLS=$SOFT/ptools
+export PTOOLS=$SOFT/ptools-dev
 export LD_LIBRARY_PATH=$PTOOLS/lib:$LD_LIBRARY_PATH
 export PATH=$PTOOLS/bin:$PTOOLS/scripts:$PATH
 

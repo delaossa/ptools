@@ -99,9 +99,6 @@ int main(int argc,char *argv[]) {
 
   PGlobals::Initialize();
   
-  // Palettes!
-  gROOT->Macro("PPalettes.C");
-
   if(opt.Contains("grid")) {
     gStyle->SetPadGridX(1);
     gStyle->SetPadGridY(1);

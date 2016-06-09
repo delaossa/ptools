@@ -34,9 +34,6 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
 
   PGlobals::Initialize();
   
-  // Palettes!
-  gROOT->Macro("PPalettes.C");
-
   TString opt = options;
   
   // More makeup            
@@ -782,15 +779,15 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     Float_t margin = (maxEextr - minEextr)/10;
     Float_t Ez0   = minEextr - margin;
     Float_t Ez1   = maxEextr + margin;
-    TH1F *hFrame2 = new TH1F("hFrame2","",100,hEvsTime[0]->GetXaxis()->GetXmin(),hEvsTime[0]->GetXaxis()->GetXmax());
-    // TH2F *hFrame2 = (TH2F*) hEvsTime[0]->Clone("hFrame2");
+    TH1F *hFrame1 = new TH1F("hFrame1","",100,hEvsTime[0]->GetXaxis()->GetXmin(),hEvsTime[0]->GetXaxis()->GetXmax());
+    // TH2F *hFrame1 = (TH2F*) hEvsTime[0]->Clone("hFrame1");
   
-    hFrame2->GetYaxis()->SetRangeUser(Ez0,Ez1);
-    hFrame2->GetXaxis()->SetTitle(hEvsTime[0]->GetXaxis()->GetTitle());
-    hFrame2->GetYaxis()->SetTitle("E_{z}/E_{0}");
-    PGlobals::SetH1LabelSize(hFrame2);
+    hFrame1->GetYaxis()->SetRangeUser(Ez0,Ez1);
+    hFrame1->GetXaxis()->SetTitle(hEvsTime[0]->GetXaxis()->GetTitle());
+    hFrame1->GetYaxis()->SetTitle("E_{z}/E_{0}");
+    PGlobals::SetH1LabelSize(hFrame1);
     
-    hFrame2->Draw("axis");
+    hFrame1->Draw("axis");
 
     gPad->Update();
 
