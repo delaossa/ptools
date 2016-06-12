@@ -57,7 +57,8 @@
   PPalette *defPalette = (PPalette*) gROOT->FindObject("def");
   if(!defPalette) {
     defPalette = new PPalette("def");
-    defPalette->SetPalette("electron");
+    //  defPalette->SetPalette("electron");
+    defPalette->SetPalette(kBird);
   }
   
   gStyle->SetNumberContours(255);

@@ -391,6 +391,19 @@ Int_t PPalette::SetPalette(const char * name)
 	this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
       return 1;
       
+    } else if(strcmp(name,"blue0")==0) {
+      const Int_t NRGBs = 3;
+      const Int_t NCont = 255;
+      Double_t Stops[NRGBs] = { 0.0, 0.10, 1.00 };
+      Double_t Red[NRGBs] =   { 1.00, 0.498, 0.106};
+      Double_t Green[NRGBs] = { 1.00, 0.718, 0.078};
+      Double_t Blue[NRGBs] =  { 1.00, 0.780, 0.518};
+      if(!fColors)
+	this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
+      else
+	this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
+      return 1;
+      
     } else if(strcmp(name,"blue")==0) {
       const Int_t NRGBs = 3;
       const Int_t NCont = 255;
