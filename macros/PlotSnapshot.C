@@ -973,7 +973,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     IPmax = hIonProb2D[ii]->GetMaximum();
 
     const Int_t NcontI = 1;
-    Double_t contI[NcontI] = {0.1*IPmax};
+    //  Double_t contI[NcontI] = {0.1*IPmax};
+    Double_t contI[NcontI] = {0.2*IPmax};
     // Double_t contI[NcontI] = {0.1*IPmax};
     //const Int_t NcontI = 1;
     //Float_t contI[NcontI] = {0.1};
@@ -1484,7 +1485,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[1]->Draw(drawopt);
       }
     } else if (Nspecies==3) {
-      
+
+      // Injected electrons ?
+      if(hDen2D[2] && noIndex!=2) {
+	exBeam2->Draw();
+	//exBeam->Draw();
+	hDen2D[2]->Draw(drawopt);
+      }
+
       // Plasma
       if(hDen2D[0] && noIndex!=0) {
 	exPlasma->Draw();
@@ -1496,13 +1504,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
-      }
-
-      // Injected electrons ?
-      if(hDen2D[2] && noIndex!=2) {
-	exBeam2->Draw();
-	//exBeam->Draw();
-	hDen2D[2]->Draw(drawopt);
       }
       
     } else if (Nspecies==4) {
@@ -1719,7 +1720,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Float_t curmin = 0.0;
       Float_t curmax = maxCur;
       // Round for better axis
-      //  curmax = TMath::Nint(curmax);
+      curmax = 0.1*TMath::Ceil(10*curmax);
       
       Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
       Float_t zPos = xMax - (xMax-xMin) * 0.14;

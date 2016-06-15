@@ -261,7 +261,6 @@ int main(int argc,char *argv[]) {
     cout << Form("\n Reading simulation data: ") << endl; 
 
     Float_t maxCur = -999.0;
-    Int_t imaxCur = -1;
     
     // Get charge density histos
     Int_t Nspecies = pData->NSpecies();
@@ -270,6 +269,7 @@ int main(int argc,char *argv[]) {
     TH1F **hDen1D = new TH1F*[Nspecies];
     // And electric current (integrated)
     TH1F **hCur1D = new TH1F*[Nspecies];
+
     for(Int_t i=0;i<Nspecies;i++) {
      
       hDen2D[i] = NULL;
@@ -373,7 +373,6 @@ int main(int argc,char *argv[]) {
 
 	if(hCur1D[i]->GetMaximum()>maxCur) {
 	  maxCur = hCur1D[i]->GetMaximum();
-	  imaxCur = i;
 	}
 	
 	hCur1D[i]->GetYaxis()->SetTitle("#Lambda_{b}");  
@@ -382,8 +381,50 @@ int main(int argc,char *argv[]) {
 	} else {
 	  hCur1D[i]->GetXaxis()->SetTitle("k_{p} z");
 	}
-     	
+	
       }
+
+    }
+
+    // Current density
+    TH2F **hJz2D = new TH2F*[Nspecies];
+    for(Int_t i=0;i<Nspecies;i++) {
+      
+      hJz2D[i] = NULL;
+      if(!pData->GetCurrentFileName(i)) 
+	continue;
+      
+      cout << Form(" -> Getting current density of specie %i  (%s)", i, pData->GetSpeciesName(i).c_str())  << endl;
+      
+      char hName[24];
+      sprintf(hName,"hJz2D_%i",i);
+      hJz2D[i] = (TH2F*) gROOT->FindObject(hName);
+      if(hJz2D[i]) delete hJz2D[i];
+
+      if(pData->Is3D()) {
+	//hJz2D[i] = pData->GetCharge2DSliceZX(i,-1,NonBin,opt+"avg");
+	hJz2D[i] = pData->GetH2SliceZX(pData->GetCurrentFileName(i)->c_str(),"j1",-1,NonBin,opt+"avg");
+      } else {
+	hJz2D[i] = pData->GetCharge(i,opt);
+      }
+
+      hJz2D[i]->SetName(hName);
+      hJz2D[i]->GetXaxis()->CenterTitle();
+      hJz2D[i]->GetYaxis()->CenterTitle();
+      hJz2D[i]->GetZaxis()->CenterTitle();
+    
+      if(opt.Contains("comov"))
+	hJz2D[i]->GetXaxis()->SetTitle("k_{p} #zeta");
+      else
+	hJz2D[i]->GetXaxis()->SetTitle("k_{p} z");
+    
+      if(pData->IsCyl()) 
+	hJz2D[i]->GetYaxis()->SetTitle("k_{p} r");
+      else
+	hJz2D[i]->GetYaxis()->SetTitle("k_{p} x");
+    
+      hJz2D[i]->GetZaxis()->SetTitle(Form("j_{z,%i}",i));
+      
       
     } 
     
@@ -662,7 +703,6 @@ int main(int argc,char *argv[]) {
 	// 	  hDen2D[i]->SetBinContent(j,k, hDen2D[i]->GetBinContent(j,k) * n0 / (1e17/PUnits::cm3) );
 	// 	}
 	// }
-
 	if(pData->IsCyl())
 	  hDen2D[i]->GetYaxis()->SetTitle(Form("r [%s]",spaSUnit.c_str()));      
 	else
@@ -679,7 +719,22 @@ int main(int argc,char *argv[]) {
 	// 	hDen2D[i]->GetZaxis()->SetTitle("n_{b} [10^{17}/cm^{3}]"); 
 	// else
 	// 	hDen2D[i]->GetZaxis()->SetTitle("n_{i} [10^{17}/cm^{3}]"); 
-      
+
+	if(hJz2D[i]) {
+	  hJz2D[i]->SetBins(NbinsX,zMin,zMax,NbinsY,ymin,ymax);
+	  
+	  if(pData->IsCyl())
+	    hJz2D[i]->GetYaxis()->SetTitle(Form("r [%s]",spaSUnit.c_str()));      
+	  else
+	    hJz2D[i]->GetYaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));      
+	  
+	  if(opt.Contains("comov"))
+	    hJz2D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	  else
+	    hJz2D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+	}
+	
+	
 	hDen1D[i]->SetBins(NbinsX,zMin,zMax);
 	// for(Int_t j=0;j<hDen1D[i]->GetNbinsX();j++) {
 	// 	hDen1D[i]->SetBinContent(j, hDen1D[i]->GetBinContent(j) * n0 / (1e17/PUnits::cm3) );
@@ -1216,6 +1271,10 @@ int main(int argc,char *argv[]) {
 	hCur1D[i]->Write(hName,TObject::kOverwrite);
       }
 
+      if(hJz2D[i]) {
+	sprintf(hName,"hJz2D_%i",i);
+	hJz2D[i]->Write(hName,TObject::kOverwrite);
+      }
 	
     }
 

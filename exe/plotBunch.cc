@@ -370,7 +370,8 @@ int main(int argc,char *argv[]) {
     Double_t x1BinMax = -4.0;
 
     // dummy shift
-    Double_t dshiftz = pData->Shift("centercomov");
+    // Double_t dshiftz = pData->Shift("centercomov");
+    Double_t dshiftz = pData->Shift(opt.Data());
 
     // Specific initializations:
     if(opt.Contains("autop")) {
