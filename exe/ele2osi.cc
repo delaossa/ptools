@@ -89,7 +89,7 @@ int main(int argc,char *argv[]) {
 	// Process str    
 	if(irow==0) {
 	  stream >> Q;
-	  // Q *= 1E12;   // pC
+	  Q *= 1E12;   // pC
 	} else if(irow==1) {
 	  stream >> Np;
 	  for(int i=0;i<Nvar;i++)

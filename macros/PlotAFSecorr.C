@@ -284,7 +284,14 @@ void PlotAFSecorr(const TString &options="") {
   
   PGlobals::imgconv(C,fOutName,opt);
   // ---------------------------------------------------------
-  
+
+
+  // Just print the graph data for the optimal case
+  Double_t *x = gX[3]->GetX(); 
+  Double_t *y = gX[3]->GetY(); 
+  for (Int_t i = 0; i < gX[3]->GetN(); i++) {
+    printf("%10f, %10f\n",x[i],y[i]);
+  }
   
 }
 

@@ -112,7 +112,7 @@ int main(int argc,char *argv[]) {
   PGlobals::Initialize();
 
   // Palettes!
-  gROOT->Macro("PPalettes.C");
+  //  gROOT->Macro("PPalettes.C");
 
   if(opt.Contains("grid")) {
     gStyle->SetPadGridX(1);
@@ -934,7 +934,8 @@ int main(int argc,char *argv[]) {
   // To current.
   Float_t binSize = (x1Max - x1Min)/x1Nbin;
   Float_t lightspeed =  PConst::c_light / (PUnits::um/PUnits::femtosecond);  
-  hX1->Scale(1000*lightspeed/binSize);
+  //  hX1->Scale(1000*lightspeed/binSize);
+  hX1->Scale(lightspeed/binSize);
 
 
   cout << "\n  Summary _______________________________________________________ " << endl;
@@ -1381,7 +1382,7 @@ int main(int argc,char *argv[]) {
 
     //hX1->Smooth();
     //    hX1->Draw("FL same");
-    hX1->Draw("LF2 same");
+    hX1->Draw("hist LF2 same");
     //hX1->Draw("C");
 
     TLine lZmean2(zmean,0.0,zmean,1.1*yMax);
