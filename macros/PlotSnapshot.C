@@ -277,13 +277,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   sprintf(hName,"hV1D"); 
   TH1F *hV1D = (TH1F*) ifile->Get(hName);
 
-  sprintf(hName,"hA2D"); 
-  TH2F *hA2D = (TH2F*) ifile->Get(hName);
-  sprintf(hName,"hA1D"); 
-  TH1D *hA1D = (TH1D*) ifile->Get(hName);
-  
   cout << Form(" done. ") << endl;
-  
+
   // Rescaling box limits:
   if(opt.Contains("rscal") && hDen2D[0]) {
 
@@ -1340,7 +1335,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TExec *exBeam   = new TExec("exBeam","beamPalette->cd();");
   TExec *exBeam2  = new TExec("exBeam2","beam2Palette->cd();");
   TExec *exBeam3  = new TExec("exBeam3","beam3Palette->cd();");
-  TExec *exLaser  = new TExec("exLaser","laserPalette->cd();");
   TExec *exField  = new TExec("exField","fieldPalette->cd();");
   TExec *exFieldT = new TExec("exFieldT","fieldTPalette->cd();");
   TExec *exPot    = new TExec("exPot","potPalette->cd();");
@@ -1354,8 +1348,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     beam2Palette->SetAlpha(0.8);
   if(opt.Contains("alpha3"))
     beam3Palette->SetAlpha(0.8);
-  if(opt.Contains("alphal"))
-    laserPalette->SetAlpha(0.8);
   
   // Current lines colors
   Int_t cBeam = PGlobals::elecLine;
@@ -1471,20 +1463,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[i]->GetZaxis()->SetLabelOffset(lyoffset);
       
     }
-
-    if(opt.Contains("laser") && hA2D) {
-      hA2D->GetZaxis()->SetTitleFont(fonttype);
-      hA2D->GetZaxis()->SetTitleOffset(tzoffset);
-      hA2D->GetZaxis()->SetTitleSize(tzsize);
-      hA2D->GetZaxis()->SetLabelFont(fonttype);
-      hA2D->GetZaxis()->SetLabelSize(lzsize);
-      hA2D->GetZaxis()->SetTickLength(Ns*tylength/(pfactor));     
-      if(opt.Contains("logz")) { 
-	hA2D->GetZaxis()->SetLabelOffset(-lyoffset * (250/ypadsize));
-      } else
-	hA2D->GetZaxis()->SetLabelOffset(lyoffset);
-      
-    }
         
     // cout << Form(" N species = %i",Nspecies) << endl;
 
@@ -1514,18 +1492,18 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[0]->Draw(drawopt);
       }
 
-      // Injected electrons ?
-      if(hDen2D[2] && noIndex!=2) {
-	exBeam2->Draw();
-	//exBeam->Draw();
-	hDen2D[2]->Draw(drawopt);
-      }
-
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
 	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
+      }
+
+      // Injected electrons ?
+      if(hDen2D[2] && noIndex!=2) {
+	exBeam2->Draw();
+	//exBeam->Draw();
+	hDen2D[2]->Draw(drawopt);
       }
       
     } else if (Nspecies==4) {
@@ -1558,13 +1536,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     }
     
-    if(hA2D && opt.Contains("laser")) {
-      exLaser->Draw();
-      Float_t aMax = hA2D->GetMaximum();
-      hA2D->GetZaxis()->SetRangeUser(0.2*aMax,aMax);
-      hA2D->Draw(drawopt);
-    }
-    
+ 
     if(opt.Contains("contall")) {
       // ADK contours
       if(graphsI2D) {
@@ -1631,9 +1603,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(!hDen2D[i]) continue;
       Ns++;
     }
-    if(hA2D && opt.Contains("laser"))
-      Ns++;
-    
+        
     pad[ip]->Update();
     y1 = pad[ip]->GetBottomMargin();
     y2 = 1 - pad[ip]->GetTopMargin();
@@ -1645,11 +1615,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     for(Int_t i=0;i<Nspecies;i++) {
       if(i==noIndex) continue;
       if(!hDen2D[i]) continue;
-
+      
       palette = (TPaletteAxis*)hDen2D[i]->GetListOfFunctions()->FindObject("palette");
       if(palette) {
 	Float_t y1b,y2b;
-	
+
 	if(j==0)
 	  y1b = y1 + j*pvsize;
 	else
@@ -1675,43 +1645,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	pFrame->Draw();
 
 	j++;
-      }
+      } 
     }
 
-    if(j<Ns && opt.Contains("laser")) {
-      palette = (TPaletteAxis*)hA2D->GetListOfFunctions()->FindObject("palette");
-      
-      if(palette) {
-	Float_t y1b,y2b;
-	
-	if(j==0)
-	  y1b = y1 + j*pvsize;
-	else
-	  y1b = y1 + j*pvsize + gap/2.0;
-
-	if(j==Ns-1)  
-	  y2b = y1 + (j+1)*pvsize;
-	else
-	  y2b = y1 + (j+1)*pvsize - gap/2.0;
-
-	palette->SetY1NDC(y1b);
-	palette->SetY2NDC(y2b);
-
-	palette->SetX1NDC(x2 + 0.01);
-	palette->SetX2NDC(x2 + 0.03);
-	palette->SetBorderSize(2);
-	palette->SetLineColor(1);
-
-	TPave *pFrame = new TPave((x2 + 0.01),y1b,(x2 + 0.03),y2b,1,"NDCL");
-	pFrame->SetFillStyle(0);
-	pFrame->SetLineColor(kBlack);
-	pFrame->SetShadowColor(0);
-	pFrame->Draw();
-	
-	j++;
-      }
-    }
-    
     // 1D plots
     Float_t yaxismin  =  pad[ip]->GetUymin();
     Float_t yaxismax  =  pad[ip]->GetUymin() + 0.3*(pad[ip]->GetUymax() - pad[ip]->GetUymin()) - 0.00;
