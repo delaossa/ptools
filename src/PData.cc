@@ -216,7 +216,10 @@ void PData::ReadParameters(const char * pfile)
 	  cout << Form(" - Beam Y RMS       = %8.4f um", GetBeamRmsY() / PUnits::um) << endl;
 	} else if(word.find("bRmsR") != string::npos)
 	  iss >> pParam.bRmsR;
-	else if(word.find("x1Min") != string::npos) {
+	else if(word.find("lOmega") != string::npos) {
+	  iss >> pParam.lOmega;
+	  cout << Form(" - Laser Omega      = %8.4f fs^-1", GetBeamRmsY() * PUnits::fs) << endl;
+	} else if(word.find("x1Min") != string::npos) {
 	  iss >> pParam.x1Min; 
 	  cout << Form(" - x1Min            = %8.4f", pParam.x1Min) << endl;
 	} else if(word.find("x1Max") != string::npos) {

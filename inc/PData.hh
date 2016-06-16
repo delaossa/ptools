@@ -56,6 +56,9 @@ struct pparam {
   Double_t bRmsX;     // Charasteristic transverse size of the bunch on X.
   Double_t bRmsY;     // Charasteristic transverse size of the bunch on Y.
   Double_t bRmsR;     // Charasteristic transverse size of the bunch on R.
+
+  // laser parameters
+  Double_t lOmega;    // Laser frequency
   
   // Box parameters: These are 4D box ranges for plotting. 
   Double_t x1Min;
@@ -179,7 +182,11 @@ public:
 
   Double_t  GetEMin()  { return pParam.EMin; }
   Double_t  GetEMax()  { return pParam.EMax; }
- 
+
+  // Parameters of the laser
+  Double_t  GetLaserOmega() { return pParam.lOmega * GetPlasmaFrequency();  }
+  
+  
   // Hyperslab access methods
   Double_t  GetX1Min() { return XMINR[0]; }
   Double_t  GetX1Max() { return XMAXR[0]; }

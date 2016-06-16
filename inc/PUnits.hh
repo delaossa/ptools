@@ -329,6 +329,7 @@ namespace PUnits
   static const Double_t  nanosecond = 1.e-3*microsecond; ///< Nanosecond
   static const Double_t  picosecond = 1.e-3*nanosecond; ///< Picosecond
   static const Double_t femtosecond = 1.e-3*picosecond; ///< Femtosecond
+  static const Double_t          fs = 1.e-3*picosecond; ///< Femtosecond
   static const Double_t  atomictime = 0.02419*femtosecond; ///< Atomictime
   //@}
   

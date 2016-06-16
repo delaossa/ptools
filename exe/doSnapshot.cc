@@ -19,6 +19,8 @@
 #include <TPaveText.h>
 #include <TPaletteAxis.h>
 #include <TExec.h>
+#include <TVirtualFFT.h>
+
 
 #include "PData.hh"
 #include "PDataHiP.hh"
@@ -653,6 +655,122 @@ int main(int argc,char *argv[]) {
       
     }
 
+
+    // Get vector potential of the radiation
+    // (substract the electro-estatic fields from the total)
+    if(hDen2D[0]) {
+
+      char hName[24];
+      sprintf(hName,"hRho2D");
+      TH2F *hRho2D = (TH2F*) hDen2D[0]->Clone(hName);
+
+      for(Int_t i=1;i<Nspecies;i++) {
+	if(hDen2D[i]) hRho2D->Add(hDen2D[i],1);
+      }
+
+      Int_t NBinsZ = hRho2D->GetXaxis()->GetNbins();
+      Float_t zmin = hRho2D->GetXaxis()->GetBinLowEdge(1);
+      Float_t zmax = hRho2D->GetXaxis()->GetBinUpEdge(NBinsZ);
+      Float_t zrange = zmax-zmin;
+      
+      Int_t NBinsX = hRho2D->GetYaxis()->GetNbins();
+      Float_t xmin = hRho2D->GetYaxis()->GetBinLowEdge(1);
+      Float_t xmax = hRho2D->GetYaxis()->GetBinUpEdge(NBinsX);
+      Float_t xrange = xmax-xmin;
+      
+      Float_t kzmin = 0.;
+      Float_t kzmax = (TMath::TwoPi() / zrange);
+      
+      Float_t kxmin = 0.;
+      Float_t kxmax = (TMath::TwoPi() / xrange);
+      
+      Int_t dims[2] = {NBinsZ,NBinsX};
+      //  Double_t *data = new Double_t[NBinsZ*NBinsX];
+      Double_t *data = new Double_t[NBinsZ*2*(NBinsX/2+1)];
+      // Extra padding!
+      // See http://www.fftw.org/fftw3_doc/Multi_002dDimensional-DFTs-of-Real-Data.html#Multi_002dDimensional-DFTs-of-Real-Data 
+      
+      for(Int_t i=0; i<NBinsZ; i++) {
+	
+	for(Int_t j=0; j<NBinsX; j++) {
+	  
+	  Int_t index =  i * NBinsX + j;
+	  
+	  data[index]  = hRho2D->GetBinContent(i+1,j+1);
+	  
+	  // substract ion background
+	  data[index] -= 1;
+	}
+      }
+  
+      // cout << Form(" Fourier transform ..." );
+      TVirtualFFT *fft = TVirtualFFT::FFT(2, dims, "R2C ES K");
+      fft->SetPoints(data);
+      fft->Transform();  
+      fft->GetPoints(data);    
+
+      // cout << Form(" Solving equation for potential in fourier space" )  << endl;
+      // Equation: \phi(kz,kx) = \rho(kz,kx)/(kz^2 + kx^2) 
+      for(Int_t i=0; i<dims[0]; i++) {
+	for(Int_t j=0; j<(dims[1]/2+1); j++) {
+
+	  Int_t index =  2 * (i * (dims[1]/2+1)  + j);
+	  //      cout << Form(" i = %4i  j = %4i  index = %10i",i,j,index) << endl;
+      
+	  Float_t kz;
+	  if(i<dims[0]/2)
+	    kz = kzmax * (i);
+	  else
+	    kz =  kzmax * (i-dims[0]);
+	  Float_t kx = (kxmax) * (j) ;
+      
+	  Float_t k2 = kx*kx + kz*kz;
+	  if(k2==0) {
+	    data[index] = 0.0;
+	    data[index+1] = 0.0; 
+	  } else {
+	    data[index] /= k2;
+	    data[index+1] /= k2;      
+	  }
+	}
+      }
+
+      //  cout << Form(" Inverse Fourier transform ..." );
+      // backward transform:
+      TVirtualFFT *fft_back = TVirtualFFT::FFT(2, dims, "C2R ES K");
+      fft_back->SetPoints(data);
+      fft_back->Transform();  
+      
+      Double_t *re_back = fft_back->GetPointsReal();
+  
+      //  cout << Form(" Take the gradient of the potential ..." );
+      TH2F *hE2D_1_ifft = new TH2F("hE2D_1_ifft","",NBinsZ,zmin,zmax,NBinsX,xmin,xmax);
+      Double_t dx = hE2D_1_ifft->GetYaxis()->GetBinWidth(1);
+      for(Int_t i=0; i<NBinsZ; i++) {
+	for(Int_t j=0; j<NBinsX; j++) {
+	  Int_t index =  i * NBinsX + j;
+	  
+	  Float_t der = 0.;
+	  if(j>2 && j<NBinsX-2) {
+	    Int_t indjp1 =  i * NBinsX + (j+1);
+	    Int_t indjp2 =  i * NBinsX + (j+2);
+	    Int_t indjm1 =  i * NBinsX + (j-1);
+	    Int_t indjm2 =  i * NBinsX + (j-2);
+	    
+	    der =  ( 4.0 / 3.0 * (re_back[indjp1] - re_back[indjm1]) / (2.0 * dx)
+		     - 1.0 / 3.0 * (re_back[indjp2] - re_back[indjm2]) / (4.0 * dx) );
+	    
+	  }
+	  
+	  hE2D_1_ifft->SetBinContent(i+1,j+1,der);
+	}
+      }
+      
+      hE2D_1_ifft->Scale(1.0/(NBinsZ*NBinsX));
+      TH1D *hE1D_1_ifft = hE2D_1_ifft->ProjectionX("hE1D_1_ifft",hE2D_1_ifft->GetNbinsY()/2,hE2D_1_ifft->GetNbinsY()/2);
+      
+    }
+    
     // Chaning to user units: 
     // --------------------------
   
