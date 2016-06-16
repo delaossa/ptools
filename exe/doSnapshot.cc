@@ -37,7 +37,7 @@ int main(int argc,char *argv[]) {
   if(argc<=2) {
     printf("\n Usage: %s <simulation name> <-t(time)>\n",argv[0]);
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
-    printf("      <--center> <--comov> <--units>\n");
+    printf("      <--center> <--comov> <--units> <--curr> <--rad> \n");
     printf("      <-z(zoom factor)> <-non(# on-axis)> <-nof(# off-axis)> <-avg(# bins)>\n");
     printf("      <-msk(mask)> <-opt(plot options)>\n");
     printf("      \n");
@@ -91,6 +91,8 @@ int main(int argc,char *argv[]) {
       opt += "center";
     } else if(arg.Contains("--curr")){
       opt += "curr";	
+    } else if(arg.Contains("--rad")){
+      opt += "rad";	
     } else if(arg.Contains("--alt1D")){
       opt += "alt1D";	
     } else if(arg.Contains("-t")) {
@@ -657,8 +659,10 @@ int main(int argc,char *argv[]) {
 
 
     // Get vector potential of the radiation
+    TH2F *hA2D = NULL;
+    TH1D *hA1D = NULL;
     // (substract the electro-estatic fields from the total)
-    if(hDen2D[0]) {
+    if(hDen2D[0] && opt.Contains("rad")) {
 
       char hName[24];
       sprintf(hName,"hRho2D");
@@ -767,8 +771,25 @@ int main(int argc,char *argv[]) {
       }
       
       hE2D_1_ifft->Scale(1.0/(NBinsZ*NBinsX));
-      TH1D *hE1D_1_ifft = hE2D_1_ifft->ProjectionX("hE1D_1_ifft",hE2D_1_ifft->GetNbinsY()/2,hE2D_1_ifft->GetNbinsY()/2);
+
+
+      hA2D = (TH2F*) hRho2D->Clone("hA2D");
+      hA2D->GetZaxis()->SetTitle("|a|");
+      for(Int_t i=0; i<NBinsZ; i++) {
+	for(Int_t j=0; j<NBinsX; j++) {
+	  Float_t content = hE2D[1]->GetBinContent(i+1,j+1) - hE2D_1_ifft->GetBinContent(i+1,j+1) ;
+	  hA2D->SetBinContent(i+1,j+1,fabs(content));     
+	}
+      }
       
+      Float_t lOmega = pData->GetLaserOmega() / pData->GetPlasmaFrequency();
+      hA2D->Scale(1.0/lOmega);
+      hA1D = hA2D->ProjectionX("hA1D",hA2D->GetNbinsY()/2,hA2D->GetNbinsY()/2);
+      hA1D->GetXaxis()->SetTitle(hA2D->GetXaxis()->GetTitle());
+      hA1D->GetYaxis()->SetTitle(hA2D->GetZaxis()->GetTitle());
+      
+      delete [] data;
+      delete hE2D_1_ifft;
     }
     
     // Chaning to user units: 
@@ -999,8 +1020,36 @@ int main(int argc,char *argv[]) {
 	  hB1D[i]->GetYaxis()->SetTitle(Form("B_{y} [%s]",eSUnit.c_str()));
 	
       }
-    }
 
+      if(hA2D) {
+	
+	Int_t NbinsX = hA2D->GetNbinsX();
+	Double_t zMin = skindepth * hA2D->GetXaxis()->GetXmin() / spaUnit;
+	Double_t zMax = skindepth * hA2D->GetXaxis()->GetXmax() / spaUnit;
+	Int_t NbinsY = hA2D->GetNbinsY();
+	Double_t ymin = skindepth * hA2D->GetYaxis()->GetXmin() / spaUnit;
+	Double_t ymax = skindepth * hA2D->GetYaxis()->GetXmax() / spaUnit;
+	hA2D->SetBins(NbinsX,zMin,zMax,NbinsY,ymin,ymax);
+	hA1D->SetBins(NbinsX,zMin,zMax);
+	
+	if(pData->IsCyl())
+	  hA2D->GetYaxis()->SetTitle(Form("r [%s]",spaSUnit.c_str()));
+	else
+	  hA2D->GetYaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));
+	
+	if(opt.Contains("comov"))
+	  hA2D->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	else
+	  hA2D->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+      
+	if(opt.Contains("comov"))
+	  hA1D->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	else
+	  hA1D->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+	
+      }
+    }
+    
     // Focusing field
     TH2F *hFocus2D = NULL;
     if(hE2D[1]) {
@@ -1393,7 +1442,7 @@ int main(int argc,char *argv[]) {
 	sprintf(hName,"hJz2D_%i",i);
 	hJz2D[i]->Write(hName,TObject::kOverwrite);
       }
-	
+      
     }
 
       
@@ -1456,6 +1505,17 @@ int main(int argc,char *argv[]) {
       sprintf(hName,"hETotal1D");
       hETotal1D->Write(hName,TObject::kOverwrite);
     }
+
+    if(hA2D) {
+      sprintf(hName,"hA2D");
+      hA2D->Write(hName,TObject::kOverwrite);
+    }
+    
+    if(hA1D) {
+      sprintf(hName,"hA1D");
+      hA1D->Write(hName,TObject::kOverwrite);
+    }
+    
 
     // Save TTree with options information for further processing.
     TTree *infotree = new TTree("infoTree","options tree from doSnapshot");

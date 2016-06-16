@@ -78,10 +78,6 @@ void PlotVectorPotential( const TString &sim, Int_t timestep, const TString &opt
   if(hDen2D_3)
     hDen2D->Add(hDen2D_3,1);
 
-
-
-  
-  
   cout << Form(" done!" ) << endl;
 
   // Get the sliced 1D histograms 
@@ -275,6 +271,6 @@ void PlotVectorPotential( const TString &sim, Int_t timestep, const TString &opt
   ha1D->Scale(1.0/omega0);
   
   ha2D->GetZaxis()->SetRangeUser(0.0101,ha2D->GetMaximum());
-  fieldTPalette->cd();
+  //fieldTPalette->cd();
   ha2D->Draw("colz");
 }

@@ -499,6 +499,8 @@ void PData::ResetParameters() {
     = pParam.bDensity = pParam.bStart 
     = pParam.bRmsZ = pParam.bRmsX  = pParam.bRmsY    = pParam.bRmsR 
     = pParam.EMin  = pParam.EMax   =  0.;
+
+  pParam.lOmega = 1.0;
   
   pParam.x1Min = pParam.x1Max  = pParam.x2Min = pParam.x2Max 
     = pParam.x3Min = pParam.x3Max = -999.;

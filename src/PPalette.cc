@@ -430,6 +430,26 @@ Int_t PPalette::SetPalette(const char * name)
 	this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
       return 1;
       
+    } else if(strcmp(name,"greengray")==0) {
+      const Int_t NRGBs = 2;
+      const Int_t NCont = 99;
+
+      //      TColor *cgreen = gROOT->GetColor(TColor::GetColor("#29CD6C"));
+      TColor *cgreen = gROOT->GetColor(TColor::GetColor("#5C7B2F"));
+      Double_t r = cgreen->GetRed();
+      Double_t g = cgreen->GetGreen();
+      Double_t b = cgreen->GetBlue();
+      
+      Double_t Stops[NRGBs] = { 0.0000, 1.0};
+      Double_t Red[NRGBs]   = { 0.9, r};
+      Double_t Green[NRGBs] = { 0.9, g};
+      Double_t Blue[NRGBs]  = { 0.9, b};
+      if(!fColors)
+	this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
+      else
+	this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
+      return 1;
+      
     }  
     else {
       std::cout << Form(" PPalette :: palette name not recognised.") << std::endl;
