@@ -32,8 +32,9 @@
   PPalette *laserPalette = (PPalette*) gROOT->FindObject("laser");
   if(!laserPalette) {
     laserPalette = new PPalette("laser");
-    //    laserPalette->SetPalette("greengray");
+    // laserPalette->SetPalette("greengray");
     laserPalette->SetPalette("kBird");
+    //laserPalette->SetPalette("red");
   }
 
   PPalette *fieldPalette = (PPalette*) gROOT->FindObject("field");
