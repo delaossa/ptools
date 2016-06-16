@@ -370,7 +370,10 @@ int main(int argc,char *argv[]) {
 	// Normalized current:
 	Double_t dV = skindepth * skindepth * skindepth;
 	if(!pData->Is3D()) {
-	  hCur1D[i]->Scale(TMath::Abs( (5./3.) * n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
+	  Float_t factor = 1.0;
+	  if(pData->GetBeamRmsX())
+	    factor *=  (pData->GetBeamRmsX()/skindepth) * TMath::Sqrt(2.0*TMath::Pi());
+	  hCur1D[i]->Scale(TMath::Abs(factor * n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
 	} else {
 	  hCur1D[i]->Scale(TMath::Abs(n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
 	}
