@@ -1181,10 +1181,11 @@ int main(int argc,char *argv[]) {
     Double_t Q0 = rawf * fabs(n0 * dV * PConst::ElectronCharge);
 
     Double_t Charge = hX1->Integral();
-    if(!pData->Is3D()) {
-      Charge *= (5./3.); 
+    if(!pData->Is3D() && pData->GetBeamRmsX()) {
+      Float_t factor =  (pData->GetBeamRmsX()/skindepth) * TMath::Sqrt(2.0*TMath::Pi());
+      Charge *= factor; 
     }
-        
+    
     if(opt.Contains("units") && n0) {
       Charge *= Q0;
       
