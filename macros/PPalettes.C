@@ -10,7 +10,8 @@
   PPalette *beamPalette = (PPalette*) gROOT->FindObject("beam");
   if(!beamPalette) {
     beamPalette = new PPalette("beam");
-    beamPalette->SetPalette("elec");
+    // beamPalette->SetPalette("elec");
+    beamPalette->SetPalette("hot");
   }
 
   PPalette *beam2Palette = (PPalette*) gROOT->FindObject("beam2");
@@ -33,7 +34,7 @@
   if(!laserPalette) {
     laserPalette = new PPalette("laser");
     // laserPalette->SetPalette("greengray");
-    laserPalette->SetPalette("kBird");
+    laserPalette->SetPalette(kBird);
     //laserPalette->SetPalette("red");
   }
 
