@@ -1363,8 +1363,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Int_t cBeam2 = kOrange+8;
 
   if(Nspecies==4) {
-    beam2Palette->SetPalette("red");
-    cBeam1 = TColor::GetColor("#FFCC66"); 
+    //    beam2Palette->SetPalette("red");
+    // cBeam1 = TColor::GetColor("#FFCC66"); 
+    // beam2Palette->SetPalette("blue");
+    // cBeam1 = TColor::GetColor("#84B1C4");
+    beam2Palette->SetPalette("greengray");
+    cBeam1 = TColor::GetColor("#5C7B2F");
   }
 
 
@@ -1508,17 +1512,18 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
 
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	exPlasma->Draw();
-	hDen2D[0]->Draw(drawopt);
-      }
 
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
 	//exBeam->Draw();
 	hDen2D[2]->Draw(drawopt);
+      }
+
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
       }
 
       // Beam driver.
@@ -1531,11 +1536,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
     } else if (Nspecies==4) {
 
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	exPlasma->Draw();
-	hDen2D[0]->Draw(drawopt);
-      }
       
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
@@ -1550,6 +1550,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[3]->Draw(drawopt);
       }
 
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
+      }
+
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
 	exBeam->Draw();
@@ -1562,7 +1568,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(hA2D && opt.Contains("laser")) {
       exLaser->Draw();
       Float_t aMax = hA2D->GetMaximum();
-      hA2D->GetZaxis()->SetRangeUser(0.2*aMax,aMax);
+      hA2D->GetZaxis()->SetRangeUser(0.2*aMax,1.2*aMax);
       hA2D->Draw(drawopt);
     }
     
