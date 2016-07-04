@@ -931,7 +931,7 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     Double_t *denarray = new Double_t[Np];
     Double_t *betapharray = new Double_t[Np];
     Double_t ntop   = 10;
-    Double_t sigmal = 2.5;
+    Double_t sigmal = 2.0;
     Double_t phase = -TMath::TwoPi();
 
     Float_t dMin = -0.5;
@@ -953,11 +953,16 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     hFrameD->GetYaxis()->SetTitle("n/n_{0}");
 
     PGlobals::SetH1LabelSize(hFrameD);
+    hFrameD->GetXaxis()->SetLabelSize(14);
+    hFrameD->GetXaxis()->SetTitleSize(18);
+ 
     hFrameD->GetYaxis()->SetNdivisions(6);
     hFrameD->GetYaxis()->SetAxisColor(myNaranja);
     hFrameD->GetYaxis()->SetLabelColor(myNaranja);
     hFrameD->GetYaxis()->SetTitleColor(myNaranja);
-
+    hFrameD->GetYaxis()->SetLabelSize(14);
+    hFrameD->GetYaxis()->SetTitleSize(18);
+    
     hFrameD->Draw("axis");
 
     denvsz->Draw("C");

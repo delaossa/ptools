@@ -165,12 +165,11 @@ namespace PGlobals {
   void SetH1LabelSize(TH1 *histo) {
     // Lines and colors for 1D Histos
        
-    histo->SetLabelSize(0.04,"xyz");
+    histo->SetLabelSize(labelSize,"xyz");
     histo->SetLabelOffset(0.01,"xyz");
  
-    histo->SetTitleSize(0.05,"xyz");
-    histo->SetTitleOffset(1.2,"xy");
-    histo->SetTitleOffset(1.3,"z");
+    histo->SetTitleSize(titleSize,"xyz");
+    histo->SetTitleOffset(1.2,"xyz");
     
     histo->SetTickLength(0.018,"xyz");
     
