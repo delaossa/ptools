@@ -503,27 +503,38 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   }
   // End of ionization histograms.
-
   
-
   // ----------- Plotting Range (ZOOM) ------------
 
-  Float_t zoom = 1;
-  Float_t yRange   = (hDen2D[0]->GetYaxis()->GetXmax() - hDen2D[0]->GetYaxis()->GetXmin())/zoom;
-  Float_t midPoint = (hDen2D[0]->GetYaxis()->GetXmax() + hDen2D[0]->GetYaxis()->GetXmin())/2.;
+  TH2F *h2D = NULL;
+  for(Int_t i=0;i<Nspecies;i++) {
+    if(hDen2D[i]) {
+      h2D = hDen2D[i];
+      break;
+    }
+  }
+  if(!h2D) {
+    for(Int_t i=0;i<Nfields;i++) {
+      if(hE2D[i]) {
+	h2D = hE2D[i];
+	break;
+      }
+    }
+  }
+
+  Float_t yRange   = (h2D->GetYaxis()->GetXmax() - h2D->GetYaxis()->GetXmin());
+  Float_t midPoint = (h2D->GetYaxis()->GetXmax() + h2D->GetYaxis()->GetXmin())/2.;
   Float_t yMin = midPoint-yRange/2;
   Float_t yMax = midPoint+yRange/2;
   if(pData->IsCyl()) {
     yMin = pData->GetXMin(1);
     yMax = yRange;
   }
-  Float_t xMin = hDen2D[0]->GetXaxis()->GetXmin();
-  Float_t xMax = hDen2D[0]->GetXaxis()->GetXmax();
+  Float_t xMin = h2D->GetXaxis()->GetXmin();
+  Float_t xMax = h2D->GetXaxis()->GetXmax();
   Float_t xRange = xMax - xMin;
-  // User range
-  // xMin = -70;
-  // xMax = -20;
-
+  
+  
   for(Int_t i=0;i<Nspecies;i++) {
     if(i==noIndex) continue;
     if(!hDen2D[i]) continue;
@@ -547,23 +558,25 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hETotal2D->GetYaxis()->SetRangeUser(yMin,yMax);
     hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
   }
-  
+
   // ----- z Zoom ---------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
   // using a dynamic palette that adjusts the base value to a certain color.
   
   Float_t Base  = 1;
-
-  // Local value of the density at \zeta = 0 and y = a quarter of the yRange.
-  Int_t binx = hDen2D[0]->GetXaxis()->FindBin(0.);
-  Int_t biny = hDen2D[0]->GetYaxis()->FindBin(yMax - ((yMax-yMin)/8.0));
-  Float_t localden = hDen2D[0]->GetBinContent(binx,biny);
-
-  cout << Form(" Local density = %.2f n0",localden) << endl;
-
   Float_t baseden = Base;
-  if(baseden<Base) baseden = Base;
-
+  Float_t localden = baseden;
+  
+  if(hDen2D[0]) {
+    
+    // Local value of the density at \zeta = 0 and y = a quarter of the yRange.
+    Int_t binx = hDen2D[0]->GetXaxis()->FindBin(0.);
+    Int_t biny = hDen2D[0]->GetYaxis()->FindBin(yMax - ((yMax-yMin)/8.0));
+    localden = hDen2D[0]->GetBinContent(binx,biny);
+    
+    cout << Form(" Local density = %.2f n0",localden) << endl;
+  }
+  
   if(opt.Contains("lden"))
     baseden = localden;
   
@@ -640,7 +653,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     if(pData->GetDenMin(i)>=0)
       Min[i] = pData->GetDenMin(i);
-
+    
     //    cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,pData->GetDenMin(i),pData->GetDenMax(i)) << endl;
     cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,Min[i],Max[i]) << endl;
     
@@ -648,42 +661,39 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
   }
   
-  
   // Dynamic plasma palette
-  const Int_t NRGBs = 3;
-  const Int_t NCont = 64;
+  PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
+  if(!plasmaPalette) {
+    plasmaPalette = new PPalette("plasma");
+    plasmaPalette->SetPalette("gray");
+  }
+  
   Float_t basePos = 0.5;
   Float_t localPos = basePos;
-  if(Max[0]!=Min[0]) {
-    if(opt.Contains("logz")) {
-      Float_t a = 1.0/(TMath::Log10(Max[0])-TMath::Log10(Min[0]));
-      Float_t b = TMath::Log10(Min[0]);
-      basePos = a*(TMath::Log10(baseden) - b);
-      localPos = a*(TMath::Log10(localden) - b);
-      
-    } else {
-      basePos = (1.0/(Max[0]-Min[0]))*(baseden - Min[0]);
-      localPos = (1.0/(Max[0]-Min[0]))*(localden - Min[0]);
+  if( hDen2D[0] ) {
+    const Int_t NRGBs = 3;
+    const Int_t NCont = 64;
+    if(Max[0]!=Min[0]) {
+      if(opt.Contains("logz")) {
+	Float_t a = 1.0/(TMath::Log10(Max[0])-TMath::Log10(Min[0]));
+	Float_t b = TMath::Log10(Min[0]);
+	basePos = a*(TMath::Log10(baseden) - b);
+	localPos = a*(TMath::Log10(localden) - b);
+      } else {
+	basePos = (1.0/(Max[0]-Min[0]))*(baseden - Min[0]);
+	localPos = (1.0/(Max[0]-Min[0]))*(localden - Min[0]);
+      }
+      // cout << Form(" Local density = %.2f    Local position  = %f ",localden,localPos) << endl;
     }
+    
+    Double_t Stops[NRGBs] = { 0.00, basePos, 1.00 };
+    Double_t Red[NRGBs]   = { 0.99, 0.90, 0.00 };
+    Double_t Green[NRGBs] = { 0.99, 0.90, 0.00 };
+    Double_t Blue[NRGBs]  = { 0.99, 0.90, 0.00 };
+    
+    plasmaPalette->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, 1.0);
   }
-
-  Double_t Stops[NRGBs] = { 0.00, basePos, 1.00 };
-  Double_t Red[NRGBs]   = { 0.99, 0.90, 0.00 };
-  Double_t Green[NRGBs] = { 0.99, 0.90, 0.00 };
-  Double_t Blue[NRGBs]  = { 0.99, 0.90, 0.00 };
-   
-  PPalette * plaPalette = (PPalette*) gROOT->FindObject("plasma");
-  if(!plaPalette) {
-    plaPalette = new PPalette("plasma");
-    plaPalette->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, 1.0);
-  } else {
-    plaPalette->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, 1.0);
-  }
-
-  cout << Form(" N colors = %i   Color index  = %i ", plaPalette->GetNColors(),
-	       plaPalette->GetColor(0)) << endl;
-	       
-	       
+  
 	       
   // Redefines the ground color of the electron palette to match background plasmas.
   PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
@@ -692,14 +702,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     beamPalette->SetPalette("elec");
   }
   
-  if(opt.Contains("mbeam")) {
-    Int_t localcolorindex =  TMath::Nint(localPos * plaPalette->GetNColors());
-    Int_t rootcolorindex = plaPalette->GetColor(localcolorindex);
+  if(opt.Contains("mbeam") && hDen2D[0]) {
+    Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
+    Int_t rootcolorindex = plasmaPalette->GetColor(localcolorindex);
     TColor *localcolor = gROOT->GetColor(rootcolorindex);
     Float_t r,g,b;
     localcolor->GetRGB(r,g,b);
 
-    cout << Form(" N colors = %i   Base position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plaPalette->GetNColors(), basePos, rootcolorindex, r, g, b) << endl;
+    cout << Form(" N colors = %i   Local position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plasmaPalette->GetNColors(), localPos, rootcolorindex, r, g, b) << endl;
 
     const Int_t elecNRGBs = 5;
     const Int_t elecNCont = 64;
@@ -708,15 +718,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
     Double_t elecBlue[elecNRGBs] =  { b, 0.58, 0.33, 0.30, 0.20};
     
-    if(!beamPalette) {
-      beamPalette = new PPalette("redelectron");
-      beamPalette->CreateGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, elecNCont,1.0);
-    } else {
-      beamPalette->ChangeGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue, 1.0);
-    }
-    
-  }  
-
+    beamPalette->ChangeGradientColorTable(elecNRGBs, elecStops, elecRed, elecGreen, elecBlue);
+  }
+  
   PPalette * beam2Palette = (PPalette*) gROOT->FindObject("beam2");
   if(!beam2Palette) {
     beam2Palette = new PPalette("beam2");
@@ -761,8 +765,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Fmax = -Fmin;
     hFocus2D->GetZaxis()->SetRangeUser(Fmin,Fmax);
   }
-
-
   
   // CROSSINGS
   
@@ -1043,7 +1045,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // ------------------------------------------------------------
   
   // Canvas setup
-  UInt_t NPad = BitCounter(mask);
+  Int_t NPad = BitCounter(mask);
   if(NPad==0) NPad = 1;
   Float_t ypadsize = 250;
   Float_t ymarginsize = 200;
@@ -1335,7 +1337,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   cout << endl;
 
-  // Access to color Palettes   
+  // Access to color Palettes
+  PPalette * laserPalette = (PPalette*) gROOT->FindObject("laser");
+  if(!laserPalette) {
+    laserPalette = new PPalette("laser");
+    laserPalette->SetPalette(kBird);
+  }
+
+  
   TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
   TExec *exBeam   = new TExec("exBeam","beamPalette->cd();");
   TExec *exBeam2  = new TExec("exBeam2","beam2Palette->cd();");
@@ -1347,7 +1356,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TExec *exIonP   = new TExec("exIonP","ionPalette->cd();");
 
   if(opt.Contains("alpha0"))
-    plaPalette->SetAlpha(0.8);
+    plasmaPalette->SetAlpha(0.8);
   if(opt.Contains("alpha1"))
     beamPalette->SetAlpha(0.8);
   if(opt.Contains("alpha2"))

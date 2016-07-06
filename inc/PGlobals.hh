@@ -110,13 +110,14 @@ namespace PGlobals {
     PlasmaStyle->SetOptStat(0);
     PlasmaStyle->SetOptFit(0);
 
-    // put/quit tick marks on top and right of plots
+    // add/remove tick marks on top and right of plots
     PlasmaStyle->SetPadTickX(0);
     PlasmaStyle->SetPadTickY(0);
 
     // Fonts
     PlasmaStyle->SetStatFont(fontType);
     PlasmaStyle->SetTextFont(fontType);
+    
     PlasmaStyle->SetTitleFont(fontType,"xyz");
     PlasmaStyle->SetLabelFont(fontType,"xyz");
 

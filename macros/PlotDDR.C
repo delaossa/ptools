@@ -34,12 +34,42 @@ Double_t DenGauss(Double_t z, Double_t sigmal, Double_t ntop) {
   
   Double_t nnorm =  1.0 + (ntop - 1.0) * TMath::Exp(-(z*z)/(2*sigmal*sigmal)) ;
   return nnorm;
-
 }
 
 Double_t DerDenGauss(Double_t z, Double_t sigmal, Double_t ntop) {
   
   Double_t dernnorm =  -(z/(sigmal*sigmal)) * (ntop - 1) * TMath::Exp(-(z*z)/(2*sigmal*sigmal));
+  return dernnorm;
+}
+
+Double_t DenLin(Double_t z, Double_t sigmal, Double_t ntop) {
+
+  Double_t zmin  = (2.0 - TMath::Sqrt(TMath::Exp(1))) * sigmal;
+  Double_t zmax  = 2.0 * sigmal;
+  
+  Double_t nnorm = ntop;
+  Double_t slop  = (1-ntop)/(TMath::Sqrt(TMath::Exp(1)) * sigmal);
+  
+  if(z>=zmin && z<=zmax)
+    nnorm = 1 + slop * ( z - sigmal ) - slop * sigmal;
+  else if(z>zmax) nnorm = 1.0;
+  
+  return nnorm;
+  
+}
+
+Double_t DerDenLin(Double_t z, Double_t sigmal, Double_t ntop) {
+
+  Double_t zmin  = (2.0 - TMath::Sqrt(TMath::Exp(1))) * sigmal;
+  Double_t zmax  = 2.0 * sigmal;
+  
+  Double_t dernnorm = 0.0;
+  Double_t slop  = (1-ntop)/(TMath::Sqrt(TMath::Exp(1)) * sigmal);
+  
+  if(z>=zmin && z<=zmax) {
+    dernnorm = slop;
+  }
+  
   return dernnorm;
   
 }
@@ -50,6 +80,14 @@ Double_t betaph(Double_t z, Double_t phase, Double_t sigmal, Double_t ntop) {
   return beta;
     
 }
+
+Double_t betaphlin(Double_t z, Double_t phase, Double_t sigmal, Double_t ntop) {
+
+  Double_t beta = 1.0 / ( 1.0 + (phase/2) * TMath::Power(DenLin(z,sigmal,ntop),-3/2.) * DerDenLin(z,sigmal,ntop)  ) ;
+  return beta;
+    
+}
+
 
 Double_t betapsi(Double_t psi) {
   Double_t beta = - ( 2*psi + psi*psi ) / (2*psi + psi*psi + 2) ;
@@ -65,9 +103,6 @@ void PlotDDR(const TString &sim, const TString &options="png") {
 
   PGlobals::Initialize();
   
-  // Palettes!
-  gROOT->Macro("PPalettes.C");
-
   TString opt = options;
 
   // Colors
@@ -929,7 +964,9 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     Int_t Np = 100;
     Double_t *zarray = new Double_t[Np];
     Double_t *denarray = new Double_t[Np];
+    Double_t *denarraylin = new Double_t[Np];
     Double_t *betapharray = new Double_t[Np];
+    Double_t *betapharraylin = new Double_t[Np];
     Double_t ntop   = 10;
     Double_t sigmal = 2.0;
     Double_t phase = -TMath::TwoPi();
@@ -938,16 +975,24 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     Float_t dMax = ntop+0.5;
     
     for(Int_t i=0; i<Np; i++) {
-      zarray[i] = (i + 0.5) * 6*sigmal/Np;
+      zarray[i] = (i + 0.5) * 5 * sigmal/Np;
       denarray[i] = DenGauss(zarray[i],sigmal,ntop);
+      denarraylin[i] = DenLin(zarray[i],sigmal,ntop);
       betapharray[i] = betaph(zarray[i],phase,sigmal,ntop);
+      betapharraylin[i] = betaphlin(zarray[i],phase,sigmal,ntop);
     }
-
+    
     TGraph *denvsz = new TGraph(Np,zarray,denarray);
     denvsz->SetLineColor(myNaranja);
     denvsz->SetLineWidth(3);
-      
-    TH1F *hFrameD = new TH1F("hFrameD","",100,0.0,6*sigmal);
+
+    TGraph *denlinvsz = new TGraph(Np,zarray,denarraylin);
+    denlinvsz->SetLineColor(myNaranja);
+    denlinvsz->SetLineWidth(1);
+    denlinvsz->SetLineStyle(2);
+    
+    
+    TH1F *hFrameD = new TH1F("hFrameD","",100,0.0,5*sigmal);
     hFrameD->GetYaxis()->SetRangeUser(dMin,dMax);
     hFrameD->GetXaxis()->SetTitle("k_{p}^{0} z");
     hFrameD->GetYaxis()->SetTitle("n/n_{0}");
@@ -956,16 +1001,20 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     hFrameD->GetXaxis()->SetLabelSize(14);
     hFrameD->GetXaxis()->SetTitleSize(18);
  
-    hFrameD->GetYaxis()->SetNdivisions(6);
+    hFrameD->GetYaxis()->SetNdivisions(206);
     hFrameD->GetYaxis()->SetAxisColor(myNaranja);
     hFrameD->GetYaxis()->SetLabelColor(myNaranja);
     hFrameD->GetYaxis()->SetTitleColor(myNaranja);
     hFrameD->GetYaxis()->SetLabelSize(14);
+    hFrameD->GetYaxis()->SetLabelOffset(0.014);
     hFrameD->GetYaxis()->SetTitleSize(18);
+    hFrameD->GetYaxis()->SetTitleOffset(1.2);
+    hFrameD->GetYaxis()->SetTickLength(0.02);
     
     hFrameD->Draw("axis");
 
     denvsz->Draw("C");
+    denlinvsz->Draw("L");
 
     gPad->Update();
 
@@ -975,15 +1024,22 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     Double_t slope = (gPad->GetUymax() - gPad->GetUymin())/(rightmax-rightmin); 
     for(Int_t i=0; i<Np; i++) {
       betapharray[i] = (betapharray[i]-rightmin) * slope +  gPad->GetUymin();
+      betapharraylin[i] = (betapharraylin[i]-rightmin) * slope +  gPad->GetUymin();
     }
     
     TGraph *betaphvsz = new TGraph(Np,zarray,betapharray); 
     //   betaphvsz->SetLineColor(myBlue);
     betaphvsz->SetLineColor(kGray+2);
-    betaphvsz->SetLineWidth(3);
-    betaphvsz->SetLineStyle(2);
+    betaphvsz->SetLineWidth(2);
+    betaphvsz->SetLineStyle(1);
     betaphvsz->Draw("C");
 
+    TGraph *betaphvszlin = new TGraph(Np,zarray,betapharraylin); 
+    //   betaphvsz->SetLineColor(myBlue);
+    betaphvszlin->SetLineColor(kGray+2);
+    betaphvszlin->SetLineWidth(1);
+    betaphvszlin->SetLineStyle(2);
+    betaphvszlin->Draw("L");
 
     // Draw beta from simulation 
     Double_t *betaarray = new Double_t[Np];
@@ -1001,7 +1057,6 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     
     for(Int_t i=0; i<Np; i++) {
       den0array[i] = denarray[i] * nfactor;
-
       Bool_t found = kFALSE;
       for(Int_t j=1; j<Npp; j++) {
 	if( den0array[i]<nval[j-1] && den0array[i]>nval[j]) {
@@ -1010,18 +1065,12 @@ void PlotDDR(const TString &sim, const TString &options="png") {
 
 	  betaarray[i] = betapsi(psi_int);
 	  betaarray[i] = (betaarray[i]-rightmin) * slope +  gPad->GetUymin();
-
 	  //	  cout << Form(" Point %i: %f --> %.4f (%.4f) %.4f (%.4f) -> %.4f ",i,den0array[i],nval[j-1],psival[j-1],nval[j],psival[j],psi_int) << endl;
-	  
-	  
 	  found = kTRUE;
       	}
-
 	if(found) break;
       }
-
       if(found) continue;
-      
       //  cout << Form("  %f ", den0array[i]) << endl;
     }
     
@@ -1033,7 +1082,7 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     
     //draw an axis on the right side
     TGaxis *axisb = new TGaxis(gPad->GetUxmax(),gPad->GetUymin(),gPad->GetUxmax(),
-			      gPad->GetUymax(),rightmin,rightmax,206,"+L");
+			      gPad->GetUymax(),rightmin,rightmax,206,"+LS");
   
     axisb->SetLineWidth(1);
     axisb->SetLineColor(betaphvsz->GetLineColor());
@@ -1044,8 +1093,10 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     axisb->SetLabelFont(43);
     axisb->SetLabelColor(kGray+2);
     axisb->SetLabelSize(14);
-    axisb->SetTitleOffset(1.6);
-    axisb->SetLabelOffset(0.02);
+    axisb->SetLabelOffset(0.014);
+    axisb->SetTitleFont(43);   
+    axisb->SetTitleSize(18);
+    axisb->SetTitleOffset(1.4);
     axisb->SetTickSize(0.02);
     axisb->Draw();
 
@@ -1055,6 +1106,13 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     lFrame->SetLineColor(PGlobals::frameColor);
     lFrame->SetLineWidth(PGlobals::frameWidth);
     lFrame->Draw();
+
+    TLine xaxis(gPad->GetUxmin(), 0.0,
+		gPad->GetUxmax(), 0.0);
+    xaxis.SetLineColor(kBlack);
+    xaxis.SetLineWidth(1);
+    xaxis.SetLineStyle(3);
+    xaxis.Draw();
     
     TLine laxis(gPad->GetUxmin(), gPad->GetUymin(),
 		gPad->GetUxmin(), gPad->GetUymax());
