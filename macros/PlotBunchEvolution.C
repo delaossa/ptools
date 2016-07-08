@@ -44,7 +44,7 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
   PGlobals::Initialize();
   
   // Palettes!
-  gROOT->Macro("PPalettes.C");
+  // gROOT->Macro("PPalettes.C");
 
   TString opt = options;
   
@@ -183,10 +183,15 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
     if(pzRms[j]<minPzrms)
       minPzrms = pzRms[j];
     
-    if(xmean[j]>maxXmean)
-      maxXmean = xmean[j];
-    if(xmean[j]<minXmean)
-      minXmean = xmean[j];
+    // if(xmean[j]>maxXmean)
+    //   maxXmean = xmean[j];
+    // if(xmean[j]<minXmean)
+    //   minXmean = xmean[j];
+
+    if(xmean[j] + xrms[j]>maxXmean)
+      maxXmean = xmean[j] + xrms[j];
+    if(xmean[j] - xrms[j]<minXmean)
+      minXmean = xmean[j] - xrms[j];
   
     if(xrms[j]>maxXrms)
       maxXrms = xrms[j];
@@ -203,11 +208,16 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
     if(pxrms[j]<minPxrms)
       minPxrms = pxrms[j];
 
-    if(xpmean[j]>maxXpmean)
-      maxXpmean = xpmean[j];
-    if(xpmean[j]<minXpmean)
-      minXpmean = xpmean[j];
-  
+    // if(xpmean[j]>maxXpmean)
+    //   maxXpmean = xpmean[j];
+    // if(xpmean[j]<minXpmean)
+    //   minXpmean = xpmean[j];
+
+    if(xpmean[j] + xprms[j]>maxXpmean)
+      maxXpmean = xpmean[j] + xprms[j];
+    if(xpmean[j] - xprms[j]<minXpmean)
+      minXpmean = xpmean[j] - xprms[j];
+
     if(xprms[j]>maxXprms)
       maxXprms = xprms[j];
     if(xprms[j]<minXprms)
@@ -427,10 +437,10 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
     yMin = -yMax;
   else
     yMax = -yMin;   
-  if(yMax<maxXprms) {
-    yMax = 1.2*maxXprms;
-    yMin = -yMax;
-  }
+  // if(yMax<maxXprms) {
+  //   yMax = 1.2*maxXprms;
+  //   yMin = -yMax;
+  // }
 
   hFrame[1]->GetYaxis()->SetRangeUser(yMin,yMax);
   hFrame[1]->GetYaxis()->SetTitle("#LTx'#GT [mrad]");
@@ -443,10 +453,10 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
     yrMin = -yrMax;
   else
     yrMax = -yrMin;   
-  if(yrMax<maxXrms) {
-    yrMax = 1.2*maxXrms;
-    yrMin = -yrMax;
-  }
+  // if(yrMax<maxXrms) {
+  //   yrMax = 1.2*maxXrms;
+  //   yrMin = -yrMax;
+  // }
   slope = (yMax-yMin)/(yrMax-yrMin);
   
   x = gXRms->GetX();
