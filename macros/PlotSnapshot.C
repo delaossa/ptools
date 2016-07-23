@@ -198,13 +198,16 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   char hName[36];
 
-  // Get charge density histos
   Int_t Nspecies = pData->NSpecies();
+  // Get charge density histos
   TH2F **hDen2D = new TH2F*[Nspecies];
   // Get charge density on-axis
   TH1F **hDen1D = new TH1F*[Nspecies];
   // And electric current (integrated)
   TH1F **hCur1D = new TH1F*[Nspecies];
+  // Get Jz histos
+  TH2F **hJz2D = new TH2F*[Nspecies];
+  TH1F **hJz1D = new TH1F*[Nspecies];
   for(Int_t i=0;i<Nspecies;i++) {
     hCur1D[i] = NULL;
     if(i==noIndex) continue;
@@ -235,6 +238,25 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hCur1D[i] = NULL;
       }
     }
+
+    sprintf(hName,"hJz2D_%i",i); 
+    hJz2D[i] = (TH2F*) ifile->Get(hName);
+    if(hJz2D[i]) {
+      if(hJz2D[i]->GetMaximum() < 1E-4) {
+	delete hJz2D[i];
+	hJz2D[i] = NULL;
+      }
+    }
+
+    sprintf(hName,"hJz1D_%i",i); 
+    hJz1D[i] = (TH1F*) ifile->Get(hName);
+    if(hJz1D[i]) {
+      if(hJz1D[i]->GetMaximum() < 1E-4) {
+	delete hJz1D[i];
+	hJz1D[i] = NULL;
+      }
+    }
+
   }
   
   
@@ -315,13 +337,19 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
       if(hDen2D[i]) 
 	hDen2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
-      
+
       if(hDen1D[i]) 
 	hDen1D[i]->SetBins(NbinsX,xMin,xMax);
 
       if(hCur1D[i]) 
 	hCur1D[i]->SetBins(NbinsX,xMin,xMax);
       
+      if(hJz2D[i]) 
+	hJz2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
+
+      if(hJz1D[i]) 
+	hJz1D[i]->SetBins(NbinsX,xMin,xMax);
+
     }
 
     for(Int_t i=0;i<Nfields;i++) {
@@ -537,9 +565,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   for(Int_t i=0;i<Nspecies;i++) {
     if(i==noIndex) continue;
-    if(!hDen2D[i]) continue;
-    hDen2D[i]->GetYaxis()->SetRangeUser(yMin,yMax);
-    hDen2D[i]->GetXaxis()->SetRangeUser(xMin,xMax);
+    if(hDen2D[i]) {
+      hDen2D[i]->GetYaxis()->SetRangeUser(yMin,yMax);
+      hDen2D[i]->GetXaxis()->SetRangeUser(xMin,xMax);
+    }
+    if(hJz2D[i]) {
+      hJz2D[i]->GetYaxis()->SetRangeUser(yMin,yMax);
+      hJz2D[i]->GetXaxis()->SetRangeUser(xMin,xMax);
+    }
   }
   
   for(Int_t i=0;i<Nfields;i++) {
@@ -574,7 +607,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Int_t biny = hDen2D[0]->GetYaxis()->FindBin(yMax - ((yMax-yMin)/8.0));
     localden = hDen2D[0]->GetBinContent(binx,biny);
     
-    cout << Form(" Local density = %.2f n0",localden) << endl;
+    cout << Form(" Local density = %.4f n0",localden) << endl;
   }
   
   if(opt.Contains("lden"))
@@ -3182,6 +3215,141 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     x2 = 1 - pad[ip]->GetRightMargin();
   
     palette = (TPaletteAxis*) hIonProb2D[ii]->GetListOfFunctions()->FindObject("palette");  
+    if(palette) {
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
+      palette->SetX1NDC(x2 + 0.01);
+      palette->SetX2NDC(x2 + 0.03);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
+    }
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			    gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+
+    pad[ip]->RedrawAxis(); 
+
+    ip--;
+    C->cd(0);
+  }
+
+  if(mask & 0x100) {
+    pad[ip]->Draw();
+    pad[ip]->cd(); // <---------------------------------------------------------- 9th panel
+    // if(opt.Contains("logz")) {
+    //   pad[ip]->SetLogz(1);
+    // } else {
+    //   pad[ip]->SetLogz(0);
+    // }
+
+    TH2F *hClone2D = (TH2F*) hJz2D[0]->Clone("hClone2D");
+    TH1F *hClone1D = NULL;
+    if(hJz1D[0])
+      hClone1D = (TH1F*) hJz1D[0]->Clone("hClone1D");
+    
+    Float_t jzmax = hJz2D[0]->GetMaximum();
+    Float_t jzmin = hJz2D[0]->GetMinimum();
+    
+    if(opt.Contains("betaz")) {
+      hClone2D->Divide(hDen2D[0]);
+      hClone2D->Scale(-1);
+
+      if(hClone1D && hDen1D[0]) {
+	hClone1D->Divide(hDen1D[0]);
+	hClone1D->Scale(-1);
+      }
+      
+      Float_t betamax = hClone2D->GetMaximum();
+      Float_t betamin = hClone2D->GetMinimum();
+      if(betamax > TMath::Abs(betamin))
+	betamin = -betamax;
+      else
+	betamax = -betamin;
+      hClone2D->GetZaxis()->SetRangeUser(betamin,betamax); 
+      hClone2D->GetZaxis()->SetTitle("#beta_{z}");
+
+      hClone1D->GetYaxis()->SetRangeUser(betamin,betamax); 
+           
+      jzmax = betamax;
+      jzmin = betamin;
+
+      
+    }
+    
+    hFrame[ip]->Draw("col");
+    
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    //hClone2D->GetZaxis()->SetNdivisions(503);
+    hClone2D->GetZaxis()->SetTitleFont(fonttype);
+    hClone2D->GetZaxis()->SetTitleOffset(tzoffset);
+    hClone2D->GetZaxis()->SetTitleSize(tzsize);
+    hClone2D->GetZaxis()->SetLabelFont(fonttype);
+    hClone2D->GetZaxis()->SetLabelSize(lzsize);
+    hClone2D->GetZaxis()->SetLabelOffset(lyoffset);
+    hClone2D->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
+
+  
+    exField->Draw();
+    hClone2D->Draw(drawopt);
+
+    {
+       Float_t rightmin = jzmin;
+       Float_t rightmax = jzmax;
+       Float_t slope = (yMax-yMin)/(rightmax-rightmin);
+      
+       for(Int_t j=0;j<hClone1D->GetNbinsX();j++) {
+	 hClone1D->SetBinContent(j+1,slope*(hClone1D->GetBinContent(j+1)-rightmin)+yMin);
+       }
+    }
+    
+    if(opt.Contains("off")) {
+      TLine *lineOff = new TLine(xMin,xoff,xMax,xoff);
+      lineOff->SetLineColor(lineColor);
+      lineOff->SetLineStyle(2);
+      lineOff->Draw();
+    }
+    
+    if(opt.Contains("zero")) {
+      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      lineZero->SetLineColor(lineColor);
+      lineZero->SetLineStyle(2);
+      lineZero->Draw();
+    }
+    
+    if(opt.Contains("sline")) {
+      if(zStartPlasma>xMin && zStartPlasma<xMax)
+	lineStartPlasma->Draw();
+      if(zStartNeutral>xMin && zStartNeutral<xMax)
+	lineStartNeutral->Draw();
+      if(zEndNeutral>xMin && zEndNeutral<xMax)
+	lineEndNeutral->Draw();
+    }
+
+    hClone1D->SetLineStyle(1);
+    hClone1D->SetLineWidth(2);
+    hClone1D->SetLineColor(lineColor);
+    hClone1D->Draw("sameL");
+  
+    pad[ip]->Update();
+  
+    y1 = pad[ip]->GetBottomMargin();
+    y2 = 1 - pad[ip]->GetTopMargin();
+    x1 = pad[ip]->GetLeftMargin();
+    x2 = 1 - pad[ip]->GetRightMargin();
+  
+    palette = (TPaletteAxis*)hClone2D->GetListOfFunctions()->FindObject("palette");  
     if(palette) {
       palette->SetY2NDC(y2 - 0.0);
       palette->SetY1NDC(y1 + 0.0);

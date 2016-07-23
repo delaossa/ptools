@@ -226,11 +226,14 @@ int main(int argc,char *argv[]) {
     TH1F **hDen1D = new TH1F*[Nspecies];
     // And electric current (integrated)
     TH1F **hCur1D = new TH1F*[Nspecies];
+    // Get Jz histos
+    TH1F **hJz1D = new TH1F*[Nspecies];
     for(Int_t i=0;i<Nspecies;i++) {
 
       hDen2D[i] = NULL;
       hDen1D[i] = NULL;
       hCur1D[i] = NULL;
+      hJz1D[i] = NULL;
       
       if(!pData->GetChargeFileName(i)) 
 	continue;
@@ -238,7 +241,7 @@ int main(int argc,char *argv[]) {
       cout << Form(" -> Getting charge density of specie %i  (%s)", i, pData->GetSpeciesName(i).c_str())  << endl;
 
       char hName[24];
-           sprintf(hName,"hDen1D_%i",i);
+      sprintf(hName,"hDen1D_%i",i);
       hDen1D[i] = (TH1F*) gROOT->FindObject(hName);
       if(hDen1D[i]) delete hDen1D[i];
       
@@ -268,7 +271,35 @@ int main(int argc,char *argv[]) {
       else   
 	hDen1D[i]->GetYaxis()->SetTitle("n_{i}/n_{0}");
 
+      // on-axis current density
+      if(pData->GetCurrentFileName(i)) {
+	sprintf(hName,"hJz1D_%i",i);
+	hJz1D[i] = (TH1F*) gROOT->FindObject(hName);
+	if(hJz1D[i]) delete hJz1D[i];
+	
+	// 1D histograms
+	if(pData->Is3D()) {
+	  hJz1D[i] = pData->GetH1SliceZ3D(pData->GetCurrentFileName(i)->c_str(),"j1",-1,NonBin,-1,NonBin,opt+"avg");
+	} else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
+	  hJz1D[i] = pData->GetH1SliceZ(pData->GetCurrentFileName(i)->c_str(),"j1",1,NonBin,opt+"avg");
+	} else { // 2D cartesian
+	  hJz1D[i] = pData->GetH1SliceZ(pData->GetCurrentFileName(i)->c_str(),"j1",-1,NonBin,opt+"avg");
+	}
+	hJz1D[i]->SetName(hName); 
+	
+	// if(hJz1D[i]) delete hJz1D[i];
+	// hJz1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstxBin,LastxBin);
+	// hJz1D[i]->Scale(1.0/(LastxBin-FirstxBin+1));
+	
+	if(opt.Contains("comov"))
+	  hJz1D[i]->GetXaxis()->SetTitle("k_{p} #zeta");
+	else
+	  hJz1D[i]->GetXaxis()->SetTitle("k_{p} z");
+	
+	hJz1D[i]->GetYaxis()->SetTitle(Form("j_{z,%i}",i));
+      }
 
+      
       // Only for the beams here on
       if(i==0 && pData->GetSpeciesName(i).find("beam") == string::npos) continue;
 
@@ -503,6 +534,14 @@ int main(int argc,char *argv[]) {
 	  hDen1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
 	  hDen1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+
+	if(hJz1D[i]) {
+	  hJz1D[i]->SetBins(NbinsX,zMin,zMax);
+	  if(opt.Contains("comov"))
+	    hJz1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	  else
+	    hJz1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+	}	
       
 	if(hCur1D[i]) {
 
@@ -951,8 +990,9 @@ int main(int argc,char *argv[]) {
       hFocusvsTime->Write(hName,TObject::kOverwrite);
 
       
-      // On-axis beam density vs \zeta vs time! _________________________________
+      // On-axis density vs \zeta vs time! _________________________________
       TH2F **hDen1DvsTime = new TH2F*[Nspecies];
+      TH2F **hJz1DvsTime = new TH2F*[Nspecies];
       for(Int_t i=0;i<Nspecies;i++) {
 	
 	if(hDen1D[i]) {
@@ -1005,6 +1045,65 @@ int main(int argc,char *argv[]) {
 	  hDen1DvsTime[i]->GetZaxis()->SetRangeUser(0,Denmax); 
 	  hDen1DvsTime[i]->Write(hName,TObject::kOverwrite);
 	}
+
+	if(hJz1D[i]) {
+
+	  char hName[24];
+	  sprintf(hName,"hJzvsTime_%i",i);
+	  TH2F *hJz1DvsTimeOld = (TH2F*) loopfile->Get(hName);
+	  
+	  Int_t nBins   = 1;
+	  Float_t edge0 = Time-0.5;
+	  Float_t edge1 = Time+0.5;
+	  if(hJz1DvsTimeOld!=NULL) {
+	    nBins = hJz1DvsTimeOld->GetNbinsX()+1;
+	    Float_t binwidth =  (Time - hJz1DvsTimeOld->GetXaxis()->GetBinCenter(1))/(nBins-1);
+	    edge0 = hJz1DvsTimeOld->GetXaxis()->GetBinCenter(1) - binwidth/2.;
+	    edge1 = Time + binwidth/2.;
+	  }
+	  hJz1DvsTime[i] = new TH2F("temp","",nBins,edge0,edge1,
+				    hJz1D[i]->GetNbinsX(),
+				    hJz1D[i]->GetBinLowEdge(1),
+				    hJz1D[i]->GetBinLowEdge(hJz1D[i]->GetNbinsX()+1));
+	  
+	  for(Int_t ix=1;ix<hJz1DvsTime[i]->GetNbinsX();ix++) {
+	    for(Int_t iy=1;iy<hJz1DvsTime[i]->GetNbinsY();iy++) {
+	      hJz1DvsTime[i]->SetBinContent(ix,iy,hJz1DvsTimeOld->GetBinContent(ix,iy));
+	    }
+	  }  
+	  delete hJz1DvsTimeOld;
+	  
+	  // Fill last bin with the newest values.
+	  for(Int_t iy=1;iy<=hJz1D[i]->GetNbinsX();iy++) {
+	    hJz1DvsTime[i]->SetBinContent(nBins,iy,hJz1D[i]->GetBinContent(iy));
+	  }   
+	  
+	  hJz1DvsTime[i]->GetZaxis()->SetTitle(Form("j_{z,%i}",i));
+	  if(opt.Contains("units")) {
+	    hJz1DvsTime[i]->GetYaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	    hJz1DvsTime[i]->GetXaxis()->SetTitle(Form("z [%s]",zSUnit.c_str()));
+	  } else {
+	    hJz1DvsTime[i]->GetYaxis()->SetTitle("k_{p} #zeta");
+	    hJz1DvsTime[i]->GetXaxis()->SetTitle("k_{p} z"); 
+	  }
+	  hJz1DvsTime[i]->GetZaxis()->CenterTitle();
+	  hJz1DvsTime[i]->GetYaxis()->CenterTitle();
+	  hJz1DvsTime[i]->GetXaxis()->CenterTitle();
+	  hJz1DvsTime[i]->SetName(hName);
+	
+	  // Change the range of z axis 
+	  Float_t Jzmax = hJz1DvsTime[i]->GetMaximum();
+	  Float_t Jzmin = hJz1DvsTime[i]->GetMinimum();
+
+	  // if(Jzmax >  TMath::Abs(Jzmin))
+	  //   Jzmin = -Jzmax;
+	  // else
+	  //   Jzmax = -Jzmin;
+	  
+	  hJz1DvsTime[i]->GetZaxis()->SetRangeUser(Jzmin,Jzmax); 
+	  hJz1DvsTime[i]->Write(hName,TObject::kOverwrite);
+	}
+
       }
 
       // Transverse charge RMS vs \zeta vs time! _________________________________

@@ -32,9 +32,6 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
 
   PGlobals::Initialize();
 
-  // Palettes!
-  gROOT->Macro("PPalettes.C");
-
   // Init Units table
   PUnits::UnitsTable::Get();
   
@@ -442,10 +439,12 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
   Double_t Stops[NRGBs] = { 0.00, basePos, 1.00 };
   Int_t cindex[NRGBs];
   if(opt.Contains("dark")) {
-    cindex[0] = TColor::GetColor("#141515"); // grey11
-    cindex[1] = TColor::GetColor("#303F4B");   // grey31
-    // cindex[1] = TColor::GetColor("#1E2D78"); // lighter blue but dark
-    // cindex[1] = TColor::GetColor("#121F40"); // dark blue
+    cindex[0] = TColor::GetColor("#141515");  // grey11 (almost black)
+    cindex[1] = TColor::GetColor("#303F4B");  // grey31
+    //cindex[1] = TColor::GetColor("#878787");  // grey60
+    //cindex[1] = TColor::GetColor("#1E2D78"); // lighter blue but dark
+    //cindex[1] = TColor::GetColor("#121F40"); // dark blue
+    //cindex[1] = TColor::GetColor("#385794"); // light blue
     cindex[2] = TColor::GetColor("#FFFFFF"); // white
   } else {
     cindex[0] = TColor::GetColor("#FFFFFF"); // white
@@ -461,12 +460,12 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     plasmaPalette->ChangeGradientColorTable(NRGBs, Stops, cindex);
   }
   
-  if(opt.Contains("alpha")) {
-    if(opt.Contains("dark")) 
-      plasmaPalette->SetAlpha(0.7);
-    else
-      plasmaPalette->SetAlpha(0.9);
-  }
+  // if(opt.Contains("alpha")) {
+  //   if(opt.Contains("dark")) 
+  //     plasmaPalette->SetAlpha(0.7);
+  //   else
+  //     plasmaPalette->SetAlpha(0.9);
+  // }
   
   // Palette for beam
   PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
@@ -484,7 +483,7 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     //bcindex[0] = cindex[1];
     bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33); // dark magenta 
     bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
-    bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
+    bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // vyellow
     beamPalette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
   } else {
     const Int_t bNRGBs = 5;
@@ -499,18 +498,26 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
     beamPalette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
     //    beamPalette->SetPalette("elec");
   }
-  
+  // beamPalette->SetPalette(kBird);
+    
   PPalette * beam2Palette = (PPalette*) gROOT->FindObject("beam2");
   if(!beam2Palette) {
     beam2Palette = new PPalette("beam2");
-    beam2Palette->SetPalette("hot");
   }
-  // if(opt.Contains("dark")) {
-  //   bcindex[0] = bcindex[0];
-  //   bcindex[1] = bcindex[2];    
-  //   bStops[1] = bStops[2] = 0.1;
-  //   beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
-  // } 
+  beam2Palette->SetPalette("hot");
+
+  if(opt.Contains("dark")) {
+    const Int_t bNRGBs = 3;
+    const Int_t bNCont = 255;
+    Double_t bStops[bNRGBs] = { 0.00, 0.20, 1.00};
+    Int_t bcindex[bNRGBs];
+    
+    bcindex[0] = TColor::GetColor("#380A3C"); // deep purple
+    // bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33); // dark magenta 
+    bcindex[1] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
+    bcindex[2] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // vyellow
+    beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
+  }
       
   // Change the range of z axis for the fields to be symmetric.
   Float_t *Emax = new Float_t[Nfields];

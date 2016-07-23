@@ -1142,8 +1142,6 @@ void PlotDDR(const TString &sim, const TString &options="png") {
     // ---------------------------------------------------------
   }
   
-
-  
   ifile->Close();
   cout << endl;
 }
