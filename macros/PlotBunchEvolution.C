@@ -257,16 +257,16 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
   Double_t rMargin = 0.15;
   Double_t bMargin = 0.17;
   Double_t tMargin = 0.04;
-  Float_t vSpacing = 0.02;
+  Float_t vSpacing = 0.03;
   PGlobals::CanvasPartition(C,Npads,lMargin,rMargin,bMargin,tMargin,vSpacing);
   
   // Define the frames for plotting
   Int_t fonttype = 43;
-  Int_t fontsize = 24;
-  Int_t tfontsize = 28;
+  Int_t fontsize = 22;
+  Int_t tfontsize = 26;
   Float_t txoffset = 2.7;
   Float_t lxoffset = 0.02;
-  Float_t tyoffset = 1.1;
+  Float_t tyoffset = 1.2;
   Float_t lyoffset = 0.01;
   Float_t tylength = 0.02;
   Float_t txlength = 0.04;
@@ -341,6 +341,11 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
   
   hFrame[2]->GetYaxis()->SetRangeUser(yMin,yMax);
   hFrame[2]->GetYaxis()->SetTitle("#LTp_{z}#GT [GeV/c]");
+
+  hFrame[2]->GetXaxis()->SetLabelOffset(999);
+  hFrame[2]->GetXaxis()->SetLabelSize(0);
+  hFrame[2]->GetXaxis()->SetTitleOffset(999);
+  hFrame[2]->GetXaxis()->SetTitleSize(0);
   hFrame[2]->Draw("axis");    
 
   gPzRms->SetFillColor(kGray);
@@ -444,6 +449,11 @@ void PlotBunchEvolution(const TString &sim, Int_t index = 2, const TString &opti
 
   hFrame[1]->GetYaxis()->SetRangeUser(yMin,yMax);
   hFrame[1]->GetYaxis()->SetTitle("#LTx'#GT [mrad]");
+
+  hFrame[1]->GetXaxis()->SetLabelOffset(999);
+  hFrame[1]->GetXaxis()->SetLabelSize(0);
+  hFrame[1]->GetXaxis()->SetTitleOffset(999);
+  hFrame[1]->GetXaxis()->SetTitleSize(0);
   hFrame[1]->Draw("axis");    
 
   // Trans. position on right axis:

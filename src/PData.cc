@@ -289,25 +289,39 @@ void PData::LoadFileNames(Int_t t) {
   // It is very important the order of the species:
   // The analisys macros always assume that the plasma specie is the first one of the list.
   // The electron bunch, for instance, uses to be the second.
-  // We swap here the order (if necessary) to put the "plasma" specie at first.
+  // We swap here the order (if necessary) to put the "plasma" species at first.
   for(UInt_t i=0;i<species.size();i++) {
     if(species[i].find("plasma") != string::npos)
-      if(i>0) {
+      if(i!=0) {
 	string temp = species[0];
 	species[0] = species[i];
 	species[i] = temp;
+	i--;
+	continue;
       }
     if(species[i].find("driver") != string::npos)
+<<<<<<< HEAD
       if(i>0 && species.size()>1) {
+=======
+      if(i!=1) {
+>>>>>>> e7155b7d985e2fb24ec9ed16a3a5c4bf114a1c51
 	string temp = species[1];
 	species[1] = species[i];
 	species[i] = temp;
+	i--;
+	continue;
       }
     if(species[i].find("high") != string::npos)
+<<<<<<< HEAD
       if(i>0 && species.size()>2) {
+=======
+      if(i!=2) {
+>>>>>>> e7155b7d985e2fb24ec9ed16a3a5c4bf114a1c51
 	string temp = species[2];
 	species[2] = species[i];
 	species[i] = temp;
+	i--;
+	continue;
       }
   }
   

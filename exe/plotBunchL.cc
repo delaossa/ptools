@@ -34,7 +34,7 @@ using namespace H5;
 int main(int argc,char *argv[]) {
   if(argc<=2) {
     printf("\n Usage: %s <input file> \n",argv[0]);
-    printf("      <--png> <--pdf> <--eps> <--units> <--comov>\n");
+    printf("      <--png> <--pdf> <--eps> <--center>\n");
     printf("      <--file> \n");
     return 0;
   }
@@ -63,10 +63,6 @@ int main(int argc,char *argv[]) {
       opt += "eps";
     } else if(arg.Contains("--png")) {
       opt += "png";
-    } else if(arg.Contains("--comov")){
-      opt += "comov";
-    } else if(arg.Contains("--units")){
-      opt += "units";
     } else if(arg.Contains("--center")){
       opt += "center";
     } else if(arg.Contains("--grid")){
@@ -87,8 +83,6 @@ int main(int argc,char *argv[]) {
       opt += "noinfo"; 
     } else if(arg.Contains("--bw")){
       opt += "bw"; 
-    } else if(arg.Contains("--zmean")){
-      opt += "zmean"; 
     } else if(arg.Contains("--elli")){
       opt += "elli"; 
     } else if(arg.Contains("--astra")){
@@ -369,6 +363,7 @@ int main(int argc,char *argv[]) {
   p3Min = varMin[5] - rangefactor*(varMax[5]-varMin[5]);
   p3Max = varMax[5] + rangefactor*(varMax[5]-varMin[5]);
   
+  
   cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f ", x1Nbin, x1Min, x1Max) << endl;
   cout << Form(" p1 range (N = %i):  p1Min = %f  p1Max = %f ", p1Nbin, p1Min, p1Max) << endl;
   cout << Form(" x2 range (N = %i):  x2Min = %f  x2Max = %f ", x2Nbin, x2Min, x2Max) << endl;
@@ -379,7 +374,6 @@ int main(int argc,char *argv[]) {
   cout <<  Form(" Number of bins = %i: x1BinMin = %f  x1BinMax = %f ", x1Nbin,x1BinMin,x1BinMax) << endl;    
     
   //  return 0;
-
 
   // Histograms
   char hName[8];
@@ -405,6 +399,15 @@ int main(int argc,char *argv[]) {
   hP1X1->GetXaxis()->SetTitle("#zeta [#mum]");
   hP1X1->GetYaxis()->SetTitle("p_{z} [GeV/c]");
   hP1X1->GetZaxis()->SetTitle("Charge [pC]");
+
+  sprintf(hName,"hP2X1");
+  TH2F *hP2X1 =  (TH2F*) gROOT->FindObject(hName);
+  if(hP2X1) delete hP2X1;
+  hP2X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,p2Nbin,p2Min,p2Max);
+  hP2X1->GetXaxis()->SetTitle("#zeta [#mum]");
+  hP2X1->GetYaxis()->SetTitle("p_{x}/mc");
+  hP2X1->GetZaxis()->SetTitle("Charge [pC]");
+  hP2X1->GetZaxis()->CenterTitle();
 
   sprintf(hName,"hP2X2");
   TH2F *hP2X2 =  (TH2F*) gROOT->FindObject(hName);
@@ -537,6 +540,8 @@ int main(int argc,char *argv[]) {
     if(iBin<0) continue;
 
     // Projected emittance in the bunch range. (skip the tails to "match" the sliced ones)
+    hP2X1->Fill(var[0][i],var[4][i],Q/Np);
+
     hP2X2->Fill(var[1][i],var[4][i],Q/Np);
     hP2X2sl[iBin]->Fill(var[1][i],var[4][i],Q/Np);
 
@@ -961,23 +966,113 @@ int main(int argc,char *argv[]) {
   cout << Form("\n 5. Preparing the graphs and plotting .. ") << endl << endl;
   
   // Centering in the x1 mean
-  if(opt.Contains("zmean")) {
+  if(opt.Contains("center")) {
     hX1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean);
     hP1X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,p1Nbin,p1Min,p1Max);
     hX2X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,x2Nbin,x2Min-x_mean,x2Max-x_mean);
+    hP2X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,p2Nbin,p2Min,p2Max);
     hP2X2->SetBins(x2Nbin,x2Min-x_mean,x2Max-x_mean,p2Nbin,p2Min,p2Max);
     hP3X3->SetBins(x3Nbin,x3Min-y_mean,x3Max-y_mean,p3Nbin,p3Min,p3Max);
     hX3X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,x3Nbin,x3Min-y_mean,x3Max-y_mean);
     hX3X2->SetBins(x2Nbin,x2Min-x_mean,x2Max-x_mean,x3Nbin,x3Min-y_mean,x3Max-y_mean);
     
     for(Int_t k=0;k<SNbin;k++) {
+      hP2X2sl[k]->SetBins(x2Nbin,x2Min-x_mean,x2Max-x_mean,p2Nbin,p2Min,p2Max);
+      hP3X3sl[k]->SetBins(x3Nbin,x3Min-y_mean,x3Max-y_mean,p3Nbin,p3Min,p3Max);
+
       xbin[k] -= zmean;
       sBinLim[k] -= zmean;
     }
     sBinLim[SNbin] -= zmean;
+
+    x1Min -= zmean;
+    x1Max -= zmean;
     zmean = 0.0;
+
+    Float_t x2min = x2Min-x_mean;
+    Float_t x2max = x2Max-x_mean;
+    if(-x2min<x2max) x2min = -x2max;
+    else x2max = -x2min;
+    
+    Float_t x3min = x3Min-y_mean;
+    Float_t x3max = x3Max-y_mean;
+    if(-x3min<x3max) x3min = -x3max;
+    else x3max = -x3min;
+   
+    Float_t p2min = p2Min;
+    Float_t p2max = p2Max;
+    if(-p2min<p2max) p2min = -p2max;
+    else p2max = -p2min;
+
+    Float_t p3min = p3Min;
+    Float_t p3max = p3Max;
+    if(-p3min<p3max) p3min = -p3max;
+    else p3max = -p3min;
+
+    if(x2max<x3max) {
+      x2max = x3max;
+      x2min = x3min;
+    } else {
+      x3max = x2max;
+      x3min = x2min;
+    }
+
+    if(p2max<p3max) {
+      p2max = p3max;
+      p2min = p3min;
+    } else {
+      p3max = p2max;
+      p3min = p2min;
+    }
+
+    
+    hP2X1->GetYaxis()->SetRangeUser(p2min,p2max);
+
+    hP2X2->GetXaxis()->SetRangeUser(x2min,x2max);
+    hP2X2->GetYaxis()->SetRangeUser(p2min,p2max);
+
+    hP3X3->GetXaxis()->SetRangeUser(x3min,x3max);
+    hP3X3->GetYaxis()->SetRangeUser(p3min,p3max);
+
+    hX2X1->GetYaxis()->SetRangeUser(x2min,x2max);
+    hX3X1->GetYaxis()->SetRangeUser(x3min,x3max);
+    hX3X2->GetYaxis()->SetRangeUser(x3min,x3max);
+    hX3X2->GetXaxis()->SetRangeUser(x2min,x2max);
+
+    
+    for(Int_t k=0;k<SNbin;k++) {
+      hP2X2sl[k]->GetXaxis()->SetRangeUser(x2min,x2max);
+      hP2X2sl[k]->GetYaxis()->SetRangeUser(p2min,p2max);
+      
+      hP3X3sl[k]->GetXaxis()->SetRangeUser(x3min,x3max);
+      hP3X3sl[k]->GetYaxis()->SetRangeUser(p3min,p3max);
+      
+    }
+
     x_mean = 0;
     y_mean = 0;
+
+    x2Min = x2min;
+    x2Max = x2max;
+
+    x3Min = x3min;
+    x3Max = x3max;
+    
+    p2Min = p2min;
+    p2Max = p2max;
+
+    p3Min = p3min;
+    p3Max = p3max;
+
+
+    cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f ", x1Nbin, x1Min, x1Max) << endl;
+    cout << Form(" p1 range (N = %i):  p1Min = %f  p1Max = %f ", p1Nbin, p1Min, p1Max) << endl;
+    cout << Form(" x2 range (N = %i):  x2Min = %f  x2Max = %f ", x2Nbin, x2Min, x2Max) << endl;
+    cout << Form(" p2 range (N = %i):  p2Min = %f  p2Max = %f ", p2Nbin, p2Min, p2Max) << endl;
+    cout << Form(" x3 range (N = %i):  x3Min = %f  x3Max = %f ", x3Nbin, x3Min, x3Max) << endl;
+    cout << Form(" p3 range (N = %i):  p3Min = %f  p3Max = %f ", p3Nbin, p3Min, p3Max) << endl;
+
+    
   }
   // ------
 
@@ -1553,31 +1648,30 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[0]->GetYaxis()->SetRangeUser(hX2X1->GetYaxis()->GetXmin(),hX2X1->GetYaxis()->GetXmax());
+    hFrame[0]->GetYaxis()->SetRangeUser(x2Min,x2Max);
     hFrame[0]->GetYaxis()->SetTitle(hX2X1->GetYaxis()->GetTitle());
-    hFrame[0]->GetXaxis()->SetRangeUser(hX2X1->GetXaxis()->GetXmin(),hX2X1->GetXaxis()->GetXmax());
+    hFrame[0]->GetXaxis()->SetRangeUser(x1Min,x1Max);
     hFrame[0]->GetXaxis()->SetTitle(hX2X1->GetXaxis()->GetTitle());
     hFrame[0]->Draw("axis");
-
-    TLine lX1mean(zmean,hFrame[0]->GetYaxis()->GetXmin(),zmean,hFrame[0]->GetYaxis()->GetXmax());
-    lX1mean.SetLineColor(kGray+2);
-    lX1mean.SetLineStyle(2);
-    lX1mean.Draw();
-
-    TLine lX2mean(hFrame[0]->GetXaxis()->GetXmin(),x_mean,hFrame[0]->GetXaxis()->GetXmax(),x_mean);
-    lX2mean.SetLineColor(kGray+2);
-    lX2mean.SetLineStyle(2);
-    lX2mean.Draw();
-
-
+    
     TH2F *hX2X1cl = (TH2F*) hX2X1->Clone("hX2X1cl");
-    hX2X1cl->Draw(drawopts);
     hX2X1cl->GetZaxis()->CenterTitle();
     hX2X1cl->GetZaxis()->SetTitleFont(fonttype);
     Float_t xFactor = pad[0]->GetAbsWNDC()/pad[0]->GetAbsWNDC();
     Float_t yFactor = pad[0]->GetAbsHNDC()/pad[0]->GetAbsHNDC();
     hX2X1cl->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
-  
+    hX2X1cl->Draw(drawopts);
+
+    TLine lX1mean(zmean,x2Min,zmean,x2Max);
+    lX1mean.SetLineColor(kGray+2);
+    lX1mean.SetLineStyle(2);
+    lX1mean.Draw();
+    
+    TLine lX2mean(x1Min,x_mean,x1Max,x_mean);
+    lX2mean.SetLineColor(kGray+2);
+    lX2mean.SetLineStyle(2);
+    lX2mean.Draw();
+    
     gPad->Update();
     
     y1 = gPad->GetBottomMargin();
@@ -1636,23 +1730,12 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[1]->GetYaxis()->SetRangeUser(hX3X1->GetYaxis()->GetXmin(),hX3X1->GetYaxis()->GetXmax());
+    hFrame[1]->GetYaxis()->SetRangeUser(x3Min,x3Max);
     hFrame[1]->GetYaxis()->SetTitle(hX3X1->GetYaxis()->GetTitle());
-    hFrame[1]->GetXaxis()->SetRangeUser(hX3X1->GetXaxis()->GetXmin(),hX3X1->GetXaxis()->GetXmax());
+    hFrame[1]->GetXaxis()->SetRangeUser(x1Min,x1Max);
     hFrame[1]->GetXaxis()->SetTitle(hX3X1->GetXaxis()->GetTitle());
     hFrame[1]->Draw("axis");
-
-    TLine lX1mean2(zmean,hFrame[1]->GetYaxis()->GetXmin(),zmean,hFrame[1]->GetYaxis()->GetXmax());
-    lX1mean2.SetLineColor(kGray+2);
-    lX1mean2.SetLineStyle(2);
-    lX1mean2.Draw();
-
-    TLine lX3mean(hFrame[1]->GetXaxis()->GetXmin(),y_mean,hFrame[1]->GetXaxis()->GetXmax(),y_mean);
-    lX3mean.SetLineColor(kGray+2);
-    lX3mean.SetLineStyle(2);
-    lX3mean.Draw();
-
-
+    
     TH2F *hX3X1cl = (TH2F*) hX3X1->Clone("hX3X1cl");
     hX3X1cl->GetZaxis()->CenterTitle();
     hX3X1cl->GetZaxis()->SetTitleFont(fonttype);
@@ -1660,6 +1743,17 @@ int main(int argc,char *argv[]) {
     yFactor = pad[0]->GetAbsHNDC()/pad[1]->GetAbsHNDC();
     hX3X1cl->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
     hX3X1cl->Draw(drawopts);
+
+    TLine lX1mean2(zmean,x3Min,zmean,x3Max);
+    lX1mean2.SetLineColor(kGray+2);
+    lX1mean2.SetLineStyle(2);
+    lX1mean2.Draw();
+    
+    TLine lX3mean(x1Min,y_mean,x1Max,y_mean);
+    lX3mean.SetLineColor(kGray+2);
+    lX3mean.SetLineStyle(2);
+    lX3mean.Draw();
+
     
     gPad->Update();
 
@@ -1785,27 +1879,26 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[0]->GetYaxis()->SetRangeUser(hX3X2->GetYaxis()->GetXmin(),hX3X2->GetYaxis()->GetXmax());
+    hFrame[0]->GetYaxis()->SetRangeUser(x3Min,x3Max);
     hFrame[0]->GetYaxis()->SetTitle(hX3X2->GetYaxis()->GetTitle());
-    hFrame[0]->GetXaxis()->SetRangeUser(hX3X2->GetXaxis()->GetXmin(),hX3X2->GetXaxis()->GetXmax());
+    hFrame[0]->GetXaxis()->SetRangeUser(x2Min,x2Max);
     hFrame[0]->GetXaxis()->SetTitle(hX3X2->GetXaxis()->GetTitle());
     hFrame[0]->Draw("axis");
-
-    TLine lX2mean2(x_mean,hFrame[0]->GetYaxis()->GetXmin(),x_mean,hFrame[0]->GetYaxis()->GetXmax());
-    lX2mean2.SetLineColor(kGray+2);
-    lX2mean2.SetLineStyle(2);
-    lX2mean2.Draw();
-
-    TLine lX3mean2(hFrame[0]->GetXaxis()->GetXmin(),y_mean,hFrame[0]->GetXaxis()->GetXmax(),y_mean);
-    lX3mean2.SetLineColor(kGray+2);
-    lX3mean2.SetLineStyle(2);
-    lX3mean2.Draw();
-
 
     TH2F *hX3X2cl = (TH2F*) hX3X2->Clone("hX3X2cl");
 
     hX3X2cl->Draw(drawopts);
     hX3X2cl->GetZaxis()->CenterTitle();
+    
+    TLine lX2mean2(x_mean,x3Min,x_mean,x3Max);
+    lX2mean2.SetLineColor(kGray+2);
+    lX2mean2.SetLineStyle(2);
+    lX2mean2.Draw();
+
+    TLine lX3mean2(x2Min,y_mean,x2Max,y_mean);
+    lX3mean2.SetLineColor(kGray+2);
+    lX3mean2.SetLineStyle(2);
+    lX3mean2.Draw();
     
     y1 = gPad->GetBottomMargin();
     y2 = 1 - gPad->GetTopMargin();
@@ -1841,58 +1934,34 @@ int main(int argc,char *argv[]) {
     C2->cd();
     C2->Clear();
 
-
-    const Int_t NPad2 = 1;
     lMargin = 0.15;
     rMargin = 0.18;
     bMargin = 0.15;
     tMargin = 0.04;
     factor = 1.0;  
     txoffset = 1.2;  
-    PGlobals::CanvasAsymPartition(C2,NPad2,lMargin,rMargin,bMargin,tMargin,factor);
 
-    for(Int_t i=0;i<NPad2;i++) {
-      char name[16];
-      sprintf(name,"pad_%i",i);
-      pad[i] = (TPad*) gROOT->FindObject(name);
-      pad[i]->SetFrameLineWidth(2);  
-      pad[i]->SetTickx(1);
-      pad[i]->SetTicky(1);
-
-      sprintf(name,"hFrame_%i",i);
-      hFrame[i] = (TH1F*) gROOT->FindObject(name);
-      if(hFrame[i]) delete hFrame[i];
-      hFrame[i] = (TH1F*) hP2X2->Clone(name);
-      hFrame[i]->Reset();
-
-      Double_t xFactor = pad[0]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
-      Double_t yFactor = pad[0]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
-
-      // Format for y axis
-      hFrame[i]->GetYaxis()->SetTitleFont(fonttype);
-      hFrame[i]->GetYaxis()->SetTitleSize(tfontsize);
-      hFrame[i]->GetYaxis()->SetTitleOffset(tyoffset);
-      hFrame[i]->GetYaxis()->SetLabelFont(fonttype);
-      hFrame[i]->GetYaxis()->SetLabelSize(fontsize);
-      hFrame[i]->GetYaxis()->SetLabelOffset(lyoffset);
-      hFrame[i]->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
-      hFrame[i]->GetYaxis()->CenterTitle();
-
-      // Format for x axis
-      hFrame[i]->GetXaxis()->SetTitleFont(fonttype);
-      hFrame[i]->GetXaxis()->SetTitleSize(tfontsize+2);
-      hFrame[i]->GetXaxis()->SetTitleOffset(txoffset);
-      hFrame[i]->GetXaxis()->SetLabelFont(fonttype);
-      hFrame[i]->GetXaxis()->SetLabelSize(fontsize+2);
-      hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
-      hFrame[i]->GetXaxis()->CenterTitle();
-      hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
-    }
-
+    // Format for y axis
+    hP2X2->GetYaxis()->SetTitleFont(fonttype);
+    hP2X2->GetYaxis()->SetTitleSize(tfontsize);
+    hP2X2->GetYaxis()->SetTitleOffset(tyoffset);
+    hP2X2->GetYaxis()->SetLabelFont(fonttype);
+    hP2X2->GetYaxis()->SetLabelSize(fontsize);
+    hP2X2->GetYaxis()->SetLabelOffset(lyoffset);
+    hP2X2->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
+    hP2X2->GetYaxis()->CenterTitle();
+    
+    // Format for x axis
+    hP2X2->GetXaxis()->SetTitleFont(fonttype);
+    hP2X2->GetXaxis()->SetTitleSize(tfontsize+2);
+    hP2X2->GetXaxis()->SetTitleOffset(txoffset);
+    hP2X2->GetXaxis()->SetLabelFont(fonttype);
+    hP2X2->GetXaxis()->SetLabelSize(fontsize+2);
+    hP2X2->GetXaxis()->SetLabelOffset(lxoffset);
+    hP2X2->GetXaxis()->CenterTitle();
+    hP2X2->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
 
     C2->cd(0);
-    pad[0]->Draw();
-    pad[0]->cd(); 
 
     if(opt.Contains("logz")) {
       gPad->SetLogz(1);
@@ -1900,25 +1969,21 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[0]->GetYaxis()->SetRangeUser(hP2X2->GetYaxis()->GetXmin(),hP2X2->GetYaxis()->GetXmax());
-    hFrame[0]->GetYaxis()->SetTitle(hP2X2->GetYaxis()->GetTitle());
-    hFrame[0]->GetXaxis()->SetRangeUser(hP2X2->GetXaxis()->GetXmin(),hP2X2->GetXaxis()->GetXmax());
-    hFrame[0]->GetXaxis()->SetTitle(hP2X2->GetXaxis()->GetTitle());
-    hFrame[0]->Draw("axis");
+    hP2X2->GetXaxis()->SetRangeUser(x2Min,x2Max);
+    hP2X2->GetYaxis()->SetRangeUser(p2Min,p2Max);
+    hP2X2->Draw(drawopt);
 
-    TLine lXmean(x_mean,hFrame[0]->GetYaxis()->GetXmin(),x_mean,hFrame[0]->GetYaxis()->GetXmax());
+    TLine lXmean(x_mean,p2Min,x_mean,p2Max);
     lXmean.SetLineColor(kGray+2);
     lXmean.SetLineStyle(2);
     lXmean.Draw();
 
-    TLine lPxmean(hFrame[0]->GetXaxis()->GetXmin(),pxmean,hFrame[0]->GetXaxis()->GetXmax(),pxmean);
+    TLine lPxmean(x2Min,pxmean,x2Max,pxmean);
     lPxmean.SetLineColor(kGray+2);
     lPxmean.SetLineStyle(2);
     lPxmean.Draw();
 
-
-    TH2F *hP2X2cl = (TH2F*) hP2X2->Clone("hP2X2cl");
-    hP2X2cl->Draw(drawopts);
+    //    hP2X2->Draw(drawopt);
     
     if(opt.Contains("elli") ) 
       for(Int_t k=0;k<SNbin;k++)
@@ -1949,65 +2014,33 @@ int main(int argc,char *argv[]) {
     PGlobals::imgconv(C2,fOutName2,opt);
 
     // p3-x3
-
     sprintf(cName,"C3");     
     TCanvas *C3 = (TCanvas*) gROOT->FindObject(cName);
     if(C3==NULL) C3 = new TCanvas("C3","Transverse phasespace p3-x3",sizex,sizey);
     C3->cd();
     C3->Clear();
 
+    // Format for y axis
+    hP3X3->GetYaxis()->SetTitleFont(fonttype);
+    hP3X3->GetYaxis()->SetTitleSize(tfontsize);
+    hP3X3->GetYaxis()->SetTitleOffset(tyoffset);
+    hP3X3->GetYaxis()->SetLabelFont(fonttype);
+    hP3X3->GetYaxis()->SetLabelSize(fontsize);
+    hP3X3->GetYaxis()->SetLabelOffset(lyoffset);
+    hP3X3->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
+    hP3X3->GetYaxis()->CenterTitle();
 
-    const Int_t NPad3 = 1;
-    lMargin = 0.15;
-    rMargin = 0.18;
-    bMargin = 0.15;
-    tMargin = 0.04;
-    factor = 1.0;  
-    txoffset = 1.2;  
-    PGlobals::CanvasAsymPartition(C3,NPad3,lMargin,rMargin,bMargin,tMargin,factor);
-
-    for(Int_t i=0;i<NPad3;i++) {
-      char name[16];
-      sprintf(name,"pad_%i",i);
-      pad[i] = (TPad*) gROOT->FindObject(name);
-      pad[i]->SetFrameLineWidth(2);  
-      pad[i]->SetTickx(1);
-      pad[i]->SetTicky(1);
-
-      sprintf(name,"hFrame_%i",i);
-      hFrame[i] = (TH1F*) gROOT->FindObject(name);
-      if(hFrame[i]) delete hFrame[i];
-      hFrame[i] = (TH1F*) hP3X3->Clone(name);
-      hFrame[i]->Reset();
-
-      Double_t xFactor = pad[0]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
-      Double_t yFactor = pad[0]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
-
-      // Format for y axis
-      hFrame[i]->GetYaxis()->SetTitleFont(fonttype);
-      hFrame[i]->GetYaxis()->SetTitleSize(tfontsize);
-      hFrame[i]->GetYaxis()->SetTitleOffset(tyoffset);
-      hFrame[i]->GetYaxis()->SetLabelFont(fonttype);
-      hFrame[i]->GetYaxis()->SetLabelSize(fontsize);
-      hFrame[i]->GetYaxis()->SetLabelOffset(lyoffset);
-      hFrame[i]->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
-      hFrame[i]->GetYaxis()->CenterTitle();
-
-      // Format for x axis
-      hFrame[i]->GetXaxis()->SetTitleFont(fonttype);
-      hFrame[i]->GetXaxis()->SetTitleSize(tfontsize+2);
-      hFrame[i]->GetXaxis()->SetTitleOffset(txoffset);
-      hFrame[i]->GetXaxis()->SetLabelFont(fonttype);
-      hFrame[i]->GetXaxis()->SetLabelSize(fontsize+2);
-      hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
-      hFrame[i]->GetXaxis()->CenterTitle();
-      hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
-    }
-
+    // Format for x axis
+    hP3X3->GetXaxis()->SetTitleFont(fonttype);
+    hP3X3->GetXaxis()->SetTitleSize(tfontsize+2);
+    hP3X3->GetXaxis()->SetTitleOffset(txoffset);
+    hP3X3->GetXaxis()->SetLabelFont(fonttype);
+    hP3X3->GetXaxis()->SetLabelSize(fontsize+2);
+    hP3X3->GetXaxis()->SetLabelOffset(lxoffset);
+    hP3X3->GetXaxis()->CenterTitle();
+    hP3X3->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
 
     C3->cd(0);
-    pad[0]->Draw();
-    pad[0]->cd(); 
 
     if(opt.Contains("logz")) {
       gPad->SetLogz(1);
@@ -2015,25 +2048,21 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[0]->GetYaxis()->SetRangeUser(hP3X3->GetYaxis()->GetXmin(),hP3X3->GetYaxis()->GetXmax());
-    hFrame[0]->GetYaxis()->SetTitle(hP3X3->GetYaxis()->GetTitle());
-    hFrame[0]->GetXaxis()->SetRangeUser(hP3X3->GetXaxis()->GetXmin(),hP3X3->GetXaxis()->GetXmax());
-    hFrame[0]->GetXaxis()->SetTitle(hP3X3->GetXaxis()->GetTitle());
-    hFrame[0]->Draw("axis");
-
-    TLine lYmean(y_mean,hFrame[0]->GetYaxis()->GetXmin(),y_mean,hFrame[0]->GetYaxis()->GetXmax());
+    hP3X3->GetXaxis()->SetRangeUser(x3Min,x3Max);
+    hP3X3->GetYaxis()->SetRangeUser(p3Min,p3Max);
+    hP3X3->Draw(drawopt);
+    
+    TLine lYmean(y_mean,p3Min,y_mean,p3Max);
     lYmean.SetLineColor(kGray+2);
     lYmean.SetLineStyle(2);
     lYmean.Draw();
 
-    TLine lPymean(hFrame[0]->GetXaxis()->GetXmin(),pymean,hFrame[0]->GetXaxis()->GetXmax(),pymean);
+    TLine lPymean(x3Min,pymean,x3Max,pymean);
     lPymean.SetLineColor(kGray+2);
     lPymean.SetLineStyle(2);
     lPymean.Draw();
 
-
-    TH2F *hP3X3cl = (TH2F*) hP3X3->Clone("hP3X3cl");
-    hP3X3cl->Draw(drawopts);
+    //    hP3X3->Draw(drawopts);
         
     if(opt.Contains("elli") ) 
       for(Int_t k=0;k<SNbin;k++)
@@ -2064,57 +2093,61 @@ int main(int argc,char *argv[]) {
     PGlobals::imgconv(C3,fOutName3,opt);
 
 
-    // Slices plots
+    // p2-x1
+    sprintf(cName,"C4");     
+    TCanvas *C4 = (TCanvas*) gROOT->FindObject(cName);
+    if(C4==NULL) C4 = new TCanvas("C4","p2-x1",sizex,sizey);
+    C4->cd();
+    C4->Clear();
 
-    gStyle->cd();
+    lMargin = 0.15;
+    rMargin = 0.18;
+    bMargin = 0.15;
+    tMargin = 0.04;
+    factor = 1.0;  
+    txoffset = 1.2;  
 
-    sprintf(cName,"CA4");     
-    TCanvas *CA4 = (TCanvas*) gROOT->FindObject(cName);
-    if(CA4==NULL) CA4 = new TCanvas("CA4","Sliced p2-x2",600,800);
-    CA4->cd();
-    CA4->Clear();
+    // Format for y axis
+    hP2X1->GetYaxis()->SetTitleFont(fonttype);
+    hP2X1->GetYaxis()->SetTitleSize(tfontsize);
+    hP2X1->GetYaxis()->SetTitleOffset(tyoffset);
+    hP2X1->GetYaxis()->SetLabelFont(fonttype);
+    hP2X1->GetYaxis()->SetLabelSize(fontsize);
+    hP2X1->GetYaxis()->SetLabelOffset(lyoffset);
+    hP2X1->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
+    hP2X1->GetYaxis()->CenterTitle();
+    
+    // Format for x axis
+    hP2X1->GetXaxis()->SetTitleFont(fonttype);
+    hP2X1->GetXaxis()->SetTitleSize(tfontsize+2);
+    hP2X1->GetXaxis()->SetTitleOffset(txoffset);
+    hP2X1->GetXaxis()->SetLabelFont(fonttype);
+    hP2X1->GetXaxis()->SetLabelSize(fontsize+2);
+    hP2X1->GetXaxis()->SetLabelOffset(lxoffset);
+    hP2X1->GetXaxis()->CenterTitle();
+    hP2X1->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
 
-    Int_t ndiv = 4;
-    CA4->Divide(1,ndiv);
+    C4->cd(0);
 
-    TString fOutName4 = ifile;
-    fOutName4.ReplaceAll(".txt","");
-    fOutName4.Append("-slp2x2");
+    if(opt.Contains("logz")) {
+      gPad->SetLogz(1);
+    } else {
+      gPad->SetLogz(0);
+    }
 
-    CA4->Print(fOutName4 + ".ps[","Portrait");
+    // hP2X1->GetXaxis()->SetRangeUser(x1Min,x1Max);
+    hP2X1->GetYaxis()->SetRangeUser(p2Min,p2Max);
+    hP2X1->Draw(drawopt);
 
-    hP2X2->GetXaxis()->SetLabelSize(0.08);
-    hP2X2->GetXaxis()->SetTitleSize(0.08);
-    hP2X2->GetXaxis()->SetTitleOffset(1.0);
-    hP2X2->GetXaxis()->CenterTitle();
-
-    hP2X2->GetYaxis()->SetLabelSize(0.08);
-    hP2X2->GetYaxis()->SetTitleSize(0.08);
-    hP2X2->GetYaxis()->SetTitleOffset(0.8);
-    hP2X2->GetYaxis()->CenterTitle();
-
-    hP2X2->GetZaxis()->SetLabelSize(0.08);
-    hP2X2->GetZaxis()->SetTitleSize(0.08);
-    hP2X2->GetZaxis()->SetTitleOffset(0.8);
-    hP2X2->GetZaxis()->CenterTitle();
-
-
-    CA4->cd(1);
-    hP2X2->Draw(drawopt);
-
-    //    ellipP2X2->Draw();
-
-    if(opt.Contains("elli") ) 
-      for(Int_t k=0;k<SNbin;k++)
-	if(sellipP2X2[k] != NULL)
-	  sellipP2X2[k]->Draw();
-
-      
-
-    y1 = gPad->GetBottomMargin();
-    y2 = 1 - gPad->GetTopMargin();
-    x1 = gPad->GetLeftMargin();
-    x2 = 1 - gPad->GetRightMargin();
+    TLine lZmean3(zmean,p2Min,zmean,p2Max);
+    lZmean3.SetLineColor(kGray+2);
+    lZmean3.SetLineStyle(2);
+    lZmean3.Draw();
+    
+    TLine lPxmean2(x1Min,pxmean,x1Max,pxmean);
+    lPxmean2.SetLineColor(kGray+2);
+    lPxmean2.SetLineStyle(2);
+    lPxmean2.Draw();
 
     textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
     PGlobals::SetPaveTextStyle(textStatInt,12); 
@@ -2123,7 +2156,7 @@ int main(int argc,char *argv[]) {
 
     sprintf(text,"Q = %5.1f pC",Charge);
     textStatInt->AddText(text);
-    sprintf(text,"#Deltax = %5.2f #mum",x_rms);
+    sprintf(text,"#Delta#zeta = %5.2f #mum",zrms);
     textStatInt->AddText(text);
     sprintf(text,"#Deltap_{x}/mc = %5.2f",pxrms);
     textStatInt->AddText(text);
@@ -2132,237 +2165,409 @@ int main(int argc,char *argv[]) {
     sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
     textStatInt->AddText(text);
     textStatInt->Draw();
+    
+    
+    TString fOutName4 = ifile;
+    fOutName4.ReplaceAll(".txt","");
+    fOutName4.Append("-p2x1");
+    PGlobals::imgconv(C4,fOutName4,opt);
+    
+    
+    // Slices plots
+    {
+      gStyle->cd();
 
-    TPaveText **textStat = new TPaveText*[SNbin];
-    TPaveText **textSlice = new TPaveText*[SNbin];
-    Int_t pnumber = 0;
-    for(Int_t k=0;k<SNbin;k++) {
-      pnumber++;
-      Int_t ic = pnumber%ndiv;
+      sprintf(cName,"CA4");     
+      TCanvas *CA4 = (TCanvas*) gROOT->FindObject(cName);
+      if(CA4==NULL) CA4 = new TCanvas("CA4","Sliced p2-x2",600,800);
+      CA4->cd();
+      CA4->Clear();
 
-      // new page
-      if( ic==0 ) {
-	CA4->cd(0);
-	CA4->Clear();
-	CA4->Divide(1,ndiv);
-      }
-      CA4->cd(ic+1);
+      Int_t ndiv = 4;
+      CA4->Divide(1,ndiv);
 
-      hP2X2sl[k]->GetXaxis()->SetLabelSize(0.08);
-      hP2X2sl[k]->GetXaxis()->SetTitleSize(0.08);
-      hP2X2sl[k]->GetXaxis()->SetTitleOffset(1.0);
-      hP2X2sl[k]->GetXaxis()->CenterTitle();
+      TString fOutName4 = ifile;
+      fOutName4.ReplaceAll(".txt","");
+      fOutName4.Append("-slp2x2");
 
-      hP2X2sl[k]->GetYaxis()->SetLabelSize(0.08);
-      hP2X2sl[k]->GetYaxis()->SetTitleSize(0.08);
-      hP2X2sl[k]->GetYaxis()->SetTitleOffset(0.8);
-      hP2X2sl[k]->GetYaxis()->CenterTitle();
+      CA4->Print(fOutName4 + ".ps[","Portrait");
 
-      hP2X2sl[k]->GetZaxis()->SetLabelSize(0.08);
-      hP2X2sl[k]->GetZaxis()->SetTitleSize(0.08);
-      hP2X2sl[k]->GetZaxis()->SetTitleOffset(0.8);
-      hP2X2sl[k]->GetZaxis()->CenterTitle();
+      Int_t fontsize = 18;
+      Int_t tfontsize = 20;
+      Double_t txoffset = 4.0;
+      Double_t lxoffset = 0.02;
+      Double_t tyoffset = 2.2;
+      Double_t lyoffset = 0.01;
+      Double_t tzoffset = 3.0;
+      Double_t lzoffset = 0.01;
+      Double_t tylength = 0.015;
+      Double_t txlength = 0.030;
 
-      hP2X2sl[k]->Draw(drawopt);
+      hP2X2->GetXaxis()->SetLabelFont(fonttype);
+      hP2X2->GetXaxis()->SetLabelSize(fontsize);
+      hP2X2->GetXaxis()->SetTitleFont(fonttype);
+      hP2X2->GetXaxis()->SetTitleSize(tfontsize);
+      hP2X2->GetXaxis()->SetTitleOffset(txoffset);
+      hP2X2->GetXaxis()->SetTickLength(txlength);
+      hP2X2->GetXaxis()->CenterTitle();
+	
+      hP2X2->GetYaxis()->SetLabelFont(fonttype);
+      hP2X2->GetYaxis()->SetLabelSize(fontsize);
+      hP2X2->GetYaxis()->SetTitleFont(fonttype);
+      hP2X2->GetYaxis()->SetTitleSize(tfontsize);
+      hP2X2->GetYaxis()->SetTitleOffset(tyoffset);
+      hP2X2->GetYaxis()->SetTickLength(tylength);
+      hP2X2->GetYaxis()->CenterTitle();
+	
+      hP2X2->GetZaxis()->SetLabelFont(fonttype);
+      hP2X2->GetZaxis()->SetLabelSize(fontsize);
+      hP2X2->GetZaxis()->SetTitleFont(fonttype);
+      hP2X2->GetZaxis()->SetTitleSize(tfontsize);
+      hP2X2->GetZaxis()->SetTitleOffset(tzoffset);
+      hP2X2->GetZaxis()->SetTickLength(tylength);
+      hP2X2->GetZaxis()->CenterTitle();    
 
+      CA4->cd(1);
+
+      gPad->SetTopMargin(0.02);
+      gPad->SetBottomMargin(0.22);
+
+      hP2X2->Draw(drawopt);
+      
+      lXmean.Draw();
+      lPxmean.Draw();
+      
+      // hP2X2->Draw(drawopts);
+      //    ellipP2X2->Draw();
+      
       if(opt.Contains("elli") ) 
-	if(sellipP2X2[k] != NULL)
-	  sellipP2X2[k]->Draw();
+	for(Int_t k=0;k<SNbin;k++)
+	  if(sellipP2X2[k] != NULL)
+	    sellipP2X2[k]->Draw();
 
-      Double_t y1 = gPad->GetBottomMargin();
-      Double_t y2 = 1 - gPad->GetTopMargin();
-      Double_t x1 = gPad->GetLeftMargin();
-      Double_t x2 = 1 - gPad->GetRightMargin();
+      y1 = gPad->GetBottomMargin();
+      y2 = 1 - gPad->GetTopMargin();
+      x1 = gPad->GetLeftMargin();
+      x2 = 1 - gPad->GetRightMargin();
+
+      textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+      PGlobals::SetPaveTextStyle(textStatInt,12); 
+      textStatInt->SetTextColor(kGray+3);
+      textStatInt->SetTextFont(42);
+
+      sprintf(text,"Q = %5.1f pC",Charge);
+      textStatInt->AddText(text);
+      sprintf(text,"#Deltax = %5.2f #mum",x_rms);
+      textStatInt->AddText(text);
+      sprintf(text,"#Deltap_{x}/mc = %5.2f",pxrms);
+      textStatInt->AddText(text);
+      sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
+      textStatInt->AddText(text);
+      sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
+      textStatInt->AddText(text);
+      textStatInt->Draw();
+
+      TPaveText **textStat = new TPaveText*[SNbin];
+      TPaveText **textSlice = new TPaveText*[SNbin];
+      TLine **slXmean = new TLine*[SNbin];
+      TLine **slPxmean = new TLine*[SNbin];
+      Int_t pnumber = 0;
+      for(Int_t k=0;k<SNbin;k++) {
+	pnumber++;
+	Int_t ic = pnumber%ndiv;
+
+	// new page
+	if( ic==0 ) {
+	  CA4->cd(0);
+	  CA4->Clear();
+	  CA4->Divide(1,ndiv);
+	}
+	CA4->cd(ic+1);
+
+     	gPad->SetTopMargin(0.02);
+	gPad->SetBottomMargin(0.22);
+
+	hP2X2sl[k]->GetXaxis()->SetLabelFont(fonttype);
+	hP2X2sl[k]->GetXaxis()->SetLabelSize(fontsize);
+	hP2X2sl[k]->GetXaxis()->SetTitleFont(fonttype);
+	hP2X2sl[k]->GetXaxis()->SetTitleSize(tfontsize);
+	hP2X2sl[k]->GetXaxis()->SetTitleOffset(txoffset);
+	hP2X2sl[k]->GetXaxis()->SetTickLength(txlength);
+	hP2X2sl[k]->GetXaxis()->CenterTitle();
+	
+	hP2X2sl[k]->GetYaxis()->SetLabelFont(fonttype);
+	hP2X2sl[k]->GetYaxis()->SetLabelSize(fontsize);
+	hP2X2sl[k]->GetYaxis()->SetTitleFont(fonttype);
+	hP2X2sl[k]->GetYaxis()->SetTitleSize(tfontsize);
+	hP2X2sl[k]->GetYaxis()->SetTitleOffset(tyoffset);
+	hP2X2sl[k]->GetYaxis()->SetTickLength(tylength);
+	hP2X2sl[k]->GetYaxis()->CenterTitle();
+	
+	hP2X2sl[k]->GetZaxis()->SetLabelFont(fonttype);
+	hP2X2sl[k]->GetZaxis()->SetLabelSize(fontsize);
+	hP2X2sl[k]->GetZaxis()->SetTitleFont(fonttype);
+	hP2X2sl[k]->GetZaxis()->SetTitleSize(tfontsize);
+	hP2X2sl[k]->GetZaxis()->SetTitleOffset(tzoffset);
+	hP2X2sl[k]->GetZaxis()->SetTickLength(tylength);
+	hP2X2sl[k]->GetZaxis()->CenterTitle();    
+
+	hP2X2sl[k]->Draw(drawopt);
+
+	slXmean[k] = new TLine(hP2X2sl[k]->GetMean(1),p2Min,hP2X2sl[k]->GetMean(1),p2Max);
+	slXmean[k]->SetLineColor(kGray+2);
+	slXmean[k]->SetLineStyle(2);
+	slXmean[k]->Draw();
+
+	
+	slPxmean[k] = new TLine(x2Min,hP2X2sl[k]->GetMean(2),x2Max,hP2X2sl[k]->GetMean(2));
+	slPxmean[k]->SetLineColor(kGray+2);
+	slPxmean[k]->SetLineStyle(2);
+	slPxmean[k]->Draw();
+	
+	if(opt.Contains("elli") ) 
+	  if(sellipP2X2[k] != NULL)
+	    sellipP2X2[k]->Draw();
+
+	Double_t y1 = gPad->GetBottomMargin();
+	Double_t y2 = 1 - gPad->GetTopMargin();
+	Double_t x1 = gPad->GetLeftMargin();
+	Double_t x2 = 1 - gPad->GetRightMargin();
       
-      textStat[k] = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
-      PGlobals::SetPaveTextStyle(textStat[k],12); 
-      textStat[k]->SetTextColor(kGray+3);
-      textStat[k]->SetTextFont(42);
+	textStat[k] = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+	PGlobals::SetPaveTextStyle(textStat[k],12); 
+	textStat[k]->SetTextColor(kGray+3);
+	textStat[k]->SetTextFont(42);
 
-      char text[64];
-      sprintf(text,"Q = %5.1f pC",sCharge[k]);
-      textStat[k]->AddText(text);
-      sprintf(text,"#Deltax = %5.2f #mum",sx_rms[k]);
-      textStat[k]->AddText(text);
-      sprintf(text,"#Deltap_{x}/mc = %5.2f",spx_rms[k]);
-      textStat[k]->AddText(text);
-      sprintf(text,"#varepsilon_{x} = %5.2f #mum",semitx[k]);
-      textStat[k]->AddText(text);
-      sprintf(text,"#beta_{x} = %5.2f mm",1E-3*sbetax[k]);
-      textStat[k]->AddText(text);
-      textStat[k]->Draw();
-
-
-      textSlice[k] = new TPaveText(x1+0.4,y2-0.2,x2-0.02,y2-0.0,"NDC");
-      PGlobals::SetPaveTextStyle(textSlice[k],32); 
-      textSlice[k]->SetTextColor(kBlack);
-      textSlice[k]->SetTextFont(42);
-
-      sprintf(text,"%5.2f #mum < #zeta < %5.2f #mum",sBinLim[k],sBinLim[k+1]);
-      textSlice[k]->AddText(text);
-      textSlice[k]->Draw();
+	char text[64];
+	sprintf(text,"Q = %5.1f pC",sCharge[k]);
+	textStat[k]->AddText(text);
+	sprintf(text,"#Deltax = %5.2f #mum",sx_rms[k]);
+	textStat[k]->AddText(text);
+	sprintf(text,"#Deltap_{x}/mc = %5.2f",spx_rms[k]);
+	textStat[k]->AddText(text);
+	sprintf(text,"#varepsilon_{x} = %5.2f #mum",semitx[k]);
+	textStat[k]->AddText(text);
+	sprintf(text,"#beta_{x} = %5.2f mm",1E-3*sbetax[k]);
+	textStat[k]->AddText(text);
+	textStat[k]->Draw();
 
 
-      if(ic+1==ndiv) {
-	CA4->cd(0);
-	CA4->Print(fOutName4 + ".ps");
+	textSlice[k] = new TPaveText(x1+0.4,y2-0.2,x2-0.02,y2-0.0,"NDC");
+	PGlobals::SetPaveTextStyle(textSlice[k],32); 
+	textSlice[k]->SetTextColor(kBlack);
+	textSlice[k]->SetTextFont(42);
+
+	sprintf(text,"%5.2f #mum < #zeta < %5.2f #mum",sBinLim[k],sBinLim[k+1]);
+	textSlice[k]->AddText(text);
+	textSlice[k]->Draw();
+
+
+	if(ic+1==ndiv) {
+	  CA4->cd(0);
+	  CA4->Print(fOutName4 + ".ps");
+	}
       }
-    }
 
-    CA4->Print(fOutName4 + ".ps]");
+      CA4->Print(fOutName4 + ".ps]");
 
-    gSystem->Exec("ps2pdf " + fOutName4 + ".ps " + fOutName4 + ".pdf");
-    gSystem->Exec("rm -rf " + fOutName4 + ".ps"); 
-
-
-    // ---------
-
-    sprintf(cName,"CA5");     
-    TCanvas *CA5 = (TCanvas*) gROOT->FindObject(cName);
-    if(CA5==NULL) CA5 = new TCanvas("CA5","Sliced p3-x3",600,800);
-    CA5->cd();
-    CA5->Clear();
-
-    ndiv = 4;
-    CA5->Divide(1,ndiv);
-
-    TString fOutName5 = ifile;
-    fOutName5.ReplaceAll(".txt","");
-    fOutName5.Append("-slp3x3");
-
-    CA5->Print(fOutName5 + ".ps[","Portrait");
-
-    hP3X3->GetXaxis()->SetLabelSize(0.08);
-    hP3X3->GetXaxis()->SetTitleSize(0.08);
-    hP3X3->GetXaxis()->SetTitleOffset(1.0);
-    hP3X3->GetXaxis()->CenterTitle();
-
-    hP3X3->GetYaxis()->SetLabelSize(0.08);
-    hP3X3->GetYaxis()->SetTitleSize(0.08);
-    hP3X3->GetYaxis()->SetTitleOffset(0.8);
-    hP3X3->GetYaxis()->CenterTitle();
-
-    hP3X3->GetZaxis()->SetLabelSize(0.08);
-    hP3X3->GetZaxis()->SetTitleSize(0.08);
-    hP3X3->GetZaxis()->SetTitleOffset(0.8);
-    hP3X3->GetZaxis()->CenterTitle();
+      gSystem->Exec("ps2pdf " + fOutName4 + ".ps " + fOutName4 + ".pdf");
+      gSystem->Exec("rm -rf " + fOutName4 + ".ps"); 
 
 
-    CA5->cd(1);
-    hP3X3->Draw(drawopt);
+      // ---------
 
-    //    ellipP3X3->Draw();
+      sprintf(cName,"CA5");     
+      TCanvas *CA5 = (TCanvas*) gROOT->FindObject(cName);
+      if(CA5==NULL) CA5 = new TCanvas("CA5","Sliced p3-x3",600,800);
+      CA5->cd();
+      CA5->Clear();
 
-    if(opt.Contains("elli") ) 
-      for(Int_t k=0;k<SNbin;k++)
-	if(sellipP3X3[k] != NULL)
-	  sellipP3X3[k]->Draw();
+      ndiv = 4;
+      CA5->Divide(1,ndiv);
+
+      TString fOutName5 = ifile;
+      fOutName5.ReplaceAll(".txt","");
+      fOutName5.Append("-slp3x3");
+
+      CA5->Print(fOutName5 + ".ps[","Portrait");
+
+      hP3X3->GetXaxis()->SetLabelFont(fonttype);
+      hP3X3->GetXaxis()->SetLabelSize(fontsize);
+      hP3X3->GetXaxis()->SetTitleFont(fonttype);
+      hP3X3->GetXaxis()->SetTitleSize(tfontsize);
+      hP3X3->GetXaxis()->SetTitleOffset(txoffset);
+      hP3X3->GetXaxis()->SetTickLength(txlength);
+      hP3X3->GetXaxis()->CenterTitle();
+	
+      hP3X3->GetYaxis()->SetLabelFont(fonttype);
+      hP3X3->GetYaxis()->SetLabelSize(fontsize);
+      hP3X3->GetYaxis()->SetTitleFont(fonttype);
+      hP3X3->GetYaxis()->SetTitleSize(tfontsize);
+      hP3X3->GetYaxis()->SetTitleOffset(tyoffset);
+      hP3X3->GetYaxis()->SetTickLength(tylength);
+      hP3X3->GetYaxis()->CenterTitle();
+	
+      hP3X3->GetZaxis()->SetLabelFont(fonttype);
+      hP3X3->GetZaxis()->SetLabelSize(fontsize);
+      hP3X3->GetZaxis()->SetTitleFont(fonttype);
+      hP3X3->GetZaxis()->SetTitleSize(tfontsize);
+      hP3X3->GetZaxis()->SetTitleOffset(tzoffset);
+      hP3X3->GetZaxis()->SetTickLength(tylength);
+      hP3X3->GetZaxis()->CenterTitle();    
+
       
+      CA5->cd(1);
+      hP3X3->Draw(drawopt);
 
-    y1 = gPad->GetBottomMargin();
-    y2 = 1 - gPad->GetTopMargin();
-    x1 = gPad->GetLeftMargin();
-    x2 = 1 - gPad->GetRightMargin();
+      gPad->SetTopMargin(0.02);
+      gPad->SetBottomMargin(0.22);
 
-    textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
-    PGlobals::SetPaveTextStyle(textStatInt,12); 
-    textStatInt->SetTextColor(kGray+3);
-    textStatInt->SetTextFont(42);
+      hP3X3->Draw(drawopt);
 
-    sprintf(text,"Q = %5.1f pC",Charge);
-    textStatInt->AddText(text);
-    sprintf(text,"#Deltay = %5.2f #mum",y_rms);
-    textStatInt->AddText(text);
-    sprintf(text,"#Deltap_{y}/mc = %5.2f",pyrms);
-    textStatInt->AddText(text);
-    sprintf(text,"#varepsilon_{y} = %5.2f #mum",emity);
-    textStatInt->AddText(text);
-    sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
-    textStatInt->AddText(text);
-    textStatInt->Draw();
-
-    textStat = new TPaveText*[SNbin];
-    textSlice = new TPaveText*[SNbin];
-    pnumber = 0;
-    for(Int_t k=0;k<SNbin;k++) {
-      pnumber++;
-      Int_t ic = pnumber%ndiv;
-
-      // new page
-      if( ic==0 ) {
-	CA5->cd(0);
-	CA5->Clear();
-	CA5->Divide(1,ndiv);
-      }
-      CA5->cd(ic+1);
-
-      hP3X3sl[k]->GetXaxis()->SetLabelSize(0.08);
-      hP3X3sl[k]->GetXaxis()->SetTitleSize(0.08);
-      hP3X3sl[k]->GetXaxis()->SetTitleOffset(1.0);
-      hP3X3sl[k]->GetXaxis()->CenterTitle();
-
-      hP3X3sl[k]->GetYaxis()->SetLabelSize(0.08);
-      hP3X3sl[k]->GetYaxis()->SetTitleSize(0.08);
-      hP3X3sl[k]->GetYaxis()->SetTitleOffset(0.8);
-      hP3X3sl[k]->GetYaxis()->CenterTitle();
-
-      hP3X3sl[k]->GetZaxis()->SetLabelSize(0.08);
-      hP3X3sl[k]->GetZaxis()->SetTitleSize(0.08);
-      hP3X3sl[k]->GetZaxis()->SetTitleOffset(0.8);
-      hP3X3sl[k]->GetZaxis()->CenterTitle();
-
-      hP3X3sl[k]->Draw(drawopt);
-
+      lYmean.Draw();
+      lPymean.Draw();
+      
+      //  hP3X3->Draw(drawopts);
+      //    ellipP3X3->Draw();
+      
       if(opt.Contains("elli") ) 
-	if(sellipP3X3[k] != NULL)
-	  sellipP3X3[k]->Draw();
-
-      Double_t y1 = gPad->GetBottomMargin();
-      Double_t y2 = 1 - gPad->GetTopMargin();
-      Double_t x1 = gPad->GetLeftMargin();
-      Double_t x2 = 1 - gPad->GetRightMargin();
+	for(Int_t k=0;k<SNbin;k++)
+	  if(sellipP3X3[k] != NULL)
+	    sellipP3X3[k]->Draw();
       
-      textStat[k] = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
-      PGlobals::SetPaveTextStyle(textStat[k],12); 
-      textStat[k]->SetTextColor(kGray+3);
-      textStat[k]->SetTextFont(42);
 
-      char text[64];
-      sprintf(text,"Q = %5.1f pC",sCharge[k]);
-      textStat[k]->AddText(text);
-      sprintf(text,"#Deltay = %5.2f #mum",sy_rms[k]);
-      textStat[k]->AddText(text);
-      sprintf(text,"#Deltap_{y}/mc = %5.2f",spy_rms[k]);
-      textStat[k]->AddText(text);
-      sprintf(text,"#varepsilon_{y} = %5.2f #mum",semity[k]);
-      textStat[k]->AddText(text);
-      sprintf(text,"#beta_{y} = %5.2f mm",1E-3*sbetay[k]);
-      textStat[k]->AddText(text);
-      textStat[k]->Draw();
+      y1 = gPad->GetBottomMargin();
+      y2 = 1 - gPad->GetTopMargin();
+      x1 = gPad->GetLeftMargin();
+      x2 = 1 - gPad->GetRightMargin();
+
+      textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+      PGlobals::SetPaveTextStyle(textStatInt,12); 
+      textStatInt->SetTextColor(kGray+3);
+      textStatInt->SetTextFont(42);
+
+      sprintf(text,"Q = %5.1f pC",Charge);
+      textStatInt->AddText(text);
+      sprintf(text,"#Deltay = %5.2f #mum",y_rms);
+      textStatInt->AddText(text);
+      sprintf(text,"#Deltap_{y}/mc = %5.2f",pyrms);
+      textStatInt->AddText(text);
+      sprintf(text,"#varepsilon_{y} = %5.2f #mum",emity);
+      textStatInt->AddText(text);
+      sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
+      textStatInt->AddText(text);
+      textStatInt->Draw();
+
+      textStat = new TPaveText*[SNbin];
+      textSlice = new TPaveText*[SNbin];
+      TLine **slXmean2 = new TLine*[SNbin];
+      TLine **slPxmean2 = new TLine*[SNbin];
+
+      pnumber = 0;
+      for(Int_t k=0;k<SNbin;k++) {
+	pnumber++;
+	Int_t ic = pnumber%ndiv;
+
+	// new page
+	if( ic==0 ) {
+	  CA5->cd(0);
+	  CA5->Clear();
+	  CA5->Divide(1,ndiv);
+	}
+	CA5->cd(ic+1);
+
+	gPad->SetTopMargin(0.02);
+	gPad->SetBottomMargin(0.22);
+
+	hP3X3sl[k]->GetXaxis()->SetLabelFont(fonttype);
+	hP3X3sl[k]->GetXaxis()->SetLabelSize(fontsize);
+	hP3X3sl[k]->GetXaxis()->SetTitleFont(fonttype);
+	hP3X3sl[k]->GetXaxis()->SetTitleSize(tfontsize);
+	hP3X3sl[k]->GetXaxis()->SetTitleOffset(txoffset);
+	hP3X3sl[k]->GetXaxis()->SetTickLength(txlength);
+	hP3X3sl[k]->GetXaxis()->CenterTitle();
+	
+	hP3X3sl[k]->GetYaxis()->SetLabelFont(fonttype);
+	hP3X3sl[k]->GetYaxis()->SetLabelSize(fontsize);
+	hP3X3sl[k]->GetYaxis()->SetTitleFont(fonttype);
+	hP3X3sl[k]->GetYaxis()->SetTitleSize(tfontsize);
+	hP3X3sl[k]->GetYaxis()->SetTitleOffset(tyoffset);
+	hP3X3sl[k]->GetYaxis()->SetTickLength(tylength);
+	hP3X3sl[k]->GetYaxis()->CenterTitle();
+	
+	hP3X3sl[k]->GetZaxis()->SetLabelFont(fonttype);
+	hP3X3sl[k]->GetZaxis()->SetLabelSize(fontsize);
+	hP3X3sl[k]->GetZaxis()->SetTitleFont(fonttype);
+	hP3X3sl[k]->GetZaxis()->SetTitleSize(tfontsize);
+	hP3X3sl[k]->GetZaxis()->SetTitleOffset(tzoffset);
+	hP3X3sl[k]->GetZaxis()->SetTickLength(tylength);
+	hP3X3sl[k]->GetZaxis()->CenterTitle();    
+
+	hP3X3sl[k]->Draw(drawopt);
+	
+	slXmean2[k] = new TLine(hP3X3sl[k]->GetMean(1),p3Min,hP3X3sl[k]->GetMean(1),p3Max);
+	slXmean2[k]->SetLineColor(kGray+2);
+	slXmean2[k]->SetLineStyle(2);
+	slXmean2[k]->Draw();
+
+	
+	slPxmean2[k] = new TLine(x3Min,hP3X3sl[k]->GetMean(2),x3Max,hP3X3sl[k]->GetMean(2));
+	slPxmean2[k]->SetLineColor(kGray+2);
+	slPxmean2[k]->SetLineStyle(2);
+	slPxmean2[k]->Draw();
+
+	
+	if(opt.Contains("elli") ) 
+	  if(sellipP3X3[k] != NULL)
+	    sellipP3X3[k]->Draw();
+
+	Double_t y1 = gPad->GetBottomMargin();
+	Double_t y2 = 1 - gPad->GetTopMargin();
+	Double_t x1 = gPad->GetLeftMargin();
+	Double_t x2 = 1 - gPad->GetRightMargin();
+      
+	textStat[k] = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+	PGlobals::SetPaveTextStyle(textStat[k],12); 
+	textStat[k]->SetTextColor(kGray+3);
+	textStat[k]->SetTextFont(42);
+
+	char text[64];
+	sprintf(text,"Q = %5.1f pC",sCharge[k]);
+	textStat[k]->AddText(text);
+	sprintf(text,"#Deltay = %5.2f #mum",sy_rms[k]);
+	textStat[k]->AddText(text);
+	sprintf(text,"#Deltap_{y}/mc = %5.2f",spy_rms[k]);
+	textStat[k]->AddText(text);
+	sprintf(text,"#varepsilon_{y} = %5.2f #mum",semity[k]);
+	textStat[k]->AddText(text);
+	sprintf(text,"#beta_{y} = %5.2f mm",1E-3*sbetay[k]);
+	textStat[k]->AddText(text);
+	textStat[k]->Draw();
 
 
-      textSlice[k] = new TPaveText(x1+0.4,y2-0.2,x2-0.02,y2-0.0,"NDC");
-      PGlobals::SetPaveTextStyle(textSlice[k],32); 
-      textSlice[k]->SetTextColor(kBlack);
-      textSlice[k]->SetTextFont(42);
+	textSlice[k] = new TPaveText(x1+0.4,y2-0.2,x2-0.02,y2-0.0,"NDC");
+	PGlobals::SetPaveTextStyle(textSlice[k],32); 
+	textSlice[k]->SetTextColor(kBlack);
+	textSlice[k]->SetTextFont(42);
 
-      sprintf(text,"%5.2f #mum < #zeta < %5.2f #mum",sBinLim[k],sBinLim[k+1]);
-      textSlice[k]->AddText(text);
-      textSlice[k]->Draw();
+	sprintf(text,"%5.2f #mum < #zeta < %5.2f #mum",sBinLim[k],sBinLim[k+1]);
+	textSlice[k]->AddText(text);
+	textSlice[k]->Draw();
 
 
-      if(ic+1==ndiv) {
-	CA5->cd(0);
-	CA5->Print(fOutName5 + ".ps");
+	if(ic+1==ndiv) {
+	  CA5->cd(0);
+	  CA5->Print(fOutName5 + ".ps");
+	}
       }
-    }
 
-    CA5->Print(fOutName5 + ".ps]");
+      CA5->Print(fOutName5 + ".ps]");
 
-    gSystem->Exec("ps2pdf " + fOutName5 + ".ps " + fOutName5 + ".pdf");
-    gSystem->Exec("rm -rf " + fOutName5 + ".ps"); 
-  } 
-
+      gSystem->Exec("ps2pdf " + fOutName5 + ".ps " + fOutName5 + ".pdf");
+      gSystem->Exec("rm -rf " + fOutName5 + ".ps"); 
+    } 
+  }
+  
   if(opt.Contains("file")) {
     TString filename = Form("histos.root");
     TFile *ofile = new TFile(filename,"RECREATE");

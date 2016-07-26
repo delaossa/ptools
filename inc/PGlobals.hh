@@ -66,7 +66,7 @@ namespace PGlobals {
     gROOT->SetStyle("Plasma");
 			
     // Line styles
-    PlasmaStyle->SetLineColor(kMagenta+2);
+    PlasmaStyle->SetLineColor(kBlack);
     //PlasmaStyle->SetLineStyleString( 5, "[52 12]" );
     //PlasmaStyle->SetLineStyleString( 6, "[22 12]" );
     //PlasmaStyle->SetLineStyleString( 7, "[22 10 7 10]" );
@@ -599,7 +599,7 @@ namespace PGlobals {
     
       if(E1*E2 >= 0) { // No change of sign means we are in a side of the zero axis.
 	if(fabs(E2 + baseline)>fabs(Extr[Ncross])) {
-	  Extr[Ncross] = E1 + baseline;
+	  Extr[Ncross] = E2 + baseline;
 	} 
       } else {  // change of sign means a crossing!
       

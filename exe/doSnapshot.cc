@@ -395,9 +395,12 @@ int main(int argc,char *argv[]) {
 
     // Current density
     TH2F **hJz2D = new TH2F*[Nspecies];
+    // Current density on-axis
+    TH1F **hJz1D = new TH1F*[Nspecies];
     for(Int_t i=0;i<Nspecies;i++) {
       
       hJz2D[i] = NULL;
+      hJz1D[i] = NULL;
       if(!pData->GetCurrentFileName(i)) 
 	continue;
       
@@ -431,8 +434,32 @@ int main(int argc,char *argv[]) {
 	hJz2D[i]->GetYaxis()->SetTitle("k_{p} x");
     
       hJz2D[i]->GetZaxis()->SetTitle(Form("j_{z,%i}",i));
+
+      // on-axis current density 
+      sprintf(hName,"hJz1D_%i",i);
+      hJz1D[i] = (TH1F*) gROOT->FindObject(hName);
+      if(hJz1D[i]) delete hJz1D[i];
       
-      
+      // 1D histograms
+      if(pData->Is3D()) {
+	hJz1D[i] = pData->GetH1SliceZ3D(pData->GetCurrentFileName(i)->c_str(),"j1",-1,NonBin,-1,NonBin,opt+"avg");
+      } else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
+	hJz1D[i] = pData->GetH1SliceZ(pData->GetCurrentFileName(i)->c_str(),"j1",1,NonBin,opt+"avg");
+      } else { // 2D cartesian
+	hJz1D[i] = pData->GetH1SliceZ(pData->GetCurrentFileName(i)->c_str(),"j1",-1,NonBin,opt+"avg");
+      }
+      hJz1D[i]->SetName(hName); 
+   
+      // if(hJz1D[i]) delete hJz1D[i];
+      // hJz1D[i] = (TH1F*) hE2D[i]->ProjectionX(hName,FirstxBin,LastxBin);
+      // hJz1D[i]->Scale(1.0/(LastxBin-FirstxBin+1));
+    
+      if(opt.Contains("comov"))
+	hJz1D[i]->GetXaxis()->SetTitle("k_{p} #zeta");
+      else
+	hJz1D[i]->GetXaxis()->SetTitle("k_{p} z");
+
+      hJz1D[i]->GetYaxis()->SetTitle(Form("j_{z,%i}",i));
     } 
     
     // Get electric fields 2D
@@ -876,18 +903,27 @@ int main(int argc,char *argv[]) {
 	    hJz2D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
 	}
 	
+	if(hJz1D[i]) {
+	  hJz1D[i]->SetBins(NbinsX,zMin,zMax);
+	  if(opt.Contains("comov"))
+	    hJz1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	  else
+	    hJz1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+	}
+
+	if(hDen1D[i]) {
+	  hDen1D[i]->SetBins(NbinsX,zMin,zMax);
+	  // for(Int_t j=0;j<hDen1D[i]->GetNbinsX();j++) {
+	  // 	hDen1D[i]->SetBinContent(j, hDen1D[i]->GetBinContent(j) * n0 / (1e17/PUnits::cm3) );
+	  // }
+		
+	  if(opt.Contains("comov"))
+	    hDen1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+	  else
+	    hDen1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+	}
+
 	
-	hDen1D[i]->SetBins(NbinsX,zMin,zMax);
-	// for(Int_t j=0;j<hDen1D[i]->GetNbinsX();j++) {
-	// 	hDen1D[i]->SetBinContent(j, hDen1D[i]->GetBinContent(j) * n0 / (1e17/PUnits::cm3) );
-	// }
-      
-      
-	if(opt.Contains("comov"))
-	  hDen1D[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
-	else
-	  hDen1D[i]->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
-      
 	if(hCur1D[i]) {
 
 	  hCur1D[i]->SetBins(NbinsX,zMin,zMax);
@@ -1446,6 +1482,10 @@ int main(int argc,char *argv[]) {
 	hJz2D[i]->Write(hName,TObject::kOverwrite);
       }
       
+      if(hJz1D[i]) {
+	sprintf(hName,"hJz1D_%i",i);
+	hJz1D[i]->Write(hName,TObject::kOverwrite);
+      }
     }
 
       
