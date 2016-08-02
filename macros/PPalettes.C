@@ -11,6 +11,7 @@
   if(!beamPalette) {
     beamPalette = new PPalette("beam");
     beamPalette->SetPalette("elec");
+    //beamPalette->SetPalette("hot");
   }
 
   PPalette *beam2Palette = (PPalette*) gROOT->FindObject("beam2");
