@@ -152,6 +152,7 @@ void PlotDDR2D( const TString &options="" ){
   Double_t *denarray = new Double_t[Np];
   Double_t *denarraylin = new Double_t[Np];
   Double_t *betapharray = new Double_t[Np];
+  Double_t *betapharray2 = new Double_t[Np];
   Double_t *betapharraylin = new Double_t[Np];
   Double_t ntop   = 10;
   Double_t sigmal = 2.0;
@@ -169,6 +170,7 @@ void PlotDDR2D( const TString &options="" ){
     denarray[i] = DenGauss(zarray[i],sigmal,ntop);
     denarraylin[i] = DenLin(zarray[i],sigmal,ntop);
     betapharray[i] = betaph(zarray[i],phase,sigmal,ntop);
+    betapharray2[i] = betaph(zarray[i],2.0*phase,sigmal,ntop);
     betapharraylin[i] = betaphlin(zarray[i],phase,sigmal,ntop);
   }
     
@@ -214,6 +216,7 @@ void PlotDDR2D( const TString &options="" ){
   Double_t slope = (gPad->GetUymax() - gPad->GetUymin())/(rightmax-rightmin); 
   for(Int_t i=0; i<Np; i++) {
     betapharray[i] = (betapharray[i]-rightmin) * slope +  gPad->GetUymin();
+    betapharray2[i] = (betapharray2[i]-rightmin) * slope +  gPad->GetUymin();
     betapharraylin[i] = (betapharraylin[i]-rightmin) * slope +  gPad->GetUymin();
   }
     
@@ -222,7 +225,13 @@ void PlotDDR2D( const TString &options="" ){
   betaphvsz->SetLineColor(colorBeta);
   betaphvsz->SetLineWidth(lineWidth);
   betaphvsz->SetLineStyle(1);
-  // betaphvsz->Draw("C");
+
+  TGraph *betaphvsz2 = new TGraph(Np,zarray,betapharray2); 
+  //   betaphvsz2->SetLineColor(myBlue);
+  betaphvsz2->SetLineColor(colorBeta);
+  betaphvsz2->SetLineWidth(lineWidth);
+  betaphvsz2->SetLineStyle(2);
+// betaphvsz2->Draw("C");
 
   TGraph *betaphvszlin = new TGraph(Np,zarray,betapharraylin); 
   betaphvszlin->SetLineColor(colorBetaLin);
@@ -283,6 +292,7 @@ void PlotDDR2D( const TString &options="" ){
   gPad->Update();
   gPad->RedrawAxis("G");
 
+  betaphvsz2->Draw("C");
   betaphvsz->Draw("C");
 
   // Get Data from PIC simulations with test ramp

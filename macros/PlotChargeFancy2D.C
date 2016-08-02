@@ -507,15 +507,15 @@ void PlotChargeFancy2D( const TString &sim, Int_t time, Float_t zoom=2, Int_t No
   beam2Palette->SetPalette("hot");
 
   if(opt.Contains("dark")) {
-    const Int_t bNRGBs = 3;
+    const Int_t bNRGBs = 4;
     const Int_t bNCont = 255;
-    Double_t bStops[bNRGBs] = { 0.00, 0.20, 1.00};
+    Double_t bStops[bNRGBs] = { 0.00, 0.05, 0.10, 1.00};
     Int_t bcindex[bNRGBs];
-    
+
     bcindex[0] = TColor::GetColor("#380A3C"); // deep purple
-    // bcindex[1] = TColor::GetColor((Float_t) 0.39, (Float_t) 0.05, (Float_t) 0.33); // dark magenta 
-    bcindex[1] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
-    bcindex[2] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // vyellow
+    bcindex[1] = TColor::GetColor("#A0203C");
+    bcindex[2] = TColor::GetColor((Float_t) 0.70, (Float_t) 0.20, (Float_t) 0.30); // pinky orange
+    bcindex[3] = TColor::GetColor((Float_t) 1.00, (Float_t) 1.00, (Float_t) 0.20); // yellow
     beam2Palette->ChangeGradientColorTable(bNRGBs, bStops, bcindex);
   }
       
