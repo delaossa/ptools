@@ -292,7 +292,7 @@ void PData::LoadFileNames(Int_t t) {
   // We swap here the order (if necessary) to put the "plasma" species at first.
   for(UInt_t i=0;i<species.size();i++) {
     if(species[i].find("plasma") != string::npos)
-      if(i!=0) {
+      if(i!=0 && species.size()>0) {
 	string temp = species[0];
 	species[0] = species[i];
 	species[i] = temp;
@@ -300,7 +300,7 @@ void PData::LoadFileNames(Int_t t) {
 	continue;
       }
     if(species[i].find("driver") != string::npos)
-      if(i>0 && species.size()>1) {
+      if(i!=1 && species.size()>1) {
 	string temp = species[1];
 	species[1] = species[i];
 	species[i] = temp;
@@ -308,7 +308,7 @@ void PData::LoadFileNames(Int_t t) {
 	continue;
       }
     if(species[i].find("high") != string::npos)
-      if(i>0 && species.size()>2) {
+      if(i!=2 && species.size()>2) {
 	string temp = species[2];
 	species[2] = species[i];
 	species[i] = temp;
