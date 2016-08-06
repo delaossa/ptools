@@ -300,11 +300,7 @@ void PData::LoadFileNames(Int_t t) {
 	continue;
       }
     if(species[i].find("driver") != string::npos)
-<<<<<<< HEAD
       if(i>0 && species.size()>1) {
-=======
-      if(i!=1) {
->>>>>>> e7155b7d985e2fb24ec9ed16a3a5c4bf114a1c51
 	string temp = species[1];
 	species[1] = species[i];
 	species[i] = temp;
@@ -312,11 +308,7 @@ void PData::LoadFileNames(Int_t t) {
 	continue;
       }
     if(species[i].find("high") != string::npos)
-<<<<<<< HEAD
       if(i>0 && species.size()>2) {
-=======
-      if(i!=2) {
->>>>>>> e7155b7d985e2fb24ec9ed16a3a5c4bf114a1c51
 	string temp = species[2];
 	species[2] = species[i];
 	species[i] = temp;
