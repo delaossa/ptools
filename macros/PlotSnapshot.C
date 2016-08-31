@@ -633,7 +633,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       } else if(Max[i]<2*baseden) {
 	Min[i] = 2*baseden - Max[i];
       } else {
-	Max[i] = 0.4*hDen2D[i]->GetMaximum(); // enhance plasma contrast.
+	Max[i] *= 1.0; // enhance plasma contrast.
         // Max[i] = hDen2D[i]->GetMaximum(); 
 	if(Max[i]<baseden) Max[i] = 1.01 * baseden;
 	if(Min[i]>baseden) Min[i] = 0.9*baseden;

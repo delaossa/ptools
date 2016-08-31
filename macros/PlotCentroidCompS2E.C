@@ -70,14 +70,16 @@ void PlotCentroidCompS2E(const TString &options="") {
 
   TString opt = options;
 
-  const Int_t Nsim = 3;
+  const Int_t Nsim = 4;
   char sName[Nsim][56] = {"flash-500pC-2kA-JZ-2016.06.3D", 
 			  "flash-500pC-2kA-JZ-2016.06.tap10.3D",
-			  "flash-500pC-2kA-JZ-2016.06.tap10.corr.3D"};
+			  "flash-500pC-2kA-JZ-2016.06.tap10.corr.3D",
+			  "flash-500pC-2kA-JZ-2016.06.tap10.R56max.3D"};
 
   char lName[Nsim][56] = {"No taper", 
 			  "k_{#beta,0}L = 10",
-			  "k_{#beta,0}L = 10 (corr.)"};
+			  "k_{#beta,0}L = 10 (corr.)",
+			  "k_{#beta,0}L = 10 (new)"};
 
   
   // Load first simulation data (for instance)
