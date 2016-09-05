@@ -1849,7 +1849,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  hCur1D[i]->SetBinContent(j+1,(content - curmin) * slope + yaxismin);	
 	}
 	
-	hCur1D[i]->SetLineWidth(2);
+	hCur1D[i]->SetLineWidth(3);
 	if(i==1)
 	  hCur1D[i]->SetLineColor(cBeam);
 	else if(i==2)

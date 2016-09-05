@@ -307,7 +307,8 @@ void PData::LoadFileNames(Int_t t) {
 	i--;
 	continue;
       }
-    if(species[i].find("high") != string::npos)
+    if( (species[i].find("high") != string::npos) ||
+	(species[i].find("1") != string::npos))
       if(i!=2 && species.size()>2) {
 	string temp = species[2];
 	species[2] = species[i];

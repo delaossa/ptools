@@ -347,21 +347,38 @@ int main(int argc,char *argv[]) {
 
   x1Min = varMin[0] - rangefactor*(varMax[0]-varMin[0]);
   x1Max = varMax[0] + rangefactor*(varMax[0]-varMin[0]);
-  //x1Min = -72390512;
-  //x1Max = -72390232;
-  //x1Min = -25846100;
 
   x2Min = varMin[1] - rangefactor*(varMax[1]-varMin[1]);
   x2Max = varMax[1] + rangefactor*(varMax[1]-varMin[1]);
+
   x3Min = varMin[2] - rangefactor*(varMax[2]-varMin[2]);
   x3Max = varMax[2] + rangefactor*(varMax[2]-varMin[2]);
 
   p1Min = varMin[3] - rangefactor*(varMax[3]-varMin[3]);
   p1Max = varMax[3] + rangefactor*(varMax[3]-varMin[3]);
+
   p2Min = varMin[4] - rangefactor*(varMax[4]-varMin[4]);
   p2Max = varMax[4] + rangefactor*(varMax[4]-varMin[4]);
+
   p3Min = varMin[5] - rangefactor*(varMax[5]-varMin[5]);
   p3Max = varMax[5] + rangefactor*(varMax[5]-varMin[5]);
+
+  if(ifile.Contains("MCELLSTART")) {
+    x1Min = varMean[0] - 500;
+    x1Max = varMean[0] + 300;
+
+    x2Min = varMean[1] - 300;
+    x2Max = varMean[1] + 300;
+
+    x3Min = varMean[2] - 300;
+    x3Max = varMean[2] + 300;
+
+    p2Min = varMean[4] - 8;
+    p2Max = varMean[4] + 8;
+
+    p3Min = varMean[5] - 8;
+    p3Max = varMean[5] + 8;
+  }
   
   
   cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f ", x1Nbin, x1Min, x1Max) << endl;
@@ -382,7 +399,12 @@ int main(int argc,char *argv[]) {
   TH1F *hX1 = (TH1F*) gROOT->FindObject(hName);
   if(hX1) delete hX1;
   hX1 = new TH1F(hName,"",x1Nbin,x1Min,x1Max);
-  hX1->GetYaxis()->SetTitle("I [kA]");
+
+  if(ifile.Contains("MCELLSTART"))
+    hX1->GetYaxis()->SetTitle("I [0.1 kA]");
+  else
+    hX1->GetYaxis()->SetTitle("I [kA]");
+  
   hX1->GetXaxis()->SetTitle("#zeta [#mum]");
 
   sprintf(hName,"hP1");
@@ -942,6 +964,9 @@ int main(int argc,char *argv[]) {
   //  hX1->Scale(1000*lightspeed/binSize);
   hX1->Scale(lightspeed/binSize);
 
+  if(ifile.Contains("MCELLSTART")) 
+    hX1->Scale(10);
+  
 
   cout << "\n  Summary _______________________________________________________ " << endl;
 
@@ -1344,10 +1369,6 @@ int main(int argc,char *argv[]) {
     
     hFrame[1]->Draw();
 
-    gP1left->SetLineWidth(2);
-    gP1left->Draw("F");
-    gP1left->Draw("L");
-
     TLine lZmean(zmean,hP1X1->GetYaxis()->GetXmin(),zmean,hP1X1->GetYaxis()->GetXmax());
     lZmean.SetLineColor(kGray+2);
     lZmean.SetLineStyle(2);
@@ -1374,6 +1395,11 @@ int main(int argc,char *argv[]) {
     // hP1X1prof->Draw("zsame");
 
     //hP1->Draw("C");
+
+    gP1left->SetLineWidth(2);
+    gP1left->Draw("F");
+    gP1left->Draw("L");
+
 
     gPad->Update();
 
@@ -1455,7 +1481,10 @@ int main(int argc,char *argv[]) {
     // } else {
     // 	Leg->AddEntry(hX1  ,"Current [kA]","L");	
     // }
-    Leg->AddEntry(hX1  ,"Current [kA]","L");
+    if(ifile.Contains("MCELLSTART"))
+      Leg->AddEntry(hX1  ,"Current [0.1 kA]","L");
+    else
+      Leg->AddEntry(hX1  ,"Current [kA]","L");
     // Leg->AddEntry(gErms,"Energy spread (GeV)","PL");
     Leg->AddEntry(gErms,"Energy spread [0.1%]","PL");
     Leg->AddEntry(gemitX,"Emittance_{x} [#mum]","PL");
