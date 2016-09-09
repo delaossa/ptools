@@ -7,8 +7,8 @@
 #pragma link C++ nestedclasses;
 #pragma link C++ nestedtypedefs;
 
+#pragma link C++ namespace PGlobals;
 #pragma link C++ namespace PFunc;
-
 #pragma link C++ namespace PConst;
 #pragma link C++ namespace PUnits;
 #pragma link C++ class PUnits::UnitsTable-!;

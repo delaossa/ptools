@@ -22,6 +22,7 @@
 #include <TNamed.h>
 
 #include "PFunctions.hh"
+#include "PGlobals.hh"
 
 using namespace std;
 
@@ -113,6 +114,7 @@ public:
   Bool_t  IsInit() { return Init; }
   Bool_t  Is3D() { return ThreeD; }
   Bool_t  IsCyl() { return Cyl; }
+  void    InitStyle() { PGlobals::Initialize(); }
 
   void    SetNavg(Int_t navg) { Navg = navg; }
   

@@ -1400,7 +1400,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     laserPalette->SetAlpha(0.8);
   
   // Current lines colors
-  Int_t cBeam = PGlobals::elecLine;
+  Int_t cBeam = TColor::GetColor(69,108,155);
   Int_t cBeam1 = kOrange+8;
   Int_t cBeam2 = kOrange+8;
 
@@ -1993,8 +1993,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
 			    gPad->GetUxmax(), gPad->GetUymax());
     lFrame->SetFillStyle(0);
-    lFrame->SetLineColor(PGlobals::frameColor);
-    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->SetLineColor(kBlack);
+    lFrame->SetLineWidth(2);
     lFrame->Draw();
     
     pad[ip]->RedrawAxis("g");
@@ -2227,8 +2227,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
 			    gPad->GetUxmax(), gPad->GetUymax());
     lFrame->SetFillStyle(0);
-    lFrame->SetLineColor(PGlobals::frameColor);
-    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->SetLineColor(kBlack);
+    lFrame->SetLineWidth(2);
     lFrame->Draw();
     
     pad[ip]->RedrawAxis("g"); 
