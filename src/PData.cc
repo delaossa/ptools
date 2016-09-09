@@ -1995,6 +1995,128 @@ TH1F* PData::GetH1SliceZ3D(const char *filename,const char *dataname,
 }
 
 //_______________________________________________________________________
+TH1F* PData::GetH1SliceX3D(const char *filename,const char *dataname, 
+			   Int_t Firstx1Bin, Int_t Lastx1Bin, 
+			   Int_t Firstx3Bin, Int_t Lastx3Bin, const char *options) {
+  
+  // Save memory and time with an specific range selection.
+
+  // Options
+  TString opt = options;
+  
+  // Open input HDF5 file
+  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  
+  // Open main group for data reading
+  Group *root = new Group(h5.openGroup("/"));
+
+  // Read data
+  // ----------
+  DataSet  *dataSet = new DataSet(root->openDataSet(dataname));
+  DataSpace dataSpace = dataSet->getSpace();
+  const DataType type = dataSet->getDataType();
+    
+  Int_t rank = dataSpace.getSimpleExtentNdims();
+  hsize_t  *dataDims = new hsize_t[rank];
+  dataSpace.getSimpleExtentDims(dataDims,NULL);
+
+  // x3 slice
+  if(Lastx3Bin>=(Int_t)dataDims[0]) Lastx3Bin = dataDims[0] - 1;
+  
+  if(Firstx3Bin<0)
+    DoSlice(dataDims[0],Firstx3Bin,Lastx3Bin);
+  
+  if(Lastx3Bin<Firstx3Bin) 
+    Lastx3Bin = Firstx3Bin;
+  
+  UInt_t x3Dim = Lastx3Bin - Firstx3Bin + 1; 
+  
+  //----------
+
+  // x1 slice
+  if(Lastx1Bin>=(Int_t)dataDims[2]) Lastx1Bin = dataDims[1] - 1;
+  
+  if(Firstx1Bin<0) {
+    DoSlice(dataDims[1],Firstx1Bin,Lastx1Bin);
+  }
+  
+  if(Lastx1Bin<Firstx1Bin) 
+    Lastx1Bin = Firstx1Bin;
+
+  UInt_t x1Dim = Lastx1Bin - Firstx1Bin + 1; 
+ 
+  //----------
+  UInt_t x2AvgFactor = GetNX(1)/dataDims[1];
+  UInt_t x2Dim = GetX2N()/x2AvgFactor;
+  Double_t x2Min = GetX2Min();
+  Double_t x2Max = GetX2Max();
+  
+  hsize_t  *count  = new hsize_t[rank];
+  count[0] = x3Dim;
+  count[1] = x2Dim;
+  count[2] = x1Dim;
+
+  hsize_t  *offset = new hsize_t[rank];
+  offset[0] = Firstx3Bin;
+  offset[1] = GetX2iMin()/x2AvgFactor;
+  offset[2] = Firstx1Bin;
+  
+  Float_t *data = new Float_t[x3Dim * x2Dim * x1Dim];
+
+  DataSpace memSpace(rank,count);
+  dataSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
+  dataSet->read(data,PredType::NATIVE_FLOAT,memSpace,dataSpace);
+  dataSet->close();
+  
+  root->close();
+
+  Float_t x2Array[x2Dim];
+  // Set all elements to 0.
+  memset(x2Array,0,sizeof(Float_t)*x2Dim);
+  
+  string sdata = dataname;
+  // Sum the values 
+  for(UInt_t i=0;i<x3Dim;i++) {
+    for(UInt_t j=0;j<x2Dim;j++) {
+      for(UInt_t k=0;k<x1Dim;k++) {
+	UInt_t index = (long)i*(long)x2Dim*(long)x1Dim + (long)j*(long)x1Dim + (long)k;
+		
+	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
+	  x2Array[j] += -data[index];
+	else
+	  x2Array[j] +=  data[index]; 
+	
+      }
+    }
+  }
+  
+  Float_t x1AvgFactor = GetNX(0)/dataDims[2];
+  Float_t dx1   = GetDX(0) * x1AvgFactor;
+
+  Float_t x3AvgFactor = GetNX(2)/dataDims[0];
+  Float_t dx3   = GetDX(2) * x3AvgFactor;
+  
+  TH1F *h1D = new TH1F(); 
+  h1D->SetBins(x2Dim,x2Min,x2Max);
+  for(UInt_t k=0;k<x2Dim;k++) { 
+    Double_t content = x2Array[k];
+    if(opt.Contains("avg")) content /= x3Dim * x1Dim;
+    else if(opt.Contains("int")) content *= dx1 * dx3;
+    h1D->SetBinContent(k+1,content);
+  }
+			      root->close();
+  
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
+  
+  return h1D;
+}
+
+
+//_______________________________________________________________________
 TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname, 
 			      Int_t FirstrBin, Int_t LastrBin,
 			      const char *options) {

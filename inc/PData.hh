@@ -264,6 +264,10 @@ public:
 		      Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, 
 		      Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg");
 
+  virtual TH1F* GetH1SliceX3D(const char *filename, const char *dataname, 
+			      Int_t Firstx1Bin = -1, Int_t Lastx1Bin = 1, 
+			      Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg");
+
   TH1F* GetH1CylSliceZ3D(const char *filename, const char *dataname, 
 			 Int_t FirstrBin = -1, Int_t LastrBin = 1,
 			 const char *options="avg");
