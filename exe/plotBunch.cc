@@ -199,7 +199,7 @@ int main(int argc,char *argv[]) {
   // Load PData
   PData *pData = PData::Get(sim.Data());
   if(pData->isHiPACE()) {
-    delete pData; pData = NULL;
+    delete[] pData; pData = NULL;
     pData = PDataHiP::Get(sim.Data());
     opt += "comov";
   }
@@ -434,22 +434,22 @@ int main(int argc,char *argv[]) {
     Int_t NX1 = pData->GetX1N()*(x1Max-x1Min)/(pData->GetX1Max()-pData->GetX1Min());
 
     TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
-    if(hScanX1) delete hScanX1;
+    if(hScanX1) delete[] hScanX1;
     hScanX1 = new TH1F("hScanX1","",NX1,x1Min,x1Max);
     
     TH1F *hScanX2 = (TH1F*) gROOT->FindObject("hScanX2");
-    if(hScanX2) delete hScanX2;
+    if(hScanX2) delete[] hScanX2;
     hScanX2 = new TH1F("hScanX2","",pData->GetX2N(),pData->GetX2Min(),pData->GetX2Max());
     TH1F *hScanX3 = (TH1F*) gROOT->FindObject("hScanX3");
-    if(hScanX3) delete hScanX3;
+    if(hScanX3) delete[] hScanX3;
     if(Nvar==7)
       hScanX3 = new TH1F("hScanX3","",pData->GetX3N(),pData->GetX3Min(),pData->GetX3Max());
 
     TH1F *hScanP2 = (TH1F*) gROOT->FindObject("hScanP2");
-    if(hScanP2) delete hScanP2;
+    if(hScanP2) delete[] hScanP2;
     hScanP2 = new TH1F("hScanP2","",p2Nbin,p2Min,p2Max);
     TH1F *hScanP3 = (TH1F*) gROOT->FindObject("hScanP3");
-    if(hScanP3) delete hScanP3;
+    if(hScanP3) delete[] hScanP3;
     hScanP3 = new TH1F("hScanP3","",p3Nbin,p3Min,p3Max);
 
     // cout << Form(" BOX (N = %i):  x1Min = %f  x1Max = %f ", pData->GetX1N(), pData->GetX1Min()-shiftz, pData->GetX1Max()-shiftz) << endl;
@@ -654,7 +654,7 @@ int main(int argc,char *argv[]) {
 
     sprintf(hName,"hX1");
     TH1F *hX1 = (TH1F*) gROOT->FindObject(hName);
-    if(hX1) delete hX1;
+    if(hX1) delete[] hX1;
     hX1 = new TH1F(hName,"",x1Nbin,x1Min,x1Max);
     hX1->GetYaxis()->SetTitle("#Lambda");
     if(opt.Contains("comov"))
@@ -668,7 +668,7 @@ int main(int argc,char *argv[]) {
     
     sprintf(hName,"hP1");
     TH1F *hP1 = (TH1F*) gROOT->FindObject(hName);
-    if(hP1) delete hP1;
+    if(hP1) delete[] hP1;
     hP1 = new TH1F(hName,"",p1Nbin,p1Min,p1Max);
     hP1->GetYaxis()->SetTitle("p_{z}/mc");
     if(opt.Contains("comov"))
@@ -678,7 +678,7 @@ int main(int argc,char *argv[]) {
     
     sprintf(hName,"hP1X1");
     TH2F *hP1X1 = (TH2F*) gROOT->FindObject(hName);
-    if(hP1X1) delete hP1X1;
+    if(hP1X1) delete[] hP1X1;
     hP1X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,p1Nbin,p1Min,p1Max);
     if(opt.Contains("comov"))
       hP1X1->GetXaxis()->SetTitle("k_{p}#zeta");
@@ -690,7 +690,7 @@ int main(int argc,char *argv[]) {
 
     sprintf(hName,"hP1range");
     TH1F *hP1range = (TH1F*) gROOT->FindObject(hName);
-    if(hP1range) delete hP1range;
+    if(hP1range) delete[] hP1range;
     hP1range = new TH1F(hName,"",p1Nbin,p1Min,p1Max);
     hP1range->GetYaxis()->SetTitle("p_{z}/mc");
     if(opt.Contains("comov"))
@@ -700,7 +700,7 @@ int main(int argc,char *argv[]) {
 
     sprintf(hName,"hP1X1range");
     TH2F *hP1X1range = (TH2F*) gROOT->FindObject(hName);
-    if(hP1X1range) delete hP1X1range;
+    if(hP1X1range) delete[] hP1X1range;
     hP1X1range = new TH2F(hName,"",x1Nbin,x1Min,x1Max,p1Nbin,p1Min,p1Max);
     if(opt.Contains("comov"))
       hP1X1range->GetXaxis()->SetTitle("k_{p}#zeta");
@@ -713,7 +713,7 @@ int main(int argc,char *argv[]) {
     
     sprintf(hName,"hP2X2");
     TH2F *hP2X2 =  (TH2F*) gROOT->FindObject(hName);
-    if(hP2X2) delete hP2X2;
+    if(hP2X2) delete[] hP2X2;
     hP2X2 = new TH2F(hName,"",x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
     hP2X2->GetXaxis()->SetTitle("k_{p}x");
     hP2X2->GetYaxis()->SetTitle("p_{x}/mc");
@@ -721,7 +721,7 @@ int main(int argc,char *argv[]) {
 
     sprintf(hName,"hP3X3");
     TH2F *hP3X3 =  (TH2F*) gROOT->FindObject(hName);
-    if(hP3X3) delete hP3X3;
+    if(hP3X3) delete[] hP3X3;
     if(pData->Is3D()) {
       hP3X3 = new TH2F(hName,"",x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
       hP3X3->GetXaxis()->SetTitle("k_{p}y");
@@ -732,7 +732,7 @@ int main(int argc,char *argv[]) {
     
     sprintf(hName,"hX2X1");
     TH2F *hX2X1 = (TH2F*) gROOT->FindObject(hName);
-    if(hX2X1) delete hX2X1;
+    if(hX2X1) delete[] hX2X1;
     hX2X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,x2Nbin,x2Min,x2Max);
     hX2X1->GetXaxis()->SetTitle("k_{p}#zeta");
     hX2X1->GetYaxis()->SetTitle("k_{p}x");
@@ -740,7 +740,7 @@ int main(int argc,char *argv[]) {
 
     sprintf(hName,"hX3X1");
     TH2F *hX3X1 = (TH2F*) gROOT->FindObject(hName);
-    if(hX3X1) delete hX3X1;
+    if(hX3X1) delete[] hX3X1;
     if(pData->Is3D()) {
       hX3X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,x3Nbin,x3Min,x3Max);
       hX3X1->GetXaxis()->SetTitle("k_{p}#zeta");
@@ -750,7 +750,7 @@ int main(int argc,char *argv[]) {
     
     sprintf(hName,"hX3X2");
     TH2F *hX3X2 = (TH2F*) gROOT->FindObject(hName);
-    if(hX3X2) delete hX3X2;
+    if(hX3X2) delete[] hX3X2;
     if(pData->Is3D()) {
       hX3X2 = new TH2F(hName,"",x2Nbin,x2Min,x2Max,x3Nbin,x3Min,x3Max);
       hX3X2->GetXaxis()->SetTitle("k_{p}x");
@@ -776,7 +776,7 @@ int main(int argc,char *argv[]) {
     for(Int_t k=0;k<SNbin;k++) {
       sprintf(hName,"hP2X2sl_%2i",k);
       hP2X2sl[k] = (TH2F*) gROOT->FindObject(hName);
-      if(hP2X2sl[k]) delete hP2X2sl[k];
+      if(hP2X2sl[k]) delete[] hP2X2sl[k];
       hP2X2sl[k] = new TH2F(hName,"",x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
 
       hP2X2sl[k]->GetXaxis()->SetTitle("k_{p}x");
@@ -785,7 +785,7 @@ int main(int argc,char *argv[]) {
 
       sprintf(hName,"hP3X3sl_%i",k);
       hP3X3sl[k] = (TH2F*) gROOT->FindObject(hName);
-      if(hP3X3sl[k]) delete hP3X3sl[k];
+      if(hP3X3sl[k]) delete[] hP3X3sl[k];
       if(pData->Is3D()) {
 	hP3X3sl[k] = new TH2F(hName,"",x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);	
 	hP3X3sl[k]->GetXaxis()->SetTitle("k_{p}y");
@@ -795,7 +795,7 @@ int main(int argc,char *argv[]) {
       
       sprintf(hName,"hP1sl_%2i",k);
       hP1sl[k] = (TH1F*) gROOT->FindObject(hName);
-      if(hP1sl[k]) delete hP1sl[k];
+      if(hP1sl[k]) delete[] hP1sl[k];
       hP1sl[k] = new TH1F(hName,"",p1Nbin,p1Min,p1Max);
 
     }
@@ -1780,7 +1780,7 @@ int main(int argc,char *argv[]) {
 
     // Free memory from the dynamic array of variables:
     for(UInt_t i=0;i<Nvar;i++) {
-      delete var[i];
+      delete[] var[i];
     }
     // -----------------------------------------------------------------------------------
 
@@ -1818,7 +1818,7 @@ int main(int argc,char *argv[]) {
     // TString pname = hP1X1->GetName();
     // pname += "_pfx";
     // TProfile *hP1X1prof = (TProfile*) gROOT->FindObject(pname.Data());
-    // if(hP1X1prof) { delete hP1X1prof; hP1X1prof = NULL; }
+    // if(hP1X1prof) { delete[] hP1X1prof; hP1X1prof = NULL; }
     // hP1X1prof = hP1X1->ProfileX("_pfx",1,-1,"s");
 
     // get the errors from the profile:
@@ -1867,8 +1867,8 @@ int main(int argc,char *argv[]) {
       gP1->SetFillStyle(1001);
       gP1->SetFillColor(PGlobals::elecFill);
 
-      delete yarray;
-      delete xarray;
+      delete[] yarray;
+      delete[] xarray;
 
       // Ranges!!
       Double_t yMin =  999.9;
@@ -2061,7 +2061,7 @@ int main(int argc,char *argv[]) {
 
 	sprintf(name,"hFrame_%i",i);
 	hFrame[i] = (TH1F*) gROOT->FindObject(name);
-	if(hFrame[i]) delete hFrame[i];
+	if(hFrame[i]) delete[] hFrame[i];
 	hFrame[i] = (TH1F*) hX1->Clone(name);
 	hFrame[i]->Reset();
 
@@ -2365,17 +2365,17 @@ int main(int argc,char *argv[]) {
       TString fOutNamep1x1 = fOutName + Form("-%s_%i","p1x1",time);
       PGlobals::imgconv(C,fOutNamep1x1,opt);
 
-      // delete [] pad;
-      // delete [] hFrame;
+      // delete[] [] pad;
+      // delete[] [] hFrame;
       for(Int_t i=0;i<NPad;i++) {
 	char name[16];
 	sprintf(name,"pad_%i",i);
 	pad[i] = (TPad*) gROOT->FindObject(name);
-	if(pad[i]) delete pad[i];
+	if(pad[i]) delete[] pad[i];
 
 	sprintf(name,"hFrame_%i",i);
 	hFrame[i] = (TH1F*) gROOT->FindObject(name);
-	if(hFrame[i]) delete hFrame[i];
+	if(hFrame[i]) delete[] hFrame[i];
       }
       // ---------------------------------------------------------
     
@@ -2422,7 +2422,7 @@ int main(int argc,char *argv[]) {
 	  
 	  sprintf(name,"hFrame_%i",i);
 	  hFrame[i] = (TH1F*) gROOT->FindObject(name);
-	  if(hFrame[i]) delete hFrame[i];
+	  if(hFrame[i]) delete[] hFrame[i];
 	  if(i==0) {
 	    hFrame[i] = new TH1F(name,"",100,x1Min,x1Max);
 	    hFrame[i]->GetYaxis()->SetRangeUser(x_min,x_max);
@@ -2729,7 +2729,7 @@ int main(int argc,char *argv[]) {
 	  
 	  sprintf(name,"hFrame_%i",i);
 	  hFrame[i] = (TH1F*) gROOT->FindObject(name);
-	  if(hFrame[i]) delete hFrame[i];
+	  if(hFrame[i]) delete[] hFrame[i];
 	  if(i==0)
 	    hFrame[i] = (TH1F*) hX2X1->Clone(name);
 	  else
@@ -2898,7 +2898,7 @@ int main(int argc,char *argv[]) {
 
 	  sprintf(name,"hFrame_%i",i);
 	  hFrame[i] = (TH1F*) gROOT->FindObject(name);
-	  if(hFrame[i]) delete hFrame[i];
+	  if(hFrame[i]) delete[] hFrame[i];
 	  hFrame[i] = (TH1F*) hX3X2->Clone(name);
 	  hFrame[i]->Reset();
 
@@ -3085,7 +3085,7 @@ int main(int argc,char *argv[]) {
 
 	sprintf(name,"hFrame_%i",i);
 	hFrame[i] = (TH1F*) gROOT->FindObject(name);
-	if(hFrame[i]) delete hFrame[i];
+	if(hFrame[i]) delete[] hFrame[i];
 	hFrame[i] = (TH1F*) hP2X2->Clone(name);
 	hFrame[i]->Reset();
 
@@ -3263,7 +3263,7 @@ int main(int argc,char *argv[]) {
 	  
 	  sprintf(name,"hFrame_%i",i);
 	  hFrame[i] = (TH1F*) gROOT->FindObject(name);
-	  if(hFrame[i]) delete hFrame[i];
+	  if(hFrame[i]) delete[] hFrame[i];
 	  hFrame[i] = (TH1F*) hP3X3->Clone(name);
 	  hFrame[i]->Reset();
 
@@ -3669,26 +3669,26 @@ int main(int argc,char *argv[]) {
       ofile->Close();
     }
     
-    // Delete newly created vectors
-    delete sBinLim;
-    delete zbin;
-    delete sEmean;
-    delete sErms;
+    // Delete[] newly created vectors
+    delete[] sBinLim;
+    delete[] zbin;
+    delete[] sEmean;
+    delete[] sErms;
 
-    delete sx_mean;
-    delete sx_rms;
-    delete spx_mean;
-    delete spx_rms;
-    delete semitx;
-    delete sbetax;
+    delete[] sx_mean;
+    delete[] sx_rms;
+    delete[] spx_mean;
+    delete[] spx_rms;
+    delete[] semitx;
+    delete[] sbetax;
 
     if(pData->Is3D()) {  
-      delete sy_mean;
-      delete sy_rms;
-      delete spy_mean;
-      delete spy_rms;
-      delete semity;
-      delete sbetay;
+      delete[] sy_mean;
+      delete[] sy_rms;
+      delete[] spy_mean;
+      delete[] spy_rms;
+      delete[] semity;
+      delete[] sbetay;
     }
 
     // end time looper

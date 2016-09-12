@@ -58,24 +58,24 @@ namespace PGlobals {
   void SetPaveStyle(TPave* pave);  
   void SetPaveTextStyle( TPaveText* text, Int_t align=12);
   void CanvasPartition(TCanvas *C, Int_t N=3, 
-		       Float_t lMargin = 0.15,
-		       Float_t rMargin = 0.18,
-		       Float_t bMargin = 0.10,
-		       Float_t tMargin = 0.04,
-		       Float_t mMargin = 0.0);
+		       Double_t lMargin = 0.15,
+		       Double_t rMargin = 0.18,
+		       Double_t bMargin = 0.10,
+		       Double_t tMargin = 0.04,
+		       Double_t mMargin = 0.0);
   
   void CanvasAsymPartition(TCanvas *C, Int_t N=3, 
-			   Float_t lMargin = 0.15,
-			   Float_t rMargin = 0.18,
-			   Float_t bMargin = 0.10,
-			   Float_t tMargin = 0.04,
-			   Float_t factor = 1.0,
-			   Float_t mMargin = 0.0);
+			   Double_t lMargin = 0.15,
+			   Double_t rMargin = 0.18,
+			   Double_t bMargin = 0.10,
+			   Double_t tMargin = 0.04,
+			   Double_t factor = 1.0,
+			   Double_t mMargin = 0.0);
   
   void CanvasDoublePartition(TCanvas *C,const Int_t Nx = 2,const Int_t Ny = 2,
-			     Float_t lMargin = 0.15, Float_t rMargin = 0.05,
-			     Float_t bMargin = 0.15, Float_t tMargin = 0.05,
-			     Float_t vSpacing = 0.0);
+			     Double_t lMargin = 0.15, Double_t rMargin = 0.05,
+			     Double_t bMargin = 0.15, Double_t tMargin = 0.05,
+			     Double_t vSpacing = 0.0);
 
   void DestroyCanvases();
 
@@ -86,8 +86,7 @@ namespace PGlobals {
   void imgconv( TCanvas* c, const TString & fname, const TString & opt="png");
 
   Int_t HCrossings(TH1F *h, Float_t *Cross, Float_t *Extr, Int_t MAXCROSS = 10, 
-		   Float_t baseline = 0.0, Float_t xmax = -999, Float_t xmin = -999,
-		   TString opt="");
+		   Float_t baseline = 0.0, Float_t xmax = -999, Float_t xmin = -999,TString opt="");
 
 
 }

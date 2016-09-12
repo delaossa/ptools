@@ -27,6 +27,7 @@ modules: $(addsuffix .o,$(MODULES))
 lib: $(LIBDIR)/$(SHLIBFILE)
 
 info:	
+	@echo "PLATFORM = $(PLATFORM)  ARCH = $(ARCH)"
 	@echo "CURDIR   = $(CURDIR)"
 	@echo "CXXFLAGS = $(CXXFLAGS)"
 	@echo "Library  : $(LIBDIR)/$(SHLIBFILE)"
@@ -43,12 +44,11 @@ ifeq ($(PLATFORM),macosx)
 else
 	$(LD) $(SOFLAGS) $^ -o $@ $(LIBS)
 endif
-#	ln -fs $(SHLIBFILE) lib/lib$(LIB).1.so
 	@echo "Done"
 
 libmap: $(LIBDIR)/lib$(LIB).rootmap 
 
-$(LIBDIR)/lib$(LIB).rootmap: $(LIBDIR)/lib$(LIB).so
+$(LIBDIR)/lib$(LIB).rootmap: $(LIBDIR)/$(SHLIBFILE)
 	@echo "Creating library rootmap $@"
 	rootcling -f $(LIB)Dict.cc -rml $< -rmf $@ $(addprefix $(INCDIR)/,$(addsuffix .hh,$(MODULES))) $(INCDIR)/LinkDef.hh 
 

@@ -1,6 +1,5 @@
-#include <iostream>
-
 #include "PGlobals.hh"
+#include "TPad.h"
 
 using std::cout;
 using std::endl;
@@ -228,26 +227,26 @@ void PGlobals::SetPaveTextStyle( TPaveText* text, Int_t align)
 }
 
 void PGlobals::CanvasPartition(TCanvas *C, Int_t N, 
-			       Float_t lMargin,
-			       Float_t rMargin,
-			       Float_t bMargin,
-			       Float_t tMargin,
-			       Float_t mMargin)
+			       Double_t lMargin,
+			       Double_t rMargin,
+			       Double_t bMargin,
+			       Double_t tMargin,
+			       Double_t mMargin)
 {
   if(!C) return;
     
   // Setup Pad layout:
-  Float_t vStep = (1.- bMargin - tMargin - (N-1) * mMargin) / N;
+  Double_t vStep = (1.- bMargin - tMargin - (N-1) * mMargin) / N;
     
-  Float_t vposd = 0.0;
-  Float_t vposu = 0.0;
-  Float_t vmard = 0.0;
-  Float_t vmaru = 0.0;
-  Float_t vfactor = 0.0;
-  Float_t hposl = 0.0;
-  Float_t hposr = 1.0;
-  Float_t hmarl = lMargin;
-  Float_t hmarr = rMargin;
+  Double_t vposd = 0.0;
+  Double_t vposu = 0.0;
+  Double_t vmard = 0.0;
+  Double_t vmaru = 0.0;
+  Double_t vfactor = 0.0;
+  Double_t hposl = 0.0;
+  Double_t hposr = 1.0;
+  Double_t hmarl = lMargin;
+  Double_t hmarr = rMargin;
     
   for(Int_t i=0;i<N;i++) {
     C->cd(0);
@@ -278,7 +277,7 @@ void PGlobals::CanvasPartition(TCanvas *C, Int_t N,
     sprintf(name,"pad_%i",i);
     TPad *pad = (TPad*) gROOT->FindObject(name);
     if(pad) delete pad;
-    pad = new TPad(name,"",hposl,vposd,hposr,vposu);
+    pad = new TPad::TPad(name,"",hposl,vposd,hposr,vposu);
     pad->SetLeftMargin(hmarl);
     pad->SetRightMargin(hmarr);  
     pad->SetBottomMargin(vmard);
@@ -291,29 +290,29 @@ void PGlobals::CanvasPartition(TCanvas *C, Int_t N,
 }
 
 void PGlobals::CanvasAsymPartition(TCanvas *C, Int_t N, 
-				   Float_t lMargin,
-				   Float_t rMargin,
-				   Float_t bMargin,
-				   Float_t tMargin,
-				   Float_t factor,
-				   Float_t mMargin)
+				   Double_t lMargin,
+				   Double_t rMargin,
+				   Double_t bMargin,
+				   Double_t tMargin,
+				   Double_t factor,
+				   Double_t mMargin)
 {
   if(!C) return;
     
   // Setup Pad layout:
-  Float_t vStep = (1.- bMargin - tMargin - (N-1) * mMargin) / N;
-  Float_t vStepB = N*vStep/(N-1+factor);
-  Float_t vStepA = factor*vStepB;
+  Double_t vStep = (1.- bMargin - tMargin - (N-1) * mMargin) / N;
+  Double_t vStepB = N*vStep/(N-1+factor);
+  Double_t vStepA = factor*vStepB;
     
-  Float_t vposd = 0.0;
-  Float_t vposu = 0.0;
-  Float_t vmard = 0.0;
-  Float_t vmaru = 0.0;
-  Float_t vfactor = 0.0;
-  Float_t hposl = 0.0;
-  Float_t hposr = 1.0;
-  Float_t hmarl = lMargin;
-  Float_t hmarr = rMargin;
+  Double_t vposd = 0.0;
+  Double_t vposu = 0.0;
+  Double_t vmard = 0.0;
+  Double_t vmaru = 0.0;
+  Double_t vfactor = 0.0;
+  Double_t hposl = 0.0;
+  Double_t hposr = 1.0;
+  Double_t hmarl = lMargin;
+  Double_t hmarr = rMargin;
     
   for(Int_t i=0;i<N;i++) {
     C->cd(0);
@@ -354,26 +353,26 @@ void PGlobals::CanvasAsymPartition(TCanvas *C, Int_t N,
 }
   
 void PGlobals::CanvasDoublePartition(TCanvas *C,const Int_t Nx,const Int_t Ny,
-				     Float_t lMargin, Float_t rMargin,
-				     Float_t bMargin, Float_t tMargin,
-				     Float_t vSpacing)
+				     Double_t lMargin, Double_t rMargin,
+				     Double_t bMargin, Double_t tMargin,
+				     Double_t vSpacing)
 {
   if(!C) return;
     
   // Setup Pad layout:
-  Float_t vStep  = (1.- bMargin - tMargin - (Ny-1) * vSpacing) / Ny;
-  Float_t hStep  = (1.- Nx * (lMargin + rMargin) ) / Nx;
+  Double_t vStep  = (1.- bMargin - tMargin - (Ny-1) * vSpacing) / Ny;
+  Double_t hStep  = (1.- Nx * (lMargin + rMargin) ) / Nx;
     
-  Float_t vposd = 0.0;
-  Float_t vposu = 0.0;
-  Float_t vmard = 0.0;
-  Float_t vmaru = 0.0;
-  Float_t vfactor = 0.0;
-  Float_t hposl = 0.0;
-  Float_t hposr = 1.0;
-  Float_t hmarl = lMargin;
-  Float_t hmarr = rMargin;
-  Float_t hfactor = 0.0;
+  Double_t vposd = 0.0;
+  Double_t vposu = 0.0;
+  Double_t vmard = 0.0;
+  Double_t vmaru = 0.0;
+  Double_t vfactor = 0.0;
+  Double_t hposl = 0.0;
+  Double_t hposr = 1.0;
+  Double_t hmarl = lMargin;
+  Double_t hmarr = rMargin;
+  Double_t hfactor = 0.0;
 
   for(Int_t i=0;i<Nx;i++) {
 

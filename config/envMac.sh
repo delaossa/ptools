@@ -14,5 +14,5 @@ export DYLD_LIBRARY_PATH=$SZIP/lib:$DYLD_LIBRARY_PATH
 # ptools environment:
 export PTOOLS=/Users/delaossa/plasma/software/ptools
 export DYLD_LIBRARY_PATH=$PTOOLS/lib:$DYLD_LIBRARY_PATH
-export PATH=$PTOOLS/bin:$PTOOLS/scripts:$PATH
+export PATH=$PTOOLS/bin:$PTOOLS/scripts:$PTOOLS/pymacros:$PATH
 
