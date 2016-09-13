@@ -59,7 +59,7 @@ PDataHiP * PDataHiP::Get(const char * name)
   if (name && strcmp(fgData->GetName(), name)!=0) {
     cout << "PDataHiP: Changing analysis to " << name << endl;
 
-    if(fgData) delete[] fgData;
+    if(fgData) delete fgData;
     fgData = new PDataHiP(name);
   }
   
@@ -72,7 +72,7 @@ void PDataHiP::Clear(Option_t *option) {
 
   if(sWF) {
     FreeClear(*sWF);
-    delete[] sWF;
+    delete sWF;
     sWF = NULL;
   }
 
@@ -381,8 +381,8 @@ Double_t PDataHiP::GetRealTimeFromFile(const char *filename) {
   Float_t rtime;
   att->read(PredType::NATIVE_FLOAT,&rtime); 
   att->close();
-  delete[] att;
-  delete[] root;
+  delete att;
+  delete root;
 
   return (Double_t) rtime;
 }
@@ -413,7 +413,7 @@ TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *datanameold,
   Attribute *att = new Attribute(root->openAttribute("NAME"));
   att->read(strdatatype,strreadbuf); 
   att->close();
-  delete[] att;
+  delete att;
   const char *dataname = strreadbuf.c_str();
 
   DataSet  *dataSet = new DataSet(root->openDataSet(dataname));
@@ -516,11 +516,11 @@ TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *datanameold,
   }
   root->close();
   
-  delete[] count;
-  delete[] offset;
-  delete[] dataSet;
-  delete[] root;
-  delete[] data;
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
   
   return h1D;
 }
@@ -550,7 +550,7 @@ TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *datanameold, Int_t
   Attribute *att = new Attribute(root->openAttribute("NAME"));
   att->read(strdatatype,strreadbuf); 
   att->close();
-  delete[] att;
+  delete att;
   const char *dataname = strreadbuf.c_str();
   
   //  cout << Form(" Dataname = %s ", dataname) << endl;
@@ -652,11 +652,11 @@ TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *datanameold, Int_t
       h2D->SetBinContent(i+1,j+1,content);
     }
     
-  delete[] count;
-  delete[] offset;
-  delete[] dataSet;
-  delete[] root;
-  delete[] data;
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
   
   return h2D;
 }

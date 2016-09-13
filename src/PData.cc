@@ -947,12 +947,12 @@ TH1F* PData::GetH1SliceZ(const char *filename,const char *dataname,Int_t Firstx2
     h1D->SetBinContent(iavg,content);
   }
   
-  delete[] x1Array;
-  delete[] count;
-  delete[] offset;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] root;
+  delete x1Array;
+  delete count;
+  delete offset;
+  delete dataDims;
+  delete dataSet;
+  delete root;
 
   return h1D;
 }
@@ -978,8 +978,8 @@ TH1F* PData::GetH1SliceX(const char *filename,const char *dataname,Int_t Firstx1
   DataSpace mem2(1,ax2Dims);
   ax2->read(ax2lims,PredType::NATIVE_DOUBLE,mem2,ax2->getSpace());
   ax2->close(); 
-  delete[] ax2Dims;
-  delete[] ax2;
+  delete ax2Dims;
+  delete ax2;
 
   // The "int" option integrates the in the range of bins specified by
   // Firstx2Bin and Lastx2Bin. 
@@ -992,11 +992,11 @@ TH1F* PData::GetH1SliceX(const char *filename,const char *dataname,Int_t Firstx1
     DataSpace mem1(1,ax1Dims);
     ax1->read(ax1lims,PredType::NATIVE_DOUBLE,mem1,ax1->getSpace());
     ax1->close(); 
-    delete[] ax1Dims;
-    delete[] ax1;
+    delete ax1Dims;
+    delete ax1;
   }
   axis->close();
-  delete[] axis;
+  delete axis;
 
   // Open main group for data reading
   Group *root = new Group(h5.openGroup("/"));
@@ -1081,12 +1081,12 @@ TH1F* PData::GetH1SliceX(const char *filename,const char *dataname,Int_t Firstx1
   
   root->close();
   
-  delete[] x2Array;
-  delete[] count;
-  delete[] offset;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] root;
+  delete x2Array;
+  delete count;
+  delete offset;
+  delete dataDims;
+  delete dataSet;
+  delete root;
 
   return h1D;
 }
@@ -1245,7 +1245,7 @@ void PData::GetH1Raw(const char *filename,const char *dataname, TH1F *h1D, const
     radiusSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
     radiusSet->read(radius,type,rmemSpace,radiusSpace);
     radiusSet->close();
-    delete[] radiusSet;
+    delete radiusSet;
   }
   
   // Histogram centering
@@ -1259,15 +1259,15 @@ void PData::GetH1Raw(const char *filename,const char *dataname, TH1F *h1D, const
   }
 
   // Free memory:
-  delete[] weight;
-  delete[] weightSet;
-  delete[] data;
-  delete[] offset;
-  delete[] count;
-  delete[] dataDims;
-  delete[] dataSet;
-  if(radius) delete[] radius;
-  delete[] root;
+  delete weight;
+  delete weightSet;
+  delete data;
+  delete offset;
+  delete count;
+  delete dataDims;
+  delete dataSet;
+  if(radius) delete radius;
+  delete root;
 }
 
 
@@ -1334,7 +1334,7 @@ void PData::GetH1RawCut(const char *filename,const char *dataname,
     radiusSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
     radiusSet->read(radius,type,rmemSpace,radiusSpace);
     radiusSet->close(); 
-    delete[] radiusSet;
+    delete radiusSet;
   }
 
   // And the variable where to cut.
@@ -1369,17 +1369,17 @@ void PData::GetH1RawCut(const char *filename,const char *dataname,
   }
 
   // Free memory:
-  delete[] weight;
-  delete[] weightSet;
-  delete[] data;
-  delete[] offset;
-  delete[] count;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] cut;
-  delete[] cutSet;
-  if(radius) delete[] radius;
-  delete[] root;
+  delete weight;
+  delete weightSet;
+  delete data;
+  delete offset;
+  delete count;
+  delete dataDims;
+  delete dataSet;
+  delete cut;
+  delete cutSet;
+  if(radius) delete radius;
+  delete root;
 
 }
 
@@ -1447,7 +1447,7 @@ void PData::GetH1RawCut2(const char *filename,const char *dataname,
     radiusSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
     radiusSet->read(radius,type,rmemSpace,radiusSpace);
     radiusSet->close(); 
-    delete[] radiusSet;
+    delete radiusSet;
   }
 
   // And the variable where to cut.
@@ -1499,19 +1499,19 @@ void PData::GetH1RawCut2(const char *filename,const char *dataname,
   }
 
   // Free memory:
-  delete[] weight;
-  delete[] weightSet;
-  delete[] data;
-  delete[] offset;
-  delete[] count;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] cut1;
-  delete[] cutSet1;
-  delete[] cut2;
-  delete[] cutSet2;
-  if(radius) delete[] radius;
-  delete[] root;
+  delete weight;
+  delete weightSet;
+  delete data;
+  delete offset;
+  delete count;
+  delete dataDims;
+  delete dataSet;
+  delete cut1;
+  delete cutSet1;
+  delete cut2;
+  delete cutSet2;
+  if(radius) delete radius;
+  delete root;
 
 }
 
@@ -1608,9 +1608,9 @@ TH2F* PData::GetH2(const char *filename,const char *dataname, const char *option
   }
 
   // Free memory:
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] root;
+  delete dataDims;
+  delete dataSet;
+  delete root;
  
   return h2D;
 }
@@ -1698,7 +1698,7 @@ void PData::GetH2Raw(const char *filename,const char *dataname1,const char *data
     radiusSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
     radiusSet->read(radius,type,rmemSpace,radiusSpace);
     radiusSet->close();
-    delete[] radiusSet;
+    delete radiusSet;
   }
 
   // Histogram centering
@@ -1719,17 +1719,17 @@ void PData::GetH2Raw(const char *filename,const char *dataname1,const char *data
   }
 
   // Free memory:
-  delete[] weight;
-  delete[] weightSet;
-  delete[] data2;
-  delete[] dataSet2;
-  delete[] data1;
-  delete[] offset;
-  delete[] count;
-  delete[] dataDims;
-  delete[] dataSet;
-  if(radius) delete[] radius;
-  delete[] root;
+  delete weight;
+  delete weightSet;
+  delete data2;
+  delete dataSet2;
+  delete data1;
+  delete offset;
+  delete count;
+  delete dataDims;
+  delete dataSet;
+  if(radius) delete radius;
+  delete root;
 }
 
 //_______________________________________________________________________
@@ -1814,7 +1814,7 @@ void PData::GetH2RawCut(const char *filename,const char *dataname1,const char *d
     radiusSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
     radiusSet->read(radius,type,rmemSpace,radiusSpace);
     radiusSet->close();
-    delete[] radiusSet;
+    delete radiusSet;
   }
 
   // And the variable where to cut.
@@ -1850,19 +1850,19 @@ void PData::GetH2RawCut(const char *filename,const char *dataname1,const char *d
   }
 
   // Free memory:
-  delete[] weight;
-  delete[] weightSet;
-  delete[] data1;
-  delete[] data2;
-  delete[] offset;
-  delete[] count;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] dataSet2;
-  delete[] cut;
-  delete[] cutSet;
-  if(radius) delete[] radius;
-  delete[] root;
+  delete weight;
+  delete weightSet;
+  delete data1;
+  delete data2;
+  delete offset;
+  delete count;
+  delete dataDims;
+  delete dataSet;
+  delete dataSet2;
+  delete cut;
+  delete cutSet;
+  if(radius) delete radius;
+  delete root;
 
 }
 
@@ -1985,11 +1985,11 @@ TH1F* PData::GetH1SliceZ3D(const char *filename,const char *dataname,
   }
   root->close();
   
-  delete[] count;
-  delete[] offset;
-  delete[] dataSet;
-  delete[] root;
-  delete[] data;
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
   
   return h1D;
 }
@@ -2106,11 +2106,11 @@ TH1F* PData::GetH1SliceX3D(const char *filename,const char *dataname,
   }
 			      root->close();
   
-  delete[] count;
-  delete[] offset;
-  delete[] dataSet;
-  delete[] root;
-  delete[] data;
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
   
   return h1D;
 }
@@ -2138,8 +2138,8 @@ TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname,
   DataSpace mem1(1,ax1Dims);
   ax1->read(ax1lims,PredType::NATIVE_DOUBLE,mem1,ax1->getSpace());
   ax1->close(); 
-  delete[] ax1Dims;
-  delete[] ax1;
+  delete ax1Dims;
+  delete ax1;
 
   Double_t ax2lims[2];
   DataSet  *ax2 = new DataSet(axis->openDataSet("AXIS2"));
@@ -2148,8 +2148,8 @@ TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname,
   DataSpace mem2(1,ax2Dims);
   ax2->read(ax2lims,PredType::NATIVE_DOUBLE,mem2,ax2->getSpace());
   ax2->close();
-  delete[] ax2Dims;
-  delete[] ax2;
+  delete ax2Dims;
+  delete ax2;
 
   Double_t ax3lims[2];
   DataSet  *ax3 = new DataSet(axis->openDataSet("AXIS3"));
@@ -2158,11 +2158,11 @@ TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname,
   DataSpace mem3(1,ax3Dims);
   ax3->read(ax3lims,PredType::NATIVE_DOUBLE,mem3,ax3->getSpace());
   ax3->close();
-  delete[] ax3Dims;
-  delete[] ax3;
+  delete ax3Dims;
+  delete ax3;
 
   axis->close();
-  delete[] axis;
+  delete axis;
 
   // Open main group for data reading
   Group *root = new Group(h5.openGroup("/"));
@@ -2283,11 +2283,11 @@ TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname,
   
   root->close();
   
-  delete[] count;
-  delete[] offset;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] root;
+  delete count;
+  delete offset;
+  delete dataDims;
+  delete dataSet;
+  delete root;
 
   return h1D;
 
@@ -2411,11 +2411,11 @@ TH2F* PData::GetH2SliceZX(const char *filename,const char *dataname, Int_t First
       h2D->SetBinContent(k+1,j+1,content);
     }
     
-  delete[] count;
-  delete[] offset;
-  delete[] dataSet;
-  delete[] root;
-  delete[] data;
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
   
   return h2D;
 
@@ -2532,11 +2532,11 @@ TH2F* PData::GetH2SliceZY(const char *filename,const char *dataname, Int_t First
       h2D->SetBinContent(k+1,j+1,content);
     }
     
-  delete[] count;
-  delete[] offset;
-  delete[] dataSet;
-  delete[] root;
-  delete[] data;
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
   
   return h2D;
 
@@ -2655,11 +2655,11 @@ TH2F* PData::GetH2SliceXY(const char *filename,const char *dataname, Int_t First
       h2D->SetBinContent(k+1,j+1,content);
     }
   
-  delete[] count;
-  delete[] offset;
-  delete[] dataSet;
-  delete[] root;
-  delete[] data;
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
   
   return h2D;
 
@@ -2686,8 +2686,8 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
   DataSpace mem1(1,ax1Dims);
   ax1->read(ax1lims,PredType::NATIVE_DOUBLE,mem1,ax1->getSpace());
   ax1->close(); 
-  delete[] ax1Dims;
-  delete[] ax1;
+  delete ax1Dims;
+  delete ax1;
 
   Double_t ax2lims[2];
   DataSet  *ax2 = new DataSet(axis->openDataSet("AXIS2"));
@@ -2696,8 +2696,8 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
   DataSpace mem2(1,ax2Dims);
   ax2->read(ax2lims,PredType::NATIVE_DOUBLE,mem2,ax2->getSpace());
   ax2->close();
-  delete[] ax2Dims;
-  delete[] ax2;
+  delete ax2Dims;
+  delete ax2;
 
   Double_t ax3lims[2];
   DataSet  *ax3 = new DataSet(axis->openDataSet("AXIS3"));
@@ -2706,11 +2706,11 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
   DataSpace mem3(1,ax3Dims);
   ax3->read(ax3lims,PredType::NATIVE_DOUBLE,mem3,ax3->getSpace());
   ax3->close();
-  delete[] ax3Dims;
-  delete[] ax3;
+  delete ax3Dims;
+  delete ax3;
 
   axis->close();
-  delete[] axis;
+  delete axis;
 
   // Open main group for data reading
   Group *root = new Group(h5.openGroup("/"));
@@ -2806,11 +2806,11 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
   
   root->close();
   
-  delete[] count;
-  delete[] offset;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] root;
+  delete count;
+  delete offset;
+  delete dataDims;
+  delete dataSet;
+  delete root;
 
   return h2D;
 }
@@ -2889,11 +2889,11 @@ TH3F* PData::GetH3(const char *filename,const char *dataname) {
     }
   }
   
-  delete[] count;
-  delete[] offset;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] root;
+  delete count;
+  delete offset;
+  delete dataDims;
+  delete dataSet;
+  delete root;
 
   return h3D;
 }
@@ -2965,11 +2965,11 @@ Float_t* PData::Get3Darray(const char *filename,const char *dataname, UInt_t dim
   
   root->close();
 
-  delete[] count;
-  delete[] offset;
-  delete[] dataDims;
-  delete[] dataSet;
-  delete[] root;
+  delete count;
+  delete offset;
+  delete dataDims;
+  delete dataSet;
+  delete root;
 
   // return data
   return data;

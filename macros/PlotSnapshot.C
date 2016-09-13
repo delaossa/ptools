@@ -400,7 +400,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   TH1F *hIonProb1D[NAtoms] = {NULL};
 
   // Ion probability: Select species index.
-  UInt_t ii = 1; // Helium
+  UInt_t ii = 0; // Hydrogen
+  // UInt_t ii = 1; // Helium
   // UInt_t ii = 2; // Helium2
   // UInt_t ii = 5; // Ne4
   // UInt_t ii = 6; // Custom
@@ -409,6 +410,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     ii = 3;
   } else if(opt.Contains("He2")) {
     ii = 2;
+  } else if(opt.Contains("He")) {
+    ii = 1;
   }
   
   if( ((mask & 0x80) || (mask == 0) ) && hETotal2D) { // only if ionization bit is selected
