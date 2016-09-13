@@ -18,7 +18,9 @@ RLIBDEP	      = libCore.so libCint.so libRIO.so libHist.so libTree.so libPhysics
 
 ALLDEPEND     = $(addsuffix .d,$(MODULES))
 
-all: depend lib libmap 
+DICT          = $(LIB)Dict.o
+
+all: depend lib
 
 depend: $(ALLDEPEND)
 
@@ -36,7 +38,7 @@ info:
 	@echo "ROOTLIBS = $(ROOTLIBS)"
 
 
-$(LIBDIR)/$(SHLIBFILE): $(addsuffix .o,$(MODULES)) $(LIB)Dict.o 
+$(LIBDIR)/$(SHLIBFILE): $(addsuffix .o,$(MODULES)) $(DICT)
 	@echo "Building shared library $@ ... "
 	@mkdir -p $(LIBDIR)
 ifeq ($(PLATFORM),macosx)
@@ -46,16 +48,13 @@ else
 endif
 	@echo "Done"
 
-libmap: $(LIBDIR)/lib$(LIB).rootmap 
+$(DICT): $(LIB)Dict.cc
+	@echo "Compiling dictionary $<"
+	@$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-$(LIBDIR)/lib$(LIB).rootmap: $(LIBDIR)/$(SHLIBFILE)
-	@echo "Creating library rootmap $@"
-	rootcling -f $(LIB)Dict.cc -rml $< -rmf $@ $(addprefix $(INCDIR)/,$(addsuffix .hh,$(MODULES))) $(INCDIR)/LinkDef.hh 
-
-$(LIB)Dict.cc: 
+$(LIB)Dict.cc: $(addprefix $(INCDIR)/,$(addsuffix .hh,$(MODULES))) $(INCDIR)/LinkDef.hh 
 	@echo "Generating dictionary $@"
-	rootcling $(LIB)Dict.cc $(addprefix $(INCDIR)/,$(addsuffix .hh,$(MODULES))) $(INCDIR)/LinkDef.hh
-	cp $(LIB)Dict_rdict.pcm $(LIBDIR)/
+	rootcling -f $@ -rmf $(LIBDIR)/lib$(LIB).rootmap -rml $(LIBDIR)/$(SHLIBFILE) $^
 
 %.d: %.c
 	@echo Making dependency for file $< ...

@@ -277,7 +277,7 @@ void PGlobals::CanvasPartition(TCanvas *C, Int_t N,
     sprintf(name,"pad_%i",i);
     TPad *pad = (TPad*) gROOT->FindObject(name);
     if(pad) delete pad;
-    pad = new TPad::TPad(name,"",hposl,vposd,hposr,vposu);
+    pad = new TPad(name,"",hposl,vposd,hposr,vposu);
     pad->SetLeftMargin(hmarl);
     pad->SetRightMargin(hmarr);  
     pad->SetBottomMargin(vmard);

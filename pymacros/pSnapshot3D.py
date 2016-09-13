@@ -137,7 +137,8 @@ def main():
 
 
     # Add data components as a 4th dimension 
-    npdatamulti = np.stack((npdatauchar[:]),axis=3)
+    # npdatamulti = np.stack((npdatauchar[:]),axis=3)
+    npdatamulti = np.concatenate([aux[...,np.newaxis] for aux in npdatauchar], axis=3)
 
     print('\nShape of the multi-component array: ', npdatamulti.shape,' Type: ',npdatamulti.dtype)
 
@@ -162,9 +163,9 @@ def main():
     dataImport.Update()
 
     # Set the mapper
-    #mapper = vtk.vtkGPUVolumeRayCastMapper()
+    # mapper = vtk.vtkGPUVolumeRayCastMapper()
     mapper = vtk.vtkFixedPointVolumeRayCastMapper()
-    #mapper = vtk.vtkSmartVolumeMapper()
+    # mapper = vtk.vtkSmartVolumeMapper()
     mapper.SetAutoAdjustSampleDistances(1)
     #mapper.SetSampleDistance(0.1)
     #mapper.SetBlendModeToMaximumIntensity();
