@@ -9,10 +9,15 @@ import numpy as np
 
 # Command argument line parser 
 parser = argparse.ArgumentParser(description='3D renderer using VTK.')
-parser.add_argument('sim', help='simulation name')
+parser.add_argument('sim', nargs='?', default='kk', help='simulation name')
 parser.add_argument('-b', action='store_true', help='run in batch mode without graphics')
 parser.add_argument('-t', type=int, help='timestep')
-parser.add_argument('--hdf5', action='store_true', help='run a direct hdf5 example')
+parser.add_argument('-i', type=int, dest='istart', help='time start')
+parser.add_argument('-z', type=float, dest='zoom', default=1,help='zoom')
+parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth')
+parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
+parser.add_argument('--test', action='store_true', help='run a direct example')
+parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
 
 try:
     args = parser.parse_args()
@@ -21,7 +26,7 @@ except:
     sys.exit(0)
 
 hfl = []
-if args.hdf5 :
+if args.test :
     hfl.append(h5py.File('data/charge-plasma-000026.h5','r'))
     hfl.append(h5py.File('data/charge-beam-driver-000026.h5','r'))
     hfl.append(h5py.File('data/charge-He-electrons-000026.h5','r'))
@@ -34,26 +39,28 @@ else :
 ncomp = len(hfl)
 
 window = vtk.vtkRenderWindow()
+                    
+if args.nowin :
+    window.SetOffScreenRendering(1)
+                    
 # ... and set window size.
 window.SetSize(1280, 800)
 
 renderer = vtk.vtkRenderer()
 # Set background  
 renderer.SetBackground(0,0,0)
-#renderer.TexturedBackgroundOn()
+# renderer.TexturedBackgroundOn()
 # Other colors 
 # nc = vtk.vtkNamedColors()
 # renderer.SetBackground(nc.GetColor3d('MidnightBlue'))
 
 data = []
 npdata = []
-npdatauchar = []
 opacity = []
 color = []
 factor = []
 
 volumeprop = vtk.vtkVolumeProperty()
-
 #volumeprop.SetIndependentComponents(ncomp)
 volumeprop.IndependentComponentsOn()
 volumeprop.SetInterpolationTypeToLinear()
@@ -73,69 +80,62 @@ for i, hf in enumerate(hfl):
     print('Axis x range: [%.2f,%.2f]  Nbins = %i  dx = %.4f' % (axisx[0],axisx[1],data[i].shape[0],dx) )
     print('Axis y range: [%.2f,%.2f]  Nbins = %i  dy = %.4f' % (axisy[0],axisy[1],data[i].shape[1],dy) )
 
-
-    # Changing to positive integer types (particle density)
-    # it is required by vtkVolumeRayCastMapper
     npdata.append(np.array(np.absolute(data[i])))
     minvalue = np.amin(npdata[i])
     maxvalue = np.amax(npdata[i])
     print('Minimum value = %.2f  Maximum = %.2f' % (minvalue,maxvalue))
-
-    # Rescale data to span from 0 to 255 (unsigned char)
-    den1 = 255.0/maxvalue
-
-    # Zooms into low values of the scalar
-    # Trick to truncate high scalar values to enhance the resolution of low values
-    factor.append(1)
-    if "He-electrons" in hf.filename:
-        factor[i] = 100
-    elif "plasma" in hf.filename:
-        factor[i] = 1
-    elif "beam" in hf.filename:
-        factor[i] = 7.5
-
-    den1 *= factor[i]
-    npdata[i] = np.round(den1 * npdata[i])
-
-    # Change data from float to unsigned char
-    npdatauchar.append(np.array(npdata[i], dtype=np.uint8))
-    print('Shape of the array: ', npdatauchar[i].shape,' Type: ',npdatauchar[i].dtype)
-    minvalue = np.amin(npdatauchar[i])
-    maxvalue = np.amax(npdatauchar[i])
-    print('Minimum value = %.2f  Maximum = %.2f' % (minvalue,maxvalue))
-        
+    print('Shape of the array: ', npdata[i].shape,' Type: ',npdata[i].dtype)
+    
     # Opacity and color scales
     opacity.append(vtk.vtkPiecewiseFunction())
     color.append(vtk.vtkColorTransferFunction())
+  
     if "plasma" in hf.filename:
+        base = npdata[i][npdata[i].shape[0]-10][npdata[i].shape[1]-10][npdata[i].shape[2]-10]
+        print('\nBase density = %f' % (base))
+        
+        maxvalue = base * 40
+        
         opacity[i].AddPoint(0, 0.0)
-        opacity[i].AddPoint(den1, 0.01)
-        opacity[i].AddPoint(10*den1, 0.8)
+        opacity[i].AddPoint(base, 0.01)
+        opacity[i].AddPoint(base + 0.01 * (maxvalue-base), 0.4)
+        opacity[i].AddPoint(base + 0.4 * (maxvalue-base), 0.9)
         opacity[i].AddPoint(maxvalue, 1.0)
+        #opacity[i].AddPoint(0, 0.0)
+        #opacity[i].AddPoint(1, 0.00)
+        #opacity[i].AddPoint(1+0.1*maxvalue, 0.00)
+        #opacity[i].AddPoint(10, 0.8)
+        #opacity[i].AddPoint(maxvalue, 1.0)
 
         color[i].AddRGBPoint(0, 0.078, 0.078, 0.078)
-        color[i].AddRGBPoint(den1, 0.188, 0.247, 0.294)
+        color[i].AddRGBPoint(base, 0.188, 0.247, 0.294)
+        color[i].AddRGBPoint(base + 0.4 * (maxvalue-base), 0.9, 0.9, 0.9)
         color[i].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
         # other palette
         #color[i].AddRGBPoint(0.0, 0.865, 0.865, 0.865)
-        #color[i].AddRGBPoint(den1, 0.2313, 0.298, 0.753)
+        #color[i].AddRGBPoint(1, 0.2313, 0.298, 0.753)
         #color[i].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
+        
     elif "beam" in hf.filename :
+        maxvalue *= 1.0        
         opacity[i].AddPoint(0, 0.0)
+        opacity[i].AddPoint(0.2*maxvalue, 0.9)
+        opacity[i].AddPoint(0.4*maxvalue, 0.95)
         opacity[i].AddPoint(maxvalue, 1.0)
 
         color[i].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
         color[i].AddRGBPoint(0.2*maxvalue, 0.390, 0.050, 0.330)
         color[i].AddRGBPoint(0.4*maxvalue, 0.700, 0.200, 0.300)
         color[i].AddRGBPoint(1.0*maxvalue, 1.000, 1.000, 0.200)
+        
     elif "He-electrons" in hf.filename:
         opacity[i].AddPoint(0.0, 0.0)
-        opacity[i].AddPoint(1, 0.3)
-        opacity[i].AddPoint(100, 0.8)
-        opacity[i].AddPoint(255, 1.0)
+        opacity[i].AddPoint(0.001*maxvalue, 0.6)
+        opacity[i].AddPoint(0.10*maxvalue, 0.8)
+        opacity[i].AddPoint(1.00*maxvalue, 1.0)
 
         color[i].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
-        color[i].AddRGBPoint(0.01*maxvalue, 0.627, 0.125, 0.235)
+        color[i].AddRGBPoint(0.001*maxvalue, 0.627, 0.125, 0.235)
         color[i].AddRGBPoint(0.10*maxvalue, 0.700, 0.200, 0.300)
         color[i].AddRGBPoint(1.00*maxvalue, 1.000, 1.000, 0.200)
 
@@ -147,10 +147,10 @@ for i, hf in enumerate(hfl):
 
 
 # Add data components as a 4th dimension 
-# npdatamulti = np.stack((npdatauchar[:]),axis=3)
+# npdatamulti = np.stack((npdata[:]),axis=3)
 
 # Alternative way compatible with earlier versions of numpy 
-npdatamulti = np.concatenate([aux[...,np.newaxis] for aux in npdatauchar], axis=3)
+npdatamulti = np.concatenate([aux[...,np.newaxis] for aux in npdata], axis=3)
 
 print('\nShape of the multi-component array: ', npdatamulti.shape,' Type: ',npdatamulti.dtype)
 
@@ -158,11 +158,8 @@ print('\nShape of the multi-component array: ', npdatamulti.shape,' Type: ',npda
 # This can be done by the vtkImageImport which
 # imports raw data and stores it.
 dataImport = vtk.vtkImageImport()
-
 dataImport.SetImportVoidPointer(npdatamulti)
-
-dataImport.SetDataScalarTypeToUnsignedChar()
-
+dataImport.SetDataScalarTypeToFloat()
 # Number of scalar components
 dataImport.SetNumberOfScalarComponents(ncomp)
 # The following two functions describe how the data is stored
@@ -171,13 +168,10 @@ dataImport.SetDataExtent(0, npdatamulti.shape[2]-1, 0, npdatamulti.shape[1]-1, 0
 dataImport.SetWholeExtent(0, npdatamulti.shape[2]-1, 0, npdatamulti.shape[1]-1, 0, npdatamulti.shape[0]-1)
 dataImport.SetDataSpacing(dz,dy,dx)
 dataImport.SetDataOrigin(0.0,axisy[0],axisx[0])
-
 dataImport.Update()
 
 # Set the mapper
 mapper = vtk.vtkGPUVolumeRayCastMapper()
-#mapper = vtk.vtkFixedPointVolumeRayCastMapper()
-#mapper = vtk.vtkSmartVolumeMapper()
 mapper.SetAutoAdjustSampleDistances(1)
 #mapper.SetSampleDistance(0.1)
 #mapper.SetBlendModeToMaximumIntensity();
@@ -200,7 +194,7 @@ light = vtk.vtkLight()
 light.SetColor(1.0, 0.0, 0.0)
 light.SwitchOn()
 light.SetIntensity(1)
-#renderer.AddLight(light)
+# renderer.AddLight(light)
 
 # Add the volume to the renderer ...
 renderer.AddVolume(volume)
@@ -208,19 +202,29 @@ renderer.AddVolume(volume)
 window.AddRenderer(renderer)
 
 interactor = vtk.vtkRenderWindowInteractor()
-interactor.SetRenderWindow(window)
 #style = vtkInteractorStyleTrackballCamera();
 #interactor.SetInteractorStyle(style);
+if args.nowin == 0 :
+    interactor.SetRenderWindow(window)
 
 # We'll zoom in a little by accessing the camera and invoking a "Zoom"
 # method on it.
 renderer.ResetCamera()
-renderer.GetActiveCamera().Zoom(2.0)
+camera = renderer.GetActiveCamera()
+camera.Zoom(args.zoom)
+#camera.Roll(45)
+camera.Azimuth(args.azimuth)
+camera.Elevation(args.elevation)
 
 window.Render()
 
 # Output file
-foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
+
+if args.test :
+    foutname = './%s.png' % (args.sim)
+else :
+    foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
+    
 PGlobals.mkdir(foutname)
 
 # Write an EPS file.
@@ -240,5 +244,9 @@ writer.SetFileName(foutname)
 writer.SetInputConnection(w2if.GetOutputPort())
 writer.Write()
 
-interactor.Initialize()
-interactor.Start()
+print('\n%s has been created.' % (foutname) )
+
+
+if args.nowin == 0 :
+    interactor.Initialize()
+    interactor.Start()
