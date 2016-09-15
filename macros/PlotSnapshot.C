@@ -115,6 +115,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // Open snapshot file and get the histograms
   TString filename;
   filename = Form("./%s/Plots/Snapshots/Snapshot-%s_%i.root",sim.Data(),sim.Data(),timestep);
+  if(opt.Contains("zyslc"))
+    filename = Form("./%s/Plots/Snapshots/SnapshotZY-%s_%i.root",sim.Data(),sim.Data(),timestep);
   
   TFile  *ifile = (TFile*) gROOT->GetListOfFiles()->FindObject(filename.Data());
   if (!ifile) ifile = new TFile(filename,"READ");
@@ -2556,7 +2558,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     C->cd(0);
   }
 
-  if(mask & 0x10) {
+  if( (mask & 0x10) && (hFocus2D) ) {
 
     pad[ip]->Draw();
     pad[ip]->cd(); // <---------------------------------------------------------- 5th panel
@@ -3385,6 +3387,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   // Writing the figure
   TString fOutName = Form("./%s/Plots/Snapshots/Snapshot%s-%s_%i",pData->GetPath().c_str(),imask.c_str(),pData->GetName(),timestep);
+  if(opt.Contains("zyslc"))
+    fOutName = Form("./%s/Plots/Snapshots/SnapshotZY%s-%s_%i",pData->GetPath().c_str(),imask.c_str(),pData->GetName(),timestep);
   PGlobals::imgconv(C,fOutName,opt);
   // ---------------------------------------------------------
 

@@ -480,6 +480,26 @@ TFile* PGlobals::OpenFile( const TString& fin )
   return file;
 }
 
+// create directory if not existing
+void PGlobals::mkdir(const TString & fname) {
+  TString dir1,dir2,dir3;
+  TString f = fname;
+  if(f.Contains('/'))
+    dir3 = f.Remove( f.Last( '/' ), f.Length() - f.Last( '/' ) );
+  if(f.Contains('/'))
+    dir2 = f.Remove( f.Last( '/' ), f.Length() - f.Last( '/' ) );
+  if(f.Contains('/')) 
+    dir1 = f.Remove( f.Last( '/' ), f.Length() - f.Last( '/' ) );	
+  
+  if(!dir1.IsNull())
+    gSystem->mkdir( dir1 );
+  if(!dir2.IsNull())
+    gSystem->mkdir( dir2 );
+  if(!dir3.IsNull())
+    gSystem->mkdir( dir3 );
+}
+
+
 // used to create output file for canvas
 void PGlobals::imgconv( TCanvas* c, const TString & fname, const TString & opt)
 {
@@ -488,25 +508,11 @@ void PGlobals::imgconv( TCanvas* c, const TString & fname, const TString & opt)
     cout << "*** Error in PlasmaGlob::imgconv: canvas is NULL" << endl;
   }
   else {
-    // create directory if not existing
-    TString dir1,dir2,dir3;
-    TString f = fname;
-    if(f.Contains('/'))
-      dir3 = f.Remove( f.Last( '/' ), f.Length() - f.Last( '/' ) );
-    if(f.Contains('/'))
-      dir2 = f.Remove( f.Last( '/' ), f.Length() - f.Last( '/' ) );
-    if(f.Contains('/')) 
-      dir1 = f.Remove( f.Last( '/' ), f.Length() - f.Last( '/' ) );	
+
+    PGlobals::mkdir(fname);
     
-    if(!dir1.IsNull())
-      gSystem->mkdir( dir1 );
-    if(!dir2.IsNull())
-      gSystem->mkdir( dir2 );
-    if(!dir3.IsNull())
-      gSystem->mkdir( dir3 );
-      
     c->cd();
-      
+    
     if(opt.Contains("png"))
       c->Print(fname + ".png");
 

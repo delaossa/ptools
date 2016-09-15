@@ -83,6 +83,8 @@ namespace PGlobals {
   
   TFile* OpenFile( const TString& fin );
 
+  void mkdir(const TString & fname);
+  
   void imgconv( TCanvas* c, const TString & fname, const TString & opt="png");
 
   Int_t HCrossings(TH1F *h, Float_t *Cross, Float_t *Extr, Int_t MAXCROSS = 10, 

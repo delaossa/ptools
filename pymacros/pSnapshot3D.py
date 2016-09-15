@@ -2,7 +2,7 @@
 from __future__ import print_function
 import h5py
 from vtk import *
-from ROOT import PData
+from ROOT import PData, PGlobals
 import sys, argparse
 import numpy as np
 
@@ -90,7 +90,7 @@ for i, hf in enumerate(hfl):
     if "He-electrons" in hf.filename:
         factor[i] = 100
     elif "plasma" in hf.filename:
-        factor[i] = 0.5
+        factor[i] = 1
     elif "beam" in hf.filename:
         factor[i] = 7.5
 
@@ -221,6 +221,7 @@ window.Render()
 
 # Output file
 foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
+PGlobals.mkdir(foutname)
 
 # Write an EPS file.
 # exp = vtk.vtkGL2PSExporter()  # Not working with openGL2 yet
