@@ -55,7 +55,7 @@ $(DICT): $(LIB)Dict.cc
 $(LIB)Dict.cc: $(addprefix $(INCDIR)/,$(addsuffix .hh,$(MODULES))) $(INCDIR)/LinkDef.hh 
 	@echo "Generating dictionary $@"
 	rootcling -f $@ -rmf $(LIBDIR)/lib$(LIB).rootmap -rml $(LIBDIR)/$(SHLIBFILE) $^
-
+	cp $(LIB)Dict_rdict.pcm $(LIBDIR)/
 %.d: %.c
 	@echo Making dependency for file $< ...
 	@set -e;\
