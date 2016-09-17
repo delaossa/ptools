@@ -97,7 +97,7 @@ for i, hf in enumerate(hfl):
         maxvalue = base * 40
         
         opacity[i].AddPoint(0, 0.0)
-        opacity[i].AddPoint(base, 0.01)
+        opacity[i].AddPoint(base, 0.00)
         opacity[i].AddPoint(base + 0.01 * (maxvalue-base), 0.4)
         opacity[i].AddPoint(base + 0.4 * (maxvalue-base), 0.9)
         opacity[i].AddPoint(maxvalue, 1.0)
@@ -117,10 +117,10 @@ for i, hf in enumerate(hfl):
         #color[i].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
         
     elif "beam" in hf.filename :
-        maxvalue *= 1.0        
+        maxvalue = 10*base       
         opacity[i].AddPoint(0, 0.0)
-        opacity[i].AddPoint(0.2*maxvalue, 0.9)
-        opacity[i].AddPoint(0.4*maxvalue, 0.95)
+        opacity[i].AddPoint(0.2*maxvalue, 0.2)
+        opacity[i].AddPoint(0.5*maxvalue, 0.5)
         opacity[i].AddPoint(maxvalue, 1.0)
 
         color[i].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
