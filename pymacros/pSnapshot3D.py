@@ -18,6 +18,7 @@ parser.add_argument('-t', type=int, help='simulation time step')
 parser.add_argument('-z', type=float, dest='zoom', default=1,help='zoom')
 parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth')
 parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
+parser.add_argument('--surf', action='store_true', default=0,help='draw surfaces')
 parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
 
@@ -27,7 +28,7 @@ except:
     parser.print_help()
     sys.exit(0)
     
-if ("none" in args.sim) and (args.test == 0) :
+if ("none" in args.sim) & (args.test == 0) :
     parser.print_help()
     sys.exit(0)
     
@@ -48,18 +49,24 @@ else :
 ncomp = len(hfl)
 # -----------
 
+
+# Get data, build multi-component vtkVolume,
+# Set colors and opacities for the components... 
 data = []
 npdata = []
 opacity = []
 color = []
 factor = []
 
+# Multi component (single) volume 
 volumeprop = vtk.vtkVolumeProperty()
 #volumeprop.SetIndependentComponents(ncomp)
 volumeprop.IndependentComponentsOn()
 volumeprop.SetInterpolationTypeToLinear()
 
+# Loop over the files
 for i, hf in enumerate(hfl):
+    
     data.append(hf.get('charge'))
     axisz = hf.get('AXIS/AXIS1')
     axisy = hf.get('AXIS/AXIS2')
@@ -111,10 +118,10 @@ for i, hf in enumerate(hfl):
         #color[i].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
         
     elif "beam" in hf.filename :
-        maxvalue = 10*base       
+        # maxvalue = 10*base       
         opacity[i].AddPoint(0, 0.0)
-        opacity[i].AddPoint(0.2*maxvalue, 0.2)
-        opacity[i].AddPoint(0.5*maxvalue, 0.5)
+        # opacity[i].AddPoint(0.2*maxvalue, 0.2)
+        # opacity[i].AddPoint(0.5*maxvalue, 0.5)
         opacity[i].AddPoint(maxvalue, 1.0)
 
         color[i].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
@@ -137,20 +144,16 @@ for i, hf in enumerate(hfl):
     volumeprop.SetScalarOpacity(i,opacity[i])
     volumeprop.ShadeOff(i)
     #volumeprop.ShadeOn(i)
-
-
+    
 
 # Add data components as a 4th dimension 
 # npdatamulti = np.stack((npdata[:]),axis=3)
-
 # Alternative way compatible with earlier versions of numpy 
 npdatamulti = np.concatenate([aux[...,np.newaxis] for aux in npdata], axis=3)
-
 print('\nShape of the multi-component array: ', npdatamulti.shape,' Type: ',npdatamulti.dtype)
 
-# For VTK to be able to use the data, it must be stored as a VTK-image.
-# This can be done by the vtkImageImport which
-# imports raw data and stores it.
+# For VTK to be able to use the data, it must be stored as a VTKimage.
+# vtkImageImport imports raw data and stores it in the image.
 dataImport = vtk.vtkImageImport()
 dataImport.SetImportVoidPointer(npdatamulti)
 dataImport.SetDataScalarTypeToFloat()
@@ -164,7 +167,6 @@ dataImport.SetDataSpacing(dz,dy,dx)
 dataImport.SetDataOrigin(0.0,axisy[0],axisx[0])
 dataImport.Update()
 
-# Set the mapper
 mapper = vtk.vtkGPUVolumeRayCastMapper()
 mapper.SetAutoAdjustSampleDistances(1)
 #mapper.SetSampleDistance(0.1)
@@ -178,6 +180,67 @@ mapper.SetInputConnection(dataImport.GetOutputPort())
 volume = vtk.vtkVolume()
 volume.SetMapper(mapper)
 volume.SetProperty(volumeprop)
+
+# Surfaces
+threshold = []
+dmc = []
+mapper2 = []
+actor = []
+
+dataImport2 = []
+
+
+# Loop over the data components
+for i in range(0,ncomp):
+    if (args.surf) & ( ("beam" in hfl[i].filename) ) :
+
+        axisz = hf.get('AXIS/AXIS1')
+        axisy = hf.get('AXIS/AXIS2')
+        axisx = hf.get('AXIS/AXIS3')
+
+        dz = (axisz[1]-axisz[0])/data[i].shape[2]
+        dy = (axisy[1]-axisy[0])/data[i].shape[1]
+        dx = (axisx[1]-axisx[0])/data[i].shape[0]
+        
+        dataImport2.append(vtk.vtkImageImport())
+        j = len(dataImport2)-1
+        dataImport2[j].SetImportVoidPointer(npdata[i])
+        dataImport2[j].SetDataScalarTypeToFloat()
+        # Number of scalar components
+        dataImport2[j].SetNumberOfScalarComponents(1)
+        # The following two functions describe how the data is stored
+        # and the dimensions of the array it is stored in.
+        dataImport2[j].SetDataExtent(0, npdata[i].shape[2]-1, 0, npdata[i].shape[1]-1, 0, npdata[i].shape[0]-1)
+        dataImport2[j].SetWholeExtent(0, npdata[i].shape[2]-1, 0, npdata[i].shape[1]-1, 0, npdata[i].shape[0]-1)
+        dataImport2[j].SetDataSpacing(dz,dy,dx)
+        dataImport2[j].SetDataOrigin(0.0,axisy[0],axisx[0])
+        dataImport2[j].Update()
+
+        maxvalue = np.amax(npdata[i])
+
+        threshold.append(vtkImageThreshold())
+        threshold[j].SetInputConnection(dataImport2[j].GetOutputPort())
+        threshold[j].ThresholdBetween(0.45*maxvalue,0.55*maxvalue)
+        threshold[j].ReplaceInOn()
+        threshold[j].SetInValue(0.5*maxvalue)  # set all values in range to 1
+        threshold[j].ReplaceOutOn()
+        threshold[j].SetOutValue(0)  # set all values out range to 0
+        threshold[j].Update()
+
+        dmc.append(vtk.vtkDiscreteMarchingCubes())
+        dmc[j].SetInputConnection(threshold[j].GetOutputPort())
+        #dmc[j].SetInputConnection(dataImport[i].GetOutputPort())
+        dmc[j].GenerateValues(1, 0.5*maxvalue, 0.5*maxvalue)
+        dmc[j].Update()
+
+        mapper2.append(vtk.vtkPolyDataMapper())
+        mapper2[j].SetInputConnection(dmc[j].GetOutputPort())
+        mapper2[j].SetLookupTable(color[i])
+        mapper2[j].SetColorModeToMapScalars()
+         
+        actor.append(vtk.vtkActor())
+        actor[j].SetMapper(mapper2[j])
+        actor[j].GetProperty().SetOpacity(0.8)
 
 planeClip = vtk.vtkPlane()
 planeClip.SetOrigin((axisz[0]+axisz[1])/2.0-axisz[0],0.0,0.0)
@@ -200,6 +263,9 @@ renderer.SetBackground(0,0,0)
 
 # Add the volume to the renderer ...
 renderer.AddVolume(volume)
+
+for j in range(len(actor)) :
+    renderer.AddActor(actor[j])
 
 # Set window
 window = vtk.vtkRenderWindow()                    
