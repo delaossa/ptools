@@ -19,6 +19,7 @@ parser.add_argument('-z', type=float, dest='zoom', default=1,help='zoom')
 parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth')
 parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
 parser.add_argument('--surf', action='store_true', default=0,help='draw surfaces')
+parser.add_argument('--log', action='store_true', default=0,help='log scale')
 parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
 
@@ -81,9 +82,18 @@ for i, hf in enumerate(hfl):
     print('Axis x range: [%.2f,%.2f]  Nbins = %i  dx = %.4f' % (axisx[0],axisx[1],data[i].shape[0],dx) )
     print('Axis y range: [%.2f,%.2f]  Nbins = %i  dy = %.4f' % (axisy[0],axisy[1],data[i].shape[1],dy) )
 
-    npdata.append(np.array(np.absolute(data[i])))
+    data[i] = np.absolute(data[i])
+    npdata.append(np.array(data[i]))
     minvalue = np.amin(npdata[i])
     maxvalue = np.amax(npdata[i])
+    if args.log :
+        npdata[i] = npdata[i] - minvalue + 1
+        npdata[i] = np.log10(npdata[i])
+
+        minvalue = np.amin(npdata[i])
+        maxvalue = np.amax(npdata[i])
+        
+    
     print('Minimum value = %.2f  Maximum = %.2f' % (minvalue,maxvalue))
     print('Shape of the array: ', npdata[i].shape,' Type: ',npdata[i].dtype)
     
@@ -95,22 +105,19 @@ for i, hf in enumerate(hfl):
         base = npdata[i][npdata[i].shape[0]-10][npdata[i].shape[1]-10][npdata[i].shape[2]-10]
         print('\nBase density = %f' % (base))
         
-        maxvalue = base * 40
+        maxvalue = base * 100
         
         opacity[i].AddPoint(0, 0.0)
         opacity[i].AddPoint(base, 0.00)
         opacity[i].AddPoint(base + 0.01 * (maxvalue-base), 0.4)
-        opacity[i].AddPoint(base + 0.4 * (maxvalue-base), 0.9)
-        opacity[i].AddPoint(maxvalue, 1.0)
-        #opacity[i].AddPoint(0, 0.0)
-        #opacity[i].AddPoint(1, 0.00)
-        #opacity[i].AddPoint(1+0.1*maxvalue, 0.00)
-        #opacity[i].AddPoint(10, 0.8)
-        #opacity[i].AddPoint(maxvalue, 1.0)
+        opacity[i].AddPoint(base + 0.10 * (maxvalue-base), 0.9)
+        opacity[i].AddPoint(base + 0.20 * (maxvalue-base), 0.1)
+        opacity[i].AddPoint(maxvalue, 0.0)
 
         color[i].AddRGBPoint(0, 0.078, 0.078, 0.078)
         color[i].AddRGBPoint(base, 0.188, 0.247, 0.294)
-        color[i].AddRGBPoint(base + 0.4 * (maxvalue-base), 0.9, 0.9, 0.9)
+        color[i].AddRGBPoint(base + 0.01 * (maxvalue-base), 1.0, 1.0, 1.0)
+        color[i].AddRGBPoint(base + 0.50 * (maxvalue-base), 1.0, 1.0, 1.0)
         color[i].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
         # other palette
         #color[i].AddRGBPoint(0.0, 0.865, 0.865, 0.865)
@@ -121,8 +128,8 @@ for i, hf in enumerate(hfl):
         # maxvalue = 10*base       
         opacity[i].AddPoint(0, 0.0)
         # opacity[i].AddPoint(0.2*maxvalue, 0.2)
-        # opacity[i].AddPoint(0.5*maxvalue, 0.5)
-        opacity[i].AddPoint(maxvalue, 1.0)
+        opacity[i].AddPoint(0.8*maxvalue, 1.0)
+        opacity[i].AddPoint(maxvalue, 0.0)
 
         color[i].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
         color[i].AddRGBPoint(0.2*maxvalue, 0.390, 0.050, 0.330)
@@ -131,9 +138,10 @@ for i, hf in enumerate(hfl):
         
     elif "He-electrons" in hf.filename:
         opacity[i].AddPoint(0.0, 0.0)
-        opacity[i].AddPoint(0.001*maxvalue, 0.6)
+        opacity[i].AddPoint(0.01*maxvalue, 0.6)
         opacity[i].AddPoint(0.10*maxvalue, 0.8)
-        opacity[i].AddPoint(1.00*maxvalue, 1.0)
+        opacity[i].AddPoint(0.80*maxvalue, 1.0)
+        opacity[i].AddPoint(1.00*maxvalue, 0.0)
 
         color[i].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
         color[i].AddRGBPoint(0.001*maxvalue, 0.627, 0.125, 0.235)
