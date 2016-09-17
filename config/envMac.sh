@@ -4,6 +4,7 @@
 export ROOTSYS=/Users/delaossa/local/root
 export DYLD_LIBRARY_PATH=$ROOTSYS/lib:$DYLD_LIBRARY_PATH
 export PATH=$ROOTSYS/bin:$PATH
+export PYTHONPATH=$ROOTSYS/lib:$PYTHONPATH
 
 # HDF5: C++ interface
 export HDF5CPP=/usr/local/opt/hdf5

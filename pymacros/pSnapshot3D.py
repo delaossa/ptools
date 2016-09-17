@@ -9,14 +9,16 @@ import numpy as np
 
 # Command argument line parser 
 parser = argparse.ArgumentParser(description='3D renderer using VTK.')
-parser.add_argument('sim', nargs='?', default='kk', help='simulation name')
+parser.add_argument('sim', nargs='?', default='none', help='simulation name')
 parser.add_argument('-b', action='store_true', help='run in batch mode without graphics')
-parser.add_argument('-t', type=int, help='timestep')
-parser.add_argument('-i', type=int, dest='istart', help='time start')
+parser.add_argument('-t', type=int, help='simulation time step')
+#parser.add_argument('-i', type=int, dest='tstart', help='time start')
+#parser.add_argument('-f', type=int, dest='tend', help='time end')
+#parser.add_argument('-s', type=int, dest='tdelta', default=1,help='time delta (step between dumps)')
 parser.add_argument('-z', type=float, dest='zoom', default=1,help='zoom')
 parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth')
 parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
-parser.add_argument('--test', action='store_true', help='run a direct example')
+parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
 
 try:
@@ -24,7 +26,14 @@ try:
 except:
     parser.print_help()
     sys.exit(0)
+    
+if ("none" in args.sim) and (args.test == 0) :
+    parser.print_help()
+    sys.exit(0)
+    
+# End of command line setup
 
+# Get data files
 hfl = []
 if args.test :
     hfl.append(h5py.File('data/charge-plasma-000026.h5','r'))
@@ -37,22 +46,7 @@ else :
         hfl.append(h5py.File(pData.GetChargeFileName(i).c_str(),'r'))
 
 ncomp = len(hfl)
-
-window = vtk.vtkRenderWindow()
-                    
-if args.nowin :
-    window.SetOffScreenRendering(1)
-                    
-# ... and set window size.
-window.SetSize(1280, 800)
-
-renderer = vtk.vtkRenderer()
-# Set background  
-renderer.SetBackground(0,0,0)
-# renderer.TexturedBackgroundOn()
-# Other colors 
-# nc = vtk.vtkNamedColors()
-# renderer.SetBackground(nc.GetColor3d('MidnightBlue'))
+# -----------
 
 data = []
 npdata = []
@@ -196,9 +190,25 @@ light.SwitchOn()
 light.SetIntensity(1)
 # renderer.AddLight(light)
 
+renderer = vtk.vtkRenderer()
+# Set background  
+renderer.SetBackground(0,0,0)
+# renderer.TexturedBackgroundOn()
+# Other colors 
+# nc = vtk.vtkNamedColors()
+# renderer.SetBackground(nc.GetColor3d('MidnightBlue'))
+
 # Add the volume to the renderer ...
 renderer.AddVolume(volume)
 
+# Set window
+window = vtk.vtkRenderWindow()                    
+# ... and set window size.
+window.SetSize(1280, 800)
+if args.nowin :
+    window.SetOffScreenRendering(1)
+
+# add renderer
 window.AddRenderer(renderer)
 
 interactor = vtk.vtkRenderWindowInteractor()
@@ -218,13 +228,15 @@ camera.Elevation(args.elevation)
 
 window.Render()
 
-# Output file
+if args.nowin == 0 :
+    interactor.Initialize()
+    interactor.Start()
 
+# Output file
 if args.test :
-    foutname = './%s.png' % (args.sim)
+    foutname = './snapshot3d.png' 
 else :
     foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
-    
 PGlobals.mkdir(foutname)
 
 # Write an EPS file.
@@ -246,7 +258,4 @@ writer.Write()
 
 print('\n%s has been created.' % (foutname) )
 
-
-if args.nowin == 0 :
-    interactor.Initialize()
-    interactor.Start()
+# END
