@@ -58,7 +58,7 @@ data = []
 npdata = []
 Min = []
 Max = []
-
+stype = []
 baseden = 1
 
 # Multi component (single) volume 
@@ -91,6 +91,8 @@ for i, hf in enumerate(hfl):
     data[i] = np.absolute(data[i])    
     maxvalue = np.amax(data[i])
     if maxvalue < 1E-4 : continue
+
+    stype.append('default')
     
     npdata.append(np.array(data[i]))
     j = len(npdata) - 1
@@ -98,8 +100,9 @@ for i, hf in enumerate(hfl):
     maxvalue = np.amax(npdata[j])
     minvalue = 0.1 * baseden
 
-    if "He-electrons" in hf.filename :
-        minvalue = 1E-4 * baseden
+    if args.test == 0 :
+        if pData.GetDenMax(j) > 0 : maxvalue = pData.GetDenMax(j)
+        if pData.GetDenMin(j) > 0 : minvalue = pData.GetDenMin(j) 
     
     if minvalue > maxvalue :
         minvalue = 0.1 * maxvalue
@@ -121,6 +124,8 @@ for i, hf in enumerate(hfl):
     color.append(vtk.vtkColorTransferFunction())
     
     if "plasma" in hf.filename:
+        stype[j] = 'plasma'
+        
         localden = npdata[j][npdata[j].shape[0]-10][npdata[j].shape[1]-10][npdata[j].shape[2]-10]
         print('\nLocal density = %f' % (localden))
         if args.lden :
@@ -142,6 +147,8 @@ for i, hf in enumerate(hfl):
         color[j].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
         
     elif "beam" in hf.filename :
+        stype[j] = 'beam'
+
         # maxvalue = 10*base       
         opacity[j].AddPoint(minvalue, 0.0)
         # opacity[j].AddPoint(0.2*maxvalue, 0.2)
@@ -154,6 +161,8 @@ for i, hf in enumerate(hfl):
         color[j].AddRGBPoint(maxvalue, 1.00, 1.00, 0.20)
         
     elif "He-electrons" in hf.filename:
+        stype[j] = 'witness'
+        
         opacity[j].AddPoint(minvalue, 0.0)
         opacity[j].AddPoint(minvalue + 0.01 * (maxvalue-minvalue), 0.6)
         opacity[j].AddPoint(minvalue + 0.40 * (maxvalue-minvalue), 0.8)
@@ -217,7 +226,7 @@ dataImport2 = []
 
 # Loop over the data components
 for i in range(0,ncomp):
-    if (args.surf) & ( ("beam" in hfl[i].filename) ) :
+    if (args.surf) & ( ("beam" in stype[i]) ) :
 
         axisz = hf.get('AXIS/AXIS1')
         axisy = hf.get('AXIS/AXIS2')
@@ -280,7 +289,8 @@ light.SetIntensity(1)
 
 renderer = vtk.vtkRenderer()
 # Set background  
-renderer.SetBackground(0,0,0)
+#renderer.SetBackground(0,0,0)
+renderer.SetBackground(0.1,0.1,0.1)
 # renderer.TexturedBackgroundOn()
 # Other colors 
 # nc = vtk.vtkNamedColors()
