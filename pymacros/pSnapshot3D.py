@@ -20,6 +20,7 @@ parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth'
 parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
 parser.add_argument('--surf', action='store_true', default=0,help='draw surfaces')
 parser.add_argument('--log', action='store_true', default=0,help='log scale')
+parser.add_argument('--lden', action='store_true', default=0,help='use local density')
 parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
 
@@ -55,20 +56,25 @@ ncomp = len(hfl)
 # Set colors and opacities for the components... 
 data = []
 npdata = []
-opacity = []
-color = []
-factor = []
+Min = []
+Max = []
+
+baseden = 1
 
 # Multi component (single) volume 
 volumeprop = vtk.vtkVolumeProperty()
 #volumeprop.SetIndependentComponents(ncomp)
 volumeprop.IndependentComponentsOn()
 volumeprop.SetInterpolationTypeToLinear()
+#
+opacity = []
+color = []
 
 # Loop over the files
 for i, hf in enumerate(hfl):
     
     data.append(hf.get('charge'))
+
     axisz = hf.get('AXIS/AXIS1')
     axisy = hf.get('AXIS/AXIS2')
     axisx = hf.get('AXIS/AXIS3')
@@ -82,74 +88,85 @@ for i, hf in enumerate(hfl):
     print('Axis x range: [%.2f,%.2f]  Nbins = %i  dx = %.4f' % (axisx[0],axisx[1],data[i].shape[0],dx) )
     print('Axis y range: [%.2f,%.2f]  Nbins = %i  dy = %.4f' % (axisy[0],axisy[1],data[i].shape[1],dy) )
 
-    data[i] = np.absolute(data[i])
-    npdata.append(np.array(data[i]))
-    minvalue = np.amin(npdata[i])
-    maxvalue = np.amax(npdata[i])
-    if args.log :
-        npdata[i] = npdata[i] - minvalue + 1
-        npdata[i] = np.log10(npdata[i])
-
-        minvalue = np.amin(npdata[i])
-        maxvalue = np.amax(npdata[i])
-        
+    data[i] = np.absolute(data[i])    
+    maxvalue = np.amax(data[i])
+    if maxvalue < 1E-4 : continue
     
-    print('Minimum value = %.2f  Maximum = %.2f' % (minvalue,maxvalue))
-    print('Shape of the array: ', npdata[i].shape,' Type: ',npdata[i].dtype)
+    npdata.append(np.array(data[i]))
+    j = len(npdata) - 1
+    
+    maxvalue = np.amax(npdata[j])
+    minvalue = 0.1 * baseden
+
+    if "He-electrons" in hf.filename :
+        minvalue = 1E-4 * baseden
+    
+    if minvalue > maxvalue :
+        minvalue = 0.1 * maxvalue
+    
+    if args.log :
+        npdata[j] = np.log10(npdata[j] - minvalue + 1)
+        baseden = np.log10(baseden - minvalue + 1)
+        minvalue = 0.0
+        maxvalue = np.amax(npdata[j])
+
+    Max.append(maxvalue)
+    Min.append(minvalue)
+        
+    print('Minimum value = %.2e  Maximum = %.2e' % (minvalue,maxvalue))
+    print('Shape of the array: ', npdata[j].shape,' Type: ',npdata[j].dtype)
     
     # Opacity and color scales
     opacity.append(vtk.vtkPiecewiseFunction())
     color.append(vtk.vtkColorTransferFunction())
-  
+    
     if "plasma" in hf.filename:
-        base = npdata[i][npdata[i].shape[0]-10][npdata[i].shape[1]-10][npdata[i].shape[2]-10]
-        print('\nBase density = %f' % (base))
-        
-        maxvalue = base * 100
-        
-        opacity[i].AddPoint(0, 0.0)
-        opacity[i].AddPoint(base, 0.00)
-        opacity[i].AddPoint(base + 0.01 * (maxvalue-base), 0.4)
-        opacity[i].AddPoint(base + 0.10 * (maxvalue-base), 0.9)
-        opacity[i].AddPoint(base + 0.20 * (maxvalue-base), 0.1)
-        opacity[i].AddPoint(maxvalue, 0.0)
+        localden = npdata[j][npdata[j].shape[0]-10][npdata[j].shape[1]-10][npdata[j].shape[2]-10]
+        print('\nLocal density = %f' % (localden))
+        if args.lden :
+            baseden = localden
 
-        color[i].AddRGBPoint(0, 0.078, 0.078, 0.078)
-        color[i].AddRGBPoint(base, 0.188, 0.247, 0.294)
-        color[i].AddRGBPoint(base + 0.01 * (maxvalue-base), 1.0, 1.0, 1.0)
-        color[i].AddRGBPoint(base + 0.50 * (maxvalue-base), 1.0, 1.0, 1.0)
-        color[i].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
-        # other palette
-        #color[i].AddRGBPoint(0.0, 0.865, 0.865, 0.865)
-        #color[i].AddRGBPoint(1, 0.2313, 0.298, 0.753)
-        #color[i].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
+        #topden = 10 * baseden
+        #if topden > maxvalue : topden = baseden + 0.50 * (maxvalue-baseden)
+        
+        opacity[j].AddPoint(minvalue, 0.0)
+        opacity[j].AddPoint(baseden, 0.0)
+        #opacity[j].AddPoint(topden, 0.99)
+        opacity[j].AddPoint(baseden + 0.50 * (maxvalue-baseden), 0.8)
+        opacity[j].AddPoint(maxvalue, 0.0)
+        
+        color[j].AddRGBPoint(minvalue, 0.078, 0.078, 0.078)
+        color[j].AddRGBPoint(baseden, 0.188, 0.247, 0.294)
+        #color[j].AddRGBPoint(topden, 1.0, 1.0, 1.0)
+        color[j].AddRGBPoint(baseden + 0.50 * (maxvalue-baseden), 1.0, 1.0, 1.0)
+        color[j].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
         
     elif "beam" in hf.filename :
         # maxvalue = 10*base       
-        opacity[i].AddPoint(0, 0.0)
-        # opacity[i].AddPoint(0.2*maxvalue, 0.2)
-        opacity[i].AddPoint(0.8*maxvalue, 1.0)
-        opacity[i].AddPoint(maxvalue, 0.0)
+        opacity[j].AddPoint(minvalue, 0.0)
+        # opacity[j].AddPoint(0.2*maxvalue, 0.2)
+        # opacity[j].AddPoint(0.8*maxvalue, 1.0)
+        opacity[j].AddPoint(minvalue + 1.00 * (maxvalue-minvalue), 1.0)
 
-        color[i].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
-        color[i].AddRGBPoint(0.2*maxvalue, 0.390, 0.050, 0.330)
-        color[i].AddRGBPoint(0.4*maxvalue, 0.700, 0.200, 0.300)
-        color[i].AddRGBPoint(1.0*maxvalue, 1.000, 1.000, 0.200)
+        color[j].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
+        color[j].AddRGBPoint(minvalue + 0.20 * (maxvalue-minvalue), 0.390, 0.050, 0.330)
+        color[j].AddRGBPoint(minvalue + 0.40 * (maxvalue-minvalue), 0.700, 0.200, 0.300)
+        color[j].AddRGBPoint(maxvalue, 1.00, 1.00, 0.20)
         
     elif "He-electrons" in hf.filename:
-        opacity[i].AddPoint(0.0, 0.0)
-        opacity[i].AddPoint(0.01*maxvalue, 0.6)
-        opacity[i].AddPoint(0.10*maxvalue, 0.8)
-        opacity[i].AddPoint(0.80*maxvalue, 1.0)
-        opacity[i].AddPoint(1.00*maxvalue, 0.0)
+        opacity[j].AddPoint(minvalue, 0.0)
+        opacity[j].AddPoint(minvalue + 0.01 * (maxvalue-minvalue), 0.6)
+        opacity[j].AddPoint(minvalue + 0.40 * (maxvalue-minvalue), 0.8)
+        opacity[j].AddPoint(minvalue + 0.60 * (maxvalue-minvalue), 0.9)
+        opacity[j].AddPoint(maxvalue, 1.0)
 
-        color[i].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
-        color[i].AddRGBPoint(0.001*maxvalue, 0.627, 0.125, 0.235)
-        color[i].AddRGBPoint(0.10*maxvalue, 0.700, 0.200, 0.300)
-        color[i].AddRGBPoint(1.00*maxvalue, 1.000, 1.000, 0.200)
+        color[j].AddRGBPoint(minvalue, 0.220, 0.039, 0.235)
+        color[j].AddRGBPoint(minvalue + 0.01 * (maxvalue-minvalue), 0.627, 0.125, 0.235)
+        color[j].AddRGBPoint(minvalue + 0.40 * (maxvalue-minvalue), 0.700, 0.200, 0.300)
+        color[j].AddRGBPoint(minvalue + 1.00 * (maxvalue-minvalue), 1.000, 1.000, 0.200)
 
-    volumeprop.SetColor(i,color[i])
-    volumeprop.SetScalarOpacity(i,opacity[i])
+    volumeprop.SetColor(i,color[j])
+    volumeprop.SetScalarOpacity(i,opacity[j])
     volumeprop.ShadeOff(i)
     #volumeprop.ShadeOn(i)
     
@@ -166,7 +183,7 @@ dataImport = vtk.vtkImageImport()
 dataImport.SetImportVoidPointer(npdatamulti)
 dataImport.SetDataScalarTypeToFloat()
 # Number of scalar components
-dataImport.SetNumberOfScalarComponents(ncomp)
+dataImport.SetNumberOfScalarComponents(len(npdata))
 # The following two functions describe how the data is stored
 # and the dimensions of the array it is stored in.
 dataImport.SetDataExtent(0, npdatamulti.shape[2]-1, 0, npdatamulti.shape[1]-1, 0, npdatamulti.shape[0]-1)
