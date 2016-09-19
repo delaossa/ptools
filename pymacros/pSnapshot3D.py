@@ -48,7 +48,7 @@ else :
     for i in range(0,pData.NSpecies()) :
         hfl.append(h5py.File(pData.GetChargeFileName(i).c_str(),'r'))
 
-ncomp = len(hfl)
+nfiles = len(hfl)
 # -----------
 
 
@@ -90,89 +90,114 @@ for i, hf in enumerate(hfl):
 
     data[i] = np.absolute(data[i])    
     maxvalue = np.amax(data[i])
-    if maxvalue < 1E-4 : continue
-
+    if maxvalue < 1E-5 : continue
+ 
     stype.append('default')
     
     npdata.append(np.array(data[i]))
     j = len(npdata) - 1
-    
-    maxvalue = np.amax(npdata[j])
-    minvalue = 0.1 * baseden
 
-    if args.test == 0 :
-        if pData.GetDenMax(j) > 0 : maxvalue = pData.GetDenMax(j)
-        if pData.GetDenMin(j) > 0 : minvalue = pData.GetDenMin(j) 
+    denavg = np.average(npdata[j],weights=npdata[j].astype(bool))
     
-    if minvalue > maxvalue :
-        minvalue = 0.1 * maxvalue
+    Max.append(np.amax(npdata[j]))
+    Min.append(0.01*Max[j])
+    
+    if args.test == 0 :
+        if pData.GetDenMax(j) > 0 : Max[j] = pData.GetDenMax(j)
+        if pData.GetDenMin(j) > 0 : Min[j] = pData.GetDenMin(j) 
+    
+    if Min[j] > Max[j] :
+        Min[j] = 0.1 * Max[j]
+        
+    if Max[j] > maxvalue : Max[j] = maxvalue
+
+    if "plasma" in hf.filename :
+        Min[j] = 0.99 * baseden
+        if args.lden :
+            localden = npdata[j][npdata[j].shape[0]-10][npdata[j].shape[1]-10][npdata[j].shape[2]-10]
+            print('Local density = %f' % (localden))
+            Min[j] = localden
+   
+    def lscale(x) :
+        x = x - Min[j] + 1
+        x = np.where(x <= 0.0, 1.0, x)
+        x = np.log10(x)
+        return x
     
     if args.log :
-        npdata[j] = np.log10(npdata[j] - minvalue + 1)
-        baseden = np.log10(baseden - minvalue + 1)
-        minvalue = 0.0
-        maxvalue = np.amax(npdata[j])
+        npdata[j] = lscale(npdata[j])
+        Min[j] = lscale(Min[j])
+        Max[j] = lscale(Max[j])
+        maxvalue = lscale(maxvalue)
+        # stop = lscale(stop)
 
-    Max.append(maxvalue)
-    Min.append(minvalue)
+    # Intermediate points in the density scale
+    npts = 101
+    stop = np.empty(npts)
+    for k in range(stop.size) :
+        stop[k] = Min[j] + (1./(npts-1)) * k * (Max[j] - Min[j])
+
         
-    print('Minimum value = %.2e  Maximum = %.2e' % (minvalue,maxvalue))
-    print('Shape of the array: ', npdata[j].shape,' Type: ',npdata[j].dtype)
+    np.set_printoptions(precision=3)
+    print('Maximum = %.2f' % maxvalue)
+    print('Min = %.2f  Max = %.2f ' % (Min[j],Max[j]),
+          '-> scale = ',['{:.2f}'.format(k) for k in stop])
+    print('Average = %.2f' % denavg)
     
     # Opacity and color scales
     opacity.append(vtk.vtkPiecewiseFunction())
     color.append(vtk.vtkColorTransferFunction())
     
-    if "plasma" in hf.filename:
+    if "plasma" in hf.filename :
         stype[j] = 'plasma'
         
-        localden = npdata[j][npdata[j].shape[0]-10][npdata[j].shape[1]-10][npdata[j].shape[2]-10]
-        print('\nLocal density = %f' % (localden))
-        if args.lden :
-            baseden = localden
-
-        #topden = 10 * baseden
-        #if topden > maxvalue : topden = baseden + 0.50 * (maxvalue-baseden)
-        
-        opacity[j].AddPoint(minvalue, 0.0)
-        opacity[j].AddPoint(baseden, 0.0)
-        #opacity[j].AddPoint(topden, 0.99)
-        opacity[j].AddPoint(baseden + 0.50 * (maxvalue-baseden), 0.8)
+        opacity[j].AddPoint(stop[0], 0.0)
+        opacity[j].AddPoint(stop[2],0.8)
+        opacity[j].AddPoint(stop[10],0.2)
+        opacity[j].AddPoint(stop[50],0.8)
+        opacity[j].AddPoint(stop[100],0.1)
         opacity[j].AddPoint(maxvalue, 0.0)
         
-        color[j].AddRGBPoint(minvalue, 0.078, 0.078, 0.078)
-        color[j].AddRGBPoint(baseden, 0.188, 0.247, 0.294)
-        #color[j].AddRGBPoint(topden, 1.0, 1.0, 1.0)
-        color[j].AddRGBPoint(baseden + 0.50 * (maxvalue-baseden), 1.0, 1.0, 1.0)
-        color[j].AddRGBPoint(maxvalue, 1.0, 1.0, 1.0)
+        color[j].AddRGBPoint(stop[0], 0.7, 0.7, 0.7)
+        #color[j].AddRGBPoint(stop[0], 0.188, 0.247, 0.294)
+        #color[j].AddRGBPoint(stop[1], 0.8, 0.8, 0.8)
+        #color[j].AddRGBPoint(stop[50], 1.0, 1.0, 1.0)
+        color[j].AddRGBPoint(stop[100], 1.0, 1.0, 1.0)
         
     elif "beam" in hf.filename :
         stype[j] = 'beam'
 
-        # maxvalue = 10*base       
-        opacity[j].AddPoint(minvalue, 0.0)
-        # opacity[j].AddPoint(0.2*maxvalue, 0.2)
-        # opacity[j].AddPoint(0.8*maxvalue, 1.0)
-        opacity[j].AddPoint(minvalue + 1.00 * (maxvalue-minvalue), 1.0)
-
-        color[j].AddRGBPoint(0.0, 0.220, 0.039, 0.235)
-        color[j].AddRGBPoint(minvalue + 0.20 * (maxvalue-minvalue), 0.390, 0.050, 0.330)
-        color[j].AddRGBPoint(minvalue + 0.40 * (maxvalue-minvalue), 0.700, 0.200, 0.300)
-        color[j].AddRGBPoint(maxvalue, 1.00, 1.00, 0.20)
+        opacity[j].AddPoint(Min[j], 0.0)
+        #opacity[j].AddPoint(denavg, 0.5)
+        opacity[j].AddPoint(Max[j], 0.9)
+        #opacity[j].AddPoint(maxvalue, 0.9)
+        
+        color[j].AddRGBPoint(stop[0], 0.220, 0.039, 0.235)
+        color[j].AddRGBPoint(stop[20], 0.390, 0.050, 0.330)
+        color[j].AddRGBPoint(stop[40], 0.700, 0.200, 0.300)
+        color[j].AddRGBPoint(stop[100], 1.00, 1.00, 0.20)
+        #color[j].AddRGBPoint(maxvalue, 1.00, 1.00, 0.20)
         
     elif "He-electrons" in hf.filename:
         stype[j] = 'witness'
         
-        opacity[j].AddPoint(minvalue, 0.0)
-        opacity[j].AddPoint(minvalue + 0.01 * (maxvalue-minvalue), 0.6)
-        opacity[j].AddPoint(minvalue + 0.40 * (maxvalue-minvalue), 0.8)
-        opacity[j].AddPoint(minvalue + 0.60 * (maxvalue-minvalue), 0.9)
-        opacity[j].AddPoint(maxvalue, 1.0)
+        opacity[j].AddPoint(stop[0], 0.0)
+        opacity[j].AddPoint(stop[1], 0.4)
+        opacity[j].AddPoint(stop[5], 0.6)
+        opacity[j].AddPoint(stop[10], 0.8)
+        #opacity[j].AddPoint(stop[3], 0.9)
+        #opacity[j].AddPoint(stop[4], 0.9)
+        opacity[j].AddPoint(stop[100], 0.98)
+        opacity[j].AddPoint(stop[100], 0.98)
 
-        color[j].AddRGBPoint(minvalue, 0.220, 0.039, 0.235)
-        color[j].AddRGBPoint(minvalue + 0.01 * (maxvalue-minvalue), 0.627, 0.125, 0.235)
-        color[j].AddRGBPoint(minvalue + 0.40 * (maxvalue-minvalue), 0.700, 0.200, 0.300)
-        color[j].AddRGBPoint(minvalue + 1.00 * (maxvalue-minvalue), 1.000, 1.000, 0.200)
+        color[j].AddRGBPoint(stop[0], 0.220, 0.039, 0.235)
+        color[j].AddRGBPoint(stop[1], 0.627, 0.125, 0.235)
+        color[j].AddRGBPoint(stop[10], 0.700, 0.200, 0.300)
+        #color[j].AddRGBPoint(stop[2], 0.700, 0.200, 0.300)
+        #color[j].AddRGBPoint(stop[3], 0.700, 0.200, 0.300)
+        #color[j].AddRGBPoint(stop[4], 1.00, 1.00, 0.20)
+        color[j].AddRGBPoint(stop[100], 1.00, 1.00, 0.20)
+
 
     volumeprop.SetColor(i,color[j])
     volumeprop.SetScalarOpacity(i,opacity[j])
@@ -225,7 +250,7 @@ dataImport2 = []
 
 
 # Loop over the data components
-for i in range(0,ncomp):
+for i in range(0,len(npdata)):
     if (args.surf) & ( ("beam" in stype[i]) ) :
 
         axisz = hf.get('AXIS/AXIS1')
@@ -289,8 +314,8 @@ light.SetIntensity(1)
 
 renderer = vtk.vtkRenderer()
 # Set background  
-#renderer.SetBackground(0,0,0)
-renderer.SetBackground(0.1,0.1,0.1)
+renderer.SetBackground(0,0,0)
+#renderer.SetBackground(0.1,0.1,0.1)
 # renderer.TexturedBackgroundOn()
 # Other colors 
 # nc = vtk.vtkNamedColors()
