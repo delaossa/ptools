@@ -109,14 +109,15 @@ for i, hf in enumerate(hfl):
     if Min[j] > Max[j] :
         Min[j] = 0.1 * Max[j]
         
-    if Max[j] > maxvalue : Max[j] = maxvalue
-
     if "plasma" in hf.filename :
-        Min[j] = 0.99 * baseden
+        Min[j] = baseden
         if args.lden :
             localden = npdata[j][npdata[j].shape[0]-10][npdata[j].shape[1]-10][npdata[j].shape[2]-10]
             print('Local density = %f' % (localden))
-            Min[j] = localden
+            Min[j] =  localden
+            Max[j] *= localden/baseden
+    else :
+        if Max[j] > maxvalue : Max[j] = maxvalue
    
     def lscale(x) :
         x = x - Min[j] + 1
@@ -140,8 +141,8 @@ for i, hf in enumerate(hfl):
         
     np.set_printoptions(precision=3)
     print('Maximum = %.2f' % maxvalue)
-    print('Min = %.2f  Max = %.2f ' % (Min[j],Max[j]),
-          '-> scale = ',['{:.2f}'.format(k) for k in stop])
+    print('Min = %.2f  Max = %.2f ' % (Min[j],Max[j]))
+    #print('Stops = ',['{:.2f}'.format(k) for k in stop])
     print('Average = %.2f' % denavg)
     
     # Opacity and color scales
