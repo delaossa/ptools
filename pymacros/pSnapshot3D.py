@@ -20,6 +20,8 @@ parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth'
 parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
 parser.add_argument('--surf', action='store_true', default=0,help='draw surfaces')
 parser.add_argument('--log', action='store_true', default=0,help='log scale')
+parser.add_argument('--axes', action='store_true', default=0,help='show axes')
+parser.add_argument('--cbar', action='store_true', default=0,help='show color maps')
 parser.add_argument('--lden', action='store_true', default=0,help='use local density')
 parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
@@ -155,7 +157,7 @@ for i, hf in enumerate(hfl):
         opacity[j].AddPoint(stop[0], 0.0)
         opacity[j].AddPoint(stop[2],0.8)
         opacity[j].AddPoint(stop[10],0.2)
-        opacity[j].AddPoint(stop[50],0.8)
+        opacity[j].AddPoint(stop[50],0.2)
         opacity[j].AddPoint(stop[100],0.1)
         opacity[j].AddPoint(maxvalue, 0.0)
         
@@ -191,8 +193,7 @@ for i, hf in enumerate(hfl):
         opacity[j].AddPoint(stop[100], 0.98)
         opacity[j].AddPoint(stop[100], 0.98)
 
-        color[j].AddRGBPoint(stop[0], 0.220, 0.039, 0.235)
-        color[j].AddRGBPoint(stop[1], 0.627, 0.125, 0.235)
+        color[j].AddRGBPoint(stop[0], 0.627, 0.125, 0.235)
         color[j].AddRGBPoint(stop[10], 0.700, 0.200, 0.300)
         #color[j].AddRGBPoint(stop[2], 0.700, 0.200, 0.300)
         #color[j].AddRGBPoint(stop[3], 0.700, 0.200, 0.300)
@@ -241,67 +242,7 @@ volume = vtk.vtkVolume()
 volume.SetMapper(mapper)
 volume.SetProperty(volumeprop)
 
-# Surfaces
-threshold = []
-dmc = []
-mapper2 = []
-actor = []
-
-dataImport2 = []
-
-
-# Loop over the data components
-for i in range(0,len(npdata)):
-    if (args.surf) & ( ("beam" in stype[i]) ) :
-
-        axisz = hf.get('AXIS/AXIS1')
-        axisy = hf.get('AXIS/AXIS2')
-        axisx = hf.get('AXIS/AXIS3')
-
-        dz = (axisz[1]-axisz[0])/data[i].shape[2]
-        dy = (axisy[1]-axisy[0])/data[i].shape[1]
-        dx = (axisx[1]-axisx[0])/data[i].shape[0]
-        
-        dataImport2.append(vtk.vtkImageImport())
-        j = len(dataImport2)-1
-        dataImport2[j].SetImportVoidPointer(npdata[i])
-        dataImport2[j].SetDataScalarTypeToFloat()
-        # Number of scalar components
-        dataImport2[j].SetNumberOfScalarComponents(1)
-        # The following two functions describe how the data is stored
-        # and the dimensions of the array it is stored in.
-        dataImport2[j].SetDataExtent(0, npdata[i].shape[2]-1, 0, npdata[i].shape[1]-1, 0, npdata[i].shape[0]-1)
-        dataImport2[j].SetWholeExtent(0, npdata[i].shape[2]-1, 0, npdata[i].shape[1]-1, 0, npdata[i].shape[0]-1)
-        dataImport2[j].SetDataSpacing(dz,dy,dx)
-        dataImport2[j].SetDataOrigin(0.0,axisy[0],axisx[0])
-        dataImport2[j].Update()
-
-        maxvalue = np.amax(npdata[i])
-
-        threshold.append(vtkImageThreshold())
-        threshold[j].SetInputConnection(dataImport2[j].GetOutputPort())
-        threshold[j].ThresholdBetween(0.45*maxvalue,0.55*maxvalue)
-        threshold[j].ReplaceInOn()
-        threshold[j].SetInValue(0.5*maxvalue)  # set all values in range to 1
-        threshold[j].ReplaceOutOn()
-        threshold[j].SetOutValue(0)  # set all values out range to 0
-        threshold[j].Update()
-
-        dmc.append(vtk.vtkDiscreteMarchingCubes())
-        dmc[j].SetInputConnection(threshold[j].GetOutputPort())
-        #dmc[j].SetInputConnection(dataImport[i].GetOutputPort())
-        dmc[j].GenerateValues(1, 0.5*maxvalue, 0.5*maxvalue)
-        dmc[j].Update()
-
-        mapper2.append(vtk.vtkPolyDataMapper())
-        mapper2[j].SetInputConnection(dmc[j].GetOutputPort())
-        mapper2[j].SetLookupTable(color[i])
-        mapper2[j].SetColorModeToMapScalars()
-         
-        actor.append(vtk.vtkActor())
-        actor[j].SetMapper(mapper2[j])
-        actor[j].GetProperty().SetOpacity(0.8)
-
+  
 planeClip = vtk.vtkPlane()
 planeClip.SetOrigin((axisz[0]+axisz[1])/2.0-axisz[0],0.0,0.0)
 planeClip.SetNormal(0.0, 0.0, -1.0)
@@ -316,7 +257,7 @@ light.SetIntensity(1)
 renderer = vtk.vtkRenderer()
 # Set background  
 renderer.SetBackground(0,0,0)
-#renderer.SetBackground(0.1,0.1,0.1)
+# renderer.SetBackground(0.1,0.1,0.1)
 # renderer.TexturedBackgroundOn()
 # Other colors 
 # nc = vtk.vtkNamedColors()
@@ -325,9 +266,65 @@ renderer.SetBackground(0,0,0)
 # Add the volume to the renderer ...
 renderer.AddVolume(volume)
 
-for j in range(len(actor)) :
-    renderer.AddActor(actor[j])
 
+if args.axes :
+    axes = vtk.vtkAxesActor()
+    axes.SetTotalLength(0.2*(axisx[1]-axisx[0]),0.2*(axisy[1]-axisy[0]),0.2*(axisz[1]-axisz[0]))
+    axes.SetShaftTypeToLine()
+    axes.SetNormalizedShaftLength(1, 1, 1)
+    axes.SetNormalizedTipLength(0.1, 0.1, 0.1)
+    propA = vtkTextProperty()
+    propA.SetFontFamilyToArial()
+    propA.ItalicOff()
+    propA.BoldOff()
+    propA.SetFontSize(1)
+    axisxact = axes.GetXAxisCaptionActor2D()
+    axisxact.SetCaptionTextProperty(propA)
+    
+    # The axes are positioned with a user transform
+    #transform = vtk.vtkTransform()
+    #transform.Translate(0.0, 0.0, 0.0)
+    #axes.SetUserTransform(transform)
+ 
+    # the actual text of the axis label can be changed:
+    axes.SetXAxisLabelText("");
+    axes.SetZAxisLabelText("");
+    axes.SetYAxisLabelText("");
+ 
+    renderer.AddActor(axes)
+
+
+    
+if args.cbar :
+    scalarBar = []
+    nbar = len(npdata)
+    step = 1.0/nbar
+    for i in range(0,len(npdata)):
+        # Adding the scalar bar color palette
+        scalarBar.append(vtkScalarBarActor())
+        scalarBar[i].SetTitle("")
+        scalarBar[i].SetLookupTable(color[i]);
+        scalarBar[i].SetOrientationToHorizontal();
+        scalarBar[i].GetPositionCoordinate().SetCoordinateSystemToNormalizedViewport()
+        scalarBar[i].SetPosition(i*step,0.02)
+        scalarBar[i].SetPosition2(step,0.04)
+        #print('%5.2f %5.2f' % (i*step,(i+1)*step-0.01) )
+        propT = vtkTextProperty()
+        propT.SetFontFamilyToArial()
+        propT.ItalicOff()
+        propT.BoldOn()
+        propL = vtkTextProperty()
+        propL.SetFontFamilyToArial()
+        propL.ItalicOff()
+        propL.BoldOff()
+        propL.SetFontSize(8)
+        scalarBar[i].SetTitleTextProperty(propT);
+        scalarBar[i].SetLabelTextProperty(propL);
+        scalarBar[i].SetLabelFormat("%5.2f")
+
+        renderer.AddActor(scalarBar[i])
+
+            
 # Set window
 window = vtk.vtkRenderWindow()                    
 # ... and set window size.
@@ -338,14 +335,14 @@ if args.nowin :
 # add renderer
 window.AddRenderer(renderer)
 
+# Mouse control
 interactor = vtk.vtkRenderWindowInteractor()
 #style = vtkInteractorStyleTrackballCamera();
 #interactor.SetInteractorStyle(style);
 if args.nowin == 0 :
     interactor.SetRenderWindow(window)
 
-# We'll zoom in a little by accessing the camera and invoking a "Zoom"
-# method on it.
+# Camera
 renderer.ResetCamera()
 camera = renderer.GetActiveCamera()
 camera.Zoom(args.zoom)

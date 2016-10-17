@@ -597,6 +597,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
   }
 
+
   // ----- z Zoom ---------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
   // using a dynamic palette that adjusts the base value to a certain color.
@@ -931,7 +932,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Vmax = -Vmin;
     
   }
-  
+
   // Extract contours from 2D histos
   TCanvas* c = new TCanvas("contours","Contour List",0,0,600,600);
   c->cd();
@@ -1113,7 +1114,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     PGlobals::CanvasPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,mMargin);
   else
     PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,pfactor,mMargin);
- 
+
   // Define the frames for plotting
   Int_t fonttype = 43;
   Int_t fontsize = 38;
@@ -1148,14 +1149,16 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     sprintf(name,"hFrame_%i",i);
     hFrame[i] = (TH2F*) gROOT->FindObject(name);
     if(hFrame[i]) delete hFrame[i];
-
+    
     if(hDen2D[0]) 
       hFrame[i] = (TH2F*) hDen2D[0]->Clone(name);
     else if(hDen2D[1])
       hFrame[i] = (TH2F*) hDen2D[1]->Clone(name);
-      
+    else if(hA2D)
+      hFrame[i] = (TH2F*) hA2D->Clone(name);
+         
     hFrame[i]->Reset();
-    
+
     Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
     Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
 
@@ -1249,8 +1252,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   lineEndNeutral->SetLineStyle(3);
   lineEndNeutral->SetLineWidth(2);
 
-
-
   // Usable accelerating field (calculated from the real slope):
   Double_t EzMaxUse;
   {
@@ -1271,7 +1272,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t zrmsInjBeam = -999;
   Float_t EInjBeam = -999;
   Float_t ESlopeInjBeam = -999;
-
 
   if(Nspecies>2) {
     if(hCur1D[2] && noIndex!=2) {
@@ -1303,7 +1303,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     } 
     
   }
-
 
   // Calculate blowout parameters
   Double_t maxcurr;
@@ -1559,6 +1558,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
 
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
+      }
 
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
@@ -1567,19 +1571,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[2]->Draw(drawopt);
       }
 
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	exPlasma->Draw();
-	hDen2D[0]->Draw(drawopt);
-      }
-
       // Beam driver.
       if(hDen2D[1] && noIndex!=1) {
 	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
       }
-
       
     } else if (Nspecies==4) {
 
@@ -1611,7 +1608,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
 
     }
-    
+
     if(hA2D && opt.Contains("laser")) {
       exLaser->Draw();
       Float_t aMax = hA2D->GetMaximum();
@@ -1688,6 +1685,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(hA2D && opt.Contains("laser")) {
       Ns++;
     }
+   
     pad[ip]->Update();
     y1 = pad[ip]->GetBottomMargin();
     y2 = 1 - pad[ip]->GetTopMargin();
@@ -1765,16 +1763,20 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	j++;
       }
     }
-    
+
     // 1D plots
     Float_t yaxismin  =  pad[ip]->GetUymin();
     Float_t yaxismax  =  pad[ip]->GetUymin() + 0.3*(pad[ip]->GetUymax() - pad[ip]->GetUymin()) - 0.00;
     //    TGaxis **axis = new TGaxis*[Nspecies];
     TGaxis *axis = NULL;
-    if(opt.Contains("den1d")) {
 
-      
+    if(opt.Contains("den1d")) {
       for(Int_t i=0;i<Nspecies;i++) {
+
+	if(i==noIndex) continue;
+	if(!hDen1D[i] || !hDen2D[i]) continue;
+	//if(!hDen1D[i] || i!=1) continue;
+
 	Float_t denmin = Min[i];
 	Float_t denmax = Max[i];
 	if(opt.Contains("logz")) {
@@ -1782,8 +1784,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  denmax = TMath::Log10(denmax);
 	}
 
-	if(i==noIndex) continue;
-	//if(!hDen1D[i] || i!=1) continue;
     
 	Float_t slope = (yaxismax - yaxismin)/(denmax - denmin);
     
@@ -1826,6 +1826,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       for(Int_t i=0;i<Nspecies;i++) {
 	if(i==noIndex) continue;
 	if(!hCur1D[i] || !hDen2D[i] || i==0 ) continue;
+
 	hCur1D[i]->ResetStats();
 
 	if(hCur1D[i]->GetMaximum()>maxCur) {
@@ -1864,9 +1865,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  
 	hCur1D[i]->Draw("same L");
 	
-      }
+      }	    
 
-      if(!opt.Contains("noaxis")) {
+      if(!opt.Contains("noaxis") && maxCur>0.0) {
 	
 	// Current axis
 	axis = new TGaxis(zPos,yaxismin,
@@ -1896,6 +1897,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       
     }
 
+         
     if(opt.Contains("ez1d")) {
       // Fit the E1D in the pad:
       Float_t y1 = yMin + yRange/80.;
