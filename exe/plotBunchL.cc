@@ -31,6 +31,26 @@
 using namespace std;
 using namespace H5;
 
+void FindLimits(TH1F *h,Double_t &xmin, Double_t &xmax, Double_t factor = 0.11) {
+  Double_t maxValue = h->GetBinContent(h->GetMaximumBin());
+  for(Int_t i=1;i<=h->GetNbinsX();i++) {
+    Double_t binValue = h->GetBinContent(i);
+    if(binValue>maxValue*factor) {
+      xmin = h->GetBinCenter(i);
+      break;
+    }
+  }
+  
+  for(Int_t i=h->GetNbinsX();i>0;i--) {
+    Double_t binValue = h->GetBinContent(i);
+    if(binValue>maxValue*factor) {
+      xmax = h->GetBinCenter(i);
+      break;
+    }
+  } 
+}
+
+
 int main(int argc,char *argv[]) {
   if(argc<=2) {
     printf("\n Usage: %s <input file> \n",argv[0]);
@@ -44,6 +64,10 @@ int main(int argc,char *argv[]) {
 
   // General options
   TString opt = "";
+
+  // Longitudinal range
+  Float_t zmin0 =  99999.;
+  Float_t zmax0 = -99999.;
   
   // Options for Spectrum
   Float_t Pmin =  99999.;
@@ -91,6 +115,12 @@ int main(int argc,char *argv[]) {
       char ss[6];
       sscanf(arg,"%6s%f",ss,&X);
       opt += "spoil";
+    } else if(arg.Contains("-zmin")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&zmin0);
+    } else if(arg.Contains("-zmax")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&zmax0);
     } else if(arg.Contains("-pmin")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmin);
@@ -340,7 +370,7 @@ int main(int argc,char *argv[]) {
   // ----------------------------------------------------------------------------------------------
 
   // Ranges
-  Float_t rangefactor = 0.3;
+  Float_t rangefactor = 0.2;
   
   x1BinMin = varMin[0];
   x1BinMax = varMax[0];
@@ -379,7 +409,74 @@ int main(int argc,char *argv[]) {
     p3Min = varMean[5] - 8;
     p3Max = varMean[5] + 8;
   }
+
+  TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
+  if(hScanX1) delete hScanX1;
+  hScanX1 = new TH1F("hScanX1","",x1Nbin,x1Min,x1Max);
+  TH1F *hScanX2 = (TH1F*) gROOT->FindObject("hScanX2");
+  if(hScanX2) delete hScanX2;
+  hScanX2 = new TH1F("hScanX2","",x2Nbin,x2Min,x2Max);
+  TH1F *hScanX3 = (TH1F*) gROOT->FindObject("hScanX3");
+  if(hScanX3) delete hScanX3;
+  hScanX3 = new TH1F("hScanX3","",x3Nbin,x3Min,x3Max);
   
+  TH1F *hScanP1 = (TH1F*) gROOT->FindObject("hScanP1");
+  if(hScanP1) delete hScanP1;
+  hScanP1 = new TH1F("hScanP1","",p1Nbin,p1Min,p1Max);
+  TH1F *hScanP2 = (TH1F*) gROOT->FindObject("hScanP2");
+  if(hScanP2) delete hScanP2;
+  hScanP2 = new TH1F("hScanP2","",p2Nbin,p2Min,p2Max);
+  TH1F *hScanP3 = (TH1F*) gROOT->FindObject("hScanP3");
+  if(hScanP3) delete hScanP3;
+  hScanP3 = new TH1F("hScanP3","",p3Nbin,p3Min,p3Max);
+
+  // Filling scan histos for auto ranging
+  
+  for(UInt_t i=0;i<Np;i++) {
+
+    hScanX1->Fill(var[0][i],Q/Np);
+    hScanP1->Fill(var[3][i],Q/Np);
+    hScanX2->Fill(var[1][i],Q/Np);
+    hScanP2->Fill(var[4][i],Q/Np);
+    hScanX3->Fill(var[2][i],Q/Np);
+    hScanP3->Fill(var[5][i],Q/Np);
+
+  }
+
+  // Set limits using Scan histograms (auto ranges)
+  Double_t peakFactor = 0.05;
+  Double_t rfactor = 0.5;
+
+  Double_t min, max;
+  FindLimits(hScanX1,min,max,peakFactor);
+  x1Min = min - rfactor*(max-min);
+  x1Max = max + rfactor*(max-min);
+
+  FindLimits(hScanX2,min,max,peakFactor);
+  x2Min = min - rfactor*(max-min);
+  x2Max = max + rfactor*(max-min);
+
+  FindLimits(hScanX3,min,max,peakFactor);
+  x3Min = min - rfactor*(max-min);
+  x3Max = max + rfactor*(max-min);
+
+  FindLimits(hScanP1,min,max,peakFactor);
+  p1Min = min - rfactor*(max-min);
+  p1Max = max + 2*rfactor*(max-min);
+
+  FindLimits(hScanP2,min,max,peakFactor);
+  p2Min = min - rfactor*(max-min);
+  p2Max = max + rfactor*(max-min);
+
+  FindLimits(hScanP3,min,max,peakFactor);
+  p3Min = min - rfactor*(max-min);
+  p3Max = max + rfactor*(max-min);
+
+  // Slices range
+  FindLimits(hScanX1,min,max,0.1);
+  x1BinMin = min;
+  x1BinMax = max;
+
   
   cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f ", x1Nbin, x1Min, x1Max) << endl;
   cout << Form(" p1 range (N = %i):  p1Min = %f  p1Max = %f ", p1Nbin, p1Min, p1Max) << endl;
@@ -431,6 +528,15 @@ int main(int argc,char *argv[]) {
   hP2X1->GetZaxis()->SetTitle("Charge [pC]");
   hP2X1->GetZaxis()->CenterTitle();
 
+  sprintf(hName,"hP3X1");
+  TH2F *hP3X1 =  (TH2F*) gROOT->FindObject(hName);
+  if(hP3X1) delete hP3X1;
+  hP3X1 = new TH2F(hName,"",x1Nbin,x1Min,x1Max,p3Nbin,p3Min,p3Max);
+  hP3X1->GetXaxis()->SetTitle("#zeta [#mum]");
+  hP3X1->GetYaxis()->SetTitle("p_{y}/mc");
+  hP3X1->GetZaxis()->SetTitle("Charge [pC]");
+  hP3X1->GetZaxis()->CenterTitle();
+
   sprintf(hName,"hP2X2");
   TH2F *hP2X2 =  (TH2F*) gROOT->FindObject(hName);
   if(hP2X2) delete hP2X2;
@@ -477,30 +583,6 @@ int main(int argc,char *argv[]) {
    // Filling histos
   cout << Form("\n 2. Filling general histograms ... ") ;
   
-  for(UInt_t i=0;i<Np;i++) {
-
-    hX1->Fill(var[0][i],Q/Np);
-    hP1->Fill(var[3][i],Q/Np);
-
-    hP1X1->Fill(var[0][i],var[3][i],Q/Np);
-  }
-
-
-  // Get slices interval
-  Float_t iMax = hX1->GetBinContent(hX1->GetMaximumBin());
-  for(Int_t i=1;i<=hX1->GetNbinsX();i++) {
-    if(hX1->GetBinContent(i)>0.05*iMax) {
-      x1BinMin = hX1->GetBinCenter(i);
-      break;
-    }
-  }
-  for(Int_t i=hX1->GetNbinsX();i>=0;i--) {
-    if(hX1->GetBinContent(i)>0.05*iMax) {
-      x1BinMax = hX1->GetBinCenter(i);
-      break;
-    }
-  }
-
 
   // Sliced quantities:
   // --------------------------------------------------------------------------
@@ -548,7 +630,21 @@ int main(int argc,char *argv[]) {
 
   
   for(UInt_t i=0;i<Np;i++) {
+    
+    hX1->Fill(var[0][i],Q/Np);
+    hP1->Fill(var[3][i],Q/Np);
+    hP1X1->Fill(var[0][i],var[3][i],Q/Np);
+    
+    hP2X1->Fill(var[0][i],var[4][i],Q/Np);
+    hP3X1->Fill(var[0][i],var[5][i],Q/Np);
 
+    hP2X2->Fill(var[1][i],var[4][i],Q/Np);
+    hP3X3->Fill(var[2][i],var[5][i],Q/Np);
+
+    hX2X1->Fill(var[0][i],var[1][i],Q/Np);
+    hX3X1->Fill(var[0][i],var[2][i],Q/Np);
+    hX3X2->Fill(var[1][i],var[2][i],Q/Np);
+    
     // Slices    
     if(var[0][i]<sBinLim[0] || var[0][i]>sBinLim[SNbin]) continue;
     Int_t iBin = -1;
@@ -562,18 +658,9 @@ int main(int argc,char *argv[]) {
     if(iBin<0) continue;
 
     // Projected emittance in the bunch range. (skip the tails to "match" the sliced ones)
-    hP2X1->Fill(var[0][i],var[4][i],Q/Np);
 
-    hP2X2->Fill(var[1][i],var[4][i],Q/Np);
     hP2X2sl[iBin]->Fill(var[1][i],var[4][i],Q/Np);
-
-    hP3X3->Fill(var[2][i],var[5][i],Q/Np);
     hP3X3sl[iBin]->Fill(var[2][i],var[5][i],Q/Np);
-
-    hX2X1->Fill(var[0][i],var[1][i],Q/Np);
-    hX3X1->Fill(var[0][i],var[2][i],Q/Np);
-    hX3X2->Fill(var[1][i],var[2][i],Q/Np);
-
     hP1sl[iBin]->Fill(var[3][i],Q/Np);   
     
   }
@@ -727,7 +814,20 @@ int main(int argc,char *argv[]) {
   // cout << Form("  xRms  = %7.3f   yRms  = %7.3f",xrms,yrms) << endl;
   // cout << Form("  Emittance = %7.3f",emit) << endl;
 
+  // Emittance units
+  Double_t emitUnit = PUnits::um;
+  string emitSUnit = "#mum";
+  emitx *= emitUnit;
+  emity *= emitUnit;
+  PUnits::BestUnit bemitSUnit(TMath::Sqrt(emity*emitx),"Emittance");
+  bemitSUnit.GetBestUnits(emitUnit,emitSUnit);
+  cout << bemitSUnit << endl;
+  
+  emitx /= emitUnit;
+  emity /= emitUnit;
 
+
+  
   cout << Form("\n 4. Calculating sliced quantities ... ") << endl ;
 
   TGraph *gemitX = NULL;
@@ -852,7 +952,7 @@ int main(int argc,char *argv[]) {
     // cout << Form("%i: %f %f %f %f %f",k+1,sxmean[k],symean[k],TMath::Sqrt(a2),TMath::Sqrt(b2),angle * 180. / PConst::pi) << endl; 
     sx_rms[k] = sxrms[k];
     spx_rms[k] = syrms[k];
-    semitx[k] = semit[k];
+    semitx[k] = semit[k] * PUnits::um / emitUnit;
 
     Double_t grel = hP1sl[k]->GetMean() * PUnits::GeV/PConst::ElectronMassE;
     sbetax[k] = beta * grel;
@@ -947,7 +1047,7 @@ int main(int argc,char *argv[]) {
 
     sy_rms[k] = sxrms[k];
     spy_rms[k] = syrms[k];
-    semity[k] = semit[k];
+    semity[k] = semit[k] * PUnits::um / emitUnit;
 
     Double_t grel = hP1sl[k]->GetMean() * PUnits::GeV/PConst::ElectronMassE;
     sbetay[k] = beta * grel;
@@ -989,13 +1089,14 @@ int main(int argc,char *argv[]) {
   // -----------------------------------------------------------------------------------
   
   cout << Form("\n 5. Preparing the graphs and plotting .. ") << endl << endl;
-  
+
   // Centering in the x1 mean
   if(opt.Contains("center")) {
     hX1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean);
     hP1X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,p1Nbin,p1Min,p1Max);
     hX2X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,x2Nbin,x2Min-x_mean,x2Max-x_mean);
     hP2X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,p2Nbin,p2Min,p2Max);
+    hP3X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,p3Nbin,p3Min,p3Max);
     hP2X2->SetBins(x2Nbin,x2Min-x_mean,x2Max-x_mean,p2Nbin,p2Min,p2Max);
     hP3X3->SetBins(x3Nbin,x3Min-y_mean,x3Max-y_mean,p3Nbin,p3Min,p3Max);
     hX3X1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean,x3Nbin,x3Min-y_mean,x3Max-y_mean);
@@ -1013,6 +1114,15 @@ int main(int argc,char *argv[]) {
     x1Min -= zmean;
     x1Max -= zmean;
     zmean = 0.0;
+
+    if(zmax0>zmin0) {
+      x1Min = zmin0;
+      x1Max = zmax0;
+    } else {
+      if(-x1Min>x1Max) x1Min = -x1Max;
+      else x1Max = -x1Min;
+      
+    }
 
     Float_t x2min = x2Min-x_mean;
     Float_t x2max = x2Max-x_mean;
@@ -1052,6 +1162,7 @@ int main(int argc,char *argv[]) {
 
     
     hP2X1->GetYaxis()->SetRangeUser(p2min,p2max);
+    hP3X1->GetYaxis()->SetRangeUser(p3min,p3max);
 
     hP2X2->GetXaxis()->SetRangeUser(x2min,x2max);
     hP2X2->GetYaxis()->SetRangeUser(p2min,p2max);
@@ -1100,7 +1211,6 @@ int main(int argc,char *argv[]) {
     
   }
   // ------
-
 
   // Set palette colors
   Int_t * sPalette = new Int_t[SNbin];
@@ -1154,9 +1264,8 @@ int main(int argc,char *argv[]) {
     // Double_t xMax = x1Min + (x1Max-x1Min) * 0.9;
     // Double_t xMin = x1Max;
     // And this for left:
-    Double_t xMin = hX1->GetXaxis()->GetXmin();
-    Double_t xMax = hX1->GetXaxis()->GetXmin() + (hX1->GetXaxis()->GetXmax()
-						 -hX1->GetXaxis()->GetXmin()) * 0.2;
+    Double_t xMin = x1Min;
+    Double_t xMax = x1Min + (x1Max-x1Min) * 0.2;
     Double_t EneMax = hP1->GetMaximum();
     // cout << Form("  EneMax = %f ", EneMax) << endl;
 
@@ -1176,8 +1285,6 @@ int main(int argc,char *argv[]) {
     delete yarray;
     delete xarray;
     //      }
-
-
 
     Bool_t autoscale = kFALSE;
     // if(hX1->GetMaximum()>10) {
@@ -1278,12 +1385,12 @@ int main(int argc,char *argv[]) {
     textInfo->AddText(ctext);
     sprintf(ctext,"#Delta#zeta = %5.2f #mum",zrms);
     textInfo->AddText(ctext);
-    //     sprintf(ctext,"#LTp_{z}#GT_{rms} = %5.2f GeV/c",pzrms);
+    // sprintf(ctext,"#LTp_{z}#GT_{rms} = %5.2f GeV/c",pzrms);
     sprintf(ctext,"#Delta#gamma/#gamma = %4.1f %%",100*pzrms/pzmean);
     textInfo->AddText(ctext);
-    sprintf(ctext,"#varepsilon_{x} = %5.2f #mum",emitx);
+    sprintf(ctext,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
     textInfo->AddText(ctext);
-    sprintf(ctext,"#varepsilon_{y} = %5.2f #mum",emity);
+    sprintf(ctext,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
     textInfo->AddText(ctext);
     sprintf(ctext,"#beta_{x} = %5.0f mm",1E-3*betax);
     textInfo->AddText(ctext);
@@ -1363,22 +1470,11 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[1]->GetYaxis()->SetRangeUser(hP1X1->GetYaxis()->GetXmin(),hP1X1->GetYaxis()->GetXmax());
-
+    hFrame[1]->SetBins(x1Nbin,x1Min,x1Max);
+    hFrame[1]->GetYaxis()->SetRangeUser(p1Min,p1Max);
     hFrame[1]->GetYaxis()->SetTitle("p_{z} [GeV/c]");
+    hFrame[1]->Draw("axis");
     
-    hFrame[1]->Draw();
-
-    TLine lZmean(zmean,hP1X1->GetYaxis()->GetXmin(),zmean,hP1X1->GetYaxis()->GetXmax());
-    lZmean.SetLineColor(kGray+2);
-    lZmean.SetLineStyle(2);
-    lZmean.Draw();
-
-    TLine lPmean(hP1X1->GetXaxis()->GetXmin(),pzmean,hP1X1->GetXaxis()->GetXmax(),pzmean);
-    lPmean.SetLineColor(kGray+2);
-    lPmean.SetLineStyle(2);
-    lPmean.Draw();
-
     // 2D histogram z range
     Double_t dmax = hP1X1->GetMaximum();
     Double_t dmin = 0.0;
@@ -1396,6 +1492,17 @@ int main(int argc,char *argv[]) {
 
     //hP1->Draw("C");
 
+    TLine lZmean(zmean,p1Min,zmean,p1Max);
+    lZmean.SetLineColor(kGray+2);
+    lZmean.SetLineStyle(2);
+    lZmean.Draw();
+
+    TLine lPmean(x1Min,pzmean,x1Max,pzmean);
+    lPmean.SetLineColor(kGray+2);
+    lPmean.SetLineStyle(2);
+    lPmean.Draw();
+
+    
     gP1left->SetLineWidth(2);
     gP1left->Draw("F");
     gP1left->Draw("L");
@@ -1487,16 +1594,15 @@ int main(int argc,char *argv[]) {
       Leg->AddEntry(hX1  ,"Current [kA]","L");
     // Leg->AddEntry(gErms,"Energy spread (GeV)","PL");
     Leg->AddEntry(gErms,"Energy spread [0.1%]","PL");
-    Leg->AddEntry(gemitX,"Emittance_{x} [#mum]","PL");
-    Leg->AddEntry(gemitY,"Emittance_{y} [#mum]","PL");
+    Leg->AddEntry(gemitX,Form("Emittance_{n,x} [%s]",emitSUnit.c_str()),"PL");
+    Leg->AddEntry(gemitY,Form("Emittance_{n,y} [%s]",emitSUnit.c_str()),"PL");
     //Leg->AddEntry(gYrms,"Bunch width [#mum]","PL");
 
 
+    hFrame[0]->SetBins(x1Nbin,x1Min,x1Max);
     hFrame[0]->GetYaxis()->SetRangeUser(0.0,1.1*yMax);
-
     hFrame[0]->GetXaxis()->SetTitle("#zeta [#mum]");
-
-    hFrame[0]->Draw();
+    hFrame[0]->Draw("axis");
 
     hX1->GetYaxis()->SetNdivisions(503);
     hX1->SetLineWidth(2);
@@ -1622,7 +1728,7 @@ int main(int argc,char *argv[]) {
     tMargin = 0.04;
     factor = 1.0;  
     txoffset = 2.0;  
-    PGlobals::CanvasAsymPartition(C1,NPad1,lMargin,rMargin,bMargin,tMargin,factor);
+    PGlobals::CanvasAsymPartition(C1,NPad1,lMargin,rMargin,bMargin,tMargin,factor,0.028);
 
     for(Int_t i=0;i<NPad1;i++) {
       char name[16];
@@ -1677,9 +1783,8 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[0]->GetYaxis()->SetRangeUser(x2Min,x2Max);
+    hFrame[0]->SetBins(x1Nbin,x1Min,x1Max,x2Nbin,x2Min,x2Max);
     hFrame[0]->GetYaxis()->SetTitle(hX2X1->GetYaxis()->GetTitle());
-    hFrame[0]->GetXaxis()->SetRangeUser(x1Min,x1Max);
     hFrame[0]->GetXaxis()->SetTitle(hX2X1->GetXaxis()->GetTitle());
     hFrame[0]->Draw("axis");
     
@@ -1748,6 +1853,16 @@ int main(int argc,char *argv[]) {
     // sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
     // textInfoX2X1->AddText(text);
     textInfoX2X1->Draw();
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			     gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+    
+    gPad->RedrawAxis(); 
+
     
     C1->cd(0);
     pad[1]->Draw();
@@ -1759,9 +1874,8 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[1]->GetYaxis()->SetRangeUser(x3Min,x3Max);
+    hFrame[1]->SetBins(x1Nbin,x1Min,x1Max,x3Nbin,x3Min,x3Max);
     hFrame[1]->GetYaxis()->SetTitle(hX3X1->GetYaxis()->GetTitle());
-    hFrame[1]->GetXaxis()->SetRangeUser(x1Min,x1Max);
     hFrame[1]->GetXaxis()->SetTitle(hX3X1->GetXaxis()->GetTitle());
     hFrame[1]->Draw("axis");
     
@@ -1831,6 +1945,16 @@ int main(int argc,char *argv[]) {
     // sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
     // textInfoX3X1->AddText(text);
     textInfoX3X1->Draw();
+
+    TBox *lFrame2 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			     gPad->GetUxmax(), gPad->GetUymax());
+    lFrame2->SetFillStyle(0);
+    lFrame2->SetLineColor(PGlobals::frameColor);
+    lFrame2->SetLineWidth(PGlobals::frameWidth);
+    lFrame2->Draw();
+
+    gPad->RedrawAxis(); 
+
     
     C1->cd();
     
@@ -1908,9 +2032,8 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hFrame[0]->GetYaxis()->SetRangeUser(x3Min,x3Max);
+    hFrame[0]->SetBins(x2Nbin,x2Min,x2Max,x3Nbin,x3Min,x3Max);
     hFrame[0]->GetYaxis()->SetTitle(hX3X2->GetYaxis()->GetTitle());
-    hFrame[0]->GetXaxis()->SetRangeUser(x2Min,x2Max);
     hFrame[0]->GetXaxis()->SetTitle(hX3X2->GetXaxis()->GetTitle());
     hFrame[0]->Draw("axis");
 
@@ -1988,7 +2111,11 @@ int main(int argc,char *argv[]) {
     hP2X2->GetXaxis()->SetLabelSize(fontsize+2);
     hP2X2->GetXaxis()->SetLabelOffset(lxoffset);
     hP2X2->GetXaxis()->CenterTitle();
-    hP2X2->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+    hP2X2->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
+
+    TH2F *hFrP2X2 = (TH2F*) hP2X2->Clone("hFrP2X2");
+    hFrP2X2->Reset();
+    hFrP2X2->SetBins(x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
 
     C2->cd(0);
 
@@ -1998,9 +2125,8 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hP2X2->GetXaxis()->SetRangeUser(x2Min,x2Max);
-    hP2X2->GetYaxis()->SetRangeUser(p2Min,p2Max);
-    hP2X2->Draw(drawopt);
+    hFrP2X2->Draw("axis");
+    hP2X2->Draw(drawopt + "same");
 
     TLine lXmean(x_mean,p2Min,x_mean,p2Max);
     lXmean.SetLineColor(kGray+2);
@@ -2030,7 +2156,7 @@ int main(int argc,char *argv[]) {
     textStatInt->AddText(text);
     sprintf(text,"#Deltap_{x}/mc = %5.2f",pxrms);
     textStatInt->AddText(text);
-    sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
+    sprintf(text,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
     textStatInt->AddText(text);
     sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
     textStatInt->AddText(text);
@@ -2069,6 +2195,10 @@ int main(int argc,char *argv[]) {
     hP3X3->GetXaxis()->CenterTitle();
     hP3X3->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
 
+    TH2F *hFrP3X3 = (TH2F*) hP3X3->Clone("hFrP3X3");
+    hFrP3X3->Reset();
+    hFrP3X3->SetBins(x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
+    
     C3->cd(0);
 
     if(opt.Contains("logz")) {
@@ -2077,9 +2207,8 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    hP3X3->GetXaxis()->SetRangeUser(x3Min,x3Max);
-    hP3X3->GetYaxis()->SetRangeUser(p3Min,p3Max);
-    hP3X3->Draw(drawopt);
+    hFrP3X3->Draw("axis");
+    hP3X3->Draw(drawopt + "same");
     
     TLine lYmean(y_mean,p3Min,y_mean,p3Max);
     lYmean.SetLineColor(kGray+2);
@@ -2109,7 +2238,7 @@ int main(int argc,char *argv[]) {
     textStatInt->AddText(text);
     sprintf(text,"#Deltap_{y}/mc = %5.2f",pyrms);
     textStatInt->AddText(text);
-    sprintf(text,"#varepsilon_{y} = %5.2f #mum",emity);
+    sprintf(text,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
     textStatInt->AddText(text);
     sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
     textStatInt->AddText(text);
@@ -2154,7 +2283,12 @@ int main(int argc,char *argv[]) {
     hP2X1->GetXaxis()->SetLabelSize(fontsize+2);
     hP2X1->GetXaxis()->SetLabelOffset(lxoffset);
     hP2X1->GetXaxis()->CenterTitle();
-    hP2X1->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+    hP2X1->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
+
+    TH2F *hFrP2X1 = (TH2F*) hP2X1->Clone("hFrP2X1");
+    hFrP2X1->Reset();
+    hFrP2X1->SetBins(x1Nbin,x1Min,x1Max,p2Nbin,p2Min,p2Max);
+
 
     C4->cd(0);
 
@@ -2164,9 +2298,8 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(0);
     }
 
-    // hP2X1->GetXaxis()->SetRangeUser(x1Min,x1Max);
-    hP2X1->GetYaxis()->SetRangeUser(p2Min,p2Max);
-    hP2X1->Draw(drawopt);
+    hFrP2X1->Draw("axis");
+    hP2X1->Draw(drawopt + "same");
 
     TLine lZmean3(zmean,p2Min,zmean,p2Max);
     lZmean3.SetLineColor(kGray+2);
@@ -2189,7 +2322,7 @@ int main(int argc,char *argv[]) {
     textStatInt->AddText(text);
     sprintf(text,"#Deltap_{x}/mc = %5.2f",pxrms);
     textStatInt->AddText(text);
-    sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
+    sprintf(text,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
     textStatInt->AddText(text);
     sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
     textStatInt->AddText(text);
@@ -2201,7 +2334,89 @@ int main(int argc,char *argv[]) {
     fOutName4.Append("-p2x1");
     PGlobals::imgconv(C4,fOutName4,opt);
     
+
+    // p3-x1
+    sprintf(cName,"C5");     
+    TCanvas *C5 = (TCanvas*) gROOT->FindObject(cName);
+    if(C5==NULL) C5 = new TCanvas("C5","p2-x1",sizex,sizey);
+    C5->cd();
+    C5->Clear();
+
+    lMargin = 0.15;
+    rMargin = 0.18;
+    bMargin = 0.15;
+    tMargin = 0.04;
+    factor = 1.0;  
+    txoffset = 1.2;  
+
+    // Format for y axis
+    hP3X1->GetYaxis()->SetTitleFont(fonttype);
+    hP3X1->GetYaxis()->SetTitleSize(tfontsize);
+    hP3X1->GetYaxis()->SetTitleOffset(tyoffset);
+    hP3X1->GetYaxis()->SetLabelFont(fonttype);
+    hP3X1->GetYaxis()->SetLabelSize(fontsize);
+    hP3X1->GetYaxis()->SetLabelOffset(lyoffset);
+    hP3X1->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
+    hP3X1->GetYaxis()->CenterTitle();
     
+    // Format for x axis
+    hP3X1->GetXaxis()->SetTitleFont(fonttype);
+    hP3X1->GetXaxis()->SetTitleSize(tfontsize+2);
+    hP3X1->GetXaxis()->SetTitleOffset(txoffset);
+    hP3X1->GetXaxis()->SetLabelFont(fonttype);
+    hP3X1->GetXaxis()->SetLabelSize(fontsize+2);
+    hP3X1->GetXaxis()->SetLabelOffset(lxoffset);
+    hP3X1->GetXaxis()->CenterTitle();
+    hP3X1->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
+
+    TH2F *hFrP3X1 = (TH2F*) hP3X1->Clone("hFrP3X1");
+    hFrP3X1->Reset();
+    hFrP3X1->SetBins(x1Nbin,x1Min,x1Max,p2Nbin,p2Min,p2Max);
+
+    C5->cd(0);
+
+    if(opt.Contains("logz")) {
+      gPad->SetLogz(1);
+    } else {
+      gPad->SetLogz(0);
+    }
+
+    hFrP3X1->Draw("axis");
+    hP3X1->Draw(drawopt + "same");
+
+    TLine lZmean4(zmean,p3Min,zmean,p3Max);
+    lZmean4.SetLineColor(kGray+2);
+    lZmean4.SetLineStyle(2);
+    lZmean4.Draw();
+    
+    TLine lPxmean3(x1Min,pymean,x1Max,pymean);
+    lPxmean3.SetLineColor(kGray+2);
+    lPxmean3.SetLineStyle(2);
+    lPxmean3.Draw();
+
+    textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
+    PGlobals::SetPaveTextStyle(textStatInt,12); 
+    textStatInt->SetTextColor(kGray+3);
+    textStatInt->SetTextFont(42);
+
+    sprintf(text,"Q = %5.1f pC",Charge);
+    textStatInt->AddText(text);
+    sprintf(text,"#Delta#zeta = %5.2f #mum",zrms);
+    textStatInt->AddText(text);
+    sprintf(text,"#Deltap_{y}/mc = %5.2f",pyrms);
+    textStatInt->AddText(text);
+    sprintf(text,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
+    textStatInt->AddText(text);
+    sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
+    textStatInt->AddText(text);
+    textStatInt->Draw();
+    
+    
+    TString fOutName5 = ifile;
+    fOutName5.ReplaceAll(".txt","");
+    fOutName5.Append("-p3x1");
+    PGlobals::imgconv(C5,fOutName5,opt);
+
     // Slices plots
     {
       gStyle->cd();
@@ -2254,14 +2469,19 @@ int main(int argc,char *argv[]) {
       hP2X2->GetZaxis()->SetTitleSize(tfontsize);
       hP2X2->GetZaxis()->SetTitleOffset(tzoffset);
       hP2X2->GetZaxis()->SetTickLength(tylength);
-      hP2X2->GetZaxis()->CenterTitle();    
+      hP2X2->GetZaxis()->CenterTitle();
+
+      hFrP2X2 = (TH2F*) hP2X2->Clone("hFrP2X2");
+      hFrP2X2->Reset();
+      hFrP2X2->SetBins(x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
 
       CA4->cd(1);
 
       gPad->SetTopMargin(0.02);
       gPad->SetBottomMargin(0.22);
 
-      hP2X2->Draw(drawopt);
+      hFrP2X2->Draw("axis");
+      hP2X2->Draw(drawopt + "same");
       
       lXmean.Draw();
       lPxmean.Draw();
@@ -2290,7 +2510,7 @@ int main(int argc,char *argv[]) {
       textStatInt->AddText(text);
       sprintf(text,"#Deltap_{x}/mc = %5.2f",pxrms);
       textStatInt->AddText(text);
-      sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
+      sprintf(text,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
       textStatInt->AddText(text);
       sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
       textStatInt->AddText(text);
@@ -2340,7 +2560,8 @@ int main(int argc,char *argv[]) {
 	hP2X2sl[k]->GetZaxis()->SetTickLength(tylength);
 	hP2X2sl[k]->GetZaxis()->CenterTitle();    
 
-	hP2X2sl[k]->Draw(drawopt);
+	hFrP2X2->Draw("axis");
+	hP2X2sl[k]->Draw(drawopt + "same");
 
 	slXmean[k] = new TLine(hP2X2sl[k]->GetMean(1),p2Min,hP2X2sl[k]->GetMean(1),p2Max);
 	slXmean[k]->SetLineColor(kGray+2);
@@ -2374,7 +2595,7 @@ int main(int argc,char *argv[]) {
 	textStat[k]->AddText(text);
 	sprintf(text,"#Deltap_{x}/mc = %5.2f",spx_rms[k]);
 	textStat[k]->AddText(text);
-	sprintf(text,"#varepsilon_{x} = %5.2f #mum",semitx[k]);
+	sprintf(text,"#varepsilon_{n,x} = %5.2f %s",semitx[k],emitSUnit.c_str());	
 	textStat[k]->AddText(text);
 	sprintf(text,"#beta_{x} = %5.2f mm",1E-3*sbetax[k]);
 	textStat[k]->AddText(text);
@@ -2444,14 +2665,17 @@ int main(int argc,char *argv[]) {
       hP3X3->GetZaxis()->SetTickLength(tylength);
       hP3X3->GetZaxis()->CenterTitle();    
 
+      hFrP3X3 = (TH2F*) hP3X3->Clone("hFrP3X3");
+      hFrP3X3->Reset();
+      hFrP3X3->SetBins(x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
       
       CA5->cd(1);
-      hP3X3->Draw(drawopt);
 
       gPad->SetTopMargin(0.02);
       gPad->SetBottomMargin(0.22);
 
-      hP3X3->Draw(drawopt);
+      hFrP3X3->Draw("axis");
+      hP3X3->Draw(drawopt + "same");
 
       lYmean.Draw();
       lPymean.Draw();
@@ -2481,7 +2705,7 @@ int main(int argc,char *argv[]) {
       textStatInt->AddText(text);
       sprintf(text,"#Deltap_{y}/mc = %5.2f",pyrms);
       textStatInt->AddText(text);
-      sprintf(text,"#varepsilon_{y} = %5.2f #mum",emity);
+      sprintf(text,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
       textStatInt->AddText(text);
       sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
       textStatInt->AddText(text);
@@ -2532,7 +2756,8 @@ int main(int argc,char *argv[]) {
 	hP3X3sl[k]->GetZaxis()->SetTickLength(tylength);
 	hP3X3sl[k]->GetZaxis()->CenterTitle();    
 
-	hP3X3sl[k]->Draw(drawopt);
+	hFrP3X3->Draw("axis");
+	hP3X3sl[k]->Draw(drawopt + "same");
 	
 	slXmean2[k] = new TLine(hP3X3sl[k]->GetMean(1),p3Min,hP3X3sl[k]->GetMean(1),p3Max);
 	slXmean2[k]->SetLineColor(kGray+2);
@@ -2567,7 +2792,7 @@ int main(int argc,char *argv[]) {
 	textStat[k]->AddText(text);
 	sprintf(text,"#Deltap_{y}/mc = %5.2f",spy_rms[k]);
 	textStat[k]->AddText(text);
-	sprintf(text,"#varepsilon_{y} = %5.2f #mum",semity[k]);
+	sprintf(text,"#varepsilon_{n,y} = %5.2f %s",semity[k],emitSUnit.c_str());
 	textStat[k]->AddText(text);
 	sprintf(text,"#beta_{y} = %5.2f mm",1E-3*sbetay[k]);
 	textStat[k]->AddText(text);

@@ -77,6 +77,7 @@ PUnits::UnitsTable::UnitsTable()
   AddUnit("Hectonanometer", "10^{2} nm", "Emittance", 100*nanometer);
   AddUnit("Micrometer", "#mum", "Emittance", micrometer);
   AddUnit("Decamicrometer", "10 #mum", "Emittance", 10*micrometer);
+  AddUnit("Hectamicrometer", "100 #mum", "Emittance", 100*micrometer);
   AddUnit("Millimeter", "mm", "Emittance", millimeter);
   AddUnit("Centimeter", "cm", "Emittance", centimeter);
   AddUnit("Meter",      "m",  "Emittance", meter);
