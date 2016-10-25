@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Setting up Root environment....
-export ROOTSYS=/homec/hhh23/hhh231/plasma/software/root-6.06.04
+export ROOTSYS=/homec/hhh23/hhh231/plasma/software/root-6.06.08
 export LD_LIBRARY_PATH=$ROOTSYS/lib:$LD_LIBRARY_PATH
 export PATH=$ROOTSYS/bin:$PATH
 
