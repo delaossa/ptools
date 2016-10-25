@@ -4,7 +4,7 @@
 setenv SOFT /afs/desy.de/group/fla/plasma/data002/SOFTWARE    
     
 # Setting up Root environment....
-setenv ROOTSYS $SOFT/root-6.06.04
+setenv ROOTSYS $SOFT/root-6.06.08
 setenv LD_LIBRARY_PATH $ROOTSYS/lib:$LD_LIBRARY_PATH
 setenv PATH $ROOTSYS/bin:$PATH
 

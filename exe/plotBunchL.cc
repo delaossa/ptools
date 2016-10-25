@@ -50,6 +50,17 @@ void FindLimits(TH1F *h,Double_t &xmin, Double_t &xmax, Double_t factor = 0.11) 
   } 
 }
 
+void DeleteOverflows(TH2 *h) {
+  Int_t Nx = h->GetXaxis()->GetNbins();
+  Int_t Ny = h->GetYaxis()->GetNbins();
+  for(Int_t i=0;i<=Nx+1;i++) {
+    for(Int_t j=0;j<=Ny+1;j++) {
+      if(i == 0 || j == 0 || i == Nx+1 || j == Ny+1)
+	h->SetBinContent(i,j,0.0);
+    }
+  }
+
+}
 
 int main(int argc,char *argv[]) {
   if(argc<=2) {
@@ -149,12 +160,12 @@ int main(int argc,char *argv[]) {
   // Float_t dx3 = 0.04;
 
   // Bining, intervals, labels, etc.
-  Int_t x1Nbin = 100;
-  Int_t p1Nbin = 100;
-  Int_t x2Nbin = 100;
-  Int_t p2Nbin = 100;
-  Int_t x3Nbin = 100;
-  Int_t p3Nbin = 100;
+  Int_t x1Nbin = 120;
+  Int_t p1Nbin = 120;
+  Int_t x2Nbin = 120;
+  Int_t p2Nbin = 120;
+  Int_t x3Nbin = 120;
+  Int_t p3Nbin = 120;
     
   // Slices
   Int_t SNbin = 40;
@@ -664,6 +675,17 @@ int main(int argc,char *argv[]) {
     hP1sl[iBin]->Fill(var[3][i],Q/Np);   
     
   }
+
+  //
+  DeleteOverflows(hP1X1);
+  DeleteOverflows(hX2X1);
+  DeleteOverflows(hX3X1);
+  DeleteOverflows(hP2X1);
+  DeleteOverflows(hP3X1);
+  DeleteOverflows(hX3X2);
+  DeleteOverflows(hP2X2);
+  DeleteOverflows(hP3X3);
+  
   
   // Integrated long. emittance:
   cout << Form("\n 3. Calculating integrated quantities ... ") ;
@@ -806,7 +828,6 @@ int main(int argc,char *argv[]) {
   ellipP3X3->SetLineColor(2);
   ellipP3X3->SetLineWidth(1);
 
-  
   // Charge  
   Double_t Charge = hX1->Integral();
   
@@ -819,10 +840,10 @@ int main(int argc,char *argv[]) {
   string emitSUnit = "#mum";
   emitx *= emitUnit;
   emity *= emitUnit;
-  PUnits::BestUnit bemitSUnit(TMath::Sqrt(emity*emitx),"Emittance");
+  //PUnits::BestUnit bemitSUnit(TMath::Sqrt(emity*emitx),"Emittance");
+  PUnits::BestUnit bemitSUnit(emity,"Emittance");
   bemitSUnit.GetBestUnits(emitUnit,emitSUnit);
-  cout << bemitSUnit << endl;
-  
+    
   emitx /= emitUnit;
   emity /= emitUnit;
 
@@ -956,6 +977,8 @@ int main(int argc,char *argv[]) {
 
     Double_t grel = hP1sl[k]->GetMean() * PUnits::GeV/PConst::ElectronMassE;
     sbetax[k] = beta * grel;
+
+    DeleteOverflows(hP2X2sl[k]);
   }
 
   TEllipse **sellipP3X3 = new TEllipse*[SNbin];
@@ -1052,7 +1075,8 @@ int main(int argc,char *argv[]) {
     Double_t grel = hP1sl[k]->GetMean() * PUnits::GeV/PConst::ElectronMassE;
     sbetay[k] = beta * grel;
 
-    
+    DeleteOverflows(hP3X3sl[k]);
+
   }
 
   
@@ -1369,7 +1393,7 @@ int main(int argc,char *argv[]) {
     sprintf(ctext,"Q = %5.1f pC", Charge);
     textCharge->AddText(ctext);
 
-    TPaveText *textMom = new TPaveText(0.55,0.03,0.80,0.13,"NDC");
+    TPaveText *textMom = new TPaveText(0.55,0.07,0.80,0.17,"NDC");
     PGlobals::SetPaveTextStyle(textMom,32); 
     textMom->SetTextColor(kGray+3);
     textMom->SetTextFont(62);
@@ -1409,7 +1433,7 @@ int main(int argc,char *argv[]) {
     Double_t bMargin = 0.15;
     Double_t tMargin = 0.04;
     Double_t factor = 1.0;    
-    PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor);
+    PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor,0.028);
 
     // Define the frames for plotting
     Int_t fonttype = 43;
@@ -1419,8 +1443,8 @@ int main(int argc,char *argv[]) {
     Double_t lxoffset = 0.02;
     Double_t tyoffset = 1.3;
     Double_t lyoffset = 0.01;
-    Double_t tylength = 0.02;
-    Double_t txlength = 0.04;
+    Double_t tylength = 0.015;
+    Double_t txlength = 0.025;
     for(Int_t i=0;i<NPad;i++) {
       char name[16];
       sprintf(name,"pad_%i",i);
@@ -1482,15 +1506,19 @@ int main(int argc,char *argv[]) {
 
     hP1X1->GetZaxis()->CenterTitle();
     hP1X1->GetZaxis()->SetTitleFont(fonttype);
-
+    hP1X1->GetZaxis()->SetTitleOffset(tyoffset);
+    hP1X1->GetZaxis()->SetTitleSize(tfontsize);
+    hP1X1->GetZaxis()->SetLabelFont(fonttype);
+    hP1X1->GetZaxis()->SetLabelSize(fontsize);
+    if(opt.Contains("logz")) 
+      hP1X1->GetZaxis()->SetLabelOffset(0);
+    else
+      hP1X1->GetZaxis()->SetLabelOffset(lyoffset);
+    
+    hP1X1->GetZaxis()->SetTickLength(0.01);    
+    
     hP1X1->Draw(drawopts);
-    // hP1X1->SetContour(20);
-    // hP1X1->Draw("contzsame");
-    // hP1X1prof->SetMarkerStyle(1);
-    // hP1X1prof->SetLineWidth(2);
-    // hP1X1prof->Draw("zsame");
 
-    //hP1->Draw("C");
 
     TLine lZmean(zmean,p1Min,zmean,p1Max);
     lZmean.SetLineColor(kGray+2);
@@ -1509,28 +1537,30 @@ int main(int argc,char *argv[]) {
 
 
     gPad->Update();
-
     TPaletteAxis *palette = (TPaletteAxis*)hP1X1->GetListOfFunctions()->FindObject("palette");
     if(palette) {
       Double_t y1 = gPad->GetBottomMargin();
       Double_t y2 = 1 - gPad->GetTopMargin();
       Double_t x1 = 1 - gPad->GetRightMargin();
-      palette->SetY2NDC(y2 - 0.04);
-      palette->SetY1NDC(y1 + 0.04);
-      palette->SetX1NDC(x1 + 0.01);
-      palette->SetX2NDC(x1 + 0.04);
-      palette->SetTitleOffset(tyoffset);
-      palette->SetTitleSize(tfontsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(fontsize);
-      if(opt.Contains("logz")) 
-	palette->SetLabelOffset(0);
-      else
-	palette->SetLabelOffset(lyoffset);
+      
+      Double_t x1b = x1 + 0.01;
+      Double_t x2b = x1 + 0.035;
+      Double_t y1b = y1 + 0.03;
+      Double_t y2b = y2 - 0.03;
+      palette->SetX1NDC(x1b);
+      palette->SetY1NDC(y1b);
+      palette->SetX2NDC(x2b);
+      palette->SetY2NDC(y2b);
       palette->SetBorderSize(2);
       palette->SetLineColor(1);
+      
+      TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
     }
-
+    
 
     if(opt.Contains("notext")) {
       cout << opt;
@@ -1555,9 +1585,14 @@ int main(int argc,char *argv[]) {
     textLabel[1]->AddText(sLabels[1]);
     textLabel[1]->Draw();
 
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			    gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+        
     gPad->RedrawAxis(); 
-
-
 
     // Bottom plot -----------------------------------------
     C->cd(0);
@@ -1668,6 +1703,8 @@ int main(int argc,char *argv[]) {
    
     Leg->Draw();
 
+    gPad->Update();
+    
     y1 = gPad->GetBottomMargin();
     y2 = 1 - gPad->GetTopMargin();
     x1 = gPad->GetLeftMargin();
@@ -1681,6 +1718,13 @@ int main(int argc,char *argv[]) {
     textLabel[0]->AddText(sLabels[0]);
     textLabel[0]->Draw();
 
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+    
     gPad->RedrawAxis(); 
 
     gPad->Update();
@@ -1807,7 +1851,30 @@ int main(int argc,char *argv[]) {
     lX2mean.Draw();
     
     gPad->Update();
-    
+    palette = (TPaletteAxis*)hX2X1cl->GetListOfFunctions()->FindObject("palette");
+    if(palette) {
+      Double_t y1 = gPad->GetBottomMargin();
+      Double_t y2 = 1 - gPad->GetTopMargin();
+      Double_t x1 = 1 - gPad->GetRightMargin();
+
+      Double_t x1b = x1 + 0.01;
+      Double_t x2b = x1 + 0.035;
+      Double_t y1b = y1 + 0.03;
+      Double_t y2b = y2 - 0.03;
+      palette->SetX1NDC(x1b);
+      palette->SetY1NDC(y1b);
+      palette->SetX2NDC(x2b);
+      palette->SetY2NDC(y2b);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+	  
+      TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+    }
+
     y1 = gPad->GetBottomMargin();
     y2 = 1 - gPad->GetTopMargin();
     x1 = gPad->GetLeftMargin();
@@ -1815,28 +1882,7 @@ int main(int argc,char *argv[]) {
     yrange = y2-y1; 
     xrange = x2-x1; 
 
-    palette = (TPaletteAxis*)hX2X1cl->GetListOfFunctions()->FindObject("palette");
-    if(palette) {
-      Double_t y1 = gPad->GetBottomMargin();
-      Double_t y2 = 1 - gPad->GetTopMargin();
-      Double_t x1 = 1 - gPad->GetRightMargin();
-      palette->SetY2NDC(y2 - 0.04);
-      palette->SetY1NDC(y1 + 0.04);
-      palette->SetX1NDC(x1 + 0.01);
-      palette->SetX2NDC(x1 + 0.04);
-      palette->SetTitleOffset(tyoffset);
-      palette->SetTitleSize(tfontsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(fontsize);
-      if(opt.Contains("logz")) 
-	palette->SetLabelOffset(0);
-      else
-	palette->SetLabelOffset(lyoffset);
-      palette->SetBorderSize(2);
-      palette->SetLineColor(1);
-    }
-
-    TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.30*yrange,x1+0.20*xrange,y2-0.05*yrange,"NDC");
+    TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.40*yrange,x1+0.20*xrange,y2-0.05*yrange,"NDC");
     PGlobals::SetPaveTextStyle(textInfoX2X1,12); 
     textInfoX2X1->SetTextColor(kGray+3);
     textInfoX2X1->SetTextFont(42);
@@ -1848,14 +1894,14 @@ int main(int argc,char *argv[]) {
     textInfoX2X1->AddText(text);
     sprintf(text,"#Deltax = %5.2f #mum",x_rms);
     textInfoX2X1->AddText(text);
-    // sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
-    // textInfoX2X1->AddText(text);
-    // sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
-    // textInfoX2X1->AddText(text);
+    sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
+    textInfoX2X1->AddText(text);
+    sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
+    textInfoX2X1->AddText(text);
     textInfoX2X1->Draw();
 
-    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			     gPad->GetUxmax(), gPad->GetUymax());
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
     lFrame->SetFillStyle(0);
     lFrame->SetLineColor(PGlobals::frameColor);
     lFrame->SetLineWidth(PGlobals::frameWidth);
@@ -1899,6 +1945,29 @@ int main(int argc,char *argv[]) {
 
     
     gPad->Update();
+    palette = (TPaletteAxis*)hX3X1cl->GetListOfFunctions()->FindObject("palette");
+    if(palette) {
+      Double_t y1 = gPad->GetBottomMargin();
+      Double_t y2 = 1 - gPad->GetTopMargin();
+      Double_t x1 = 1 - gPad->GetRightMargin();
+
+      Double_t x1b = x1 + 0.01;
+      Double_t x2b = x1 + 0.035;
+      Double_t y1b = y1 + 0.03;
+      Double_t y2b = y2 - 0.03;
+      palette->SetX1NDC(x1b);
+      palette->SetY1NDC(y1b);
+      palette->SetX2NDC(x2b);
+      palette->SetY2NDC(y2b);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+	  
+      TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+    }
 
     y1 = gPad->GetBottomMargin();
     y2 = 1 - gPad->GetTopMargin();
@@ -1907,29 +1976,8 @@ int main(int argc,char *argv[]) {
     yrange = y2-y1; 
     xrange = x2-x1; 
 
-    palette = (TPaletteAxis*)hX3X1cl->GetListOfFunctions()->FindObject("palette");
-    if(palette) {
-      Double_t y1 = gPad->GetBottomMargin();
-      Double_t y2 = 1 - gPad->GetTopMargin();
-      Double_t x1 = 1 - gPad->GetRightMargin();
-      palette->SetY2NDC(y2 - 0.04);
-      palette->SetY1NDC(y1 + 0.04);
-      palette->SetX1NDC(x1 + 0.01);
-      palette->SetX2NDC(x1 + 0.04);
-      palette->SetTitleOffset(tyoffset);
-      palette->SetTitleSize(tfontsize);
-      palette->SetLabelFont(fonttype);
-      palette->SetLabelSize(fontsize);
-      if(opt.Contains("logz")) 
-	palette->SetLabelOffset(0);
-      else
-	palette->SetLabelOffset(lyoffset);
-      palette->SetBorderSize(2);
-      palette->SetLineColor(1);
-    }
-
-
-    TPaveText *textInfoX3X1 =  new TPaveText(x1+0.02*xrange,y2-0.30*yrange,x1+0.20*xrange,y2-0.05*yrange,"NDC");
+    
+    TPaveText *textInfoX3X1 =  new TPaveText(x1+0.02*xrange,y2-0.40*yrange,x1+0.20*xrange,y2-0.05*yrange,"NDC");
     PGlobals::SetPaveTextStyle(textInfoX3X1,12); 
     textInfoX3X1->SetTextColor(kGray+3);
     textInfoX3X1->SetTextFont(42);
@@ -1940,18 +1988,23 @@ int main(int argc,char *argv[]) {
     textInfoX3X1->AddText(text);
     sprintf(text,"#Deltay = %5.2f #mum",y_rms);
     textInfoX3X1->AddText(text);
+    sprintf(text,"#varepsilon_{y} = %5.2f %s",emity,emitSUnit.c_str());
+    textInfoX3X1->AddText(text);
+    sprintf(text,"#beta_{y} = %5.2f mm",betay/1000);
+    textInfoX3X1->AddText(text);
+    
     // sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
     // textInfoX3X1->AddText(text);
     // sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
     // textInfoX3X1->AddText(text);
     textInfoX3X1->Draw();
 
-    TBox *lFrame2 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			     gPad->GetUxmax(), gPad->GetUymax());
-    lFrame2->SetFillStyle(0);
-    lFrame2->SetLineColor(PGlobals::frameColor);
-    lFrame2->SetLineWidth(PGlobals::frameWidth);
-    lFrame2->Draw();
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
 
     gPad->RedrawAxis(); 
 
@@ -2038,10 +2091,20 @@ int main(int argc,char *argv[]) {
     hFrame[0]->Draw("axis");
 
     TH2F *hX3X2cl = (TH2F*) hX3X2->Clone("hX3X2cl");
+    hX3X2cl->GetZaxis()->CenterTitle();
+    hX3X2cl->GetZaxis()->SetTitleFont(fonttype);
+    hX3X2cl->GetZaxis()->SetTitleOffset(tyoffset);
+    hX3X2cl->GetZaxis()->SetTitleSize(tfontsize);
+    hX3X2cl->GetZaxis()->SetLabelFont(fonttype);
+    hX3X2cl->GetZaxis()->SetLabelSize(fontsize);
+    if(opt.Contains("logz")) 
+      hX3X2cl->GetZaxis()->SetLabelOffset(0);
+    else
+      hX3X2cl->GetZaxis()->SetLabelOffset(lyoffset);
+    hX3X2cl->GetZaxis()->SetTickLength(0.01);      
 
     hX3X2cl->Draw(drawopts);
-    hX3X2cl->GetZaxis()->CenterTitle();
-    
+        
     TLine lX2mean2(x_mean,x3Min,x_mean,x3Max);
     lX2mean2.SetLineColor(kGray+2);
     lX2mean2.SetLineStyle(2);
@@ -2051,15 +2114,40 @@ int main(int argc,char *argv[]) {
     lX3mean2.SetLineColor(kGray+2);
     lX3mean2.SetLineStyle(2);
     lX3mean2.Draw();
+
+    gPad->Update();
+    palette = (TPaletteAxis*)hX3X2cl->GetListOfFunctions()->FindObject("palette");
+    if(palette) {
+      Double_t y1 = gPad->GetBottomMargin();
+      Double_t y2 = 1 - gPad->GetTopMargin();
+      Double_t x1 = 1 - gPad->GetRightMargin();
+      
+      Double_t x1b = x1 + 0.01;
+      Double_t x2b = x1 + 0.035;
+      Double_t y1b = y1 + 0.03;
+      Double_t y2b = y2 - 0.03;
+      palette->SetX1NDC(x1b);
+      palette->SetY1NDC(y1b);
+      palette->SetX2NDC(x2b);
+      palette->SetY2NDC(y2b);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+      
+      TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+    }
     
     y1 = gPad->GetBottomMargin();
     y2 = 1 - gPad->GetTopMargin();
     x1 = gPad->GetLeftMargin();
     x2 = 1 - gPad->GetRightMargin();
     yrange = y2-y1; 
-    xrange = x2-x1; 
-    
-    TPaveText *textStatX3X2 =  new TPaveText(x1+0.02*xrange,y2-0.20*yrange,x1+0.30*xrange,y2-0.05*yrange,"NDC");
+    xrange = x2-x1;
+
+    TPaveText *textStatX3X2 =  new TPaveText(x1+0.02*xrange,y2-0.40*yrange,x1+0.30*xrange,y2-0.05*yrange,"NDC");
     PGlobals::SetPaveTextStyle(textStatX3X2,12); 
     textStatX3X2->SetTextColor(kGray+3);
     textStatX3X2->SetTextFont(42);
@@ -2070,8 +2158,25 @@ int main(int argc,char *argv[]) {
     textStatX3X2->AddText(text);
     sprintf(text,"#Deltay = %5.2f #mum",y_rms);
     textStatX3X2->AddText(text);
+    sprintf(text,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
+    textStatX3X2->AddText(text);
+    sprintf(text,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
+    textStatX3X2->AddText(text);
+    sprintf(text,"#beta_{x} = %5.2f mm",betax/1000);
+    textStatX3X2->AddText(text);
+    sprintf(text,"#beta_{y} = %5.2f mm",betay/1000);
+    textStatX3X2->AddText(text);
+
     textStatX3X2->Draw();
-    
+
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+
+    gPad->RedrawAxis(); 
     
     TString fOutNameX3X2 = ifile;
     fOutNameX3X2.ReplaceAll(".txt","");
@@ -2113,6 +2218,19 @@ int main(int argc,char *argv[]) {
     hP2X2->GetXaxis()->CenterTitle();
     hP2X2->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
 
+    hP2X2->GetZaxis()->CenterTitle();
+    hP2X2->GetZaxis()->SetTitleFont(fonttype);
+    hP2X2->GetZaxis()->SetTitleOffset(tyoffset);
+    hP2X2->GetZaxis()->SetTitleSize(tfontsize);
+    hP2X2->GetZaxis()->SetLabelFont(fonttype);
+    hP2X2->GetZaxis()->SetLabelSize(fontsize);
+    if(opt.Contains("logz")) 
+      hP2X2->GetZaxis()->SetLabelOffset(0);
+    else
+      hP2X2->GetZaxis()->SetLabelOffset(lyoffset);
+    hP2X2->GetZaxis()->SetTickLength(0.01);      
+
+
     TH2F *hFrP2X2 = (TH2F*) hP2X2->Clone("hFrP2X2");
     hFrP2X2->Reset();
     hFrP2X2->SetBins(x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
@@ -2145,6 +2263,32 @@ int main(int argc,char *argv[]) {
 	if(sellipP2X2[k] != NULL)
 	  sellipP2X2[k]->Draw();
 
+    gPad->Update();
+    palette = (TPaletteAxis*) hP2X2->GetListOfFunctions()->FindObject("palette");
+    if(palette) {
+      Double_t y1 = gPad->GetBottomMargin();
+      Double_t y2 = 1 - gPad->GetTopMargin();
+      Double_t x1 = 1 - gPad->GetRightMargin();
+	
+      Double_t x1b = x1 + 0.01;
+      Double_t x2b = x1 + 0.035;
+      Double_t y1b = y1 + 0.03;
+      Double_t y2b = y2 - 0.03;
+      palette->SetX1NDC(x1b);
+      palette->SetY1NDC(y1b);
+      palette->SetX2NDC(x2b);
+      palette->SetY2NDC(y2b);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+    }
+
+
     TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
     PGlobals::SetPaveTextStyle(textStatInt,12); 
     textStatInt->SetTextColor(kGray+3);
@@ -2161,7 +2305,15 @@ int main(int argc,char *argv[]) {
     sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
     textStatInt->AddText(text);
     textStatInt->Draw();
+
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
     
+    gPad->RedrawAxis(); 
     
     TString fOutName2 = ifile;
     fOutName2.ReplaceAll(".txt","");
@@ -2193,7 +2345,20 @@ int main(int argc,char *argv[]) {
     hP3X3->GetXaxis()->SetLabelSize(fontsize+2);
     hP3X3->GetXaxis()->SetLabelOffset(lxoffset);
     hP3X3->GetXaxis()->CenterTitle();
-    hP3X3->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+    hP3X3->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
+
+    hP3X3->GetZaxis()->CenterTitle();
+    hP3X3->GetZaxis()->SetTitleFont(fonttype);
+    hP3X3->GetZaxis()->SetTitleOffset(tyoffset);
+    hP3X3->GetZaxis()->SetTitleSize(tfontsize);
+    hP3X3->GetZaxis()->SetLabelFont(fonttype);
+    hP3X3->GetZaxis()->SetLabelSize(fontsize);
+    if(opt.Contains("logz")) 
+      hP3X3->GetZaxis()->SetLabelOffset(0);
+    else
+      hP3X3->GetZaxis()->SetLabelOffset(lyoffset);
+    hP3X3->GetZaxis()->SetTickLength(0.01);      
+
 
     TH2F *hFrP3X3 = (TH2F*) hP3X3->Clone("hFrP3X3");
     hFrP3X3->Reset();
@@ -2227,6 +2392,32 @@ int main(int argc,char *argv[]) {
 	if(sellipP3X3[k] != NULL)
 	  sellipP3X3[k]->Draw();
 
+    gPad->Update();
+    palette = (TPaletteAxis*) hP3X3->GetListOfFunctions()->FindObject("palette");
+    if(palette) {
+      Double_t y1 = gPad->GetBottomMargin();
+      Double_t y2 = 1 - gPad->GetTopMargin();
+      Double_t x1 = 1 - gPad->GetRightMargin();
+	
+      Double_t x1b = x1 + 0.01;
+      Double_t x2b = x1 + 0.035;
+      Double_t y1b = y1 + 0.03;
+      Double_t y2b = y2 - 0.03;
+      palette->SetX1NDC(x1b);
+      palette->SetY1NDC(y1b);
+      palette->SetX2NDC(x2b);
+      palette->SetY2NDC(y2b);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+    }
+
+    
     textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
     PGlobals::SetPaveTextStyle(textStatInt,12); 
     textStatInt->SetTextColor(kGray+3);
@@ -2244,7 +2435,15 @@ int main(int argc,char *argv[]) {
     textStatInt->AddText(text);
     textStatInt->Draw();
     
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
     
+    gPad->RedrawAxis(); 
+
     TString fOutName3 = ifile;
     fOutName3.ReplaceAll(".txt","");
     fOutName3.Append("-p3x3");
@@ -2285,6 +2484,19 @@ int main(int argc,char *argv[]) {
     hP2X1->GetXaxis()->CenterTitle();
     hP2X1->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
 
+    hP2X1->GetZaxis()->CenterTitle();
+    hP2X1->GetZaxis()->SetTitleFont(fonttype);
+    hP2X1->GetZaxis()->SetTitleOffset(tyoffset);
+    hP2X1->GetZaxis()->SetTitleSize(tfontsize);
+    hP2X1->GetZaxis()->SetLabelFont(fonttype);
+    hP2X1->GetZaxis()->SetLabelSize(fontsize);
+    if(opt.Contains("logz")) 
+      hP2X1->GetZaxis()->SetLabelOffset(0);
+    else
+      hP2X1->GetZaxis()->SetLabelOffset(lyoffset);
+    hP2X1->GetZaxis()->SetTickLength(0.01);      
+
+
     TH2F *hFrP2X1 = (TH2F*) hP2X1->Clone("hFrP2X1");
     hFrP2X1->Reset();
     hFrP2X1->SetBins(x1Nbin,x1Min,x1Max,p2Nbin,p2Min,p2Max);
@@ -2311,6 +2523,32 @@ int main(int argc,char *argv[]) {
     lPxmean2.SetLineStyle(2);
     lPxmean2.Draw();
 
+    gPad->Update();
+    palette = (TPaletteAxis*) hP2X1->GetListOfFunctions()->FindObject("palette");
+    if(palette) {
+      Double_t y1 = gPad->GetBottomMargin();
+      Double_t y2 = 1 - gPad->GetTopMargin();
+      Double_t x1 = 1 - gPad->GetRightMargin();
+	
+      Double_t x1b = x1 + 0.01;
+      Double_t x2b = x1 + 0.035;
+      Double_t y1b = y1 + 0.03;
+      Double_t y2b = y2 - 0.03;
+      palette->SetX1NDC(x1b);
+      palette->SetY1NDC(y1b);
+      palette->SetX2NDC(x2b);
+      palette->SetY2NDC(y2b);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+    }
+
+
     textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
     PGlobals::SetPaveTextStyle(textStatInt,12); 
     textStatInt->SetTextColor(kGray+3);
@@ -2327,7 +2565,16 @@ int main(int argc,char *argv[]) {
     sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
     textStatInt->AddText(text);
     textStatInt->Draw();
+
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
     
+    gPad->RedrawAxis(); 
+
     
     TString fOutName4 = ifile;
     fOutName4.ReplaceAll(".txt","");
@@ -2369,6 +2616,19 @@ int main(int argc,char *argv[]) {
     hP3X1->GetXaxis()->CenterTitle();
     hP3X1->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
 
+    hP3X1->GetZaxis()->CenterTitle();
+    hP3X1->GetZaxis()->SetTitleFont(fonttype);
+    hP3X1->GetZaxis()->SetTitleOffset(tyoffset);
+    hP3X1->GetZaxis()->SetTitleSize(tfontsize);
+    hP3X1->GetZaxis()->SetLabelFont(fonttype);
+    hP3X1->GetZaxis()->SetLabelSize(fontsize);
+    if(opt.Contains("logz")) 
+      hP3X1->GetZaxis()->SetLabelOffset(0);
+    else
+      hP3X1->GetZaxis()->SetLabelOffset(lyoffset);
+    hP3X1->GetZaxis()->SetTickLength(0.01);      
+
+
     TH2F *hFrP3X1 = (TH2F*) hP3X1->Clone("hFrP3X1");
     hFrP3X1->Reset();
     hFrP3X1->SetBins(x1Nbin,x1Min,x1Max,p2Nbin,p2Min,p2Max);
@@ -2394,6 +2654,32 @@ int main(int argc,char *argv[]) {
     lPxmean3.SetLineStyle(2);
     lPxmean3.Draw();
 
+    gPad->Update();
+    palette = (TPaletteAxis*) hP3X1->GetListOfFunctions()->FindObject("palette");
+    if(palette) {
+      Double_t y1 = gPad->GetBottomMargin();
+      Double_t y2 = 1 - gPad->GetTopMargin();
+      Double_t x1 = 1 - gPad->GetRightMargin();
+	
+      Double_t x1b = x1 + 0.01;
+      Double_t x2b = x1 + 0.035;
+      Double_t y1b = y1 + 0.03;
+      Double_t y2b = y2 - 0.03;
+      palette->SetX1NDC(x1b);
+      palette->SetY1NDC(y1b);
+      palette->SetX2NDC(x2b);
+      palette->SetY2NDC(y2b);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+    }
+
+
     textStatInt = new TPaveText(x1+0.02,y2-0.40,x1+0.20,y2-0.05,"NDC");
     PGlobals::SetPaveTextStyle(textStatInt,12); 
     textStatInt->SetTextColor(kGray+3);
@@ -2410,7 +2696,16 @@ int main(int argc,char *argv[]) {
     sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
     textStatInt->AddText(text);
     textStatInt->Draw();
+
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
     
+    gPad->RedrawAxis(); 
+
     
     TString fOutName5 = ifile;
     fOutName5.ReplaceAll(".txt","");
@@ -2444,8 +2739,8 @@ int main(int argc,char *argv[]) {
       Double_t lyoffset = 0.01;
       Double_t tzoffset = 3.0;
       Double_t lzoffset = 0.01;
-      Double_t tylength = 0.015;
-      Double_t txlength = 0.030;
+      Double_t tylength = 0.010;
+      Double_t txlength = 0.050;
 
       hP2X2->GetXaxis()->SetLabelFont(fonttype);
       hP2X2->GetXaxis()->SetLabelSize(fontsize);
@@ -2476,7 +2771,8 @@ int main(int argc,char *argv[]) {
       hFrP2X2->SetBins(x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
 
       CA4->cd(1);
-
+      gPad->SetTickx(1);
+      gPad->SetTicky(1);
       gPad->SetTopMargin(0.02);
       gPad->SetBottomMargin(0.22);
 
@@ -2494,6 +2790,32 @@ int main(int argc,char *argv[]) {
 	  if(sellipP2X2[k] != NULL)
 	    sellipP2X2[k]->Draw();
 
+      gPad->Update();
+      palette = (TPaletteAxis*)hP2X2->GetListOfFunctions()->FindObject("palette");
+      if(palette) {
+	Double_t y1 = gPad->GetBottomMargin();
+	Double_t y2 = 1 - gPad->GetTopMargin();
+	Double_t x1 = 1 - gPad->GetRightMargin();
+      
+	Double_t x1b = x1 + 0.01;
+	Double_t x2b = x1 + 0.035;
+	Double_t y1b = y1 + 0.03;
+	Double_t y2b = y2 - 0.03;
+	palette->SetX1NDC(x1b);
+	palette->SetY1NDC(y1b);
+	palette->SetX2NDC(x2b);
+	palette->SetY2NDC(y2b);
+	palette->SetBorderSize(2);
+	palette->SetLineColor(1);
+      
+	TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	pFrame->SetFillStyle(0);
+	pFrame->SetLineColor(kBlack);
+	pFrame->SetShadowColor(0);
+	pFrame->Draw();
+      }
+
+      
       y1 = gPad->GetBottomMargin();
       y2 = 1 - gPad->GetTopMargin();
       x1 = gPad->GetLeftMargin();
@@ -2516,6 +2838,16 @@ int main(int argc,char *argv[]) {
       textStatInt->AddText(text);
       textStatInt->Draw();
 
+      lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			gPad->GetUxmax(), gPad->GetUymax());
+      lFrame->SetFillStyle(0);
+      lFrame->SetLineColor(PGlobals::frameColor);
+      lFrame->SetLineWidth(PGlobals::frameWidth);
+      lFrame->Draw();
+      
+      gPad->RedrawAxis(); 
+      
+      
       TPaveText **textStat = new TPaveText*[SNbin];
       TPaveText **textSlice = new TPaveText*[SNbin];
       TLine **slXmean = new TLine*[SNbin];
@@ -2532,6 +2864,8 @@ int main(int argc,char *argv[]) {
 	  CA4->Divide(1,ndiv);
 	}
 	CA4->cd(ic+1);
+	gPad->SetTickx(1);
+	gPad->SetTicky(1);
 
      	gPad->SetTopMargin(0.02);
 	gPad->SetBottomMargin(0.22);
@@ -2578,6 +2912,31 @@ int main(int argc,char *argv[]) {
 	  if(sellipP2X2[k] != NULL)
 	    sellipP2X2[k]->Draw();
 
+	gPad->Update();
+	palette = (TPaletteAxis*)hP2X2sl[k]->GetListOfFunctions()->FindObject("palette");
+	if(palette) {
+	  Double_t y1 = gPad->GetBottomMargin();
+	  Double_t y2 = 1 - gPad->GetTopMargin();
+	  Double_t x1 = 1 - gPad->GetRightMargin();
+      
+	  Double_t x1b = x1 + 0.01;
+	  Double_t x2b = x1 + 0.035;
+	  Double_t y1b = y1 + 0.03;
+	  Double_t y2b = y2 - 0.03;
+	  palette->SetX1NDC(x1b);
+	  palette->SetY1NDC(y1b);
+	  palette->SetX2NDC(x2b);
+	  palette->SetY2NDC(y2b);
+	  palette->SetBorderSize(2);
+	  palette->SetLineColor(1);
+      
+	  TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	  pFrame->SetFillStyle(0);
+	  pFrame->SetLineColor(kBlack);
+	  pFrame->SetShadowColor(0);
+	  pFrame->Draw();
+	}
+
 	Double_t y1 = gPad->GetBottomMargin();
 	Double_t y2 = 1 - gPad->GetTopMargin();
 	Double_t x1 = gPad->GetLeftMargin();
@@ -2610,6 +2969,15 @@ int main(int argc,char *argv[]) {
 	sprintf(text,"%5.2f #mum < #zeta < %5.2f #mum",sBinLim[k],sBinLim[k+1]);
 	textSlice[k]->AddText(text);
 	textSlice[k]->Draw();
+
+	lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			  gPad->GetUxmax(), gPad->GetUymax());
+	lFrame->SetFillStyle(0);
+	lFrame->SetLineColor(PGlobals::frameColor);
+	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->Draw();
+
+	gPad->RedrawAxis(); 
 
 
 	if(ic+1==ndiv) {
@@ -2670,7 +3038,8 @@ int main(int argc,char *argv[]) {
       hFrP3X3->SetBins(x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
       
       CA5->cd(1);
-
+      gPad->SetTickx(1);
+      gPad->SetTicky(1);
       gPad->SetTopMargin(0.02);
       gPad->SetBottomMargin(0.22);
 
@@ -2687,7 +3056,32 @@ int main(int argc,char *argv[]) {
 	for(Int_t k=0;k<SNbin;k++)
 	  if(sellipP3X3[k] != NULL)
 	    sellipP3X3[k]->Draw();
+
+      gPad->Update();
+      palette = (TPaletteAxis*)hP3X3->GetListOfFunctions()->FindObject("palette");
+      if(palette) {
+	Double_t y1 = gPad->GetBottomMargin();
+	Double_t y2 = 1 - gPad->GetTopMargin();
+	Double_t x1 = 1 - gPad->GetRightMargin();
       
+	Double_t x1b = x1 + 0.01;
+	Double_t x2b = x1 + 0.035;
+	Double_t y1b = y1 + 0.03;
+	Double_t y2b = y2 - 0.03;
+	palette->SetX1NDC(x1b);
+	palette->SetY1NDC(y1b);
+	palette->SetX2NDC(x2b);
+	palette->SetY2NDC(y2b);
+	palette->SetBorderSize(2);
+	palette->SetLineColor(1);
+      
+	TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	pFrame->SetFillStyle(0);
+	pFrame->SetLineColor(kBlack);
+	pFrame->SetShadowColor(0);
+	pFrame->Draw();
+      }
+
 
       y1 = gPad->GetBottomMargin();
       y2 = 1 - gPad->GetTopMargin();
@@ -2711,6 +3105,16 @@ int main(int argc,char *argv[]) {
       textStatInt->AddText(text);
       textStatInt->Draw();
 
+      lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			gPad->GetUxmax(), gPad->GetUymax());
+      lFrame->SetFillStyle(0);
+      lFrame->SetLineColor(PGlobals::frameColor);
+      lFrame->SetLineWidth(PGlobals::frameWidth);
+      lFrame->Draw();
+      
+      gPad->RedrawAxis(); 
+
+
       textStat = new TPaveText*[SNbin];
       textSlice = new TPaveText*[SNbin];
       TLine **slXmean2 = new TLine*[SNbin];
@@ -2728,7 +3132,8 @@ int main(int argc,char *argv[]) {
 	  CA5->Divide(1,ndiv);
 	}
 	CA5->cd(ic+1);
-
+	gPad->SetTickx(1);
+	gPad->SetTicky(1);
 	gPad->SetTopMargin(0.02);
 	gPad->SetBottomMargin(0.22);
 
@@ -2775,6 +3180,31 @@ int main(int argc,char *argv[]) {
 	  if(sellipP3X3[k] != NULL)
 	    sellipP3X3[k]->Draw();
 
+	gPad->Update();
+	palette = (TPaletteAxis*)hP3X3sl[k]->GetListOfFunctions()->FindObject("palette");
+	if(palette) {
+	  Double_t y1 = gPad->GetBottomMargin();
+	  Double_t y2 = 1 - gPad->GetTopMargin();
+	  Double_t x1 = 1 - gPad->GetRightMargin();
+      
+	  Double_t x1b = x1 + 0.01;
+	  Double_t x2b = x1 + 0.035;
+	  Double_t y1b = y1 + 0.03;
+	  Double_t y2b = y2 - 0.03;
+	  palette->SetX1NDC(x1b);
+	  palette->SetY1NDC(y1b);
+	  palette->SetX2NDC(x2b);
+	  palette->SetY2NDC(y2b);
+	  palette->SetBorderSize(2);
+	  palette->SetLineColor(1);
+      
+	  TPave *pFrame = new TPave(x1b,y1b,x2b,y2b,1,"NDCL");
+	  pFrame->SetFillStyle(0);
+	  pFrame->SetLineColor(kBlack);
+	  pFrame->SetShadowColor(0);
+	  pFrame->Draw();
+	}
+
 	Double_t y1 = gPad->GetBottomMargin();
 	Double_t y2 = 1 - gPad->GetTopMargin();
 	Double_t x1 = gPad->GetLeftMargin();
@@ -2808,6 +3238,14 @@ int main(int argc,char *argv[]) {
 	textSlice[k]->AddText(text);
 	textSlice[k]->Draw();
 
+	lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			  gPad->GetUxmax(), gPad->GetUymax());
+	lFrame->SetFillStyle(0);
+	lFrame->SetLineColor(PGlobals::frameColor);
+	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->Draw();
+
+	gPad->RedrawAxis(); 
 
 	if(ic+1==ndiv) {
 	  CA5->cd(0);
