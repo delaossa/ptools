@@ -292,7 +292,7 @@ void PlotDDR2D( const TString &options="" ){
   gPad->Update();
   gPad->RedrawAxis("G");
 
-  betaphvsz2->Draw("C");
+  //betaphvsz2->Draw("C");
   betaphvsz->Draw("C");
 
   // Get Data from PIC simulations with test ramp

@@ -517,6 +517,7 @@ int main(int argc,char *argv[]) {
 
       Float_t Emax =  hE1D[0]->GetMaximum();
       if(Emax < 10E-3) Emax = 10E-3;
+      Emax = 1.0;
       PUnits::BestUnit beSUnit(E0 * Emax,"Efield");
       beSUnit.GetBestUnits(eUnit,eSUnit);
       cout << Form(" E0 = %.2f %s", E0 * Emax/eUnit, eSUnit.c_str()) << endl;
@@ -814,14 +815,14 @@ int main(int argc,char *argv[]) {
 	}   
       
 	if(opt.Contains("units")) {
-
+	  
 	  if(i==0)
-	  hE1D[i]->GetYaxis()->SetTitle(Form("E_{z} [%s]",eSUnit.c_str()));
-	else if(i==1)
-	  hE1D[i]->GetYaxis()->SetTitle(Form("E_{x} [%s]",eSUnit.c_str()));
-	else if(i==2)
-	  hE1D[i]->GetYaxis()->SetTitle(Form("E_{y} [%s]",eSUnit.c_str()));
-		
+	    hEvsTime[i]->GetZaxis()->SetTitle(Form("E_{z} [%s]",eSUnit.c_str()));
+	  else if(i==1)
+	    hEvsTime[i]->GetZaxis()->SetTitle(Form("E_{x} [%s]",eSUnit.c_str()));
+	  else if(i==2)
+	    hEvsTime[i]->GetZaxis()->SetTitle(Form("E_{y} [%s]",eSUnit.c_str()));
+	  
 	  hEvsTime[i]->GetYaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	  hEvsTime[i]->GetXaxis()->SetTitle(Form("z [%s]",zSUnit.c_str()));
 	} else {

@@ -631,7 +631,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(Max[i]==0) {
       Min[i]=0;
       continue;
-    } else if(Min[i]>Max[i]) Min[i] = 1.01E-1 * Max[i];
+    }
+    else if(Min[i]>Max[i]) Min[i] = 1.01E-1 * Max[i];
     
     if(i==0) {
       if(Max[i]<baseden) { 
@@ -690,9 +691,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     }
     
-    if(pData->GetDenMin(i)>=0)
+    if(pData->GetDenMin(i)>0) {
       Min[i] = pData->GetDenMin(i);
-    
+      if(opt.Contains("logz") && (Max[i]<10*Min[i])) Max[i] = 1.01E1 * Min[i];
+    }
+      
     //    cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,pData->GetDenMin(i),pData->GetDenMax(i)) << endl;
     cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,Min[i],Max[i]) << endl;
     
@@ -990,7 +993,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	new(graphsV2D[nGraphs]) TGraph(*gr) ;
 	nGraphs++;
 	
-	if(i==0 && j==0) {
+	//	if(i==0 && j==0) {
+	if(i==0) {
 	  TGraph *grm = new(graphsV2D_main[nGraphs_main]) TGraph(*gr);
 	  nGraphs_main++;
 	  grm->SetLineWidth(1);
@@ -1413,8 +1417,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     // cBeam1 = TColor::GetColor("#FFCC66"); 
     // beam2Palette->SetPalette("blue");
     // cBeam1 = TColor::GetColor("#84B1C4");
-    beam2Palette->SetPalette("greengray");
-    cBeam1 = TColor::GetColor("#5C7B2F");
+    // beam2Palette->SetPalette("greengray");
+    // cBeam1 = TColor::GetColor("#5C7B2F"); // Green
+    beam2Palette->SetPalette("elec");
+    cBeam1 = TColor::GetColor(83,109,161); // Bluish
+    // beam3Palette->SetPalette("red");
   }
 
 
@@ -1558,17 +1565,17 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
 
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	exPlasma->Draw();
-	hDen2D[0]->Draw(drawopt);
-      }
-
       // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
 	//exBeam->Draw();
 	hDen2D[2]->Draw(drawopt);
+      }
+  
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
       }
 
       // Beam driver.
@@ -1577,35 +1584,35 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
       }
-      
+
     } else if (Nspecies==4) {
 
-      
-      // Injected electrons ?
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
+      }
+
+      // Beam driver.
+      if(hDen2D[1] && noIndex!=1) {
+	exBeam->Draw();
+	//exPlasma->Draw();
+	hDen2D[1]->Draw(drawopt);
+      }
+
+      // Witness
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
 	//exBeam->Draw();
 	hDen2D[2]->Draw(drawopt);
       }
 
-      // Injected electrons ?
+      // Witness 2
       if(hDen2D[3] && noIndex!=3) {
 	exBeam3->Draw();
 	hDen2D[3]->Draw(drawopt);
       }
 
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	exPlasma->Draw();
-	hDen2D[0]->Draw(drawopt);
-      }
-
-      // Beam driver.
-      if(hDen2D[1] && noIndex!=1) {
-	exBeam->Draw();
-	//exPlasma->Draw();
-	hDen2D[1]->Draw(drawopt);
-      }
 
     }
 
@@ -1632,7 +1639,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	if(!gr) continue;
 	gr->Draw("C");
       }
-    } else if(opt.Contains("cont")) {
+    } else if(opt.Contains("conti")) {
       // ADK MAIN contour
       if(graphsI2D_main) {
 	for(Int_t i=0;i<graphsI2D_main->GetEntriesFast();i++) {
@@ -1648,7 +1655,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	if(!gr) continue;
 	gr->Draw("C");
       }
+    }  else if(opt.Contains("cont")) {
+      // PSI MAIN contour  
+      for(Int_t i=0;i<graphsV2D_main.GetEntriesFast();i++) {
+	TGraph *gr = (TGraph*) graphsV2D_main.At(i);
+	if(!gr) continue;
+	gr->Draw("C");
+      }
     } 
+
 
 
     if(opt.Contains("bopar")) {
@@ -3023,7 +3038,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     //  hV1D->SetLineColor(PGlobals::elecLine);
     hV1D->SetLineColor(lineColor);
 
-    hV1D->Draw("sameL");
+    if(!opt.Contains("no1d"))
+      hV1D->Draw("sameL");
     
     // ADK MAIN contour  
     // for(Int_t i=0;i<graphsI2D_main->GetEntriesFast();i++) {
@@ -3057,6 +3073,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(opt.Contains("1dline")) {
       lineYzero->Draw();
     }
+
+    if(opt.Contains("zero")) {
+      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      lineZero->SetLineColor(lineColor);
+      lineZero->SetLineStyle(2);
+      lineZero->Draw();
+    }
+    
 
     if(opt.Contains("sline")) {
       if(zStartPlasma>xMin && zStartPlasma<xMax)
