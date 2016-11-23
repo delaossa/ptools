@@ -33,7 +33,7 @@ except:
     parser.print_help()
     sys.exit(0)
     
-if ("none" in args.sim) & (args.test == 0) :
+if ('none' in args.sim) & (args.test == 0) :
     parser.print_help()
     sys.exit(0)
     
@@ -62,10 +62,6 @@ nfiles = len(hfl)
 # Set colors and opacities for the components... 
 data = []
 npdata = []
-Min = []
-Max = []
-stype = []
-baseden = 1
 
 # Multi component (single) volume 
 volumeprop = vtk.vtkVolumeProperty()
@@ -73,13 +69,70 @@ volumeprop = vtk.vtkVolumeProperty()
 volumeprop.IndependentComponentsOn()
 volumeprop.SetInterpolationTypeToLinear()
 
-#
+# This blocks read the colormaps file (if any)
+
+fcolname = './%s/%s.col' % (pData.GetPath(),args.sim)
+opafile = []
+colfile = []
+minfile = []
+maxfile = []
+stypefile = []
+
+try: 
+    fcolmap = open(fcolname,'r')
+except IOError:
+    print('\nNo color map file found')
+else:
+    print('\nReading color maps file ',fcolname)
+    
+    for line in fcolmap: # Loop over the lines
+        pos = line.find('Species kind : ')
+        if pos>=0 :
+            stypefile.append(line[pos+len('Species kind : '):].replace('\n',''))
+            print('Type : ',stypefile[len(stypefile)-1])
+
+        pos = line.find('# MinMax')
+        if pos>=0 :
+            line = fcolmap.next()
+            minfile.append(float(line))
+            line = fcolmap.next()
+            maxfile.append(float(line))
+            print('Min = %.2f  Max = %.2f' % (minfile[len(minfile)-1],maxfile[len(minfile)-1]))
+                  
+        pos = line.find('# Opacities')
+        if pos>=0 :
+            chunk = []
+            line = fcolmap.next()
+            while line.find('#') < 0 :
+                chunk.append([float(s) for s in line.split()])
+                line = fcolmap.next()
+
+            opafile.append(chunk)
+            print('Opacities : ', opafile[len(opafile)-1])
+
+        pos = line.find('# Colors')
+        if pos>=0 :
+            chunk = []
+            line = fcolmap.next()
+            while (line.find('#') < 0) & (len(line.rstrip())>0) :
+                chunk.append([float(s) for s in line.split()])
+                line = fcolmap.next()
+
+            colfile.append(chunk)
+            print('Colors : ', colfile[len(colfile)-1])
+
+    fcolmap.close()
+
+# end of reading color maps
+    
+# Loop over the files
 opacity = []
 color = []
-fcolname = './%s/%s.col' % (pData.GetPath(),args.sim)
-filecolor = open(fcolname,'w')
-
-# Loop over the files
+Min = []
+Max = []
+stype = []
+baseden = 1
+localden = 1
 for i, hf in enumerate(hfl):
 
     if (args.laser) & (i == nfiles-1) :  
@@ -109,9 +162,6 @@ for i, hf in enumerate(hfl):
     
     npdata.append(np.array(data[i]))
     j = len(npdata) - 1
-
-    # average value for non-zero data points
-    denavg = np.average(npdata[j],weights=npdata[j].astype(bool))
     
     Max.append(np.amax(npdata[j]))
     Min.append(0.01*Max[j])
@@ -119,140 +169,156 @@ for i, hf in enumerate(hfl):
     if args.test == 0 :
         if pData.GetDenMax(j) > 0 : Max[j] = pData.GetDenMax(j)
         if pData.GetDenMin(j) > 0 : Min[j] = pData.GetDenMin(j) 
-    
+        else : Min[j] = 0.01 * Max[j]
+        
+    if len(opafile) == nfiles :
+        Min[j] = minfile[j]
+        Max[j] = maxfile[j]
+
     if Min[j] > Max[j] :
         Min[j] = 0.1 * Max[j]
-        
-    if "plasma" in hf.filename :
-        Min[j] = baseden
+
+    print('Maximum = %.2f' % maxvalue)
+    print('Min = %.3e  Max = %.3e ' % (Min[j],Max[j]))
+
+    if 'plasma' in hf.filename :
+        # Min[j] = baseden
         if args.lden :
-            localden = npdata[j][npdata[j].shape[0]-10][npdata[j].shape[1]-10][npdata[j].shape[2]-10]
+            localden = npdata[j][npdata[j].shape[0]-10][npdata[j].shape[1]-10][npdata[j].shape[2]-2]
             print('Local density = %f' % (localden))
-            Min[j] =  localden
+            Min[j] *= localden/baseden
             Max[j] *= localden/baseden
+    elif 'e2' in hf.filename:
+        Min[j] = -Max[j]
     else :
-        if Max[j] > maxvalue : Max[j] = maxvalue
+        if Max[j] > maxvalue :
+            Max[j] = maxvalue
+            print('New max = %.3e' % Max[j])
    
     def lscale(x) :
-        x = x - Min[j] + 1
-        x = np.where(x <= 0.0, 1.0, x)
+#        x = x - Min[j] + 1
+        x = np.where(x <= 1E-6,1E-6, x)
         x = np.log10(x)
         return x
-    
+
     if args.log :
         npdata[j] = lscale(npdata[j])
         Min[j] = lscale(Min[j])
         Max[j] = lscale(Max[j])
         maxvalue = lscale(maxvalue)
+        localden = lscale(localden)
         # stop = lscale(stop)
 
     # Intermediate points in the density scale
-    npts = 101
-    stop = np.empty(npts)
-    for k in range(stop.size) :
-        stop[k] = Min[j] + (1./(npts-1)) * k * (Max[j] - Min[j])
-
-        
-    np.set_printoptions(precision=3)
-    print('Maximum = %.2f' % maxvalue)
-    print('Min = %.2f  Max = %.2f ' % (Min[j],Max[j]))
-    #print('Stops = ',['{:.2f}'.format(k) for k in stop])
-    print('Average = %.2f' % denavg)
+    def stop(x):
+        x = Min[j] + (x/100) * (Max[j] - Min[j])
+        return x
+            
+    # average value for non-zero data points
+    # denavg = np.average(npdata[j],weights=npdata[j].astype(bool))
+    # print('Average = %.2f' % denavg)
     
     # Opacity and color scales
     opacity.append(vtk.vtkPiecewiseFunction())
     color.append(vtk.vtkColorTransferFunction())
 
-    opalist = []
-    colorlist = []
-    if "plasma" in hf.filename :
-        stype[j] = 'plasma'
+    if len(opafile) == nfiles :
+        for k, opa in enumerate(opafile[j]) :
+            opacity[j].AddPoint(stop(opa[0]),opa[1])
+        for k, col in enumerate(colfile[j]) :
+            color[j].AddRGBPoint(stop(col[0]),col[1],col[2],col[3])
 
-        opalist.append( [0,0.0] )
-        opalist.append( [1,0.8] )
-        opalist.append( [10,0.2] )
-        opalist.append( [50,0.2] )
-        opalist.append( [100,0.1] )
-        for k, opa in enumerate(opalist) :
-            opacity[j].AddPoint(stop[opa[0]],opa[1])
-            
-        colorlist.append( [0,0.7,0.7,0.7] )
-        colorlist.append( [100,1.0,1.0,1.0] )
-        for k, col in enumerate(colorlist) :
-            color[j].AddRGBPoint(stop[col[0]],col[1],col[2],col[3])
+        if stypefile[j] == 'plasma' :
+            opacity[j].AddPoint( 0.98 * localden ,0.0)
+            opacity[j].AddPoint( 1.02 * localden ,0.0)
+                            
+    else : 
 
-    elif "beam" in hf.filename :
-        stype[j] = 'beam'
+        opalist = []
+        colorlist = []
 
-        opalist.append( [0,0.0] )
-        opalist.append( [100,0.9] )
-        for k, opa in enumerate(opalist) :
-            opacity[j].AddPoint(stop[opa[0]],opa[1])
+        if 'plasma' in hf.filename :
+            stype[j] = 'plasma'
 
-        colorlist.append( [0,0.220, 0.039, 0.235] )
-        colorlist.append( [20,0.390, 0.050, 0.330] )
-        colorlist.append( [40,0.700, 0.200, 0.300] )
-        colorlist.append( [100,1.00, 1.00, 0.20] )
-        for k, col in enumerate(colorlist) :
-            color[j].AddRGBPoint(stop[col[0]],col[1],col[2],col[3])
-        
+            opalist.append( [0,0.0] )
+            opalist.append( [1,0.8] )
+            opalist.append( [10,0.2] )
+            opalist.append( [50,0.2] )
+            opalist.append( [100,0.1] )
+                
+            colorlist.append( [0,0.7,0.7,0.7] )
+            colorlist.append( [100,1.0,1.0,1.0] )
+
+        elif 'beam' in hf.filename :
+            stype[j] = 'beam'
+
+            opalist.append( [0,0.0] )
+            opalist.append( [100,0.9] )
+
+            colorlist.append( [0,0.220, 0.039, 0.235] )
+            colorlist.append( [20,0.390, 0.050, 0.330] )
+            colorlist.append( [40,0.700, 0.200, 0.300] )
+            colorlist.append( [100,1.00, 1.00, 0.20] )
          
-    elif ("He-electrons" in hf.filename) or ("N-electrons" in hf.filename):
-        stype[j] = 'witness'
+        elif ('He-electrons' in hf.filename) or ('N-electrons' in hf.filename):
+            stype[j] = 'witness'
         
-        opalist.append( [0,0.0] )
-        opalist.append( [1,0.4] )
-        opalist.append( [5,0.6] )
-        opalist.append( [10,0.8] )
-        opalist.append( [100,0.98] )
-        for k, opa in enumerate(opalist) :
-            opacity[j].AddPoint(stop[opa[0]],opa[1])
+            opalist.append( [0,0.0] )
+            opalist.append( [1,0.4] )
+            opalist.append( [5,0.6] )
+            opalist.append( [10,0.8] )
+            opalist.append( [100,0.98] )
+       
+            colorlist.append( [0,0.627, 0.125, 0.235] )
+            colorlist.append( [10,0.700, 0.200, 0.300] )
+            colorlist.append( [100,1.00, 1.00, 0.20] )
+                
+        elif "e2" in hf.filename:
+            stype[j] = 'laser'
+            
+            opalist.append( [0,0.6] )
+            opalist.append( [35,0.2] )
+            opalist.append( [40,0.0] )
+            opalist.append( [60,0.0] )
+            opalist.append( [65,0.2] )
+            opalist.append( [100,0.6] )
 
-        colorlist.append( [0,0.627, 0.125, 0.235] )
-        colorlist.append( [10,0.700, 0.200, 0.300] )
-        colorlist.append( [100,1.00, 1.00, 0.20] )
+            colorlist.append( [0,0.427, 0.588, 0.811] )
+            colorlist.append( [100,0.972, 0.647, 0.145] )
+
+            
+        for k, opa in enumerate(opalist) :
+            opacity[j].AddPoint(stop(opa[0]),opa[1])
         for k, col in enumerate(colorlist) :
-            color[j].AddRGBPoint(stop[col[0]],col[1],col[2],col[3])
+            color[j].AddRGBPoint(stop(col[0]),col[1],col[2],col[3])
+
+        fcolmap = open(fcolname,'a')
+        #np.savetxt(fcolmap,stype[j])
+        fcolmap.write('Species kind : %s\n' % str(stype[j]))
+        # Go back to original values of MinMax
+        if args.log & (args.lden & (stype[j] == 'plasma')) :
+            localden = np.power(10,localden)
+            Min[j] = np.power(10,Min[j]) * (baseden/localden)
+            Max[j] = np.power(10,Max[j]) * (baseden/localden)
+        elif args.lden & (stype[j] == 'plasma') :
+            Min[j] = Min[j] * (baseden/localden)
+            Max[j] = Max[j] * (baseden/localden)
+        elif args.log & (stype[j] != 'laser'):
+            Min[j] = np.power(10,Min[j]) 
+            Max[j] = np.power(10,Max[j]) 
         
-    elif "e2" in hf.filename:
-        stype[j] = 'laser'
-
-        Min[j] = -Max[j]
-        print('Min = %.2f  Max = %.2f ' % (Min[j],Max[j]))
-        for k in range(stop.size) :
-            stop[k] = Min[j] + (1./(npts-1)) * k * (Max[j] - Min[j])
-
-        #print('Stops = ',['{:.2f}'.format(k) for k in stop])
+        np.savetxt(fcolmap,(Min[j],Max[j]),fmt='%.3e',header='MinMax') 
+        np.savetxt(fcolmap,opalist,fmt='%7.3f',header='Opacities')
+        np.savetxt(fcolmap,colorlist,fmt='%7.3f',header='Colors')
+        fcolmap.write('\n')
     
-        opalist.append( [0,0.6] )
-        opalist.append( [35,0.2] )
-        opalist.append( [40,0.0] )
-        opalist.append( [60,0.0] )
-        opalist.append( [65,0.2] )
-        opalist.append( [100,0.6] )
-        for k, opa in enumerate(opalist) :
-            opacity[j].AddPoint(stop[opa[0]],opa[1])
-
-        colorlist.append( [0,0.427, 0.588, 0.811] )
-        colorlist.append( [100,0.972, 0.647, 0.145] )
-        for k, col in enumerate(colorlist) :
-            color[j].AddRGBPoint(stop[col[0]],col[1],col[2],col[3])
-
-
-    #np.savetxt(filecolor,stype[j])
-    filecolor.write('Species kind : %s\n' % str(stype[j]))
-    np.savetxt(filecolor,(Min[j],Max[j]),fmt='%.3e',header='Min and Max')
-    np.savetxt(filecolor,opalist,fmt='%7.3f',header='Opacities')
-    np.savetxt(filecolor,colorlist,fmt='%7.3f',header='Colors')
-    filecolor.write('\n')
-    
-    volumeprop.SetColor(i,color[j])
-    volumeprop.SetScalarOpacity(i,opacity[j])
-    volumeprop.ShadeOff(i)
-    #volumeprop.ShadeOn(i)
+    volumeprop.SetColor(j,color[j])
+    volumeprop.SetScalarOpacity(j,opacity[j])
+    volumeprop.ShadeOff(j)
+    #volumeprop.ShadeOn(j)
     
 
-filecolor.close()
+fcolmap.close()
 
 # Add data components as a 4th dimension 
 # npdatamulti = np.stack((npdata[:]),axis=3)
@@ -304,6 +370,8 @@ light.SetIntensity(1)
 renderer = vtk.vtkRenderer()
 # Set background  
 renderer.SetBackground(0,0,0)
+# renderer.SetBackground(0.09,0.10,0.12)
+# renderer.SetBackground(.1,.2,.3) # Background dark blue
 # renderer.SetBackground(0.1,0.1,0.1)
 # renderer.TexturedBackgroundOn()
 # Other colors 
@@ -324,20 +392,24 @@ if args.axes :
     propA.SetFontFamilyToArial()
     propA.ItalicOff()
     propA.BoldOff()
-    propA.SetFontSize(1)
-    axisxact = axes.GetXAxisCaptionActor2D()
-    axisxact.SetCaptionTextProperty(propA)
-    
+    propA.SetFontSize(28)
+
+    # the actual text of the axis label can be changed:
+    axes.SetXAxisLabelText("z");
+    axes.SetZAxisLabelText("y");
+    axes.SetYAxisLabelText("x");
+    axes.GetXAxisCaptionActor2D().GetTextActor().SetTextScaleModeToNone()
+    axes.GetXAxisCaptionActor2D().SetCaptionTextProperty(propA)
+    axes.GetZAxisCaptionActor2D().GetTextActor().SetTextScaleModeToNone()
+    axes.GetZAxisCaptionActor2D().SetCaptionTextProperty(propA)
+    axes.GetYAxisCaptionActor2D().GetTextActor().SetTextScaleModeToNone()
+    axes.GetYAxisCaptionActor2D().SetCaptionTextProperty(propA)
+
     # The axes are positioned with a user transform
     #transform = vtk.vtkTransform()
     #transform.Translate(0.0, 0.0, 0.0)
     #axes.SetUserTransform(transform)
- 
-    # the actual text of the axis label can be changed:
-    axes.SetXAxisLabelText("");
-    axes.SetZAxisLabelText("");
-    axes.SetYAxisLabelText("");
- 
+
     renderer.AddActor(axes)
 
 
@@ -349,17 +421,25 @@ if args.cbar :
     for i in range(0,len(npdata)):
         # Adding the scalar bar color palette
         scalarBar.append(vtkScalarBarActor())
-        scalarBar[i].SetTitle("")
+        if stype[i] == 'laser' :
+            scalarBar[i].SetTitle("a")
+        else :
+            if args.log :
+                scalarBar[i].SetTitle("log(n/np)")
+            else :
+                scalarBar[i].SetTitle("n/np")
+
         scalarBar[i].SetLookupTable(color[i]);
         scalarBar[i].SetOrientationToHorizontal();
         scalarBar[i].GetPositionCoordinate().SetCoordinateSystemToNormalizedViewport()
         scalarBar[i].SetPosition(i*step,0.02)
-        scalarBar[i].SetPosition2(step,0.04)
+        scalarBar[i].SetPosition2(step,0.08)
         #print('%5.2f %5.2f' % (i*step,(i+1)*step-0.01) )
         propT = vtkTextProperty()
         propT.SetFontFamilyToArial()
         propT.ItalicOff()
         propT.BoldOn()
+        propT.SetFontSize(14)
         propL = vtkTextProperty()
         propL.SetFontFamilyToArial()
         propL.ItalicOff()
