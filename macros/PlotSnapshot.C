@@ -1408,7 +1408,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     laserPalette->SetAlpha(0.8);
   
   // Current lines colors
-  Int_t cBeam = TColor::GetColor(69,108,155);
+  //Int_t cBeam = TColor::GetColor(69,108,155);
+  Int_t cBeam = kGray+2;
   Int_t cBeam1 = kOrange+8;
   Int_t cBeam2 = kOrange+8;
 
@@ -1586,20 +1587,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
 
     } else if (Nspecies==4) {
-
-      // Plasma
-      if(hDen2D[0] && noIndex!=0) {
-	exPlasma->Draw();
-	hDen2D[0]->Draw(drawopt);
-      }
-
-      // Beam driver.
-      if(hDen2D[1] && noIndex!=1) {
-	exBeam->Draw();
-	//exPlasma->Draw();
-	hDen2D[1]->Draw(drawopt);
-      }
-
+      
       // Witness
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
@@ -1613,7 +1601,18 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[3]->Draw(drawopt);
       }
 
+      // Plasma
+      if(hDen2D[0] && noIndex!=0) {
+	exPlasma->Draw();
+	hDen2D[0]->Draw(drawopt);
+      }
 
+      // Beam driver.
+      if(hDen2D[1] && noIndex!=1) {
+	exBeam->Draw();
+	//exPlasma->Draw();
+	hDen2D[1]->Draw(drawopt);
+      }
     }
 
     if(hA2D && opt.Contains("laser")) {
@@ -1870,7 +1869,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	  hCur1D[i]->SetBinContent(j+1,(content - curmin) * slope + yaxismin);	
 	}
 	
-	hCur1D[i]->SetLineWidth(3);
+	hCur1D[i]->SetLineWidth(2);
 	if(i==1)
 	  hCur1D[i]->SetLineColor(cBeam);
 	else if(i==2)
