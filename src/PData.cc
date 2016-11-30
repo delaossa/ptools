@@ -241,6 +241,8 @@ void PData::ReadParameters(const char * pfile)
 	  iss >> pParam.denMin;
 	else if(word.find("denMax0") != string::npos)
 	  iss >> pParam.denMax;
+	else if(word.find("denLoc0") != string::npos)
+	  iss >> pParam.denLoc;
 	else if(word.find("denMin1") != string::npos)
 	  iss >> pParam.denMin1;
 	else if(word.find("denMax1") != string::npos)

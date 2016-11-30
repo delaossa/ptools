@@ -74,6 +74,7 @@ struct pparam {
   // Density ranges
   Double_t denMin;
   Double_t denMax;
+  Double_t denLoc;
   Double_t denMin1;
   Double_t denMax1;
   Double_t denMin2;
@@ -243,6 +244,13 @@ public:
       return -999.0;
   }
 
+  Double_t  GetDenLoc(Int_t i = 0)  {
+    if(i==0)
+      return pParam.denLoc;
+    else
+      return -999.0;
+  }
+  
   // Simulation parameters:
   Int_t    GetNDim()  { return NDIM; } 
   Int_t    GetNX(Int_t i) {return NX[i];}
@@ -521,7 +529,7 @@ void PData::ResetParameters() {
   pParam.bGamma = 10000.0;
 
   // Density ranges
-  pParam.denMin = pParam.denMax = pParam.denMin1 = pParam.denMax1 = pParam.denMin2 = pParam.denMax2 = pParam.denMin3 = pParam.denMax3 = -999.;
+  pParam.denMin = pParam.denMax = pParam.denLoc = pParam.denMin1 = pParam.denMax1 = pParam.denMin2 = pParam.denMax2 = pParam.denMin3 = pParam.denMax3 = -999.;
 }
 
 

@@ -693,14 +693,23 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     if(pData->GetDenMin(i)>0) {
       Min[i] = pData->GetDenMin(i);
-      if(opt.Contains("logz") && (Max[i]<10*Min[i])) Max[i] = 1.01E1 * Min[i];
+      if(pData->GetDenMax(i)==0) {
+	if(opt.Contains("logz") && (Max[i]<10*Min[i])) Max[i] = 1.01E1 * Min[i];
+      }
     }
       
-    //    cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,pData->GetDenMin(i),pData->GetDenMax(i)) << endl;
-    cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,Min[i],Max[i]) << endl;
+    if(pData->GetDenLoc(i)>0) {
+      localden = pData->GetDenLoc(i);
+      baseden = localden;
+      cout << Form(" Species %2i  denMin = %5f  denMax = %5f  denLoc = %5f",i,Min[i],Max[i],localden) << endl;
+    } else {
+      cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,Min[i],Max[i]) << endl;
+    }
+    
     
     if(hDen2D[i])
       hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
+
   }
   
   // Dynamic plasma palette

@@ -64,7 +64,7 @@ void DeleteOverflows(TH2 *h) {
 
 int main(int argc,char *argv[]) {
   if(argc<=2) {
-    printf("\n Usage: %s <input file> \n",argv[0]);
+    printf("\n Usage: %s <input file> <--astra>\n",argv[0]);
     printf("      <--png> <--pdf> <--eps> <--center>\n");
     printf("      <--file> \n");
     return 0;
@@ -1088,8 +1088,16 @@ int main(int argc,char *argv[]) {
   //  hX1->Scale(1000*lightspeed/binSize);
   hX1->Scale(lightspeed/binSize);
 
-  if(ifile.Contains("MCELLSTART")) 
-    hX1->Scale(10);
+
+  Double_t curUnit;
+  string curSUnit;
+  PUnits::BestUnit bcurSUnit(hX1->GetMaximum(),"Current");
+  bcurSUnit.GetBestUnits(curUnit,curSUnit);
+  hX1->Scale(1/curUnit);
+  hX1->GetYaxis()->SetTitle(Form("I[%s]",curSUnit.c_str()));
+  
+  // if(ifile.Contains("MCELLSTART")) 
+  //   hX1->Scale(10);
   
 
   cout << "\n  Summary _______________________________________________________ " << endl;
