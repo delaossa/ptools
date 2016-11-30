@@ -1833,10 +1833,15 @@ int main(int argc,char *argv[]) {
     hFrame[0]->Draw("axis");
     
     TH2F *hX2X1cl = (TH2F*) hX2X1->Clone("hX2X1cl");
-    hX2X1cl->GetZaxis()->CenterTitle();
-    hX2X1cl->GetZaxis()->SetTitleFont(fonttype);
     Float_t xFactor = pad[0]->GetAbsWNDC()/pad[0]->GetAbsWNDC();
     Float_t yFactor = pad[0]->GetAbsHNDC()/pad[0]->GetAbsHNDC();
+    
+    hX2X1cl->GetZaxis()->CenterTitle();
+    hX2X1cl->GetZaxis()->SetTitleFont(fonttype);
+    hX2X1cl->GetZaxis()->SetTitleOffset(tyoffset);
+    hX2X1cl->GetZaxis()->SetTitleSize(tfontsize);
+    hX2X1cl->GetZaxis()->SetLabelFont(fonttype);
+    hX2X1cl->GetZaxis()->SetLabelSize(fontsize);
     hX2X1cl->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
     hX2X1cl->Draw(drawopts);
 
@@ -1926,10 +1931,14 @@ int main(int argc,char *argv[]) {
     hFrame[1]->Draw("axis");
     
     TH2F *hX3X1cl = (TH2F*) hX3X1->Clone("hX3X1cl");
-    hX3X1cl->GetZaxis()->CenterTitle();
-    hX3X1cl->GetZaxis()->SetTitleFont(fonttype);
     xFactor = pad[0]->GetAbsWNDC()/pad[1]->GetAbsWNDC();
     yFactor = pad[0]->GetAbsHNDC()/pad[1]->GetAbsHNDC();
+    hX3X1cl->GetZaxis()->CenterTitle();
+    hX3X1cl->GetZaxis()->SetTitleFont(fonttype);
+    hX3X1cl->GetZaxis()->SetTitleOffset(tyoffset);
+    hX3X1cl->GetZaxis()->SetTitleSize(tfontsize);
+    hX3X1cl->GetZaxis()->SetLabelFont(fonttype);
+    hX3X1cl->GetZaxis()->SetLabelSize(fontsize);
     hX3X1cl->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
     hX3X1cl->Draw(drawopts);
 
