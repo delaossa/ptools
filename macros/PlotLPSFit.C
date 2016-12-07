@@ -1,3 +1,24 @@
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <stdlib.h>
+
+#include <TROOT.h>
+#include <TSystem.h>
+#include <TFile.h>
+#include <TLegend.h>
+#include <TH1F.h>
+#include <TH2F.h>
+#include <TF1.h>
+#include <TGraph.h>
+#include <TGraphErrors.h>
+#include <TProfile.h>
+#include <TPaletteAxis.h>
+
+#include "PData.hh"
+#include "PDataHiP.hh"
+#include "PGlobals.hh"
+#include "PPalette.hh"
 
 void PlotLPSFit(const TString &sim, Int_t timestep, Int_t index = 1) {
   
