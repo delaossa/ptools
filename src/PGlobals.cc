@@ -43,8 +43,8 @@ void PGlobals::SetPlasmaStyle() {
     
   PlasmaStyle->SetLegendBorderSize(0);
       
-  PlasmaStyle->SetCanvasDefH(1024);
-  PlasmaStyle->SetCanvasDefW(640);
+  PlasmaStyle->SetCanvasDefW(800);
+  PlasmaStyle->SetCanvasDefH(600);
   // set the paper & margin sizes
   PlasmaStyle->SetPaperSize(TStyle::kA4);
   PlasmaStyle->SetPadTopMargin(0.05);

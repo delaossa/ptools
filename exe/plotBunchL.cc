@@ -206,6 +206,7 @@ int main(int argc,char *argv[]) {
   UInt_t Np = 0;  
   const Int_t Nvar = 6;
   Double_t *var[Nvar]; 
+  Double_t *charge = NULL; 
   Double_t varMean[Nvar]; 
   Double_t varRms[Nvar]; 
   Double_t varMin[Nvar]; 
@@ -235,6 +236,7 @@ int main(int argc,char *argv[]) {
       else if(irow==2) { // allocate memory for the variables
 	for(Int_t i=0;i<Nvar;i++)
 	  var[i] = new Double_t[Np];
+	charge = new Double_t[Np];
       } else {
 	for(Int_t i=0;i<Nvar;i++) {
 	  stream >> var[i][irow-2];	
@@ -286,9 +288,11 @@ int main(int argc,char *argv[]) {
 	  if(var[i][irow-2]<varMin[i]) varMin[i] = var[i][irow-2];
 	  if(var[i][irow-2]>varMax[i]) varMax[i] = var[i][irow-2];
 	
-	}      
+	}
+
+	charge[irow-2] = Q/Np;
       }
-    
+      
       irow++;
     }
   } else {
@@ -305,6 +309,8 @@ int main(int argc,char *argv[]) {
     for(Int_t i=0;i<Nvar;i++)
       var[i] = new Double_t[Np];
 
+    charge = new Double_t[Np];
+    
     // Rewind
     file.clear();
     file.seekg(0);
@@ -334,6 +340,9 @@ int main(int argc,char *argv[]) {
       var[2][irow] = aux1 * 1E6;  // um;
 
       // transform momentum coordinates
+      // skip crazy momentum
+      if(irow>0 && (fabs(var[5][irow])>5000000)) continue;
+
       aux0 = var[3][irow];
       aux1 = var[4][irow];
       var[3][irow] = var[5][irow] * PUnits::eV / (PUnits::GeV);
@@ -344,9 +353,10 @@ int main(int argc,char *argv[]) {
 	var[0][irow] += var[0][0];
 	var[3][irow] += var[3][0];
       }
-      
-      Q += q;
 
+      charge[irow] = q*1E3; // pC
+      Q += q;
+      
       for(Int_t i=0;i<Nvar;i++) {
 	varMean[i] += var[i][irow];
 	varRms[i]  += var[i][irow]*var[i][irow];	
@@ -421,73 +431,76 @@ int main(int argc,char *argv[]) {
     p3Max = varMean[5] + 8;
   }
 
-  TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
-  if(hScanX1) delete hScanX1;
-  hScanX1 = new TH1F("hScanX1","",x1Nbin,x1Min,x1Max);
-  TH1F *hScanX2 = (TH1F*) gROOT->FindObject("hScanX2");
-  if(hScanX2) delete hScanX2;
-  hScanX2 = new TH1F("hScanX2","",x2Nbin,x2Min,x2Max);
-  TH1F *hScanX3 = (TH1F*) gROOT->FindObject("hScanX3");
-  if(hScanX3) delete hScanX3;
-  hScanX3 = new TH1F("hScanX3","",x3Nbin,x3Min,x3Max);
-  
-  TH1F *hScanP1 = (TH1F*) gROOT->FindObject("hScanP1");
-  if(hScanP1) delete hScanP1;
-  hScanP1 = new TH1F("hScanP1","",p1Nbin,p1Min,p1Max);
-  TH1F *hScanP2 = (TH1F*) gROOT->FindObject("hScanP2");
-  if(hScanP2) delete hScanP2;
-  hScanP2 = new TH1F("hScanP2","",p2Nbin,p2Min,p2Max);
-  TH1F *hScanP3 = (TH1F*) gROOT->FindObject("hScanP3");
-  if(hScanP3) delete hScanP3;
-  hScanP3 = new TH1F("hScanP3","",p3Nbin,p3Min,p3Max);
 
-  // Filling scan histos for auto ranging
-  
-  for(UInt_t i=0;i<Np;i++) {
-
-    hScanX1->Fill(var[0][i],Q/Np);
-    hScanP1->Fill(var[3][i],Q/Np);
-    hScanX2->Fill(var[1][i],Q/Np);
-    hScanP2->Fill(var[4][i],Q/Np);
-    hScanX3->Fill(var[2][i],Q/Np);
-    hScanP3->Fill(var[5][i],Q/Np);
-
+  if(opt.Contains("auto")) {
+    TH1F *hScanX1 = (TH1F*) gROOT->FindObject("hScanX1");
+    if(hScanX1) delete hScanX1;
+    hScanX1 = new TH1F("hScanX1","",x1Nbin,x1Min,x1Max);
+    TH1F *hScanX2 = (TH1F*) gROOT->FindObject("hScanX2");
+    if(hScanX2) delete hScanX2;
+    hScanX2 = new TH1F("hScanX2","",x2Nbin,x2Min,x2Max);
+    TH1F *hScanX3 = (TH1F*) gROOT->FindObject("hScanX3");
+    if(hScanX3) delete hScanX3;
+    hScanX3 = new TH1F("hScanX3","",x3Nbin,x3Min,x3Max);
+    
+    TH1F *hScanP1 = (TH1F*) gROOT->FindObject("hScanP1");
+    if(hScanP1) delete hScanP1;
+    hScanP1 = new TH1F("hScanP1","",p1Nbin,p1Min,p1Max);
+    TH1F *hScanP2 = (TH1F*) gROOT->FindObject("hScanP2");
+    if(hScanP2) delete hScanP2;
+    hScanP2 = new TH1F("hScanP2","",p2Nbin,p2Min,p2Max);
+    TH1F *hScanP3 = (TH1F*) gROOT->FindObject("hScanP3");
+    if(hScanP3) delete hScanP3;
+    hScanP3 = new TH1F("hScanP3","",p3Nbin,p3Min,p3Max);
+    
+    // Filling scan histos for auto ranging
+    
+    for(UInt_t i=0;i<Np;i++) {
+      
+      hScanX1->Fill(var[0][i],charge[i]);
+      hScanP1->Fill(var[3][i],charge[i]);
+      hScanX2->Fill(var[1][i],charge[i]);
+      hScanP2->Fill(var[4][i],charge[i]);
+      hScanX3->Fill(var[2][i],charge[i]);
+      hScanP3->Fill(var[5][i],charge[i]);
+      
+    }
+    
+    // Set limits using Scan histograms (auto ranges)
+    Double_t peakFactor = 0.05;
+    Double_t rfactor = 0.5;
+    
+    Double_t min, max;
+    FindLimits(hScanX1,min,max,peakFactor);
+    x1Min = min - rfactor*(max-min);
+    x1Max = max + rfactor*(max-min);
+    
+    FindLimits(hScanX2,min,max,peakFactor);
+    x2Min = min - rfactor*(max-min);
+    x2Max = max + rfactor*(max-min);
+    
+    FindLimits(hScanX3,min,max,peakFactor);
+    x3Min = min - rfactor*(max-min);
+    x3Max = max + rfactor*(max-min);
+    
+    FindLimits(hScanP1,min,max,peakFactor);
+    p1Min = min - rfactor*(max-min);
+    p1Max = max + 2*rfactor*(max-min);
+    
+    FindLimits(hScanP2,min,max,peakFactor);
+    p2Min = min - rfactor*(max-min);
+    p2Max = max + rfactor*(max-min);
+    
+    FindLimits(hScanP3,min,max,peakFactor);
+    p3Min = min - rfactor*(max-min);
+    p3Max = max + rfactor*(max-min);
+    
+    // Slices range
+    FindLimits(hScanX1,min,max,0.1);
+    x1BinMin = min;
+    x1BinMax = max;
+    
   }
-
-  // Set limits using Scan histograms (auto ranges)
-  Double_t peakFactor = 0.05;
-  Double_t rfactor = 0.5;
-
-  Double_t min, max;
-  FindLimits(hScanX1,min,max,peakFactor);
-  x1Min = min - rfactor*(max-min);
-  x1Max = max + rfactor*(max-min);
-
-  FindLimits(hScanX2,min,max,peakFactor);
-  x2Min = min - rfactor*(max-min);
-  x2Max = max + rfactor*(max-min);
-
-  FindLimits(hScanX3,min,max,peakFactor);
-  x3Min = min - rfactor*(max-min);
-  x3Max = max + rfactor*(max-min);
-
-  FindLimits(hScanP1,min,max,peakFactor);
-  p1Min = min - rfactor*(max-min);
-  p1Max = max + 2*rfactor*(max-min);
-
-  FindLimits(hScanP2,min,max,peakFactor);
-  p2Min = min - rfactor*(max-min);
-  p2Max = max + rfactor*(max-min);
-
-  FindLimits(hScanP3,min,max,peakFactor);
-  p3Min = min - rfactor*(max-min);
-  p3Max = max + rfactor*(max-min);
-
-  // Slices range
-  FindLimits(hScanX1,min,max,0.1);
-  x1BinMin = min;
-  x1BinMax = max;
-
   
   cout << Form(" x1 range (N = %i):  x1Min = %f  x1Max = %f ", x1Nbin, x1Min, x1Max) << endl;
   cout << Form(" p1 range (N = %i):  p1Min = %f  p1Max = %f ", p1Nbin, p1Min, p1Max) << endl;
@@ -519,8 +532,8 @@ int main(int argc,char *argv[]) {
   TH1F *hP1 = (TH1F*) gROOT->FindObject(hName);
   if(hP1) delete hP1;
   hP1 = new TH1F(hName,"",p1Nbin,p1Min,p1Max);
-  hP1->GetYaxis()->SetTitle("p_{z} [GeV/c]");
-  hP1->GetXaxis()->SetTitle("#zeta [#mum]");
+  hP1->GetXaxis()->SetTitle("p_{z} [GeV/c]");
+  hP1->GetYaxis()->SetTitle("");
 
   sprintf(hName,"hP1X1");
   TH2F *hP1X1 = (TH2F*) gROOT->FindObject(hName);
@@ -642,19 +655,19 @@ int main(int argc,char *argv[]) {
   
   for(UInt_t i=0;i<Np;i++) {
     
-    hX1->Fill(var[0][i],Q/Np);
-    hP1->Fill(var[3][i],Q/Np);
-    hP1X1->Fill(var[0][i],var[3][i],Q/Np);
+    hX1->Fill(var[0][i],charge[i]);
+    hP1->Fill(var[3][i],charge[i]);
+    hP1X1->Fill(var[0][i],var[3][i],charge[i]);
     
-    hP2X1->Fill(var[0][i],var[4][i],Q/Np);
-    hP3X1->Fill(var[0][i],var[5][i],Q/Np);
+    hP2X1->Fill(var[0][i],var[4][i],charge[i]);
+    hP3X1->Fill(var[0][i],var[5][i],charge[i]);
 
-    hP2X2->Fill(var[1][i],var[4][i],Q/Np);
-    hP3X3->Fill(var[2][i],var[5][i],Q/Np);
+    hP2X2->Fill(var[1][i],var[4][i],charge[i]);
+    hP3X3->Fill(var[2][i],var[5][i],charge[i]);
 
-    hX2X1->Fill(var[0][i],var[1][i],Q/Np);
-    hX3X1->Fill(var[0][i],var[2][i],Q/Np);
-    hX3X2->Fill(var[1][i],var[2][i],Q/Np);
+    hX2X1->Fill(var[0][i],var[1][i],charge[i]);
+    hX3X1->Fill(var[0][i],var[2][i],charge[i]);
+    hX3X2->Fill(var[1][i],var[2][i],charge[i]);
     
     // Slices    
     if(var[0][i]<sBinLim[0] || var[0][i]>sBinLim[SNbin]) continue;
@@ -670,9 +683,9 @@ int main(int argc,char *argv[]) {
 
     // Projected emittance in the bunch range. (skip the tails to "match" the sliced ones)
 
-    hP2X2sl[iBin]->Fill(var[1][i],var[4][i],Q/Np);
-    hP3X3sl[iBin]->Fill(var[2][i],var[5][i],Q/Np);
-    hP1sl[iBin]->Fill(var[3][i],Q/Np);   
+    hP2X2sl[iBin]->Fill(var[1][i],var[4][i],charge[i]);
+    hP3X3sl[iBin]->Fill(var[2][i],var[5][i],charge[i]);
+    hP1sl[iBin]->Fill(var[3][i],charge[i]);   
     
   }
 
@@ -1086,7 +1099,7 @@ int main(int argc,char *argv[]) {
   Float_t binSize = (x1Max - x1Min)/x1Nbin;
   Float_t lightspeed =  PConst::c_light / (PUnits::um/PUnits::femtosecond);  
   //  hX1->Scale(1000*lightspeed/binSize);
-  hX1->Scale(lightspeed/binSize);
+  hX1->Scale(1000*lightspeed/binSize);
 
 
   Double_t curUnit;
@@ -1103,7 +1116,7 @@ int main(int argc,char *argv[]) {
   cout << "\n  Summary _______________________________________________________ " << endl;
 
   cout << Form("  Integrated charge (RAW) = %8f pC",Charge) << endl;
-  cout << Form("  Peak current = %6.2f kA",hX1->GetMaximum()) << endl;
+  cout << Form("  Peak current = %6.2f %s",hX1->GetMaximum(),curSUnit.c_str()) << endl;
   cout << Form("  Total energy = %6.2f GeV, rms = %3.1f %%",pzmean,100*pzrms/pzmean) << endl;
   cout << Form("  Gamma        = %6.2f ",grel) << endl;
   cout << Form("  Trans. emit. = %6.2f  um",emitx) << endl;
@@ -1634,7 +1647,7 @@ int main(int argc,char *argv[]) {
     if(ifile.Contains("MCELLSTART"))
       Leg->AddEntry(hX1  ,"Current [0.1 kA]","L");
     else
-      Leg->AddEntry(hX1  ,"Current [kA]","L");
+      Leg->AddEntry(hX1  ,Form("Current [%s]",curSUnit.c_str()),"L");
     // Leg->AddEntry(gErms,"Energy spread (GeV)","PL");
     Leg->AddEntry(gErms,"Energy spread [0.1%]","PL");
     Leg->AddEntry(gemitX,Form("Emittance_{n,x} [%s]",emitSUnit.c_str()),"PL");

@@ -600,9 +600,11 @@ int main(int argc,char *argv[]) {
     x1Max = floor((x1Max-X1MIN)/dx1) * dx1 + X1MIN;
 
     Double_t ddx1 = dxf * dx1;
+    x1Min = floor((x1Min-X1MIN)/ddx1) * ddx1 + X1MIN;  
+    x1Max = floor((x1Max-X1MIN)/ddx1) * ddx1 + X1MIN;
     x1Nbin = ceil ((x1Max - x1Min)/(ddx1));
     p1Nbin = x1Nbin;
-
+    
     // slices
     x1BinMin = floor((x1BinMin-X1MIN)/dx1) * dx1 + X1MIN;  
     x1BinMax = floor((x1BinMax-X1MIN)/dx1) * dx1 + X1MIN;
@@ -1215,7 +1217,12 @@ int main(int argc,char *argv[]) {
       hP1X1->SetBins(x1Nbin,x1Min,x1Max,p1Nbin,p1Min,p1Max);
       hP1X1->Scale(Q0 / chargeUnit);
       hP1X1->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
-      
+      hP1X1->GetYaxis()->SetTitle(Form("p_{z} [%s/c]",eneSUnit.c_str()));
+      if(opt.Contains("comov"))
+	hP1X1->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
+      else
+	hP1X1->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
+
       // Converting electron density
       hP1->Scale(Q0 / chargeUnit);
       hP1->SetBins(p1Nbin,p1Min,p1Max);
