@@ -293,7 +293,7 @@ public:
 
   TH2F* GetH2ZR(const char *filename, const char *dataname, const char *options="");
   
-  TH3F* GetH3(const char *filename, const char *dataname) ;
+  TH3F* GetH3(const char *filename, const char *dataname, const char *options="") ;
 
   Float_t* Get3Darray(const char *filename, const char *dataname, UInt_t dim[3]) ;
   

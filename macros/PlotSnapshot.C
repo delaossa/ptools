@@ -26,6 +26,7 @@
 #include "PData.hh"
 #include "PDataHiP.hh"
 #include "PGlobals.hh"
+#include "PConst.hh"
 #include "PPalette.hh"
 
 
@@ -1886,7 +1887,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	else if(i==3)
 	  hCur1D[i]->SetLineColor(cBeam2);
 	  
-	hCur1D[i]->Draw("same L");
+	hCur1D[i]->Draw("hist LF2 same");
 	
       }	    
 

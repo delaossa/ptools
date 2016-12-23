@@ -2819,10 +2819,13 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
 
 
 //_______________________________________________________________________
-TH3F* PData::GetH3(const char *filename,const char *dataname) {
+TH3F* PData::GetH3(const char *filename,const char *dataname, const char *options) {
 
   // Save memory and time with an specific range selection.
 
+  // Options
+  TString opt = options;
+  
   // Open input HDF5 file
   H5File h5 = H5File(filename,H5F_ACC_RDONLY);
   
@@ -2873,6 +2876,24 @@ TH3F* PData::GetH3(const char *filename,const char *dataname) {
   dataSet->close();
 
   root->close();
+  
+  // Histogram centering
+  Double_t shiftx1 = Shift(opt);  
+  Double_t shiftx2(0), shiftx3(0);
+  if(opt.Contains("center")) 
+    if(!opt.Contains("cyl")) {
+      shiftx2 += (x2Min + x2Max)/2.;
+      shiftx3 += (x3Min + x3Max)/2.;
+    }
+  
+  x1Min -= shiftx1;
+  x1Max -= shiftx1;
+  
+  x2Min -= shiftx2;
+  x2Max -= shiftx2;
+
+  x3Min -= shiftx2;
+  x3Max -= shiftx2;
   
   string sdata = dataname;
  

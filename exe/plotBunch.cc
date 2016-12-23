@@ -58,7 +58,7 @@ int main(int argc,char *argv[]) {
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
     printf("      <--png> <--pdf> <--eps> <--slcs>\n");
     printf("      <--center> <--comov>\n");
-    printf("      <--units> <--logz>\n");
+    printf("      <--units> <--logz> <-z(zoom factor)>\n");
     printf("      <--file> <--loop>\n");
     return 0;
   }
@@ -71,6 +71,9 @@ int main(int argc,char *argv[]) {
   Int_t   iStep = 1;
   TString   opt = "";
   Int_t   indexi = 1;
+
+  // zoom
+  Float_t  zoom = 1;
 
   // Option for raw fraction correction
   Float_t rawf = 1;
@@ -144,6 +147,8 @@ int main(int argc,char *argv[]) {
       opt += "fwhm"; 
     } else if(arg.Contains("--elli")){
       opt += "elli"; 
+    } else if(arg.Contains("--eztrack")){
+      opt += "eztrack"; 
     } else if(arg.Contains("-index")) {
       char ss[6];
       sscanf(arg,"%6s%i",ss,&indexi);
@@ -183,12 +188,19 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-pmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmax);
+    } else if(arg.Contains("-z")) {
+      char ss[2];
+      sscanf(arg,"%2s%f",ss,&zoom);
     } else {
       cout << Form("\t Invalid argument (%i): exiting...\n",l) << endl;
       return 0;
     }
   }
 
+  if(opt.Contains("eztrack") && !opt.Contains("loop")) {
+    cout << Form(" WARNING: 'eztrack' option only works in loop mode: add --loop flag to the program") << endl;
+  }
+  
   PGlobals::Initialize();
 
   if(opt.Contains("grid")) {
@@ -221,8 +233,8 @@ int main(int argc,char *argv[]) {
   //  opt += "comovcenter";
 
   // Units
-  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit,  betaUnit;
-  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit,  betaSUnit;
+  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit,  betaUnit, ezUnit;
+  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit,  betaSUnit, ezSUnit;
 
   if(opt.Contains("units") && n0) {
 
@@ -282,6 +294,10 @@ int main(int argc,char *argv[]) {
   // ermsUnit = PUnits::perThousand; 
   // ermsSUnit = "0.1 %";
 
+  // Ez unit
+  ezUnit = PUnits::GV/PUnits::meter;
+  ezSUnit = "GV/m";
+  
   if (sim.Contains("pitz")) {
     curUnit = PUnits::ampere;
     curSUnit = "A";
@@ -344,7 +360,7 @@ int main(int argc,char *argv[]) {
     else
       dx3 = 1.0;
     
-    // Bining, intervals, labels, etc.
+    // Binning, ranges, labels, etc.
     Int_t x1Nbin = 200;
     Int_t p1Nbin = 200;
     Int_t x2Nbin = 200;
@@ -352,7 +368,7 @@ int main(int argc,char *argv[]) {
     Int_t x3Nbin = 200;
     Int_t p3Nbin = 200;
     
-    // Spatial coordinates intervals:
+    // Spatial range:
     Double_t x1Min = X1MIN;
     Double_t x1Max = X1MAX;
     Double_t x2Min = X2MIN;
@@ -360,7 +376,23 @@ int main(int argc,char *argv[]) {
     Double_t x3Min = X3MIN;
     Double_t x3Max = X3MAX;
 
-    // Momentum coordinates intervals:
+    x1Nbin = (X1MAX-X1MIN)/dx1;
+    x2Nbin = (X2MAX-X2MIN)/dx2;
+    x1Nbin = (X3MAX-X3MIN)/dx3;
+
+    // Zoom trasverse range
+    Double_t x2Range = (x2Max - x2Min)/zoom;
+    Double_t x2Mid   = (x2Max + x2Min)/2.0;
+    x2Min = x2Mid - x2Range/2.0;
+    x2Max = x2Mid + x2Range/2.0;
+    if(pData->Is3D()) {
+      Double_t x3Range = (x3Max - x3Min)/zoom;
+      Double_t x3Mid   = (x3Max + x3Min)/2.0;
+      x3Min = x3Mid - x3Range/2.0;
+      x3Max = x3Mid + x3Range/2.0;
+    }
+    
+    // Momentum range:
     Double_t p1Min =  Pmin;
     Double_t p1Max =  Pmax;
     Double_t p2Min = -15.0;
@@ -502,22 +534,22 @@ int main(int argc,char *argv[]) {
 	
     }
       
+    // Set limits using extreme values
     p1Min = MinP1 - rfactor*(MaxP1-MinP1);
     p1Max = MaxP1 + rfactor*(MaxP1-MinP1);
-    p2Min = MinP2 - rfactor*(MaxP2-MinP2);
-    p2Max = MaxP2 + rfactor*(MaxP2-MinP2);
-    p3Min = MinP3 - rfactor*(MaxP3-MinP3);
-    p3Max = MaxP3 + rfactor*(MaxP3-MinP3);
+    // p2Min = MinP2 - rfactor*(MaxP2-MinP2);
+    // p2Max = MaxP2 + rfactor*(MaxP2-MinP2);
+    // p3Min = MinP3 - rfactor*(MaxP3-MinP3);
+    // p3Max = MaxP3 + rfactor*(MaxP3-MinP3);
 
-    x1Min = MinX1 - rfactor*(MaxX1-MinX1);
-    x1Max = MaxX1 + rfactor*(MaxX1-MinX1);
-    x2Min = MinX2 - rfactor*(MaxX2-MinX2);
-    x2Max = MaxX2 + rfactor*(MaxX2-MinX2);
-    
-    if(Nvar==7) {
-      x3Min = MinX3 - rfactor*(MaxX3-MinX3);
-      x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
-    }
+    // x1Min = MinX1 - rfactor*(MaxX1-MinX1);
+    // x1Max = MaxX1 + rfactor*(MaxX1-MinX1);
+    // x2Min = MinX2 - rfactor*(MaxX2-MinX2);
+    // x2Max = MaxX2 + rfactor*(MaxX2-MinX2);    
+    // if(Nvar==7) {
+    //   x3Min = MinX3 - rfactor*(MaxX3-MinX3);
+    //   x3Max = MaxX3 + rfactor*(MaxX3-MinX3);
+    // }
 
     // Set limits using Scan histograms
     Double_t peakFactor = 0.2;
@@ -537,6 +569,7 @@ int main(int argc,char *argv[]) {
     x1Min = x1min - rfactor*(x1max-x1min);
     x1Max = x1max + 2*rfactor*(x1max-x1min);
 
+    // Transverse plane
     Double_t x2min = -999;
     Double_t x2max = -999;
     FindLimits(hScanX2,x2min,x2max,peakFactor);
@@ -544,16 +577,16 @@ int main(int argc,char *argv[]) {
       x2min -= 0.1;
       x2max += 0.1;
     }
-    x2Min = x2min - rfactor2*(x2max-x2min);
-    x2Max = x2max + rfactor2*(x2max-x2min);
+    //x2Min = x2min - rfactor2*(x2max-x2min);
+    //x2Max = x2max + rfactor2*(x2max-x2min);
     //      cout << Form("  x2Min = %f  x2Max = %f ",x2min,x2max) << endl;
       
     Double_t x3min = -999;
     Double_t x3max = -999;
     if(Nvar==7) {
       FindLimits(hScanX3,x3min,x3max,peakFactor);
-      x3Min = x3min - rfactor2*(x3max-x3min);
-      x3Max = x3max + rfactor2*(x3max-x3min);
+      //x3Min = x3min - rfactor2*(x3max-x3min);
+      //x3Max = x3max + rfactor2*(x3max-x3min);
     }
       
     Double_t p2min = -999;
@@ -561,12 +594,16 @@ int main(int argc,char *argv[]) {
     FindLimits(hScanP2,p2min,p2max,peakFactor);
     p2Min = p2min - rfactor2*(p2max-p2min);
     p2Max = p2max + rfactor2*(p2max-p2min);
-
+    if(p2Max<-p2Min) p2Max = -p2Min; 
+    else p2Min = -p2Max;
+      
     Double_t p3min = -999;
     Double_t p3max = -999;
     FindLimits(hScanP3,p3min,p3max,peakFactor);
     p3Min = p3min - rfactor2*(p3max-p3min);
     p3Max = p3max + rfactor2*(p3max-p3min);
+    if(p3Max<-p3Min) p3Max = -p3Min; 
+    else p3Min = -p3Max;
                   
     // Prevent range limits to go out of the box
     if(x1Min<X1MIN) x1Min = X1MIN;
@@ -620,22 +657,21 @@ int main(int argc,char *argv[]) {
     // cout << Form(" x1-slices (N = %i):  x1Min = %f  x1Max = %f  Dx1 = %f", SNbin, x1BinMin, x1BinMax, (x1BinMax-x1BinMin)/SNbin) << endl;
 
     
-    Double_t ddx2 = dxf * dx2;      
-    x2Min = floor((x2Min-X2MIN)/dx2) * dx2 + X2MIN;  
-    x2Max = floor((x2Max-X2MIN)/dx2) * dx2 + X2MIN;  
-    x2Nbin = ceil ((x2Max - x2Min)/(ddx2));
-    if(x2Nbin<50) x2Nbin = 50;
-
-    p2Nbin = x2Nbin;
+    // Double_t ddx2 = dxf * dx2;      
+    // x2Min = floor((x2Min-X2MIN)/dx2) * dx2 + X2MIN;  
+    // x2Max = floor((x2Max-X2MIN)/dx2) * dx2 + X2MIN;  
+    // x2Nbin = ceil ((x2Max - x2Min)/(ddx2));
+    // if(x2Nbin<100) x2Nbin = 100;
+    // p2Nbin = x2Nbin;
     
-    if(pData->Is3D()) {
-      Double_t ddx3 = dxf * dx3;      
-      x3Min = floor((x3Min-X3MIN)/dx3) * dx3 + X3MIN;  
-      x3Max = floor((x3Max-X3MIN)/dx3) * dx3 + X3MIN;  
-      x3Nbin = ceil ((x3Max - x3Min)/(ddx3));
-      if(x3Nbin<50) x3Nbin = 50;
-    }
-    p3Nbin = x3Nbin;
+    // if(pData->Is3D()) {
+    //   Double_t ddx3 = dxf * dx3;      
+    //   x3Min = floor((x3Min-X3MIN)/dx3) * dx3 + X3MIN;  
+    //   x3Max = floor((x3Max-X3MIN)/dx3) * dx3 + X3MIN;  
+    //   x3Nbin = ceil ((x3Max - x3Min)/(ddx3));
+    //   if(x3Nbin<100) x3Nbin = 100;
+    // }
+    // p3Nbin = x3Nbin;
     
     if(p1Min < 0.0) p1Min = 0.01;
     // if(x1Nbin < 100) x1Nbin = 100;
@@ -721,15 +757,34 @@ int main(int argc,char *argv[]) {
     hP2X2->GetYaxis()->SetTitle("p_{x}/mc");
     hP2X2->GetZaxis()->SetTitle("Charge [n_{0}dV]");
 
-    sprintf(hName,"hP3X3");
-    TH2F *hP3X3 =  (TH2F*) gROOT->FindObject(hName);
-    if(hP3X3) delete hP3X3;
+    sprintf(hName,"hP2X2range");
+    TH2F *hP2X2range = (TH2F*) gROOT->FindObject(hName);
+    if(hP2X2range) delete hP2X2range;
+    hP2X2range = new TH2F(hName,"",x2Nbin,x2Min,x2Max,p2Nbin,p2Min,p2Max);
+    hP2X2range->GetXaxis()->SetTitle("k_{p}x");
+    hP2X2range->GetYaxis()->SetTitle("p_{x}/mc");
+    hP2X2range->GetZaxis()->SetTitle("Charge [n_{0}dV]");
+    hP2X2range->GetZaxis()->CenterTitle();
+
+    TH2F *hP3X3(0), *hP3X3range(0);
     if(pData->Is3D()) {
+      sprintf(hName,"hP3X3");
+      hP3X3 =  (TH2F*) gROOT->FindObject(hName);
+      if(hP3X3) delete hP3X3;
       hP3X3 = new TH2F(hName,"",x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
       hP3X3->GetXaxis()->SetTitle("k_{p}y");
       hP3X3->GetYaxis()->SetTitle("p_{y}/mc");
       hP3X3->GetZaxis()->SetTitle("Charge [n_{0}dV]");
       hP3X3->GetZaxis()->CenterTitle();
+      
+      sprintf(hName,"hP3X3range");
+      hP3X3range = (TH2F*) gROOT->FindObject(hName);
+      if(hP3X3range) delete hP3X3range;
+      hP3X3range = new TH2F(hName,"",x3Nbin,x3Min,x3Max,p3Nbin,p3Min,p3Max);
+      hP3X3range->GetXaxis()->SetTitle("k_{p}y");
+      hP3X3range->GetYaxis()->SetTitle("p_{y}/mc");
+      hP3X3range->GetZaxis()->SetTitle("Charge [n_{0}dV]");
+      hP3X3range->GetZaxis()->CenterTitle();
     }
     
     sprintf(hName,"hX2X1");
@@ -843,19 +898,21 @@ int main(int argc,char *argv[]) {
 	}
       }
       if(iBin<0) continue;
+      // cout << Form("  iBin = %i   p1 = %7.3f",iBin,var[0][i]) << endl;
 
-      // Fill points in range
+      // Fill histograms in slices range
+      hP1sl[iBin]->Fill(var[0][i],TMath::Abs(var[3][i]));
       hP1range->Fill(var[0][i],TMath::Abs(var[3][i]));
       hP1X1range->Fill(var[4][i],var[0][i],TMath::Abs(var[3][i]));
       
       hP2X2sl[iBin]->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
 
-      if(Nvar==7)
+      hP2X2range->Fill(var[5][i],var[1][i],TMath::Abs(var[3][i]));
+
+      if(Nvar==7) {
 	hP3X3sl[iBin]->Fill(var[6][i],var[2][i],TMath::Abs(var[3][i]));
-      
-      hP1sl[iBin]->Fill(var[0][i],TMath::Abs(var[3][i]));
-      //      cout << Form("  iBin = %i   p1 = %7.3f",iBin,var[0][i]) << endl;
-      
+	hP3X3range->Fill(var[6][i],var[2][i],TMath::Abs(var[3][i]));
+      }
       
     }
     // cout << " done! " << endl;
@@ -1000,9 +1057,33 @@ int main(int argc,char *argv[]) {
     ellipP2X2->SetLineColor(2);
     ellipP2X2->SetLineWidth(1);
 
+    // in slices range
+    hP2X2range->GetStats(stats);
+
+    xrms2  = stats[3]/stats[0] - stats[2]*stats[2]/(stats[0]*stats[0]);
+    yrms2  = stats[5]/stats[0] - stats[4]*stats[4]/(stats[0]*stats[0]);
+    xyrms = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+    emit2 = xrms2*yrms2 - xyrms*xyrms;
+    emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ; 
+
+    Double_t emitx_r = emit;
+    Double_t x_mean_r = stats[2]/stats[0];
+    Double_t x_rms_r = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
+    Double_t px_mean_r = stats[4]/stats[0];
+    Double_t px_rms_r = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+
+    beta = xrms2 / emit;
+    gamma = yrms2 / emit;
+    alpha = -xyrms / emit;
+
+    Double_t grel_r = hP1range->GetMean();
+    Double_t betax_r = beta * grel_r;
+
 
     // P3X3 SPACE -----------------------
     Double_t emity = 0, y_mean = 0, y_rms = 0, py_mean = 0, py_rms = 0, betay = 0;
+    Double_t emity_r(0), y_mean_r(0), y_rms_r(0), py_mean_r(0), py_rms_r(0), betay_r(0);
+
     TEllipse *ellipP3X3 = NULL;
     if(pData->Is3D()) {
       hP3X3->GetStats(stats);
@@ -1042,6 +1123,25 @@ int main(int argc,char *argv[]) {
       ellipP3X3->SetLineStyle(2);
       ellipP3X3->SetLineColor(2);
       ellipP3X3->SetLineWidth(1);
+
+      // in slices range
+      hP3X3range->GetStats(stats);
+
+      xrms2  = stats[3]/stats[0] - stats[2]*stats[2]/(stats[0]*stats[0]);
+      yrms2  = stats[5]/stats[0] - stats[4]*stats[4]/(stats[0]*stats[0]);
+      xyrms = stats[6]/stats[0] - stats[2]*stats[4]/(stats[0]*stats[0]);
+      emit2 = xrms2*yrms2 - xyrms*xyrms;
+      emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ; 
+
+      emity_r = emit;
+      y_mean_r = stats[2]/stats[0];
+      y_rms_r = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
+      py_mean_r = stats[4]/stats[0];
+      py_rms_r = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+
+      Double_t beta = xrms2 / emit;
+      betay_r = beta * grel_r;
+
     }
 
     cout << Form("\n 4. Calculating sliced quantities.. ") << endl ;
@@ -1052,9 +1152,9 @@ int main(int argc,char *argv[]) {
     TGraph *gYrms = NULL;
     TGraph *gErms = NULL;
 
-    Double_t * zbin = new Double_t[SNbin];
-    Double_t * sEmean = new Double_t[SNbin];
-    Double_t * sErms = new Double_t[SNbin];
+    Double_t *zbin = new Double_t[SNbin];
+    Double_t *sEmean = new Double_t[SNbin];
+    Double_t *sErms = new Double_t[SNbin];
 
     Double_t *sx_mean = new Double_t[SNbin];
     Double_t *sx_rms = new Double_t[SNbin];
@@ -1278,6 +1378,11 @@ int main(int argc,char *argv[]) {
       hP2X2->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
       hP2X2->GetZaxis()->CenterTitle();
       
+      hP2X2range->GetXaxis()->SetTitle(Form("x [%s]",spaSUnit.c_str()));
+      hP2X2range->GetYaxis()->SetTitle(Form("p_{x} [%s/c]",teneSUnit.c_str()));
+      hP2X2range->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
+      hP2X2range->GetZaxis()->CenterTitle();
+      
       hX2X1->SetBins(x1Nbin,x1Min,x1Max,x2Nbin,x2Min,x2Max);
       hX2X1->Scale(Q0 / chargeUnit);
       hX2X1->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
@@ -1303,7 +1408,12 @@ int main(int argc,char *argv[]) {
 	hP3X3->GetYaxis()->SetTitle(Form("p_{y} [%s/c]",teneSUnit.c_str()));
 	hP3X3->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
 	hP3X3->GetZaxis()->CenterTitle();
-	
+
+	hP3X3range->GetXaxis()->SetTitle(Form("y [%s]",spaSUnit.c_str()));
+	hP3X3range->GetYaxis()->SetTitle(Form("p_{y} [%s/c]",teneSUnit.c_str()));
+	hP3X3range->GetZaxis()->SetTitle(Form("Charge [%s]",chargeSUnit.c_str()));
+	hP3X3range->GetZaxis()->CenterTitle();
+
 	hX3X1->SetBins(x1Nbin,x1Min,x1Max,x3Nbin,x3Min,x3Max);
 	hX3X1->Scale(Q0 / chargeUnit);
 	hX3X1->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
@@ -1326,6 +1436,7 @@ int main(int argc,char *argv[]) {
 	// cout << bemitSUnit << endl;
       }
       emitx /= emitUnit;
+      emitx_r *= skindepth/emitUnit;
 
       betax *= skindepth;
       if(opt.Contains("best")) {
@@ -1334,10 +1445,13 @@ int main(int argc,char *argv[]) {
 	cout << bbetaSUnit << endl;
       }
       betax /= betaUnit;
+      betax_r *= skindepth/emitUnit;
 
       if(pData->Is3D()) {
 	emity *= skindepth / emitUnit;
 	betay *= skindepth / betaUnit;
+	emity_r *= skindepth / emitUnit;
+	betay_r *= skindepth / betaUnit;
       }
       
       // cout << Form(" %.6f   %s",emitUnit,emitSUnit.c_str())  << endl;
@@ -1670,7 +1784,58 @@ int main(int argc,char *argv[]) {
       gEmitxvsTime->SetPoint(nPoints,Time,emitx);
       gEmitxvsTime->Write(gName,TObject::kOverwrite);
 
-      
+      // Core emittance (in slices range)
+      sprintf(gName,"gEmitxcorevsTime");     
+      TGraph *gEmitxcorevsTime = NULL;
+      gEmitxcorevsTime = (TGraph*) ifile->Get(gName);
+      if(gEmitxcorevsTime==NULL) {
+	gEmitxcorevsTime = new TGraph();
+	gEmitxcorevsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gEmitxcorevsTime->SetLineWidth(3);
+	gEmitxcorevsTime->SetLineColor(kBlue-2);
+	gEmitxcorevsTime->SetMarkerStyle(20);
+	gEmitxcorevsTime->SetMarkerSize(0.4);
+	gEmitxcorevsTime->SetMarkerColor(kBlue-2);	
+      } else {
+	nPoints = gEmitxcorevsTime->GetN(); 
+      }  
+
+      gEmitxcorevsTime->Set(nPoints+1);
+      gEmitxcorevsTime->SetPoint(nPoints,Time,emitx_r);
+      gEmitxcorevsTime->Write(gName,TObject::kOverwrite);
+
+      // Sliced averaged emittance
+      sprintf(gName,"gEmitxavgvsTime");     
+      TGraph *gEmitxavgvsTime = NULL;
+      gEmitxavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gEmitxavgvsTime==NULL) {
+	gEmitxavgvsTime = new TGraph();
+	gEmitxavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gEmitxavgvsTime->SetLineWidth(3);
+	gEmitxavgvsTime->SetLineColor(kGray+3);
+	gEmitxavgvsTime->SetMarkerStyle(20);
+	gEmitxavgvsTime->SetMarkerSize(0.4);
+	gEmitxavgvsTime->SetMarkerColor(kGray+3);	
+      } else {
+	nPoints = gEmitxavgvsTime->GetN(); 
+      }  
+
+      // Extract from selected slices:
+      Double_t emitxavg = 0;
+      Double_t norm = 0;
+      for(Int_t i=0;i<SNbin;i++) {
+	emitxavg += hP2X2sl[i]->GetEntries() * semitx[i];
+	norm += hP2X2sl[i]->GetEntries();
+      }
+      emitxavg /= norm;
+      gEmitxavgvsTime->Set(nPoints+1);
+      gEmitxavgvsTime->SetPoint(nPoints,Time,emitxavg);
+      gEmitxavgvsTime->Write(gName,TObject::kOverwrite);
+      // ------
      
       sprintf(gName,"gPymeanvsTime");     
       TGraph *gPymeanvsTime = NULL;
@@ -1778,7 +1943,203 @@ int main(int argc,char *argv[]) {
       gEmityvsTime->SetPoint(nPoints,Time,emity);
       gEmityvsTime->Write(gName,TObject::kOverwrite);
 
+      // Core emittance (in slices range)
+      sprintf(gName,"gEmitycorevsTime");     
+      TGraph *gEmitycorevsTime = NULL;
+      gEmitycorevsTime = (TGraph*) ifile->Get(gName);
+      if(gEmitycorevsTime==NULL) {
+	gEmitycorevsTime = new TGraph();
+	gEmitycorevsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gEmitycorevsTime->SetLineWidth(3);
+	gEmitycorevsTime->SetLineColor(kBlue-2);
+	gEmitycorevsTime->SetMarkerStyle(20);
+	gEmitycorevsTime->SetMarkerSize(0.4);
+	gEmitycorevsTime->SetMarkerColor(kBlue-2);	
+      } else {
+	nPoints = gEmitycorevsTime->GetN(); 
+      }  
 
+      gEmitycorevsTime->Set(nPoints+1);
+      gEmitycorevsTime->SetPoint(nPoints,Time,emity_r);
+      gEmitycorevsTime->Write(gName,TObject::kOverwrite);
+
+      // Sliced averaged emittance
+      sprintf(gName,"gEmityavgvsTime");     
+      TGraph *gEmityavgvsTime = NULL;
+      gEmityavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gEmityavgvsTime==NULL) {
+	gEmityavgvsTime = new TGraph();
+	gEmityavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gEmityavgvsTime->SetLineWidth(3);
+	gEmityavgvsTime->SetLineColor(kGray+3);
+	gEmityavgvsTime->SetMarkerStyle(20);
+	gEmityavgvsTime->SetMarkerSize(0.4);
+	gEmityavgvsTime->SetMarkerColor(kGray+3);	
+      } else {
+	nPoints = gEmityavgvsTime->GetN(); 
+      }  
+
+      // Extract from selected slices:
+      Double_t emityavg = 0;
+      norm = 0;
+      for(Int_t i=0;i<SNbin;i++) {
+	emityavg += hP3X3sl[i]->GetEntries() * semity[i];
+	norm += hP3X3sl[i]->GetEntries();
+      }
+      emityavg /= norm;
+      gEmityavgvsTime->Set(nPoints+1);
+      gEmityavgvsTime->SetPoint(nPoints,Time,emityavg);
+      gEmityavgvsTime->Write(gName,TObject::kOverwrite);
+      // ------
+
+      // Ez track addon (for hosing studies)
+      if(opt.Contains("eztrack")) {
+	// Get 3D histogram in a zoomed area to save time
+	Double_t x1minr = pData->GetXMin(0);
+	Double_t x1maxr = pData->GetXMax(0);
+	x1maxr = (x1minr + x1maxr)/2;
+	Double_t x2minr = pData->GetXMin(1);
+	Double_t x2maxr = pData->GetXMax(1);
+	Double_t x2width = x2maxr - x2minr;
+	Double_t x2center = (x2maxr + x2minr)/2.;
+	x2minr = x2center - x2width/2.;
+	x2maxr = x2center + x2width/2.;
+	Double_t x3minr = pData->GetXMin(2);
+	Double_t x3maxr = pData->GetXMax(2);
+	Double_t x3width = x3maxr - x3minr;
+	Double_t x3center = (x3maxr + x3minr)/2.;
+	x3minr = x3center - x3width/2.;
+	x3maxr = x3center + x3width/2.;
+
+	pData->SetX1Min(x1minr);
+	pData->SetX1Max(x1maxr);
+	pData->SetX2Min(x2minr);
+	pData->SetX2Max(x2maxr);
+	pData->SetX3Min(x3minr);
+	pData->SetX3Max(x3maxr);
+	
+	cout << Form("\n Reading 3D Ez info for maximum tracking") << endl;
+ 	
+	TH3F *hEz3D = pData->GetH3(pData->GetEfieldFileName(0)->c_str(),"e1",opt);
+	
+	Double_t ezmin = hEz3D->GetMinimum();
+	Int_t im,jm,km;
+	hEz3D->GetMinimumBin(im,jm,km);
+	Double_t zpos = hEz3D->GetXaxis()->GetBinCenter(im);
+	Double_t xpos = hEz3D->GetYaxis()->GetBinCenter(jm);
+	Double_t ypos = hEz3D->GetZaxis()->GetBinCenter(km);
+
+	// Average the values using the nearest bins
+	Double_t ezminavg = 0;
+	Double_t zposavg = 0;
+	Double_t xposavg = 0;
+	Double_t yposavg = 0;
+	Int_t nbins = 4;
+	for(Int_t i=im;i<im+nbins;i++)
+	  for(Int_t j=jm;j<jm+nbins;j++)
+	    for(Int_t k=km;k<km+nbins;k++) {
+	      Double_t ez = hEz3D->GetBinContent(i,j,k);
+	      ezminavg += ez;
+	      zposavg += hEz3D->GetXaxis()->GetBinCenter(i) * fabs(ez);
+	      xposavg += hEz3D->GetYaxis()->GetBinCenter(j) * fabs(ez);
+	      yposavg += hEz3D->GetZaxis()->GetBinCenter(k) * fabs(ez);
+	    }
+
+	zposavg /= fabs(ezminavg);
+	xposavg /= fabs(ezminavg);
+	yposavg /= fabs(ezminavg);
+	ezminavg /= nbins*nbins*nbins;
+	
+	if(opt.Contains("units")) {
+	  Double_t E0 = pData->GetPlasmaE0();
+	  ezmin *= E0 / ezUnit; 
+	  ezminavg *= E0 / ezUnit; 
+	  cout << Form(" - Minimum value           = %.2e %s",ezmin,ezSUnit.c_str()) << endl;
+	  cout << Form(" - Minimum (average) value = %.2e %s",ezminavg,ezSUnit.c_str()) << endl;
+
+	  zpos *= skindepth / spaUnit;
+	  xpos *= skindepth / tspaUnit;
+	  ypos *= skindepth / tspaUnit;
+
+	  zposavg *= skindepth / spaUnit;
+	  xposavg *= skindepth / tspaUnit;
+	  yposavg *= skindepth / tspaUnit;
+
+	  cout << Form(" - Position           = (%.4f %s, %.4f %s, %.4f %s)",zpos
+		       ,spaSUnit.c_str(),xpos,tspaSUnit.c_str(),ypos,tspaSUnit.c_str()) << endl;
+	  cout << Form(" - Position (average) = (%.4f %s, %.4f %s, %.4f %s)",zposavg
+		       ,spaSUnit.c_str(),xposavg,tspaSUnit.c_str(),yposavg,tspaSUnit.c_str()) << endl;
+	}
+		
+	sprintf(gName,"gEzminvsTime");     
+	TGraph *gEzminvsTime = NULL;
+	gEzminvsTime = (TGraph*) ifile->Get(gName);
+	if(gEzminvsTime==NULL) {
+	  gEzminvsTime = new TGraph();
+	  gEzminvsTime->SetName(gName);
+	  nPoints = 0;
+	  // Some cosmetics at creation time:
+	  gEzminvsTime->SetLineWidth(3);
+	  gEzminvsTime->SetLineColor(PGlobals::fieldLine);
+	  gEzminvsTime->SetMarkerStyle(20);
+	  gEzminvsTime->SetMarkerSize(0.4);
+	  gEzminvsTime->SetMarkerColor(PGlobals::fieldLine);	
+	} else {
+	  nPoints = gEzminvsTime->GetN(); 
+	}  
+
+	gEzminvsTime->Set(nPoints+1);
+	gEzminvsTime->SetPoint(nPoints,Time,ezminavg);
+	gEzminvsTime->Write(gName,TObject::kOverwrite);
+
+	sprintf(gName,"gxEzminvsTime");     
+	TGraph *gxEzminvsTime = NULL;
+	gxEzminvsTime = (TGraph*) ifile->Get(gName);
+	if(gxEzminvsTime==NULL) {
+	  gxEzminvsTime = new TGraph();
+	  gxEzminvsTime->SetName(gName);
+	  nPoints = 0;
+	  // Some cosmetics at creation time:
+	  gxEzminvsTime->SetLineWidth(3);
+	  gxEzminvsTime->SetLineColor(PGlobals::fieldLine);
+	  gxEzminvsTime->SetMarkerStyle(20);
+	  gxEzminvsTime->SetMarkerSize(0.4);
+	  gxEzminvsTime->SetMarkerColor(PGlobals::fieldLine);	
+	} else {
+	  nPoints = gxEzminvsTime->GetN(); 
+	}  
+
+	gxEzminvsTime->Set(nPoints+1);
+	gxEzminvsTime->SetPoint(nPoints,Time,xposavg);
+	gxEzminvsTime->Write(gName,TObject::kOverwrite);
+
+	sprintf(gName,"gyEzminvsTime");     
+	TGraph *gyEzminvsTime = NULL;
+	gyEzminvsTime = (TGraph*) ifile->Get(gName);
+	if(gyEzminvsTime==NULL) {
+	  gyEzminvsTime = new TGraph();
+	  gyEzminvsTime->SetName(gName);
+	  nPoints = 0;
+	  // Some cosmetics at creation time:
+	  gyEzminvsTime->SetLineWidth(3);
+	  gyEzminvsTime->SetLineColor(PGlobals::fieldLine);
+	  gyEzminvsTime->SetMarkerStyle(20);
+	  gyEzminvsTime->SetMarkerSize(0.4);
+	  gyEzminvsTime->SetMarkerColor(PGlobals::fieldLine);	
+	} else {
+	  nPoints = gyEzminvsTime->GetN(); 
+	}  
+
+	gyEzminvsTime->Set(nPoints+1);
+	gyEzminvsTime->SetPoint(nPoints,Time,yposavg);
+	gyEzminvsTime->Write(gName,TObject::kOverwrite);
+
+
+      }
 
       ifile->Close();
     }
@@ -2109,7 +2470,7 @@ int main(int argc,char *argv[]) {
       hFrame[1]->GetYaxis()->SetRangeUser(hP1X1->GetYaxis()->GetXmin(),hP1X1->GetYaxis()->GetXmax());
 
       if(opt.Contains("units"))
-	hFrame[1]->GetYaxis()->SetTitle("p_{z} [GeV/c]");
+	hFrame[1]->GetYaxis()->SetTitle(Form("p_{z} [%s/c]",eneSUnit.c_str()));
       else
 	hFrame[1]->GetYaxis()->SetTitle("p_{z}/mc");
       
@@ -3657,7 +4018,10 @@ int main(int argc,char *argv[]) {
       hX1->Write("hX1",TObject::kOverwrite);
       hP1->Write("hP1",TObject::kOverwrite);
       hP1X1->Write("hP1X1",TObject::kOverwrite);
+      hP1range->Write("hP1range",TObject::kOverwrite);
+      hP1X1range->Write("hP1X1range",TObject::kOverwrite);
       hP2X2->Write("hP2X2",TObject::kOverwrite);
+      hP2X2range->Write("hP2X2range",TObject::kOverwrite);
       hX2X1->Write("hX2X1",TObject::kOverwrite);
       
       gErms->Write("gErms",TObject::kOverwrite);
@@ -3668,7 +4032,8 @@ int main(int argc,char *argv[]) {
 	gYrms->Write("gYrms",TObject::kOverwrite);
 	gEmity->Write("gEmity",TObject::kOverwrite);
 
-	hP3X3->Write("hP2X2",TObject::kOverwrite);
+	hP3X3->Write("hP3X3",TObject::kOverwrite);
+	hP3X3range->Write("hP3X3range",TObject::kOverwrite);
 	hX3X1->Write("hX3X1",TObject::kOverwrite);
 	hX3X2->Write("hX3X2",TObject::kOverwrite);
       }
