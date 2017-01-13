@@ -37,16 +37,31 @@ void PlotEnergyComp(const TString &options="") {
 
   TString opt = options;
 
-  const Int_t Nsim = 4;
-  char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
- 			  "flash_v2.5kA.G.ZH.DDR.30.3D",
-			  "flash_v2.5kA.G.ZH.DDR.40.3D"};
+  // const Int_t Nsim = 5;
+  // char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
+  // 			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
+  // 			  "flash_v2.5kA.G.ZH.DDR.30.3D",
+  // 			  "flash_v2.5kA.G.ZH.DDR.40.3D",
+  // 			  "flash_v2.5kA.G.ZH.DDR.10.tap1.77.std.3D"};
+  
+  // char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 2.5",
+  //  			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
+  //  			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
+  // 			  "(d): k_{p}^{0}#sigma_{l} = 10.0",
+  // 			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
 
+  const Int_t Nsim = 4;
+  char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.20.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.30.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.40.3D"};
+  //			  "flash_v2.5kA.G.ZH.DDR.10.tap1.77.std.3D"};
+  
   char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 2.5",
    			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
    			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
-			  "(d): k_{p}^{0}#sigma_{l} = 10.0"};
+  			  "(d): k_{p}^{0}#sigma_{l} = 10.0"};
+  //			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
   
   
   // Load first simulation data (for instance)

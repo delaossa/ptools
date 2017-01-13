@@ -414,17 +414,19 @@ int main(int argc,char *argv[]) {
       }
 
     }
-
+    
     // Current density
     TH2F **hJz2D = new TH2F*[Nspecies];
     // Current density on-axis
     TH1F **hJz1D = new TH1F*[Nspecies];
     for(Int_t i=0;i<Nspecies;i++) {
-      
+
       hJz2D[i] = NULL;
       hJz1D[i] = NULL;
       if(!pData->GetCurrentFileName(i)) 
 	continue;
+
+      cout << Form("Getting currents") << endl;
       
       cout << Form(" -> Getting current density of specie %i  (%s)", i, pData->GetSpeciesName(i).c_str())  << endl;
       
