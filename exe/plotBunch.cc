@@ -73,7 +73,7 @@ int main(int argc,char *argv[]) {
   Int_t   indexi = 1;
 
   // zoom
-  Float_t  zoom = 1;
+  Float_t  zoom = -1;
 
   // Option for raw fraction correction
   Float_t rawf = 1;
@@ -89,6 +89,9 @@ int main(int argc,char *argv[]) {
   // Options for Spectrum
   Float_t Pmin =  99999.;
   Float_t Pmax = -99999.;
+
+  // Maximum current
+  Float_t Imax = -99999.;
 
   // Option for longitudinal binning
   // dxf is a fraction of the simulation binning
@@ -152,6 +155,9 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-index")) {
       char ss[6];
       sscanf(arg,"%6s%i",ss,&indexi);
+    } else if(arg.Contains("-imax")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&Imax);
     } else if(arg.Contains("-t")) {
       char ss[2];
       sscanf(arg,"%2s%i",ss,&time);
@@ -333,8 +339,6 @@ int main(int argc,char *argv[]) {
     Double_t Time = pData->GetRealTime();
     Time += pData->ShiftT(opt);
 
-    
-    
     // Centering time and z position:
     Double_t shiftz = pData->Shift(opt);
 
@@ -378,18 +382,20 @@ int main(int argc,char *argv[]) {
 
     x1Nbin = (X1MAX-X1MIN)/dx1;
     x2Nbin = (X2MAX-X2MIN)/dx2;
-    x1Nbin = (X3MAX-X3MIN)/dx3;
+    x3Nbin = (X3MAX-X3MIN)/dx3;
 
     // Zoom trasverse range
-    Double_t x2Range = (x2Max - x2Min)/zoom;
-    Double_t x2Mid   = (x2Max + x2Min)/2.0;
-    x2Min = x2Mid - x2Range/2.0;
-    x2Max = x2Mid + x2Range/2.0;
-    if(pData->Is3D()) {
-      Double_t x3Range = (x3Max - x3Min)/zoom;
-      Double_t x3Mid   = (x3Max + x3Min)/2.0;
-      x3Min = x3Mid - x3Range/2.0;
-      x3Max = x3Mid + x3Range/2.0;
+    if(zoom>0) {
+      Double_t x2Range = (x2Max - x2Min)/zoom;
+      Double_t x2Mid   = (x2Max + x2Min)/2.0;
+      x2Min = x2Mid - x2Range/2.0;
+      x2Max = x2Mid + x2Range/2.0;
+      if(pData->Is3D()) {
+	Double_t x3Range = (x3Max - x3Min)/zoom;
+	Double_t x3Mid   = (x3Max + x3Min)/2.0;
+	x3Min = x3Mid - x3Range/2.0;
+	x3Max = x3Mid + x3Range/2.0;
+      }
     }
     
     // Momentum range:
@@ -535,8 +541,17 @@ int main(int argc,char *argv[]) {
     }
       
     // Set limits using extreme values
-    p1Min = MinP1 - rfactor*(MaxP1-MinP1);
-    p1Max = MaxP1 + rfactor*(MaxP1-MinP1);
+
+    if(Pmin<99999.)
+      p1Min = Pmin;
+    else
+      p1Min = MinP1 - rfactor*(MaxP1-MinP1);
+
+    if(Pmax>-99999.)
+      p1Max = Pmax;
+    else
+      p1Max = MaxP1 + rfactor*(MaxP1-MinP1);
+
     // p2Min = MinP2 - rfactor*(MaxP2-MinP2);
     // p2Max = MaxP2 + rfactor*(MaxP2-MinP2);
     // p3Min = MinP3 - rfactor*(MaxP3-MinP3);
@@ -552,6 +567,8 @@ int main(int argc,char *argv[]) {
     // }
 
     // Set limits using Scan histograms
+    // --------------------------------
+    
     Double_t peakFactor = 0.2;
     Double_t rfactor2 = 1.5;
       
@@ -563,32 +580,35 @@ int main(int argc,char *argv[]) {
     x1BinMin = x1min;
     x1BinMax = x1max;
       
-    peakFactor = 0.05;
+    peakFactor = 0.1;
     FindLimits(hScanX1,x1min,x1max,peakFactor);
     
     x1Min = x1min - rfactor*(x1max-x1min);
     x1Max = x1max + 2*rfactor*(x1max-x1min);
 
     // Transverse plane
-    Double_t x2min = -999;
-    Double_t x2max = -999;
-    FindLimits(hScanX2,x2min,x2max,peakFactor);
-    if( x2max-x2min < 0.1) {
-      x2min -= 0.1;
-      x2max += 0.1;
-    }
-    //x2Min = x2min - rfactor2*(x2max-x2min);
-    //x2Max = x2max + rfactor2*(x2max-x2min);
-    //      cout << Form("  x2Min = %f  x2Max = %f ",x2min,x2max) << endl;
+    if(zoom == -1) {
+      Double_t x2min = -999;
+      Double_t x2max = -999;
       
-    Double_t x3min = -999;
-    Double_t x3max = -999;
-    if(Nvar==7) {
-      FindLimits(hScanX3,x3min,x3max,peakFactor);
-      //x3Min = x3min - rfactor2*(x3max-x3min);
-      //x3Max = x3max + rfactor2*(x3max-x3min);
-    }
+      FindLimits(hScanX2,x2min,x2max,peakFactor);
+      if( x2max-x2min < 0.1) {
+	x2min -= 0.1;
+	x2max += 0.1;
+      }
       
+      x2Min = x2min - rfactor2*(x2max-x2min);
+      x2Max = x2max + rfactor2*(x2max-x2min);
+      
+      Double_t x3min = -999;
+      Double_t x3max = -999;
+      if(Nvar==7) {
+	FindLimits(hScanX3,x3min,x3max,peakFactor);
+	x3Min = x3min - rfactor2*(x3max-x3min);
+	x3Max = x3max + rfactor2*(x3max-x3min);
+      }
+    }
+    
     Double_t p2min = -999;
     Double_t p2max = -999;
     FindLimits(hScanP2,p2min,p2max,peakFactor);
@@ -656,7 +676,6 @@ int main(int argc,char *argv[]) {
     // cout << Form("\n x1 range (N = %i) :  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
     // cout << Form(" x1-slices (N = %i):  x1Min = %f  x1Max = %f  Dx1 = %f", SNbin, x1BinMin, x1BinMax, (x1BinMax-x1BinMin)/SNbin) << endl;
 
-    
     // Double_t ddx2 = dxf * dx2;      
     // x2Min = floor((x2Min-X2MIN)/dx2) * dx2 + X2MIN;  
     // x2Max = floor((x2Max-X2MIN)/dx2) * dx2 + X2MIN;  
@@ -998,10 +1017,10 @@ int main(int argc,char *argv[]) {
     emit2 = xrms2*yrms2 - xyrms*xyrms;
     emit = (emit2>0.0) ? TMath::Sqrt(emit2) : 0.0 ;
 
-    pzmean = ymean;
-    pzrms = yrms;
-    zpzcorr = xyrms;
-    zpzcorrrel = xyrms/pzmean;
+    // pzmean = ymean;
+    // pzrms = yrms;
+    // zpzcorr = xyrms;
+    // zpzcorrrel = xyrms/pzmean;
     
     cout << Form("  zMean = %7.3f   pzMean = %7.3f",zmean,pzmean) << endl;
     // cout << Form("  zRms  = %7.3f   pzRms  = %7.3f",zrms,pzrms) << endl;
@@ -2276,10 +2295,12 @@ int main(int argc,char *argv[]) {
       }
 
       yMax *= 1.1;
-
+      
+      if(Imax > -99999.) yMax = Imax;
+      
       // Plotting
       // -----------------------------------------------
-
+      
       // Canvas setup
       // Create the canvas and the pads before the Frame loop
       // Resolution:
@@ -2643,14 +2664,15 @@ int main(int argc,char *argv[]) {
       }
       
       hFrame[0]->GetYaxis()->SetTitle("");
-      hFrame[0]->GetYaxis()->SetRangeUser(0.0,1.1*yMax);
+      cout << Form(" - Imax = %.2f",Imax) << endl;
+      hFrame[0]->GetYaxis()->SetRangeUser(0.0,yMax);
       hFrame[0]->Draw("axis");
 
       if(opt.Contains("smooth"))
 	hX1->Smooth(3);
       hX1->Draw("hist LF2 same");
 
-      TLine lZmean2(zmean,0.0,zmean,1.1*yMax);
+      TLine lZmean2(zmean,0.0,zmean,yMax);
       lZmean2.SetLineColor(kGray+2);
       lZmean2.SetLineStyle(2);
       lZmean2.Draw();

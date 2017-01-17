@@ -41,8 +41,8 @@ void PlotEmittanceComp(const TString &options="") {
   char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
    			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
   			  "flash_v2.5kA.G.ZH.DDR.30.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.40.3D",
-   			  "flash_v2.5kA.G.ZH.DDR.10.tap1.77.std.3D"};
+  			  "flash_v2.5kA.G.ZH.DDR.40.FinalSet.3D",
+   			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.tap1.5.3D"};
   
   char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 2.5",
     			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
@@ -162,8 +162,8 @@ void PlotEmittanceComp(const TString &options="") {
     if(T[i][N[i]-1]>zmax) zmax = T[i][N[i]-1];
   }
 
-  zmin = 5;
-  zmax = 75;
+  zmin = 2.5;
+  zmax = 100;
    
   // Setup Pad layout: 
   Int_t NPad = 1;
@@ -232,7 +232,7 @@ void PlotEmittanceComp(const TString &options="") {
   Double_t erange = emax - emin;
   Double_t zrange = zmax - zmin;
 
-  TLegend *Leg = new TLegend(zmin + 0.02 * zrange, emax - 0.3*erange , zmin + 0.4 * zrange, emax - 0.05 * erange,"","tl");
+  TLegend *Leg = new TLegend(zmin + 0.02 * zrange, emax - 0.4*erange , zmin + 0.3 * zrange, emax - 0.05 * erange,"","tl");
   PGlobals::SetPaveStyle(Leg);
   Leg->SetTextAlign(12);
   Leg->SetTextColor(kGray+3);

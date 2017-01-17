@@ -4,7 +4,7 @@
 export SOFT=/afs/desy.de/group/fla/plasma/data002/SOFTWARE
 
 # Setting up Root environment....
-export ROOTSYS=$SOFT/root-6.06.08
+export ROOTSYS=$SOFT/root-6.08.00
 export LD_LIBRARY_PATH=$ROOTSYS/lib:$LD_LIBRARY_PATH
 export PATH=$ROOTSYS/bin:$PATH
 

@@ -50,18 +50,18 @@ void PlotEnergyComp(const TString &options="") {
   // 			  "(d): k_{p}^{0}#sigma_{l} = 10.0",
   // 			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
 
-  const Int_t Nsim = 4;
-  char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.20.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.30.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.40.3D"};
-  //			  "flash_v2.5kA.G.ZH.DDR.10.tap1.77.std.3D"};
+  const Int_t Nsim = 5;
+  char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.30.FinalSet.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.40.FinalSet.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.tap1.5.3D"};
   
   char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 2.5",
    			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
    			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
-  			  "(d): k_{p}^{0}#sigma_{l} = 10.0"};
-  //			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
+  			  "(d): k_{p}^{0}#sigma_{l} = 10.0",
+  			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
   
   
   // Load first simulation data (for instance)
@@ -152,11 +152,11 @@ void PlotEnergyComp(const TString &options="") {
     gPzup[i] = new TGraph(N[i],T[i],Pzup[i]);
     gPzdo[i] = new TGraph(N[i],T[i],Pzdo[i]);
 
-    gPzup[i]->SetLineWidth(1);
+    gPzup[i]->SetLineWidth(2);
     gPzup[i]->SetLineColor(color[i]);
     gPzup[i]->SetLineStyle(3);
     
-    gPzdo[i]->SetLineWidth(1);
+    gPzdo[i]->SetLineWidth(2);
     gPzdo[i]->SetLineColor(color[i]);
     gPzdo[i]->SetLineStyle(3);
 
@@ -190,8 +190,8 @@ void PlotEnergyComp(const TString &options="") {
     if(T[i][N[i]-1]>zmax) zmax = T[i][N[i]-1];
   }
 
-  zmin = 5;
-  zmax = 75;
+  zmin = 2.5;
+  zmax = 90;
    
   // Setup Pad layout: 
   Int_t NPad = 1;
@@ -256,11 +256,11 @@ void PlotEnergyComp(const TString &options="") {
   Double_t pzmin =  pzMin-(pzMax-pzMin)*mfactor;
   Double_t pzmax =  pzMax+(pzMax-pzMin)*mfactor;
   pzmin = 0;
-  pzmax = 0.79;
+  pzmax = 1.1999;
   Double_t erange = pzmax - pzmin;
   Double_t zrange = zmax - zmin;
 
-  TLegend *Leg = new TLegend(zmin + 0.02 * zrange, pzmax - 0.3*erange , zmin + 0.4 * zrange, pzmax - 0.05 * erange,"","tl");
+  TLegend *Leg = new TLegend(zmin + 0.02 * zrange, pzmax - 0.4*erange , zmin + 0.3 * zrange, pzmax - 0.05 * erange,"","tl");
   PGlobals::SetPaveStyle(Leg);
   Leg->SetTextAlign(12);
   Leg->SetTextColor(kGray+3);
@@ -295,7 +295,7 @@ void PlotEnergyComp(const TString &options="") {
     gPzup[i]->Draw("L");
     gPzdo[i]->Draw("L");
     //   gPzrms[i]->Draw("L");
-    gdPz[i]->Draw("L");
+    // gdPz[i]->Draw("L");
     Leg->AddEntry(gPz[i],lName[i],"L");
   }
   
