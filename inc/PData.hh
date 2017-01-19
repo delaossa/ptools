@@ -127,6 +127,7 @@ public:
   string *GetEfieldFileName(UInt_t i) { return sEF->at(i); }
   string *GetBfieldFileName(UInt_t i) { return sBF->at(i); }
   string *GetRawFileName(UInt_t i) { return sRAW->at(i); }
+  string *GetTrackFileName(UInt_t i) { return sTrack->at(i); }
 
   virtual string   GetRawSpeciesName(UInt_t i) { return species.at(i); }
   virtual string  *GetWfieldFileName(UInt_t i) { return 0; }
@@ -454,6 +455,7 @@ protected:
   vector<string*>             *sEF;   // vector of files with the Electric field.
   vector<string*>             *sBF;   // vector of files with the Magnetic field. 
   vector<string*>            *sRAW;   // vector of files with RAW data.
+  vector<string*>          *sTrack;   // vector of files with particle tracking info
   vector<string>           pspaces;   // vector of phase spaces names.
   vector<vector<string*> >   *sPHA;   // vector of files with PHASESPACE info.
 

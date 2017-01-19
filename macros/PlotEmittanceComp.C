@@ -14,6 +14,7 @@
 #include <TF1.h>
 #include <TProfile.h>
 #include <TGraphErrors.h>
+#include <TGraphSmooth.h>
 #include <TCanvas.h>
 #include <TStyle.h>
 #include <TLegend.h>
@@ -74,11 +75,15 @@ void PlotEmittanceComp(const TString &options="") {
   TFile *sFile[Nsim];
   TGraph *gEmitx[Nsim];
   TGraph *gEmity[Nsim];
+  TGraph *gEmitr[Nsim];
+  TGraphSmooth **gsmooth = new TGraphSmooth*[Nsim];
+  TGraph **gEmitxsmooth = new TGraph*[Nsim];
 
   Int_t N[Nsim];
   Double_t *T[Nsim];
   Double_t *Ex[Nsim];
   Double_t *Ey[Nsim];
+  Double_t *Er[Nsim];
   
   Int_t color[Nsim];
 
@@ -111,13 +116,13 @@ void PlotEmittanceComp(const TString &options="") {
     sFile[i] = new TFile(filename,"READ");
     
     // Load histos and graphs
-    gEmitx[i] = (TGraph*) sFile[i]->Get("gEmitxcorevsTime");
+    gEmitx[i] = (TGraph*) sFile[i]->Get("gEmitxavgvsTime");
     Ex[i] = gEmitx[i]->GetY();
 
     gEmitx[i]->SetLineWidth(3);
     gEmitx[i]->SetLineColor(color[i]);
 
-    gEmity[i] = (TGraph*) sFile[i]->Get("gEmitycorevsTime");
+    gEmity[i] = (TGraph*) sFile[i]->Get("gEmityavgvsTime");
     Ey[i] = gEmity[i]->GetY();
 
     gEmity[i]->SetLineWidth(3);
@@ -126,6 +131,8 @@ void PlotEmittanceComp(const TString &options="") {
     
     T[i]  = gEmitx[i]->GetX();
     N[i]  = gEmitx[i]->GetN();
+
+    Er[i] = new Double_t[N[i]];
     
     for(Int_t j=0;j<N[i];j++) {
       
@@ -134,10 +141,18 @@ void PlotEmittanceComp(const TString &options="") {
 
       if( Ey[i][j] > eMax) eMax =  Ey[i][j];
       if( Ey[i][j] < eMin) eMin =  Ey[i][j];
-
+      
+      Er[i][j] = (Ex[i][j] + Ey[i][j])/2.;
     }
 
+    gEmitr[i] = new TGraph(N[i],T[i],Er[i]);
+    gEmitr[i]->SetLineWidth(3);
+    gEmitr[i]->SetLineColor(color[i]);
     
+    gsmooth[i] = new TGraphSmooth("normal");
+    gEmitxsmooth[i] = gsmooth[i]->SmoothSuper(gEmitx[i],"",0.0);
+    gEmitxsmooth[i]->SetLineWidth(3);
+    gEmitxsmooth[i]->SetLineColor(color[i]);
   }
   
   // Canvas setup
@@ -162,8 +177,8 @@ void PlotEmittanceComp(const TString &options="") {
     if(T[i][N[i]-1]>zmax) zmax = T[i][N[i]-1];
   }
 
-  zmin = 2.5;
-  zmax = 100;
+  zmin = 5.0;
+  zmax = 90;
    
   // Setup Pad layout: 
   Int_t NPad = 1;
@@ -228,7 +243,7 @@ void PlotEmittanceComp(const TString &options="") {
   Double_t emin =  eMin-(eMax-eMin)*mfactor;
   Double_t emax =  eMax+(eMax-eMin)*mfactor;
   emin = 0;
-  emax = 1.99;
+  emax = 1.01;
   Double_t erange = emax - emin;
   Double_t zrange = zmax - zmin;
 
@@ -263,7 +278,10 @@ void PlotEmittanceComp(const TString &options="") {
   // lineZero->Draw();
 
   for(Int_t i=0;i<Nsim;i++) {
+    
+    //gEmitxsmooth[i]->Draw("L");
     gEmitx[i]->Draw("L");
+    //gEmitr[i]->Draw("L");
     gEmity[i]->Draw("L");
     Leg->AddEntry(gEmitx[i],lName[i],"L");
   }

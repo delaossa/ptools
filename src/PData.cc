@@ -19,7 +19,7 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   species.clear();
   pspaces.clear();
 
-  sCHG = sEF = sBF = sRAW = NULL;
+  sCHG = sEF = sBF = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -51,7 +51,7 @@ PData::PData(const char * name) : TNamed(name,name) {
   species.clear();
   pspaces.clear();
 
-  sCHG = sEF = sBF = sRAW = NULL;
+  sCHG = sEF = sBF = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -83,7 +83,7 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   species.clear();
   pspaces.clear();
   
-  sCHG = sEF = sBF = sRAW = NULL;
+  sCHG = sEF = sBF = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -355,6 +355,7 @@ void PData::LoadFileNames(Int_t t) {
   sEF  = new vector<string*>(3,NULL);
   sBF  = new vector<string*>(3,NULL);
   sRAW = new vector<string*>(NSpecies(),NULL);
+  sTrack = new vector<string*>(NSpecies(),NULL);
   sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
 
   for(UInt_t i=0;i<3;i++) {
@@ -398,6 +399,9 @@ void PData::LoadFileNames(Int_t t) {
 	  
 	} else if((files[i].find("RAW") != string::npos) && (files[i].find(".h5") != string::npos)) {
 	  sRAW->at(j) = new string(files[i]);
+
+	} else if((files[i].find("tracks") != string::npos) && (files[i].find(".h5") != string::npos)) {
+	  sTrack->at(j) = new string(files[i]);
 
 	} else if(files[i].find("PHA") != string::npos) {
 	  // Loop over Phase spaces
@@ -550,6 +554,13 @@ void PData::PrintData(Option_t *option) {
   for(UInt_t is=0;is<NRawSpecies();is++) {
     if(sRAW->at(is)) 
       cout << " - " << sRAW->at(is)->c_str() << endl;
+  }
+  cout << endl;
+
+  cout << "Data for TRACKING macroparticles:" << endl;
+  for(UInt_t is=0;is<NRawSpecies();is++) {
+    if(sTrack->at(is)) 
+      cout << " - " << sTrack->at(is)->c_str() << endl;
   }
   cout << endl;
   

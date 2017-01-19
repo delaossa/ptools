@@ -86,10 +86,14 @@ int main(int argc,char *argv[]) {
   Float_t zsmin0 =  99999.;
   Float_t zsmax0 = -99999.;
 
-  // Options for Spectrum
+  // Spectrum range
   Float_t Pmin =  99999.;
   Float_t Pmax = -99999.;
 
+  // Transverse momentum range
+  Float_t Pxmin = 0.;
+  Float_t Pxmax = 0.;
+    
   // Maximum current
   Float_t Imax = -99999.;
 
@@ -194,6 +198,12 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-pmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmax);
+    } else if(arg.Contains("-pxmin")) {
+      char ss[6];
+      sscanf(arg,"%6s%f",ss,&Pxmin);
+    } else if(arg.Contains("-pxmax")) {
+      char ss[6];
+      sscanf(arg,"%6s%f",ss,&Pxmax);
     } else if(arg.Contains("-z")) {
       char ss[2];
       sscanf(arg,"%2s%f",ss,&zoom);
@@ -249,7 +259,7 @@ int main(int argc,char *argv[]) {
     // Get the best units for each quantity
     PUnits::BestUnit bdenSUnit(n0,"PartDensity");
     bdenSUnit.GetBestUnits(denUnit,denSUnit);
-    //    cout << Form(" n0 = %.2f %s", n0/denUnit, denSUnit.c_str()) << endl;
+    //  cout << Form(" n0 = %.2f %s", n0/denUnit, denSUnit.c_str()) << endl;
 
     PUnits::BestUnit bspaSUnit(wavelength,"Length");
     bspaSUnit.GetBestUnits(spaUnit,spaSUnit);
@@ -383,20 +393,6 @@ int main(int argc,char *argv[]) {
     x1Nbin = (X1MAX-X1MIN)/dx1;
     x2Nbin = (X2MAX-X2MIN)/dx2;
     x3Nbin = (X3MAX-X3MIN)/dx3;
-
-    // Zoom trasverse range
-    if(zoom>0) {
-      Double_t x2Range = (x2Max - x2Min)/zoom;
-      Double_t x2Mid   = (x2Max + x2Min)/2.0;
-      x2Min = x2Mid - x2Range/2.0;
-      x2Max = x2Mid + x2Range/2.0;
-      if(pData->Is3D()) {
-	Double_t x3Range = (x3Max - x3Min)/zoom;
-	Double_t x3Mid   = (x3Max + x3Min)/2.0;
-	x3Min = x3Mid - x3Range/2.0;
-	x3Max = x3Mid + x3Range/2.0;
-      }
-    }
     
     // Momentum range:
     Double_t p1Min =  Pmin;
@@ -409,7 +405,7 @@ int main(int argc,char *argv[]) {
     // z-slices
     Int_t SNbin = 100;
     Double_t x1BinMin = -4.5;
-    Double_t x1BinMax = -4.0;
+    Double_t x1BinMax = -4.0;    
 
     // dummy shift
     // Double_t dshiftz = pData->Shift("centercomov");
@@ -587,7 +583,19 @@ int main(int argc,char *argv[]) {
     x1Max = x1max + 2*rfactor*(x1max-x1min);
 
     // Transverse plane
-    if(zoom == -1) {
+    // Zoom trasverse range
+    if(zoom>0) {
+      Double_t x2Range = (x2Max - x2Min)/zoom;
+      Double_t x2Mid   = (x2Max + x2Min)/2.0;
+      x2Min = x2Mid - x2Range/2.0;
+      x2Max = x2Mid + x2Range/2.0;
+      if(pData->Is3D()) {
+	Double_t x3Range = (x3Max - x3Min)/zoom;
+	Double_t x3Mid   = (x3Max + x3Min)/2.0;
+	x3Min = x3Mid - x3Range/2.0;
+	x3Max = x3Mid + x3Range/2.0;
+      }
+    } else {
       Double_t x2min = -999;
       Double_t x2max = -999;
       
@@ -609,22 +617,31 @@ int main(int argc,char *argv[]) {
       }
     }
     
-    Double_t p2min = -999;
-    Double_t p2max = -999;
-    FindLimits(hScanP2,p2min,p2max,peakFactor);
-    p2Min = p2min - rfactor2*(p2max-p2min);
-    p2Max = p2max + rfactor2*(p2max-p2min);
-    if(p2Max<-p2Min) p2Max = -p2Min; 
-    else p2Min = -p2Max;
+    if((Pxmin != 0.) && (Pxmin != 0.)) {
+      p2Min = Pxmin;
+      p2Max = Pxmax;
+
+      p3Min = Pxmin;
+      p3Max = Pxmax;
+    } else {
+      Double_t p2min = -999;
+      Double_t p2max = -999;
+      FindLimits(hScanP2,p2min,p2max,peakFactor);
+      p2Min = p2min - rfactor2*(p2max-p2min);
+      p2Max = p2max + rfactor2*(p2max-p2min);
+      if(p2Max<-p2Min) p2Max = -p2Min; 
+      else p2Min = -p2Max;
       
-    Double_t p3min = -999;
-    Double_t p3max = -999;
-    FindLimits(hScanP3,p3min,p3max,peakFactor);
-    p3Min = p3min - rfactor2*(p3max-p3min);
-    p3Max = p3max + rfactor2*(p3max-p3min);
-    if(p3Max<-p3Min) p3Max = -p3Min; 
-    else p3Min = -p3Max;
-                  
+      Double_t p3min = -999;
+      Double_t p3max = -999;
+      FindLimits(hScanP3,p3min,p3max,peakFactor);
+      p3Min = p3min - rfactor2*(p3max-p3min);
+      p3Max = p3max + rfactor2*(p3max-p3min);
+      if(p3Max<-p3Min) p3Max = -p3Min; 
+      else p3Min = -p3Max;
+    }
+
+    
     // Prevent range limits to go out of the box
     if(x1Min<X1MIN) x1Min = X1MIN;
     if(x1Max>X1MAX) x1Max = X1MAX;
