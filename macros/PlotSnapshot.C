@@ -197,7 +197,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   cout << Form("\n Getting the histograms ... ") ; 
 
   // Skip one of the species
-  Int_t noIndex = -1;
+  Int_t noIndex = 3;
     
   char hName[36];
 
@@ -287,15 +287,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   }
 
-  sprintf(hName,"hETotal2D");   
-  TH2F *hETotal2D = (TH2F*) ifile->Get(hName);
-  sprintf(hName,"hETotal1D");   
-  TH1F *hETotal1D = (TH1F*) ifile->Get(hName);
-
   sprintf(hName,"hFocus2D"); 
   TH2F *hFocus2D = (TH2F*) ifile->Get(hName);
   sprintf(hName,"hFocus1D"); 
   TH1F *hFocus1D = (TH1F*) ifile->Get(hName);
+
+  sprintf(hName,"hETotal2D");   
+  TH2F *hETotal2D = (TH2F*) ifile->Get(hName);
+  sprintf(hName,"hETotal1D");   
+  TH1F *hETotal1D = (TH1F*) ifile->Get(hName);
 
   sprintf(hName,"hV2D"); 
   TH2F *hV2D = (TH2F*) ifile->Get(hName);
@@ -2387,7 +2387,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     if(opt.Contains("zero")) {
       TLine *lineZero = new TLine(xMin,0,xMax,0);
-      lineZero->SetLineColor(lineColor);
+      //lineZero->SetLineColor(lineColor);
+      lineZero->SetLineColor(kGray);
       lineZero->SetLineStyle(2);
       lineZero->Draw();
     }
@@ -2483,7 +2484,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hE2D[2]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);  
   
     exField->Draw();
-    hE2D[2]->Draw(drawopt);
+    hE2D[2]->Draw("colz0 same");
 
     if(opt.Contains("1dline")) {
       lineYzero->Draw();
@@ -2513,7 +2514,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     if(opt.Contains("zero")) {
       TLine *lineZero = new TLine(xMin,0,xMax,0);
-      lineZero->SetLineColor(lineColor);
+      //lineZero->SetLineColor(lineColor);
+      lineZero->SetLineColor(kGray);
       lineZero->SetLineStyle(2);
       lineZero->Draw();
     }

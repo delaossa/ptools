@@ -131,8 +131,7 @@ int main(int argc,char *argv[]) {
       return 0;
     }
   }
-  
-  
+    
   PGlobals::Initialize();
   
   // Load PData
@@ -300,12 +299,11 @@ int main(int argc,char *argv[]) {
 
       cout << Form(" -> Getting charge density of specie %i  (%s)", i, pData->GetSpeciesName(i).c_str())  << endl;
       
-    
       char hName[24];
       sprintf(hName,"hDen2D_%i",i);
       hDen2D[i] = (TH2F*) gROOT->FindObject(hName);
       if(hDen2D[i]) delete hDen2D[i];
-
+      
       if(pData->Is3D()) {
 	if(opt.Contains("zyslc"))
 	  hDen2D[i] = pData->GetCharge2DSliceZY(i,-1,NonBin,opt+"avg");
@@ -573,9 +571,12 @@ int main(int argc,char *argv[]) {
 	if(!opt.Contains("alt1D")){
 	  if(i==0) 
 	    hE1D[i] = pData->GetH1SliceZ3D(pData->GetEfieldFileName(i)->c_str(),nam,-1,NonBin,-1,NonBin,opt+"avg");
-	  else // In case of transverse fields, the 1D line is taken off-axis 
-	    hE1D[i] = pData->GetH1SliceZ3D(pData->GetEfieldFileName(i)->c_str(),nam,-NofBin,NonBin,-1,NonBin,opt+"avg");
-	
+	  else { // In case of transverse fields, the 1D line is taken off-axis 
+	    if(opt.Contains("zyslc")) 
+	      hE1D[i] = pData->GetH1SliceZ3D(pData->GetEfieldFileName(i)->c_str(),nam,-1,NonBin,-NofBin,NonBin,opt+"avg");
+	    else
+	      hE1D[i] = pData->GetH1SliceZ3D(pData->GetEfieldFileName(i)->c_str(),nam,-NofBin,NonBin,-1,NonBin,opt+"avg");
+	  }
 	} else { // Alternative
 	  cout << " Alternative! " << endl;
 	  if(i==0) {
@@ -700,9 +701,13 @@ int main(int argc,char *argv[]) {
 	if(!opt.Contains("alt1D")){
 	  if(i==0) 
 	    hB1D[i] = pData->GetH1SliceZ3D(pData->GetBfieldFileName(i)->c_str(),nam,-1,NonBin,-1,NonBin,opt+"avg");
-	  else // In case of transverse fields, the 1D line is taken offaxis
-	    hB1D[i] = pData->GetH1SliceZ3D(pData->GetBfieldFileName(i)->c_str(),nam,-NofBin,NonBin,-1,NonBin,opt+"avg");
-	  
+	  else { // In case of transverse fields, the 1D line is taken offaxis
+	    if(opt.Contains("zyslc")) 
+	      hB1D[i] = pData->GetH1SliceZ3D(pData->GetBfieldFileName(i)->c_str(),nam,-1,NonBin,-NofBin,NonBin,opt+"avg");
+	    else
+	      hB1D[i] = pData->GetH1SliceZ3D(pData->GetBfieldFileName(i)->c_str(),nam,-NofBin,NonBin,-1,NonBin,opt+"avg");
+	  }
+	    
 	} else {  // Alternative
 	  cout << " Alternative! " << endl;
 	  if(i==0) {
@@ -1201,8 +1206,9 @@ int main(int argc,char *argv[]) {
 	}
       }
     }
-      
-    if(pData->GetWfieldFileName(0)) {
+
+    // HiPACE: dumps directly the transverse wakefields
+    if(pData->GetWfieldFileName(it-1)) {
 
       cout << Form(" -> Getting transverse wakefield ") << endl;
     
@@ -1212,15 +1218,18 @@ int main(int argc,char *argv[]) {
       if(hFocus2D) delete hFocus2D;
     
       if(!pData->Is3D())
-	hFocus2D = pData->GetBField(0,opt);
-      else
-	hFocus2D = pData->GetWField2DSliceZX(0,-1,NonBin,opt+"avg");
-
+	hFocus2D = pData->GetWField(it-1,opt);
+      else {
+	if(opt.Contains("zyslc"))
+	  hFocus2D = pData->GetWField2DSliceZY(it-1,-1,NonBin,opt+"avg");
+	else
+	  hFocus2D = pData->GetWField2DSliceZX(it-1,-1,NonBin,opt+"avg");
+      }
       hFocus2D->SetName(hName);   
       hFocus2D->GetXaxis()->CenterTitle();
       hFocus2D->GetYaxis()->CenterTitle();
       hFocus2D->GetZaxis()->CenterTitle();
-
+      
       if(opt.Contains("units") && n0) {
 	Int_t NbinsX = hFocus2D->GetNbinsX();
 	Double_t zMin = skindepth * hFocus2D->GetXaxis()->GetXmin() / spaUnit;
@@ -1249,9 +1258,12 @@ int main(int argc,char *argv[]) {
 	  hFocus2D->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
 	  hFocus2D->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
-      
-	hFocus2D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
 
+	if(opt.Contains("zyslc"))
+	  hFocus2D->GetZaxis()->SetTitle(Form("E_{y}+cB_{x} [%s]",eSUnit.c_str()));
+	else
+	  hFocus2D->GetZaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
+	  
       } else {
 	if(opt.Contains("comov"))
 	  hFocus2D->GetXaxis()->SetTitle("k_{p} #zeta");
@@ -1263,7 +1275,45 @@ int main(int argc,char *argv[]) {
 	else
 	  hFocus2D->GetYaxis()->SetTitle("k_{p} x");
 	
-	hFocus2D->GetZaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
+	if(opt.Contains("zyslc"))
+	  hFocus2D->GetZaxis()->SetTitle("(E_{y}+cB_{x})/E_{0}");
+	else
+	  hFocus2D->GetZaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
+
+      }
+
+      if(opt.Contains("zyslc")) {
+	if(!hE2D[it] && hB2D[it-1]) {
+	  sprintf(hName,"hE2D_%i",it);
+	  hE2D[it] = (TH2F*) gROOT->FindObject(hName);
+	  if(hE2D[it]) delete hE2D[it];
+	  
+	  hE2D[it] = (TH2F*) hFocus2D->Clone(hName);
+	  hE2D[it]->Add(hB2D[it-1],-1);
+	  
+	  if(opt.Contains("units") && n0) {
+	    hE2D[it]->GetZaxis()->SetTitle("E_{y}/E_{0}");
+	  }  else {
+	    hE2D[it]->GetZaxis()->SetTitle(Form("E_{y} [%s]",eSUnit.c_str()));
+	  }
+	  
+	}
+      } else {
+	if(!hE2D[it] && hB2D[it+1]) {
+	  sprintf(hName,"hE2D_%i",it);
+	  hE2D[it] = (TH2F*) gROOT->FindObject(hName);
+	  if(hE2D[it]) delete hE2D[it];
+	  
+	  hE2D[it] = (TH2F*) hFocus2D->Clone(hName);
+	  hE2D[it]->Add(hB2D[it+1],1);
+	  
+	  if(opt.Contains("units") && n0) {
+	    hE2D[it]->GetZaxis()->SetTitle("E_{x}/E_{0}");
+	  }  else {
+	    hE2D[it]->GetZaxis()->SetTitle(Form("E_{x} [%s]",eSUnit.c_str()));
+	  }
+	  
+	}
       }
     }
     
@@ -1302,16 +1352,27 @@ int main(int argc,char *argv[]) {
       }	
     }
     
-    if(pData->GetWfieldFileName(0)) {
-	
-	// 1D histograms
+    if(pData->GetWfieldFileName(it-1)) {
+
+      char fname[5];
+      if(it==1)
+	sprintf(fname,"ExmBy");
+      else
+	sprintf(fname,"EypBx");
+      
+      
+      // 1D histograms
       if(pData->Is3D()) {
 	// In case of transverse fields, the 1D line is taken offaxis
-	hFocus1D = pData->GetH1SliceZ3D(pData->GetWfieldFileName(0)->c_str(),"ExmBy",-NofBin,NonBin,-1,NonBin,opt+"avg");
+	if(opt.Contains("zyslc")) 
+	  hFocus1D = pData->GetH1SliceZ3D(pData->GetWfieldFileName(it-1)->c_str(),fname,-1,NonBin,-NofBin,NonBin,opt+"avg");
+	else
+	  hFocus1D = pData->GetH1SliceZ3D(pData->GetWfieldFileName(it-1)->c_str(),fname,-NofBin,NonBin,-1,NonBin,opt+"avg");
+	
       } else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
-	hFocus1D = pData->GetH1SliceZ(pData->GetWfieldFileName(0)->c_str(),"ExmBy",1,NonBin,opt+"avg");
+	hFocus1D = pData->GetH1SliceZ(pData->GetWfieldFileName(it-1)->c_str(),fname,1,NonBin,opt+"avg");
       } else { // 2D cartesian
-	hFocus1D = pData->GetH1SliceZ(pData->GetWfieldFileName(0)->c_str(),"ExmBy",-NonBin,NonBin,opt+"avg");    
+	hFocus1D = pData->GetH1SliceZ(pData->GetWfieldFileName(it-1)->c_str(),fname,-NonBin,NonBin,opt+"avg");    
       }
       hFocus1D->SetName("hFocus1D");
 
@@ -1329,17 +1390,62 @@ int main(int argc,char *argv[]) {
 	  hFocus1D->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));
 	else
 	  hFocus1D->GetXaxis()->SetTitle(Form("z [%s]",spaSUnit.c_str()));
-	
-	hFocus1D->GetYaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
-	
+
+	if(opt.Contains("zyslc"))
+	  hFocus1D->GetYaxis()->SetTitle(Form("E_{y}+cB_{x} [%s]",eSUnit.c_str()));
+	else
+	  hFocus1D->GetYaxis()->SetTitle(Form("E_{x}-cB_{y} [%s]",eSUnit.c_str()));
+	  
       } else {
 	if(opt.Contains("comov"))
 	  hFocus1D->GetXaxis()->SetTitle("#zeta [c/#omega_{p}]");
 	else
 	  hFocus1D->GetXaxis()->SetTitle("z [c/#omega_{p}]");
-	
-	hFocus1D->GetYaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
+
+	if(opt.Contains("zyslc"))
+	  hFocus1D->GetYaxis()->SetTitle("(E_{y}+cB_{x})/E_{0}");
+	else
+	  hFocus1D->GetYaxis()->SetTitle("(E_{x}-cB_{y})/E_{0}");
       }
+
+      if(opt.Contains("zyslc")) {
+	if(!hE1D[it] && hB1D[it-1]) {
+	  char hName[24];
+	  sprintf(hName,"hE1D_%i",it);
+	  hE1D[it] = (TH1F*) gROOT->FindObject(hName);
+	  if(hE1D[it]) delete hE1D[it];
+	
+	  hE1D[it] = (TH1F*) hFocus1D->Clone(hName);
+	  hE1D[it]->Add(hB1D[it-1],-1);
+	  
+	  if(opt.Contains("units") && n0) {
+	    hE1D[it]->GetYaxis()->SetTitle("E_{y}/E_{0}");
+	  }  else {
+	    hE1D[it]->GetYaxis()->SetTitle(Form("E_{y} [%s]",eSUnit.c_str()));
+	  }
+	  
+	}
+	
+      } else {
+	if(!hE1D[it] && hB1D[it+1]) {
+	  char hName[24];
+	  sprintf(hName,"hE1D_%i",it);
+	  hE1D[it] = (TH1F*) gROOT->FindObject(hName);
+	  if(hE1D[it]) delete hE1D[it];
+	
+	  hE1D[it] = (TH1F*) hFocus1D->Clone(hName);
+	  hE1D[it]->Add(hB1D[it+1],1);
+	  
+	  if(opt.Contains("units") && n0) {
+	    hE1D[it]->GetYaxis()->SetTitle("E_{x}/E_{0}");
+	  }  else {
+	    hE1D[it]->GetYaxis()->SetTitle(Form("E_{x} [%s]",eSUnit.c_str()));
+	  }
+	  
+	}
+		
+      }
+
     }
       
     

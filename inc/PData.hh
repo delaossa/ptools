@@ -120,17 +120,16 @@ public:
   void    SetNavg(Int_t navg) { Navg = navg; }
   
   UInt_t  NSpecies() { return species.size(); }
-  virtual UInt_t  NRawSpecies() { return species.size(); }  
   string  GetSpeciesName(UInt_t i) { return species.at(i); }
   string *GetChargeFileName(UInt_t i) { return sCHG->at(i); }
   string *GetCurrentFileName(UInt_t i, UInt_t j=0) { return sJ[j]->at(i); }
   string *GetEfieldFileName(UInt_t i) { return sEF->at(i); }
   string *GetBfieldFileName(UInt_t i) { return sBF->at(i); }
+  virtual string  *GetWfieldFileName(UInt_t i) { return 0; }
+  virtual UInt_t  NRawSpecies() { return species.size(); }  
+  virtual string  GetRawSpeciesName(UInt_t i) { return species.at(i); }
   string *GetRawFileName(UInt_t i) { return sRAW->at(i); }
   string *GetTrackFileName(UInt_t i) { return sTrack->at(i); }
-
-  virtual string   GetRawSpeciesName(UInt_t i) { return species.at(i); }
-  virtual string  *GetWfieldFileName(UInt_t i) { return 0; }
 
   UInt_t  NPhaseSpaces() { return pspaces.size(); }
   string  GetPhasespaceName(UInt_t i) { return pspaces.at(i); }
@@ -286,7 +285,7 @@ public:
   virtual TH2F* GetH2SliceZX(const char *filename, const char *dataname, 
 		     Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg");
 
-  TH2F* GetH2SliceZY(const char *filename, const char *dataname, 
+  virtual TH2F* GetH2SliceZY(const char *filename, const char *dataname, 
 		     Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="avg");
   
   TH2F* GetH2SliceXY(const char *filename, const char *dataname, 
@@ -299,7 +298,7 @@ public:
   Float_t* Get3Darray(const char *filename, const char *dataname, UInt_t dim[3]) ;
   
   // RAW data
-  TTree* GetTreeRaw(const char *filename, const char *options="");
+  TTree* GetRawTree(const char *filename, const char *options="");
 
   UInt_t GetRawArray(const char *filename, Float_t **var = NULL, const char *options="");
 
@@ -324,7 +323,12 @@ public:
 		    const char *cutname, Float_t cutMin, Float_t cutMax,
 		    TH2F *h2D, const char *options="");
   
+  // Particle tracking
+  TTree** GetTrackTree(const char *filename,Int_t &NTracks, const char *options="");
+  UInt_t GetTrackArray(const char *filename, Double_t ***var = NULL, Int_t *np = NULL, const char *options="");
 
+
+  
   // Specific access to Histos
 
   // 1D Histos
@@ -385,22 +389,26 @@ public:
   } 
 
   virtual TH2F* GetWField2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) { return 0; }
-  
+
+  virtual TH2F*  GetWField(UInt_t i, const char *options="") {return 0; }
+    
   // ZY Slices 
   TH2F* GetCharge2DSliceZY(UInt_t i, Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="" ) 
   { 
     return GetH2SliceZY(GetChargeFileName(i)->c_str(),"charge",Firstx2Bin,Lastx2Bin,options); 
   } 
   
-  TH2F* GetEField2DSliceZY(UInt_t i, Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="" ) 
+  virtual TH2F* GetEField2DSliceZY(UInt_t i, Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="" ) 
   { char nam[3]; sprintf(nam,"e%i",i+1); 
     return GetH2SliceZY(GetEfieldFileName(i)->c_str(),nam,Firstx2Bin,Lastx2Bin,options); 
   } 
   
-  TH2F* GetBField2DSliceZY(UInt_t i, Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="" ) 
+  virtual TH2F* GetBField2DSliceZY(UInt_t i, Int_t Firstx2Bin = -1, Int_t Lastx2Bin = 1, const char *options="" ) 
   { char nam[3]; sprintf(nam,"b%i",i+1); 
     return GetH2SliceZY(GetBfieldFileName(i)->c_str(),nam,Firstx2Bin,Lastx2Bin,options); 
-  } 
+  }
+
+  virtual TH2F* GetWField2DSliceZY(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) { return 0; }
 
   // XY Slices
   TH2F* GetCharge2DSliceXY(UInt_t i, Int_t Firstx1Bin = -1, Int_t Lastx1Bin = 1, const char *options="" ) 
@@ -476,7 +484,7 @@ Int_t PData::ListDir(string dir, string pattern, vector<string> &files,string op
   DIR *dp;
   struct dirent *dirp;
   if((dp  = opendir(dir.c_str())) == NULL) {
-    //    cout << "Error(" << errno << ") opening " << dir << endl;
+    // cout << "Error(" << errno << ") opening " << dir << endl;
     return errno;
   }  
 

@@ -14,7 +14,6 @@
 #include <TF1.h>
 #include <TProfile.h>
 #include <TGraphErrors.h>
-#include <TGraphSmooth.h>
 #include <TCanvas.h>
 #include <TStyle.h>
 #include <TLegend.h>
@@ -28,7 +27,7 @@
 
 using namespace std;
 
-void PlotEmittanceComp(const TString &options="") {
+void PlotEnergySpreadComp(const TString &options="") {
   
 #ifdef __CINT__  
   gSystem->Load("libptools.so");
@@ -38,38 +37,32 @@ void PlotEmittanceComp(const TString &options="") {
 
   TString opt = options;
 
-  const Int_t Nsim = 4;
-  char sName[Nsim][56] = {//"flash_v2.5kA.G.ZH.DDR.5.FinalSet.3D",
-			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
-   			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.30.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.10.n2.5.FinalSet.3D"};
-     			  //"flash_v2.5kA.G.ZH.DDR.10.n5.FinalSet.3D",
-     			  //"flash_v2.5kA.G.ZH.DDR.10.n2.5.FinalSet.3D"};
-  //   			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.tap1.5.3D"};
-  
-  char lName[Nsim][56] = {//"(a): k_{p}^{0}#sigma_{l} = 1.25",
-			  "(a): k_{p}^{0}#sigma_{l} = 2.5",
-    			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
-    			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
-   			  "(d): k_{p}^{0}#sigma_{l} = 10.0"};
-    			  //"(f): k_{p}^{0}#sigma_{l} = 2.5",
-   			  //"(g): k_{p}^{0}#sigma_{l} = 2.5"};
-  //   			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
-
-  // const Int_t Nsim = 4;
-  // char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.3D",
-  // 			  "flash_v2.5kA.G.ZH.DDR.20.3D",
+  // const Int_t Nsim = 5;
+  // char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
+  // 			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
   // 			  "flash_v2.5kA.G.ZH.DDR.30.3D",
-  // 			  "flash_v2.5kA.G.ZH.DDR.40.3D"};
-  // //			  "flash_v2.5kA.G.ZH.DDR.10.tap1.77.std.3D"};
+  // 			  "flash_v2.5kA.G.ZH.DDR.40.3D",
+  // 			  "flash_v2.5kA.G.ZH.DDR.10.tap1.77.std.3D"};
   
   // char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 2.5",
   //  			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
   //  			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
-  // 			  "(d): k_{p}^{0}#sigma_{l} = 10.0"};
-  // //			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
+  // 			  "(d): k_{p}^{0}#sigma_{l} = 10.0",
+  // 			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
 
+  const Int_t Nsim = 5;
+  char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.30.FinalSet.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.40.FinalSet.3D",
+  			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.tap1.5.3D"};
+  
+  char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 2.5",
+   			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
+   			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
+  			  "(d): k_{p}^{0}#sigma_{l} = 10.0",
+  			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
+  
   
   // Load first simulation data (for instance)
   PData *pData = PData::Get(sName[0]);
@@ -79,25 +72,32 @@ void PlotEmittanceComp(const TString &options="") {
   cout << Form("\n skd = %.6f mm",skd) << endl;
   
   TFile *sFile[Nsim];
-  TGraph *gEmitx[Nsim];
-  TGraph *gEmity[Nsim];
-  TGraph *gEmitr[Nsim];
-  TGraphSmooth **gsmooth = new TGraphSmooth*[Nsim];
-  TGraph **gEmitxsmooth = new TGraph*[Nsim];
-
+  TGraph *gPz[Nsim];
+  TGraph *gPzrms[Nsim];
+  TGraph *gPzup[Nsim];
+  TGraph *gPzdo[Nsim];
+  TGraph *gdPz[Nsim];
+  TGraph *gZrms[Nsim];
+  TGraph *gPzspread[Nsim];
+  TGraph *gPzcorrrel[Nsim];
+  
   Int_t N[Nsim];
   Double_t *T[Nsim];
-  Double_t *Ex[Nsim];
-  Double_t *Ey[Nsim];
-  Double_t *Er[Nsim];
+  Double_t *Pz[Nsim];
+  Double_t *Pzrms[Nsim];
+  Double_t *Pzup[Nsim];
+  Double_t *Pzdo[Nsim];
+  Double_t *dPz[Nsim];
+  Double_t *Zrms[Nsim];
+  Double_t *Pzspread[Nsim];
   
   Int_t color[Nsim];
 
   PPalette *pal = new PPalette("pal");
   pal->SetPalette("oli");
 
-  Double_t eMax = -99999;
-  Double_t eMin = 99999;
+  Double_t pzMax = -99999;
+  Double_t pzMin = 99999;
   for(Int_t i=0;i<Nsim;i++) {
 
     Int_t index =  i * pal->GetNColors() / Nsim;
@@ -122,43 +122,69 @@ void PlotEmittanceComp(const TString &options="") {
     sFile[i] = new TFile(filename,"READ");
     
     // Load histos and graphs
-    gEmitx[i] = (TGraph*) sFile[i]->Get("gEmitxavgvsTime");
-    Ex[i] = gEmitx[i]->GetY();
+    gPz[i] = (TGraph*) sFile[i]->Get("gPzmeanvsTime");
+    Pz[i] = gPz[i]->GetY();
 
-    gEmitx[i]->SetLineWidth(3);
-    gEmitx[i]->SetLineColor(color[i]);
+    gPz[i]->SetLineWidth(3);
+    gPz[i]->SetLineColor(color[i]);
 
-    gEmity[i] = (TGraph*) sFile[i]->Get("gEmityavgvsTime");
-    Ey[i] = gEmity[i]->GetY();
+    gPzrms[i] = (TGraph*) sFile[i]->Get("gPzrmsvsTime");
+    Pzrms[i] = gPzrms[i]->GetY();
 
-    gEmity[i]->SetLineWidth(3);
-    gEmity[i]->SetLineColor(color[i]);
-    gEmity[i]->SetLineStyle(3);
+    gPzrms[i]->SetLineWidth(3);
+    gPzrms[i]->SetLineColor(color[i]);
+    gPzrms[i]->SetLineStyle(3);
+
+    gZrms[i] = (TGraph*) sFile[i]->Get("gZrmsvsTime");
+    Zrms[i] = gZrms[i]->GetY();
+
+    gPzcorrrel[i] = (TGraph*) sFile[i]->Get("gPzcorrrelvsTime");
+    gPzcorrrel[i]->SetLineWidth(3);
+    gPzcorrrel[i]->SetLineColor(color[i]);
     
-    T[i]  = gEmitx[i]->GetX();
-    N[i]  = gEmitx[i]->GetN();
+    T[i]  = gPz[i]->GetX();
+    N[i]  = gPz[i]->GetN();
 
-    Er[i] = new Double_t[N[i]];
-    
+    Pzup[i] = new Double_t[N[i]];
+    Pzdo[i] = new Double_t[N[i]];
+    Pzup[i] = new Double_t[N[i]];
+    dPz[i] = new Double_t[N[i]];
+    Pzspread[i] = new Double_t[N[i]];
+      
     for(Int_t j=0;j<N[i];j++) {
-      
-      if( Ex[i][j] > eMax) eMax =  Ex[i][j];
-      if( Ex[i][j] < eMin) eMin =  Ex[i][j];
 
-      if( Ey[i][j] > eMax) eMax =  Ey[i][j];
-      if( Ey[i][j] < eMin) eMin =  Ey[i][j];
-      
-      Er[i][j] = (Ex[i][j] + Ey[i][j])/2.;
+      Pzup[i][j] = Pz[i][j] + Pzrms[i][j];
+      Pzdo[i][j] = Pz[i][j] - Pzrms[i][j];
+      dPz[i][j] = Pzrms[i][j]/Pz[i][j];
+
+      if( Pzup[i][j] > pzMax) pzMax =  Pzup[i][j];
+      if( Pzdo[i][j] < pzMin) pzMin =  Pzdo[i][j];
+
+      Pzspread[i][j] = 100 * Pzrms[i][j] / (Pz[i][j] * Zrms[i][j]) ;
     }
 
-    gEmitr[i] = new TGraph(N[i],T[i],Er[i]);
-    gEmitr[i]->SetLineWidth(3);
-    gEmitr[i]->SetLineColor(color[i]);
+    gPzup[i] = new TGraph(N[i],T[i],Pzup[i]);
+    gPzdo[i] = new TGraph(N[i],T[i],Pzdo[i]);
+
+    gPzup[i]->SetLineWidth(2);
+    gPzup[i]->SetLineColor(color[i]);
+    gPzup[i]->SetLineStyle(3);
     
-    gsmooth[i] = new TGraphSmooth("normal");
-    gEmitxsmooth[i] = gsmooth[i]->SmoothSuper(gEmitx[i],"",0.0);
-    gEmitxsmooth[i]->SetLineWidth(3);
-    gEmitxsmooth[i]->SetLineColor(color[i]);
+    gPzdo[i]->SetLineWidth(2);
+    gPzdo[i]->SetLineColor(color[i]);
+    gPzdo[i]->SetLineStyle(3);
+
+    gdPz[i] = new TGraph(N[i],T[i],dPz[i]);
+    gdPz[i]->SetLineWidth(1);
+    gdPz[i]->SetLineColor(color[i]);
+    gdPz[i]->SetLineStyle(3);
+
+    gPzspread[i] = new TGraph(N[i],T[i],Pzspread[i]);
+    gPzspread[i]->SetLineWidth(3);
+    gPzspread[i]->SetLineColor(color[i]);
+    gPzspread[i]->SetLineStyle(1);
+
+    
   }
   
   // Canvas setup
@@ -183,8 +209,8 @@ void PlotEmittanceComp(const TString &options="") {
     if(T[i][N[i]-1]>zmax) zmax = T[i][N[i]-1];
   }
 
-  zmin = 5.0;
-  zmax = 100;
+  zmin = 2.5;
+  zmax = 90;
    
   // Setup Pad layout: 
   Int_t NPad = 1;
@@ -246,14 +272,17 @@ void PlotEmittanceComp(const TString &options="") {
   }
 
   Double_t mfactor = 0.1;
-  Double_t emin =  eMin-(eMax-eMin)*mfactor;
-  Double_t emax =  eMax+(eMax-eMin)*mfactor;
-  emin = 0;
-  emax = 1.199;
-  Double_t erange = emax - emin;
+  Double_t pzmin =  pzMin-(pzMax-pzMin)*mfactor;
+  Double_t pzmax =  pzMax+(pzMax-pzMin)*mfactor;
+  Double_t erange = pzmax - pzmin;
   Double_t zrange = zmax - zmin;
-
-  TLegend *Leg = new TLegend(zmin + 0.02 * zrange, emax - 0.4*erange , zmin + 0.3 * zrange, emax - 0.05 * erange,"","tl");
+  //Double_t pzsmin = 1.0;
+  //Double_t pzsmax = 3.49;
+  Double_t pzsmin = -2.99;
+  Double_t pzsmax = -0.01;
+  Double_t pzsrange = pzsmax - pzsmin;
+  
+  TLegend *Leg = new TLegend(zmin + 0.02 * zrange, pzsmax - 0.4*pzsrange , zmin + 0.3 * zrange, pzsmax - 0.05 * erange,"","tl");
   PGlobals::SetPaveStyle(Leg);
   Leg->SetTextAlign(12);
   Leg->SetTextColor(kGray+3);
@@ -271,10 +300,11 @@ void PlotEmittanceComp(const TString &options="") {
   pad[ipad]->Draw();
   pad[ipad]->cd();
 
-  hFrame[ipad]->GetYaxis()->SetRangeUser(emin,emax);
+  hFrame[ipad]->GetYaxis()->SetRangeUser(pzsmin,pzsmax);
   
   hFrame[ipad]->GetXaxis()->SetTitle("z [mm]");
-  hFrame[ipad]->GetYaxis()->SetTitle("#varepsilon_{n} [#mum]");
+  //hFrame[ipad]->GetYaxis()->SetTitle("#deltap_{z}/#sigma_{z} [%/#mum]");
+  hFrame[ipad]->GetYaxis()->SetTitle("#deltap_{z,corr} [%/#mum]");
 
   hFrame[ipad]->Draw("AXIS");
   
@@ -284,12 +314,14 @@ void PlotEmittanceComp(const TString &options="") {
   // lineZero->Draw();
 
   for(Int_t i=0;i<Nsim;i++) {
-    
-    //gEmitxsmooth[i]->Draw("L");
-    gEmitx[i]->Draw("L");
-    //gEmitr[i]->Draw("L");
-    gEmity[i]->Draw("L");
-    Leg->AddEntry(gEmitx[i],lName[i],"L");
+    //gPz[i]->Draw("L");
+    //gPzup[i]->Draw("L");
+    //gPzdo[i]->Draw("L");
+    //   gPzrms[i]->Draw("L");
+    // gdPz[i]->Draw("L");
+    //gPzspread[i]->Draw("L");
+    gPzcorrrel[i]->Draw("L");
+    Leg->AddEntry(gPz[i],lName[i],"L");
   }
   
   Leg->Draw();
@@ -312,7 +344,7 @@ void PlotEmittanceComp(const TString &options="") {
   
   // Print to file -------------------------------------------
 
-  TString fOutName = Form("./EmittanceCompDDR/EmittanceCompDDR");
+  TString fOutName = Form("./EnergyCompDDR/EnergySpreadCompDDR");
   PGlobals::imgconv(C,fOutName,opt);
 
   // ---------------------------------------------------------

@@ -56,10 +56,10 @@ char map_h5type_to_root(DataType type) {
   if(type == PredType::NATIVE_ULONG){
     return 'i';
   }
-  if(type == PredType::NATIVE_FLOAT){
+  if((type == PredType::NATIVE_FLOAT) || (type == PredType::INTEL_F32)){
     return 'F';
   }
-  if(type == PredType::NATIVE_DOUBLE){
+  if((type == PredType::NATIVE_DOUBLE) || (type == PredType::INTEL_F64)){
     return 'D';
   }
   if(type == PredType::NATIVE_CHAR){
@@ -79,16 +79,16 @@ char map_h5type_to_root(DataType *type) {
   size_t type_size = type->getSize();
 
   if( type_class == H5T_INTEGER ) {
-    *type = PredType::NATIVE_INT; 
+    // *type = PredType::NATIVE_INT; 
     return 'I';
   }
 
   if( type_class == H5T_FLOAT ) {
     if(type_size == 4) {
-      *type = PredType::NATIVE_FLOAT;
+      // *type = PredType::NATIVE_FLOAT;
       return 'F';
     } else if(type_size == 8) {
-      *type = PredType::NATIVE_DOUBLE; 
+      // *type = PredType::NATIVE_DOUBLE; 
       return 'D';
     }
   }
@@ -232,6 +232,8 @@ void GroupToTree(Group *group, TTree *dataTree, Bool_t seq=kFALSE, Bool_t ver=kF
   // Actually read and fill data
   UInt_t Nseq = 1; 
   if(seq) Nseq = dims[0][0];
+  cout << Form(" Nseq = %i",Nseq) << endl;
+  
   for(UInt_t k=0;k<Nseq;k++) {
     for(UInt_t i=0;i<iN;i++) {
       DataSpace dataSpace = dataSets[i]->getSpace();
@@ -241,6 +243,7 @@ void GroupToTree(Group *group, TTree *dataTree, Bool_t seq=kFALSE, Bool_t ver=kF
       dataSets[i]->read(data_out[i],type,*(mem_out[i]),dataSpace);
       if(seq) // increase first dimension offset
 	offset[i][0] += count[i][0];
+      
     }
     dataTree->Fill();
   }

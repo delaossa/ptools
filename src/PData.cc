@@ -16,7 +16,7 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   rtime = 0;
   simPath = name;
 
-  species.clear();
+  species.clear(); 
   pspaces.clear();
 
   sCHG = sEF = sBF = sRAW = sTrack = NULL;
@@ -48,7 +48,7 @@ PData::PData(const char * name) : TNamed(name,name) {
   rtime = 0;
   simPath = name;
 
-  species.clear();
+  species.clear(); 
   pspaces.clear();
 
   sCHG = sEF = sBF = sRAW = sTrack = NULL;
@@ -80,7 +80,7 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   rtime = 0;
   simPath = name;
 
-  species.clear();
+  species.clear(); 
   pspaces.clear();
   
   sCHG = sEF = sBF = sRAW = sTrack = NULL;
@@ -149,7 +149,7 @@ void PData::ReadParameters(const char * pfile)
   
   ifile.open(ifilename.c_str(),ios::in);
   if (ifile.is_open()) {
-    cout << "PData:: Reading parameters file: " << ifilename.c_str() << endl;
+    cout << "\n PData:: Reading parameters file: " << ifilename.c_str() << endl;
 
     string line;
     while ( getline(ifile,line) )
@@ -285,45 +285,71 @@ void PData::LoadFileNames(Int_t t) {
   string Dir;
   
   // Get the list of different species
+  vector<string> sptemp;
   Dir = simPath + "/MS/DENSITY";
-  ListDir(Dir,string(""),species,"nam");
+  ListDir(Dir,string(""),sptemp,"nam");
 
+  // Get the list of RAW species
+  Dir = simPath + "/MS/RAW";
+  ListDir(Dir,string(""),sptemp,"nam");
+
+  // Eliminate redundancies
+  for(UInt_t i=0;i<sptemp.size();i++) {
+    for(UInt_t j=0;j<i;j++) {
+      if(sptemp[j] == sptemp[i]) {
+	sptemp.erase(sptemp.begin()+i);
+	i--;
+	break;
+      }
+    }
+  }
+  
   // It is very important the order of the species:
   // The analisys macros always assume that the plasma specie is the first one of the list.
   // The electron bunch, for instance, uses to be the second.
   // We swap here the order (if necessary) to put the "plasma" species at first.
-  for(UInt_t i=0;i<species.size();i++) {
-    if(species[i].find("plasma") != string::npos)
-      if(i!=0 && species.size()>0) {
-	string temp = species[0];
-	species[0] = species[i];
-	species[i] = temp;
+  for(UInt_t i=0;i<sptemp.size();i++) {
+    if(sptemp[i].find("plasma") != string::npos)
+      if(i!=0 && sptemp.size()>0) {
+	string temp = sptemp[0];
+	sptemp[0] = sptemp[i];
+	sptemp[i] = temp;
 	i--;
 	continue;
       }
-    if(species[i].find("driver") != string::npos)
-      if(i!=1 && species.size()>1) {
-	string temp = species[1];
-	species[1] = species[i];
-	species[i] = temp;
+    if(sptemp[i].find("driver") != string::npos)
+      if(i!=1 && sptemp.size()>1) {
+	string temp = sptemp[1];
+	sptemp[1] = sptemp[i];
+	sptemp[i] = temp;
 	i--;
 	continue;
       }
-    if( (species[i].find("high") != string::npos) ||
-	(species[i].find("1") != string::npos))
-      if(i!=2 && species.size()>2) {
-	string temp = species[2];
-	species[2] = species[i];
-	species[i] = temp;
+    if( (sptemp[i].find("high") != string::npos) ||
+	(sptemp[i].find("1") != string::npos))
+      if(i!=2 && sptemp.size()>2) {
+	string temp = sptemp[2];
+	sptemp[2] = sptemp[i];
+	sptemp[i] = temp;
 	i--;
 	continue;
       }
   }
+
+  for(UInt_t i=0;i<sptemp.size();i++) {
+    species.push_back(sptemp[i]);
+    //cout << Form(" Species = %s", species[i].c_str()) << endl;
+  }
+  
+  // cout << Form("\n Number species = %i",species.size()) << endl;
+  // for(UInt_t i=0;i<species.size();i++) {
+  //   cout << Form(" Species = %s", species[i].c_str()) << endl;
+  // }
   
   // Get the list of different phase spaces
   Dir = simPath + "/MS/PHA";
   ListDir(Dir,string(""),pspaces,"nam");
-  
+    
   // Time
   char stime[10];
   if(time<1e1) sprintf(stime,"00000%1i",time);
@@ -352,11 +378,11 @@ void PData::LoadFileNames(Int_t t) {
   
   // Initialize the pointers to NULLS
   sCHG = new vector<string*>(NSpecies(),NULL);
+  sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
   sEF  = new vector<string*>(3,NULL);
   sBF  = new vector<string*>(3,NULL);
-  sRAW = new vector<string*>(NSpecies(),NULL);
-  sTrack = new vector<string*>(NSpecies(),NULL);
-  sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
+  sRAW = new vector<string*>(NRawSpecies(),NULL);
+  sTrack = new vector<string*>(NRawSpecies(),NULL);
 
   for(UInt_t i=0;i<3;i++) {
     sJ[i] = new vector<string*>(NSpecies(),NULL);    
@@ -397,12 +423,6 @@ void PData::LoadFileNames(Int_t t) {
 	  else if(!sCHG->at(j))
 	    sJ[2]->at(j) = new string(files[i]);
 	  
-	} else if((files[i].find("RAW") != string::npos) && (files[i].find(".h5") != string::npos)) {
-	  sRAW->at(j) = new string(files[i]);
-
-	} else if((files[i].find("tracks") != string::npos) && (files[i].find(".h5") != string::npos)) {
-	  sTrack->at(j) = new string(files[i]);
-
 	} else if(files[i].find("PHA") != string::npos) {
 	  // Loop over Phase spaces
 	  for(UInt_t ip=0;ip<NPhaseSpaces();ip++) {
@@ -414,7 +434,20 @@ void PData::LoadFileNames(Int_t t) {
 	}
       }
     }
-    
+
+    // Get RAW species files:
+    for(UInt_t j=0;j<NRawSpecies();j++) {
+
+      if(files[i].find(species[j]) != string::npos) {
+	
+	if((files[i].find("RAW") != string::npos) && (files[i].find(".h5") != string::npos)) {
+	  sRAW->at(j) = new string(files[i]);
+	}
+
+	continue;
+      }
+    }
+        
     // Get Electromagnetic fields files:
     for(UInt_t j=0;j<3;j++) {
       char eName[16];
@@ -441,26 +474,56 @@ void PData::LoadFileNames(Int_t t) {
     }
   
   }
-
-  if(species.size()) {
-    rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
-    GetBoxDimensionsFromFile(GetChargeFileName(0)->c_str());
+  
+  // Get the vector of particle tracking files.
+  vector<string> tfiles;
+  Dir = simPath + "/MS/TRACKS";
+  ListDir(Dir,".h5",tfiles,"recursive");
+  
+  if(tfiles.size()==0) {
+    cout << "PData:: No particle tracking files" << endl;
   } else {
-    cout << "PData:: No species folders in this simulation: " << GetPath() << "." << endl;
-    cout << "Checking the fields..." << endl;
+    // Fishing the pieces ...
+    for(UInt_t i=0;i<tfiles.size();i++) {
+      
+      // Get RAW species files:
+      for(UInt_t j=0;j<NRawSpecies();j++) {
+	
+	if(tfiles[i].find(species[j]) != string::npos) {
+	  if((tfiles[i].find("tracks") != string::npos) && (tfiles[i].find(".h5") != string::npos)) {
+	    sTrack->at(j) = new string(tfiles[i]);
+	  }
+	  
+	  continue;
+	}
+      }
+    }
+  }
+  
+  if(species.size()) {
+    if(sCHG->at(0)) {
+      rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
+      GetBoxDimensionsFromFile(GetChargeFileName(0)->c_str());
+    } else if(sRAW->at(0)) {
+      rtime = GetRealTimeFromFile(GetRawFileName(0)->c_str());
+      GetBoxDimensionsFromFile(GetRawFileName(0)->c_str());
+    }
+  } else {
+    // cout << "PData:: No species folders in this simulation: " << GetPath() << "." << endl;
+    // cout << "Checking the fields..." << endl;
     
     for(UInt_t i=0;i<3;i++) { 
       if(sEF->at(i)) {
 	rtime = GetRealTimeFromFile(GetEfieldFileName(i)->c_str());
 	GetBoxDimensionsFromFile(GetEfieldFileName(i)->c_str());
 	break;
-      }
+      } else
+	continue;
     }
+    
     
   }
 
-  
-  
   // Defines the sub-range for the analysis.
   // Here at initialization, it is set to the whole simulation range.
   Double_t shiftx1 = Shift("comov");  
@@ -759,7 +822,7 @@ void PData::Clear(Option_t *option)
     sPHA = NULL;
   }
   
-  species.clear();
+  species.clear(); 
   pspaces.clear();
   
 }
@@ -1104,7 +1167,7 @@ TH1F* PData::GetH1SliceX(const char *filename,const char *dataname,Int_t Firstx1
   return h1D;
 }
 //_______________________________________________________________________
-TTree* PData::GetTreeRaw(const char *filename, const char *options) {
+TTree* PData::GetRawTree(const char *filename, const char *options) {
   
   // Options
   TString opt = options;
@@ -1116,8 +1179,8 @@ TTree* PData::GetTreeRaw(const char *filename, const char *options) {
   Group *root = new Group(h5.openGroup("/"));
   
   TTree *tree = new TTree("RawTree","");
-  GroupToTree(root,tree,kTRUE);  // kTRUE for sequential reading.
-  tree->Print();
+  GroupToTree(root,tree,kTRUE,kTRUE);  // kTRUE for sequential reading.
+  // tree->Print();
 
   return tree;
 }
@@ -1528,7 +1591,92 @@ void PData::GetH1RawCut2(const char *filename,const char *dataname,
 
 }
 
+//_______________________________________________________________________
+TTree** PData::GetTrackTree(const char *filename,Int_t &NTracks, const char *options) {
+  
+  // Options
+  TString opt = options;
 
+  // Open input HDF5 file
+  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  
+  // Open main group for data reading
+  Group *root = new Group(h5.openGroup("/"));
+
+  Int_t NOBJ = root->getNumObjs();
+  TTree **tree = new TTree*[NOBJ];
+  Int_t NT = 0;
+  for(Int_t i=0; (i<NOBJ) && (NT<NTracks); i++) {
+    char gname[128];
+    root->getObjnameByIdx( i, gname, 128 );
+    //cout << Form(" Group name = %s",gname) << endl;
+    Group *track = new Group(h5.openGroup(Form("/%s",gname)));
+    if(track == NULL) continue;
+    
+    tree[NT] = new TTree(Form("TrackTree_%i",NT),"");
+    GroupToTree(track,tree[NT],kTRUE,kTRUE);  // kTRUE for sequential reading.
+    NT++;
+    delete track;
+  }
+  
+  NTracks = NT;
+  return tree;
+}
+
+
+//_______________________________________________________________________
+UInt_t PData::GetTrackArray(const char *filename, Double_t ***var, Int_t *np, const char *options) {
+  
+  // Options
+  TString opt = options;
+
+  // Open input HDF5 file
+  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  
+  // Open main group for data reading
+  Group *root = new Group(h5.openGroup("/"));
+  Int_t NOBJ = root->getNumObjs();
+  var = new Double_t**[NOBJ];
+  np = new Int_t[NOBJ];
+  for(Int_t i=0; (i<NOBJ); i++) {
+    char gname[128];
+    root->getObjnameByIdx( i, gname, 128 );
+    Group *track = new Group(h5.openGroup(Form("/%s",gname)));
+    if(track == NULL) continue;
+   
+    UInt_t Nvar = 8;
+    if(!Is3D()) Nvar = 7;
+    char varname[8][4] = {{"t"},{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+
+    var[i] = new Double_t*[Nvar];
+    
+    DataSet *dataSet[Nvar];
+    UInt_t Ntime = 0;
+    for(UInt_t j=0;j<Nvar;j++) {
+    
+      dataSet[j] = new DataSet(track->openDataSet(varname[j]));
+      Int_t rank = dataSet[j]->getSpace().getSimpleExtentNdims();
+      hsize_t  *dataDims = new hsize_t[rank];
+      dataSet[j]->getSpace().getSimpleExtentDims(dataDims,NULL);
+      if(j==0) {
+	Ntime = dataDims[0];  
+	np[i] = Ntime;
+      }
+      var[i][j] = new Double_t[Ntime];
+      
+      DataSpace memspace(rank,dataDims);
+      dataSet[j]->read(var[i][j],PredType::NATIVE_DOUBLE,memspace,dataSet[j]->getSpace());
+
+      dataSet[j]->close();
+      
+    }
+    track->close();
+  }
+  root->close();
+
+  return NOBJ;
+  
+}
 
 //_______________________________________________________________________
 TH2F* PData::GetH2(const char *filename,const char *dataname, const char *options) {
