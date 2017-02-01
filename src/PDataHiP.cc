@@ -81,14 +81,14 @@ void PDataHiP::Clear(Option_t *option) {
 }
 //_______________________________________________________________________
 void PDataHiP::LoadFileNames(Int_t t) {
-  
+
   if(time == t && Init) {
     // cout << "Time step already loaded: doing nothing." << endl;
     cout << " ... " << endl << endl;
     return;  
   }
-  
-  Clear();
+
+  PDataHiP::Clear();
   
   time = t;
 
@@ -114,7 +114,6 @@ void PDataHiP::LoadFileNames(Int_t t) {
     Init = kFALSE;
     return;
   }
-
   
   // Initialize the pointers to NULLS
   sCHG = new vector<string*>(NSpecies(),NULL);
@@ -276,7 +275,7 @@ void PDataHiP::LoadFileNames(Int_t t) {
   } else {
     XMAXR[2] = pParam.x3Max;
   }
-  
+
   Init = kTRUE;  
 }
 
@@ -354,7 +353,8 @@ void PDataHiP::ReadOutputSummary(const char * pfile)
 	iline++;
 	
       }
-    
+
+    cout << endl;
     ifile.close();
     
   } else {

@@ -180,9 +180,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   // Time in OU
   Double_t Time = pData->GetRealTime();
-  cout << Form(" Real time = %.2f  ",Time);
+  // cout << Form(" Real time = %.2f  ",Time);
   Time += pData->ShiftT(opt);
-  cout << Form(" Shifted time = %.2f  ",Time) << endl;
+  // cout << Form(" Shifted time = %.2f  ",Time) << endl;
 
   Float_t shiftz = pData->Shift(opt);
 

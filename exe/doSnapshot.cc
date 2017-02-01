@@ -134,40 +134,43 @@ int main(int argc,char *argv[]) {
     
   PGlobals::Initialize();
   
-  // Load PData
-  PData *pData = PData::Get(sim.Data());
-  if(pData->isHiPACE()) {
-    delete pData; pData = NULL;
-    pData = PDataHiP::Get(sim.Data());
-    opt += "comov";
-  }
-  
-  pData->SetNavg(Navg);
-
+  // Time looper
   if(iStart<0) iStart = time;
   if(iEnd<=iStart) iEnd = iStart;
-  
-  // Some plasma constants
-  Double_t n0 = pData->GetPlasmaDensity();
-  //  Double_t omegap = pData->GetPlasmaFrequency();
-  //  Double_t timedepth = pData->GetPlasmaTimeDepth();
-  Double_t period = pData->GetPlasmaPeriod();
-  Double_t kp = pData->GetPlasmaK();
-  Double_t skindepth = pData->GetPlasmaSkinDepth();
-  Double_t wavelength = pData->GetPlasmaWaveLength();
-  Double_t E0 = pData->GetPlasmaE0();
-
-  // Some beam properties:
-  // Double_t Ebeam = pData->GetBeamEnergy();
-  // Double_t gamma = pData->GetBeamGamma();
-  // Double_t vbeam = pData->GetBeamVelocity();
-  
-  // Other parameters
-  // Double_t trapPotential = 1.0;
-  // Double_t trapPotential = 1.0 - (1.0/gamma);
-
-  // Time looper
+    
   for(Int_t i=iStart; i<iEnd+1; i+=iStep) {
+
+    // Load PData
+    // Note: I had to move this here because being outside the loop
+    // pData cast was failing when 
+    PData *pData = PData::Get(sim.Data());
+    if(pData->isHiPACE()) {
+      delete pData; pData = NULL;
+      pData = PDataHiP::Get(sim.Data());
+      if(!opt.Contains("comov"))
+	opt += "comov";
+    }
+  
+    pData->SetNavg(Navg);
+  
+    // Some plasma constants
+    Double_t n0 = pData->GetPlasmaDensity();
+    //  Double_t omegap = pData->GetPlasmaFrequency();
+    //  Double_t timedepth = pData->GetPlasmaTimeDepth();
+    Double_t period = pData->GetPlasmaPeriod();
+    Double_t kp = pData->GetPlasmaK();
+    Double_t skindepth = pData->GetPlasmaSkinDepth();
+    Double_t wavelength = pData->GetPlasmaWaveLength();
+    Double_t E0 = pData->GetPlasmaE0();
+
+    // Some beam properties:
+    // Double_t Ebeam = pData->GetBeamEnergy();
+    // Double_t gamma = pData->GetBeamGamma();
+    // Double_t vbeam = pData->GetBeamVelocity();
+  
+    // Other parameters
+    // Double_t trapPotential = 1.0;
+    // Double_t trapPotential = 1.0 - (1.0/gamma);
 
     time = i;
 
@@ -178,12 +181,12 @@ int main(int argc,char *argv[]) {
     
     if(!pData->IsInit()) continue;
     if(time==iStart) pData->PrintData();
-    
+
     // Time in OU
     Double_t Time = pData->GetRealTime();
-    cout << Form(" Real time = %.2f  ",Time);
+    // cout << Form(" Real time = %.2f  ",Time);
     Time += pData->ShiftT(opt);
-    cout << Form(" Shifted time = %.2f  ",Time) << endl;
+    // cout << Form(" Shifted time = %.2f  ",Time) << endl;
     
     // Off-axis definition    
     Double_t rms0 = pData->GetBeamRmsX() * kp;
@@ -1828,9 +1831,9 @@ int main(int argc,char *argv[]) {
     }
     
     ofile->Close();
-        
+    
   }
-
+  
 
 
 }

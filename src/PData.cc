@@ -258,7 +258,8 @@ void PData::ReadParameters(const char * pfile)
 
 	word.clear();
       }
-    
+
+    cout << endl;
     ifile.close();
     
   } else {
@@ -480,25 +481,22 @@ void PData::LoadFileNames(Int_t t) {
   Dir = simPath + "/MS/TRACKS";
   ListDir(Dir,".h5",tfiles,"recursive");
   
-  if(tfiles.size()==0) {
-    cout << "PData:: No particle tracking files" << endl;
-  } else {
-    // Fishing the pieces ...
-    for(UInt_t i=0;i<tfiles.size();i++) {
+  // Fishing the pieces ...
+  for(UInt_t i=0;i<tfiles.size();i++) {
+    
+    // Get RAW species files:
+    for(UInt_t j=0;j<NRawSpecies();j++) {
       
-      // Get RAW species files:
-      for(UInt_t j=0;j<NRawSpecies();j++) {
-	
-	if(tfiles[i].find(species[j]) != string::npos) {
-	  if((tfiles[i].find("tracks") != string::npos) && (tfiles[i].find(".h5") != string::npos)) {
-	    sTrack->at(j) = new string(tfiles[i]);
-	  }
-	  
-	  continue;
+      if(tfiles[i].find(species[j]) != string::npos) {
+	if((tfiles[i].find("tracks") != string::npos) && (tfiles[i].find(".h5") != string::npos)) {
+	  sTrack->at(j) = new string(tfiles[i]);
 	}
+	
+	continue;
       }
     }
   }
+  
   
   if(species.size()) {
     if(sCHG->at(0)) {
@@ -795,6 +793,14 @@ void PData::Clear(Option_t *option)
     delete sCHG;
     sCHG = NULL;
   }
+
+  for(UInt_t i=0;i<3;i++) {
+    if(sJ[i]) {
+      FreeClear(*sJ[i]);
+      delete sJ[i];
+      sJ[i] = NULL;
+    }
+  }
   
   if(sEF) {
     FreeClear(*sEF);
@@ -814,6 +820,12 @@ void PData::Clear(Option_t *option)
     sRAW = NULL;
   }
 
+  if(sTrack) {
+    FreeClear(*sTrack);
+    delete sTrack;
+    sTrack = NULL;
+  }
+
   if(sPHA) {
     for(UInt_t i=0;i<NSpecies();i++) {
       FreeClear(sPHA->at(i));
@@ -823,7 +835,7 @@ void PData::Clear(Option_t *option)
   }
   
   species.clear(); 
-  pspaces.clear();
+  pspaces.clear();  
   
 }
 

@@ -16,9 +16,8 @@
 #pragma link C++ function operator<<(std::ostream&, const PUnits::BestUnit&);
 
 #pragma link C++ class PData+;
-#pragma link C++ global gData;
-
 #pragma link C++ class PDataHiP+;
+#pragma link C++ global gData;
 
 #pragma link C++ class PPalette+;
 
