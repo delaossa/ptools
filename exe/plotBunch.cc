@@ -91,14 +91,20 @@ int main(int argc,char *argv[]) {
   Float_t Pmax = -99999.;
 
   // Transverse momentum range
-  Float_t Pxmin = 0.;
-  Float_t Pxmax = 0.;
+  Float_t Pxmax0 = 0.;
     
   // Maximum current
   Float_t Imax = -99999.;
 
+  // Maximum transverse range 
+  Float_t Xmax0 = -99999.;
+
   // Option for longitudinal binning
-  // dxf is a fraction of the simulation binning
+  // dzf is a fraction of the simulation binning in longitudinal direction
+  Float_t dzf = 1.0;
+
+  // Option for transverse binning
+  // dxf is a fraction of the simulation binning in transverse direction
   Float_t dxf = 1.0;
 
   // Interfacing command line:
@@ -177,6 +183,9 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-rawf")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&rawf);
+    } else if(arg.Contains("-dzf")) {
+      char ss[4];
+      sscanf(arg,"%4s%f",ss,&dzf);
     } else if(arg.Contains("-dxf")) {
       char ss[4];
       sscanf(arg,"%4s%f",ss,&dxf);
@@ -198,15 +207,15 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-pmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmax);
-    } else if(arg.Contains("-pxmin")) {
-      char ss[6];
-      sscanf(arg,"%6s%f",ss,&Pxmin);
     } else if(arg.Contains("-pxmax")) {
       char ss[6];
-      sscanf(arg,"%6s%f",ss,&Pxmax);
+      sscanf(arg,"%6s%f",ss,&Pxmax0);
     } else if(arg.Contains("-z")) {
       char ss[2];
       sscanf(arg,"%2s%f",ss,&zoom);
+    } else if(arg.Contains("-xmax")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&Xmax0);
     } else {
       cout << Form("\t Invalid argument (%i): exiting...\n",l) << endl;
       return 0;
@@ -449,6 +458,26 @@ int main(int argc,char *argv[]) {
       x1BinMin = zsmin + dshiftz;
       x1BinMax = zsmax + dshiftz;
     }
+
+    // Transverse range
+    Double_t Xmax = Xmax0;
+    if (Xmax > 0.) {
+      
+      if(opt.Contains("units")) {
+	Xmax *= tspaUnit * kp;
+      }
+      
+    }
+
+    Double_t Pxmax = Pxmax0;
+    if (Pxmax > 0.) {
+      
+      if(opt.Contains("units")) {
+	Pxmax *= teneUnit / PConst::ElectronMassE;
+      }
+      
+    }
+    
     
     // --------------------------------------------------
     
@@ -584,7 +613,7 @@ int main(int argc,char *argv[]) {
 
     // Transverse plane
     // Zoom trasverse range
-    if(zoom>0) {
+    if((zoom>0) && (Xmax<0)) {
       Double_t x2Range = (x2Max - x2Min)/zoom;
       Double_t x2Mid   = (x2Max + x2Min)/2.0;
       x2Min = x2Mid - x2Range/2.0;
@@ -594,6 +623,15 @@ int main(int argc,char *argv[]) {
 	Double_t x3Mid   = (x3Max + x3Min)/2.0;
 	x3Min = x3Mid - x3Range/2.0;
 	x3Max = x3Mid + x3Range/2.0;
+      }
+    } else if(Xmax>0) {
+      Double_t x2Mid   = (x2Max + x2Min)/2.0;
+      x2Min = x2Mid - Xmax;
+      x2Max = x2Mid + Xmax;
+      if(pData->Is3D()) {
+	Double_t x3Mid   = (x3Max + x3Min)/2.0;
+	x3Min = x3Mid - Xmax;
+	x3Max = x3Mid + Xmax;
       }
     } else {
       Double_t x2min = -999;
@@ -617,11 +655,11 @@ int main(int argc,char *argv[]) {
       }
     }
     
-    if((Pxmin != 0.) && (Pxmin != 0.)) {
-      p2Min = Pxmin;
+    if(Pxmax > 0.) {
+      p2Min = -Pxmax;
       p2Max = Pxmax;
 
-      p3Min = Pxmin;
+      p3Min = -Pxmax;
       p3Max = Pxmax;
     } else {
       Double_t p2min = -999;
@@ -669,19 +707,15 @@ int main(int argc,char *argv[]) {
     // cout << Form(" x1 range (N = %i) :  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
     // cout << Form(" x1-slices (N = %i):  x1Min = %f  x1Max = %f  Dx1 = %f", SNbin, x1BinMin, x1BinMax, (x1BinMax-x1BinMin)/SNbin) << endl;
 
-
-    x1Min = floor((x1Min-X1MIN)/dx1) * dx1 + X1MIN;  
-    x1Max = floor((x1Max-X1MIN)/dx1) * dx1 + X1MIN;
-
-    Double_t ddx1 = dxf * dx1;
+    Double_t ddx1 = dzf * dx1;
     x1Min = floor((x1Min-X1MIN)/ddx1) * ddx1 + X1MIN;  
-    x1Max = floor((x1Max-X1MIN)/ddx1) * ddx1 + X1MIN;
+    x1Max = ceil((x1Max-X1MIN)/ddx1) * ddx1 + X1MIN;
     x1Nbin = ceil ((x1Max - x1Min)/(ddx1));
     p1Nbin = x1Nbin;
     
     // slices
-    x1BinMin = floor((x1BinMin-X1MIN)/dx1) * dx1 + X1MIN;  
-    x1BinMax = floor((x1BinMax-X1MIN)/dx1) * dx1 + X1MIN;
+    x1BinMin = floor((x1BinMin-X1MIN)/ddx1) * ddx1 + X1MIN;  
+    x1BinMax = ceil((x1BinMax-X1MIN)/ddx1) * ddx1 + X1MIN;
     
     SNbin  = ceil ((x1BinMax - x1BinMin)/(ddx1));
 
@@ -693,22 +727,26 @@ int main(int argc,char *argv[]) {
     // cout << Form("\n x1 range (N = %i) :  x1Min = %f  x1Max = %f  dx1 = %f", x1Nbin, x1Min, x1Max, (x1Max - x1Min)/x1Nbin) << endl;
     // cout << Form(" x1-slices (N = %i):  x1Min = %f  x1Max = %f  Dx1 = %f", SNbin, x1BinMin, x1BinMax, (x1BinMax-x1BinMin)/SNbin) << endl;
 
-    // Double_t ddx2 = dxf * dx2;      
-    // x2Min = floor((x2Min-X2MIN)/dx2) * dx2 + X2MIN;  
-    // x2Max = floor((x2Max-X2MIN)/dx2) * dx2 + X2MIN;  
-    // x2Nbin = ceil ((x2Max - x2Min)/(ddx2));
+    Double_t ddx2 = dxf * dx2;      
+    // Make the transverse edges to match cell boundaries
+    x2Min = floor((x2Min-X2MIN)/ddx2) * ddx2 + X2MIN;  
+    x2Max = ceil((x2Max-X2MIN)/ddx2) * ddx2 + X2MIN;  
+    x2Nbin = ceil ((x2Max - x2Min)/(ddx2));
     // if(x2Nbin<100) x2Nbin = 100;
-    // p2Nbin = x2Nbin;
+    p2Nbin = x2Nbin;
     
-    // if(pData->Is3D()) {
-    //   Double_t ddx3 = dxf * dx3;      
-    //   x3Min = floor((x3Min-X3MIN)/dx3) * dx3 + X3MIN;  
-    //   x3Max = floor((x3Max-X3MIN)/dx3) * dx3 + X3MIN;  
-    //   x3Nbin = ceil ((x3Max - x3Min)/(ddx3));
+    if(pData->Is3D()) {
+      Double_t ddx3 = dxf * dx3;      
+      x3Min = floor((x3Min-X3MIN)/ddx3) * ddx3 + X3MIN;  
+      x3Max = ceil((x3Max-X3MIN)/ddx3) * ddx3 + X3MIN;  
+      x3Nbin = ceil ((x3Max - x3Min)/(ddx3));
     //   if(x3Nbin<100) x3Nbin = 100;
-    // }
-    // p3Nbin = x3Nbin;
+      p3Nbin = x3Nbin;
+    } else 
+      p3Nbin = x2Nbin;
     
+
+    // other
     if(p1Min < 0.0) p1Min = 0.01;
     // if(x1Nbin < 100) x1Nbin = 100;
     // if(x2Nbin < 100) x2Nbin = 100;
@@ -1118,7 +1156,7 @@ int main(int argc,char *argv[]) {
 
     // P3X3 SPACE -----------------------
     Double_t emity = 0, y_mean = 0, y_rms = 0, py_mean = 0, py_rms = 0, betay = 0;
-    Double_t emity_r(0), y_mean_r(0), y_rms_r(0), py_mean_r(0), py_rms_r(0), betay_r(0);
+    Double_t emity_r = 0, y_mean_r = 0, y_rms_r = 0, py_mean_r = 0, py_rms_r = 0, betay_r = 0;
 
     TEllipse *ellipP3X3 = NULL;
     if(pData->Is3D()) {
@@ -3350,17 +3388,6 @@ int main(int argc,char *argv[]) {
 	hFrame[0]->GetXaxis()->SetTitle(hX3X2->GetXaxis()->GetTitle());
 	hFrame[0]->Draw("axis");
 
-	TLine lX3mean;
-	lX3mean.SetLineColor(kGray+2);
-	lX3mean.SetLineStyle(2);
-	lX3mean.DrawLine(hFrame[0]->GetXaxis()->GetXmin(),y_mean,hFrame[0]->GetXaxis()->GetXmax(),y_mean);
-	
-	TLine lX2mean;
-	lX2mean.SetLineColor(kGray+2);
-	lX2mean.SetLineStyle(2);
-	lX2mean.DrawLine(x_mean,hFrame[0]->GetYaxis()->GetXmin(),x_mean,hFrame[0]->GetYaxis()->GetXmax());
-
-
 	TH2F *hX3X2cl = (TH2F*) hX3X2->Clone("hX3X2cl");
 	hX3X2cl->GetZaxis()->CenterTitle();
 	hX3X2cl->GetZaxis()->SetTitleFont(fonttype);
@@ -3376,6 +3403,16 @@ int main(int argc,char *argv[]) {
 	hX3X2cl->GetZaxis()->SetTickLength(0.01);      
 
 	hX3X2cl->Draw("colz 0 same");
+
+	TLine lX3mean;
+	lX3mean.SetLineColor(kGray+2);
+	lX3mean.SetLineStyle(2);
+	lX3mean.DrawLine(hFrame[0]->GetXaxis()->GetXmin(),y_mean,hFrame[0]->GetXaxis()->GetXmax(),y_mean);
+	
+	TLine lX2mean;
+	lX2mean.SetLineColor(kGray+2);
+	lX2mean.SetLineStyle(2);
+	lX2mean.DrawLine(x_mean,hFrame[0]->GetYaxis()->GetXmin(),x_mean,hFrame[0]->GetYaxis()->GetXmax());
 	
 	gPad->Update();
 	palette = (TPaletteAxis*)hX3X2cl->GetListOfFunctions()->FindObject("palette");
