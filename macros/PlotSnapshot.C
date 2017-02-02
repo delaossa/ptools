@@ -287,11 +287,19 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   }
 
-  sprintf(hName,"hFocus2D"); 
-  TH2F *hFocus2D = (TH2F*) ifile->Get(hName);
-  sprintf(hName,"hFocus1D"); 
-  TH1F *hFocus1D = (TH1F*) ifile->Get(hName);
-
+  TH2F *hFocus2D = NULL;
+  TH1F *hFocus1D = NULL;
+  if(opt.Contains("zyslc")) {
+    sprintf(hName,"hW2D_1"); 
+    hFocus2D = (TH2F*) ifile->Get(hName);
+    sprintf(hName,"hW1D_1"); 
+    hFocus1D = (TH1F*) ifile->Get(hName);
+  } else {
+    sprintf(hName,"hW2D_0"); 
+    hFocus2D = (TH2F*) ifile->Get(hName);
+    sprintf(hName,"hW1D_0"); 
+    hFocus1D = (TH1F*) ifile->Get(hName);
+  }
   sprintf(hName,"hETotal2D");   
   TH2F *hETotal2D = (TH2F*) ifile->Get(hName);
   sprintf(hName,"hETotal1D");   
@@ -373,10 +381,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     if(hFocus2D)
       hFocus2D->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
-
+    
     if(hFocus1D)
       hFocus1D->SetBins(NbinsX,xMin,xMax);
-
+    
     if(hV2D)
       hV2D->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
 
