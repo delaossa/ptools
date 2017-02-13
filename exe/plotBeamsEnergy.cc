@@ -121,6 +121,8 @@ int main(int argc,char *argv[]) {
     gStyle->SetPadGridY(1);
   }
 
+  gStyle->SetJoinLinePS(2);
+  
   // Load PData
   PData *pData = PData::Get(sim.Data());
 
@@ -405,7 +407,8 @@ int main(int argc,char *argv[]) {
       gPad->SetLogz(1);
 
     // Plot frame
-    Float_t xmin = x1Min - 0.4*(x1Max - x1Min);
+    // Float_t xmin = x1Min - 0.4*(x1Max - x1Min);
+    Float_t xmin = x1Min;
     Float_t xmax = x1Max;
     Float_t ymin = eMin - 0.3*(eMax - eMin);
     Float_t ymax = eMax;
@@ -498,7 +501,8 @@ int main(int argc,char *argv[]) {
       // Plot 1D spectrum
       Float_t xaxismin  =  gPad->GetUxmin();
       // Float_t xaxismax  =  gPad->GetUxmin() + 0.2*(gPad->GetUxmax() - gPad->GetUxmin());
-      Float_t xaxismax  = x1Min;
+      //  Float_t xaxismax  = x1Min;
+      Float_t xaxismax  = xmin + (xmax-xmin) * 0.2;
       Float_t enemin = 0.0;
       Float_t enemax = maxEne;
       // Round for better axis
@@ -523,8 +527,9 @@ int main(int argc,char *argv[]) {
 
 
     // Current axis
-    TGaxis *axis = new TGaxis(x1Min,ymin,
-			      x1Min,eMin,
+    Float_t x1pos = xmin + (xmax-xmin) * 0.2;
+    TGaxis *axis = new TGaxis(x1pos,ymin,
+			      x1pos,eMin,
 			      0.0,maxCur,503,"S");
     axis->SetLineWidth(1);
     axis->SetLineColor(kGray+3);//PGlobals::elecLine);
@@ -537,6 +542,7 @@ int main(int argc,char *argv[]) {
     axis->SetTitleSize(PGlobals::titleSize-10);
     axis->SetTitleOffset(0.8);
     axis->SetTickSize(0.03);
+    axis->ChangeLabel(1,-1,0.);
     if(opt.Contains("units"))
       axis->SetTitle(Form("I [%s]",curSUnit.c_str()));
     axis->CenterTitle();

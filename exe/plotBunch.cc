@@ -235,6 +235,8 @@ int main(int argc,char *argv[]) {
     gStyle->SetPadGridY(1);
   }
 
+  gStyle->SetJoinLinePS(2);
+
   // Load PData
   PData *pData = PData::Get(sim.Data());
   if(pData->isHiPACE()) {
