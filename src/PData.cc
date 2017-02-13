@@ -483,7 +483,7 @@ void PData::LoadFileNames(Int_t t) {
   
   // Fishing the pieces ...
   for(UInt_t i=0;i<tfiles.size();i++) {
-    
+
     // Get RAW species files:
     for(UInt_t j=0;j<NRawSpecies();j++) {
       
@@ -1185,13 +1185,39 @@ TTree* PData::GetRawTree(const char *filename, const char *options) {
   TString opt = options;
 
   // Open input HDF5 file
-  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  // H5File h5 = H5File(filename,H5F_ACC_RDONLY);
   
   // Open main group for data reading
-  Group *root = new Group(h5.openGroup("/"));
+  // Group *root = new Group(h5.openGroup("/"));
   
+  // TTree *tree = new TTree("RawTree","");
+  // - not working -
+  // GroupToTree(root,tree,kTRUE,kTRUE);  // kTRUE for sequential reading.
+
+  UInt_t Nvar = 7;
+  if(!Is3D()) Nvar = 6;
+  char varname[7][4] = {{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+
+  
+  Float_t **var;
+  var = new Float_t*[Nvar];
+  UInt_t Np = GetRawArray(filename,var);
+
   TTree *tree = new TTree("RawTree","");
-  GroupToTree(root,tree,kTRUE,kTRUE);  // kTRUE for sequential reading.
+  
+  // Define the branches
+  Float_t *darray = new Float_t[Nvar];
+  for(UInt_t i=0;i<Nvar;i++) {
+    tree->Branch(varname[i],&darray[i],Form("%s/F",varname[i]));
+  }
+
+  for(UInt_t j=0;j<Np;j++) {
+    for(UInt_t i=0;i<Nvar;i++)
+      darray[i] = var[i][j];
+    
+    tree->Fill();
+  }
+  
   // tree->Print();
 
   return tree;
@@ -1615,19 +1641,60 @@ TTree** PData::GetTrackTree(const char *filename,Int_t &NTracks, const char *opt
   // Open main group for data reading
   Group *root = new Group(h5.openGroup("/"));
 
+  UInt_t Nvar = 8;
+  if(!Is3D()) Nvar = 7;
+  char varname[8][4] = {{"t"},{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+
   Int_t NOBJ = root->getNumObjs();
   TTree **tree = new TTree*[NOBJ];
   Int_t NT = 0;
-  for(Int_t i=0; (i<NOBJ) && (NT<NTracks); i++) {
+  for(Int_t i=0; (i<NOBJ) && ( (NTracks<0) || (NT<NTracks) ); i++) {
     char gname[128];
     root->getObjnameByIdx( i, gname, 128 );
     //cout << Form(" Group name = %s",gname) << endl;
     Group *track = new Group(h5.openGroup(Form("/%s",gname)));
     if(track == NULL) continue;
+
+    Double_t **var = new Double_t*[Nvar];
     
+    DataSet *dataSet = NULL;
+    UInt_t Np = 0;
+    
+    for(UInt_t i=0;i<Nvar;i++) {
+      
+      dataSet = new DataSet(track->openDataSet(varname[i]));
+      Int_t rank = dataSet->getSpace().getSimpleExtentNdims();
+      hsize_t  *dataDims = new hsize_t[rank];
+      dataSet->getSpace().getSimpleExtentDims(dataDims,NULL);
+      if(i==0) Np = dataDims[0];  
+    
+      var[i] = new Double_t[Np];
+      
+      DataSpace memspace(rank,dataDims);
+      dataSet->read(var[i],PredType::NATIVE_DOUBLE,memspace,dataSet->getSpace());
+      dataSet->close();
+
+      delete dataSet;
+    }
+    track->close(); 
+
     tree[NT] = new TTree(Form("TrackTree_%i",NT),"");
-    GroupToTree(track,tree[NT],kTRUE,kTRUE);  // kTRUE for sequential reading.
+    // Define the branches
+    Double_t *darray = new Double_t[Nvar];
+    for(UInt_t i=0;i<Nvar;i++) {
+      tree[NT]->Branch(varname[i],&darray[i],Form("%s/D",varname[i]));
+    }
+
+    // Fill the tree
+    for(UInt_t j=0;j<Np;j++) {
+      for(UInt_t i=0;i<Nvar;i++)
+	darray[i] = var[i][j];
+      
+      tree[NT]->Fill();
+    }
+    
     NT++;
+    
     delete track;
   }
   

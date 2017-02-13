@@ -158,7 +158,7 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
   fDenProf4->SetNpx(10000);
 
   TF1 *fDenProf5 = new TF1("fDenProf5",DensityGaussTap,zmin,zmax,9);
-    fDenProf5->SetParameters(n0,z0,sigma0,n1,z1,sigma1,nt,zt,sigmat);
+  fDenProf5->SetParameters(n0,z0,sigma0,n1,z1,sigma1,nt,zt,sigmat);
   fDenProf5->SetNpx(10000);
 
   const Int_t Nsim = 4;

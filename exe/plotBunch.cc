@@ -87,8 +87,8 @@ int main(int argc,char *argv[]) {
   Float_t zsmax0 = -99999.;
 
   // Spectrum range
-  Float_t Pmin =  99999.;
-  Float_t Pmax = -99999.;
+  Float_t Pmin0 =  99999.;
+  Float_t Pmax0 = -99999.;
 
   // Transverse momentum range
   Float_t Pxmax0 = 0.;
@@ -152,6 +152,8 @@ int main(int argc,char *argv[]) {
       opt += "notext"; 
     } else if(arg.Contains("--noinfo")){
       opt += "noinfo"; 
+    } else if(arg.Contains("--avge")){
+      opt += "avge"; 
     } else if(arg.Contains("--bw")){
       opt += "bw"; 
     } else if(arg.Contains("--nospec")){
@@ -203,10 +205,10 @@ int main(int argc,char *argv[]) {
       sscanf(arg,"%6s%f",ss,&zsmax0);
     } else if(arg.Contains("-pmin")) {
       char ss[5];
-      sscanf(arg,"%5s%f",ss,&Pmin);
+      sscanf(arg,"%5s%f",ss,&Pmin0);
     } else if(arg.Contains("-pmax")) {
       char ss[5];
-      sscanf(arg,"%5s%f",ss,&Pmax);
+      sscanf(arg,"%5s%f",ss,&Pmax0);
     } else if(arg.Contains("-pxmax")) {
       char ss[6];
       sscanf(arg,"%6s%f",ss,&Pxmax0);
@@ -404,8 +406,8 @@ int main(int argc,char *argv[]) {
     x3Nbin = (X3MAX-X3MIN)/dx3;
     
     // Momentum range:
-    Double_t p1Min =  Pmin;
-    Double_t p1Max =  Pmax;
+    Double_t p1Min =  0.;
+    Double_t p1Max =  4000.;
     Double_t p2Min = -15.0;
     Double_t p2Max =  15.0;
     Double_t p3Min = -15.0;
@@ -431,6 +433,17 @@ int main(int argc,char *argv[]) {
     }
 
     // Command line input
+    Double_t Pmin = Pmin0;
+    Double_t Pmax = Pmax0;
+    if (Pmax0 > Pmin0) {
+      
+      if(opt.Contains("units")) {
+	Pmin *= eneUnit / PConst::ElectronMassE;
+	Pmax *= eneUnit / PConst::ElectronMassE;
+      }
+      
+    }
+    
     Double_t zmin = zmin0;
     Double_t zmax = zmax0;
     Double_t zsmin = zsmin0;
@@ -1586,6 +1599,26 @@ int main(int argc,char *argv[]) {
       
     }
     // End of the users units module    
+
+    // Average emittance
+    Double_t emitxavg = 0;
+    // Extract from selected slices:
+    Double_t norm = 0;
+    for(Int_t i=0;i<SNbin;i++) {
+      emitxavg += hP2X2sl[i]->GetEntries() * semitx[i];
+      norm += hP2X2sl[i]->GetEntries();
+    }
+    emitxavg /= norm;
+    
+    // Extract from selected slices:
+    Double_t emityavg = 0;
+    norm = 0;
+    for(Int_t i=0;i<SNbin;i++) {
+      emityavg += hP3X3sl[i]->GetEntries() * semity[i];
+      norm += hP3X3sl[i]->GetEntries();
+    }
+    emityavg /= norm;
+
     
     cout << "\n  Summary _______________________________________________________ " << endl;
     if(opt.Contains("units")) {
@@ -1897,15 +1930,6 @@ int main(int argc,char *argv[]) {
       } else {
 	nPoints = gEmitxavgvsTime->GetN(); 
       }  
-
-      // Extract from selected slices:
-      Double_t emitxavg = 0;
-      Double_t norm = 0;
-      for(Int_t i=0;i<SNbin;i++) {
-	emitxavg += hP2X2sl[i]->GetEntries() * semitx[i];
-	norm += hP2X2sl[i]->GetEntries();
-      }
-      emitxavg /= norm;
       gEmitxavgvsTime->Set(nPoints+1);
       gEmitxavgvsTime->SetPoint(nPoints,Time,emitxavg);
       gEmitxavgvsTime->Write(gName,TObject::kOverwrite);
@@ -2057,14 +2081,6 @@ int main(int argc,char *argv[]) {
 	nPoints = gEmityavgvsTime->GetN(); 
       }  
 
-      // Extract from selected slices:
-      Double_t emityavg = 0;
-      norm = 0;
-      for(Int_t i=0;i<SNbin;i++) {
-	emityavg += hP3X3sl[i]->GetEntries() * semity[i];
-	norm += hP3X3sl[i]->GetEntries();
-      }
-      emityavg /= norm;
       gEmityavgvsTime->Set(nPoints+1);
       gEmityavgvsTime->SetPoint(nPoints,Time,emityavg);
       gEmityavgvsTime->Write(gName,TObject::kOverwrite);
@@ -2451,19 +2467,37 @@ int main(int argc,char *argv[]) {
       else
 	sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
       textInfo->AddText(ctext);
-      if(opt.Contains("units"))
-	sprintf(ctext,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
+
+      if(opt.Contains("avge")) {
+	if(opt.Contains("units"))
+	  sprintf(ctext,"#LT#varepsilon_{n,x}#GT = %5.2f %s",emitxavg,emitSUnit.c_str());
+	else
+	  sprintf(ctext,"k_{p} #LT#varepsilon_{n,x}#GT = %5.2f",emitxavg);
+	
+	textInfo->AddText(ctext);
+	if(pData->Is3D()) {
+	  if(opt.Contains("units"))
+	    sprintf(ctext,"#LT#varepsilon_{n,y}#GT = %5.2f %s",emityavg,emitSUnit.c_str());
+	  else
+	    sprintf(ctext,"k_{p} #LT#varepsilon_{n,y}#GT = %5.2f",emityavg);
+	  
+	  textInfo->AddText(ctext);
+	}
+      } else {
+	if(opt.Contains("units"))
+	  sprintf(ctext,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
       else
 	sprintf(ctext,"k_{p} #varepsilon_{n,x} = %5.2f",emitx);
 	
-      textInfo->AddText(ctext);
-      if(pData->Is3D()) {
-	if(opt.Contains("units"))
-	  sprintf(ctext,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
+	textInfo->AddText(ctext);
+	if(pData->Is3D()) {
+	  if(opt.Contains("units"))
+	    sprintf(ctext,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
 	else
 	  sprintf(ctext,"k_{p} #varepsilon_{n,y} = %5.2f",emity);
-	  
-	textInfo->AddText(ctext);
+	
+	  textInfo->AddText(ctext);
+	}
       }
       
       // Setup Pad layout: 

@@ -39,20 +39,20 @@ void PlotEmittanceComp(const TString &options="") {
   TString opt = options;
 
   const Int_t Nsim = 4;
-  char sName[Nsim][56] = {//"flash_v2.5kA.G.ZH.DDR.5.FinalSet.3D",
+  char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.5.FinalSet.3D",
 			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
    			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.30.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.10.n2.5.FinalSet.3D"};
+  			  "flash_v2.5kA.G.ZH.DDR.30.FinalSet.3D"};
+  			  //"flash_v2.5kA.G.ZH.DDR.40.FinalSet.3D"};
      			  //"flash_v2.5kA.G.ZH.DDR.10.n5.FinalSet.3D",
      			  //"flash_v2.5kA.G.ZH.DDR.10.n2.5.FinalSet.3D"};
   //   			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.tap1.5.3D"};
   
-  char lName[Nsim][56] = {//"(a): k_{p}^{0}#sigma_{l} = 1.25",
-			  "(a): k_{p}^{0}#sigma_{l} = 2.5",
-    			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
-    			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
-   			  "(d): k_{p}^{0}#sigma_{l} = 10.0"};
+  char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 1.25",
+			  "(b): k_{p}^{0}#sigma_{l} = 2.5",
+    			  "(c): k_{p}^{0}#sigma_{l} = 5.0",
+    			  "(d): k_{p}^{0}#sigma_{l} = 7.5"};
+  //   			  "(e): k_{p}^{0}#sigma_{l} = 10.0"};
     			  //"(f): k_{p}^{0}#sigma_{l} = 2.5",
    			  //"(g): k_{p}^{0}#sigma_{l} = 2.5"};
   //   			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};

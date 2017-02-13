@@ -1908,7 +1908,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	// axis->SetNdivisions(0);
 	axis->SetNdivisions(502);
 	
-	axis->SetLineWidth(1);
+	axis->SetLineWidth(2);
 	axis->SetLineColor(kGray+3);//PGlobals::elecLine);
 	axis->SetLabelColor(kGray+3);//PGlobals::elecLine);
 	axis->SetLabelFont(fonttype);
@@ -1920,7 +1920,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	axis->SetTitleOffset(tyoffset);
 	axis->SetTickSize(0.03);
 	axis->SetTitle(hCur1D[imaxCur]->GetYaxis()->GetTitle());
-	
+
+	axis->ChangeLabel(1,-1,0.);
+
 	axis->CenterTitle();
 	// axis->SetMaxDigits(2);
 	axis->Draw();

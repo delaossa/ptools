@@ -83,8 +83,9 @@ dictclean:
 
 clean:
 	@rm -f $(LIBDIR)/lib$(LIB).so	
+	@rm -f $(LIBDIR)/$(LIB)Dict*
 	@rm -f $(LIBDIR)/lib$(LIB).rootmap
-	@rm -f $(LIB)Dict.*
+	@rm -f $(LIB)Dict*
 	@rm -f $(INCDIR)/*Dict.h
 	@rm -f *.o
 	@rm -f *~ *.d
