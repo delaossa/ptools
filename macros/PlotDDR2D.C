@@ -680,7 +680,7 @@ void PlotDDR2D( const TString &options="" ){
   Double_t contsim[Nsim];
   for(Int_t i=0; i<Nsim; i++) {
     contsim[i] = betamax[i];
-    //   cout << Form("sim %i:  beta_max = %.4f",i,contsim[i]) << endl;
+    cout << Form("sim %i:  beta_max = %.4f",i,contsim[i]) << endl;
   }
   
   hClone->SetContour(Nsim,contsim);

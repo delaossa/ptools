@@ -93,6 +93,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     gStyle->SetPadGridY(1);
   }
   gStyle->SetNumberContours(255);
+  gStyle->SetJoinLinePS(2);
   
   // Some plasma constants
   Float_t n0 = pData->GetPlasmaDensity();
@@ -197,7 +198,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   cout << Form("\n Getting the histograms ... ") ; 
 
   // Skip one of the species
-  Int_t noIndex = 3;
+  Int_t noIndex = -1;
     
   char hName[36];
 
@@ -803,8 +804,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Emin[i] = -Emax[i];
     else
       Emax[i] = -Emin[i];
-    //    hE2D[i]->GetZaxis()->SetRangeUser(Emin[i],Emax[i]); 
-    hE2D[i]->GetZaxis()->SetRangeUser(Emin[0],Emax[0]); 
+
+    if(i!=0) {
+      Emin[i] = Emin[0];
+      Emax[i] = Emax[0];
+    }
+    hE2D[i]->GetZaxis()->SetRangeUser(Emin[i],Emax[i]); 
+   
   }
 
   Float_t ETmin = 0.0001;  
@@ -823,6 +829,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Fmin = -Fmax;
     else
       Fmax = -Fmin;
+
+    Fmin = Emin[0];
+    Fmax = Emax[0];
     hFocus2D->GetZaxis()->SetRangeUser(Fmin,Fmax);
   }
   
@@ -1289,6 +1298,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     EzMaxUse  = -EzSlope * (EzCross[1]-EzCross[0]);
   }
 
+  // Data about Ez
+  //  cout << Form("Ez max (driver) = %.2f",EzExtr[0]) << endl;
+
   // Get position of the injected beam:
   Float_t zInjBeam = -999;
   Float_t zrmsInjBeam = -999;
@@ -1400,9 +1412,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   PPalette * laserPalette = (PPalette*) gROOT->FindObject("laser");
   if(!laserPalette) {
     laserPalette = new PPalette("laser");
-    laserPalette->SetPalette(kBird);
+    // laserPalette->SetPalette(kBird);
+    laserPalette->SetPalette(kColorPrintableOnGrey);
+    laserPalette->Invert();
   }
-
   
   TExec *exPlasma = new TExec("exPlasma","plasmaPalette->cd();");
   TExec *exBeam   = new TExec("exBeam","beamPalette->cd();");
@@ -1438,9 +1451,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     // cBeam1 = TColor::GetColor("#84B1C4");
     // beam2Palette->SetPalette("greengray");
     // cBeam1 = TColor::GetColor("#5C7B2F"); // Green
-    beam2Palette->SetPalette("elec");
+    beam2Palette->SetPalette("elec0");
     cBeam1 = TColor::GetColor(83,109,161); // Bluish
-    // beam3Palette->SetPalette("red");
+    //cBeam1 = TColor::GetColor(192,114,49); // dark orange
+    //cBeam2 = TColor::GetColor(137,158,107); // dark green
+    beam3Palette->SetPalette("hot");
   }
 
 
@@ -1583,13 +1598,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[1]->Draw(drawopt);
       }
     } else if (Nspecies==3) {
-
-      // Injected electrons ?
-      if(hDen2D[2] && noIndex!=2) {
-	exBeam2->Draw();
-	//exBeam->Draw();
-	hDen2D[2]->Draw(drawopt);
-      }
   
       // Plasma
       if(hDen2D[0] && noIndex!=0) {
@@ -1604,19 +1612,26 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hDen2D[1]->Draw(drawopt);
       }
 
-    } else if (Nspecies==4) {
-      
-      // Witness
+      // Injected electrons ?
       if(hDen2D[2] && noIndex!=2) {
 	exBeam2->Draw();
 	//exBeam->Draw();
 	hDen2D[2]->Draw(drawopt);
       }
 
+    } else if (Nspecies==4) {
+      
       // Witness 2
       if(hDen2D[3] && noIndex!=3) {
 	exBeam3->Draw();
 	hDen2D[3]->Draw(drawopt);
+      }
+
+      // Witness
+      if(hDen2D[2] && noIndex!=2) {
+	exBeam2->Draw();
+	//exBeam->Draw();
+	hDen2D[2]->Draw(drawopt);
       }
 
       // Plasma
@@ -1636,7 +1651,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(hA2D && opt.Contains("laser")) {
       exLaser->Draw();
       Float_t aMax = hA2D->GetMaximum();
-      hA2D->GetZaxis()->SetRangeUser(0.2*aMax,1.2*aMax);
+      hA2D->GetZaxis()->SetRangeUser(0.1*aMax,1.0*aMax);
       hA2D->Draw(drawopt);
     }
     
@@ -2622,7 +2637,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     //    hFocus2D->GetZaxis()->SetTitle("E_{z} [GV/m]");
     
     exField->Draw();
-    hFocus2D->Draw(drawopt);
+    hFocus2D->Draw(drawopt + "0");
 
 
     if(opt.Contains("bopar")) {

@@ -87,7 +87,7 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
   // More makeup            
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
-  gStyle->SetLineWidth(3);  
+  //gStyle->SetLineWidth(3);  
   
   if(opt.Contains("grid")) {
     gStyle->SetPadGridX(1);
@@ -110,9 +110,16 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
     zmin *= skd;
     zmax *= skd;
   }
+
+  // arrays for graphs
+  Int_t NP = 1000;
+  Double_t *zarray = new Double_t[NP];
+  Double_t *darray = new Double_t[NP];
   
   cout << Form("  Plasma density = %.2f E17 cm^{-3}", np) << endl;
   
+  Double_t nres = 2.26;
+
   Double_t n0 = 10.0;
   Double_t z0 = 60.0 - shiftz;
   Double_t sigma0 = 7.5;
@@ -139,58 +146,155 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
     nt *= np;
     zt *= skd;
     sigmat *= skd;
+
+    nres *= np;
   }
+  
+  
+  const Int_t Nsim = 7;
+  char lName[Nsim][128] = {"#tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 1.25",
+			   "(a) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 2.5",
+			   "(b) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 5.0",
+			   "(c) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 7.5",
+			   "(d) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 2.5 [tap]",
+			   "(e) #tilde{n}_{top} =  5,  #tilde{#sigma}_{l} = 2.5",
+			   "(f) #tilde{n}_{top} = 2.5,  #tilde{#sigma}_{l} = 2.5"};
+  
+  TF1 **fDenProf = new TF1*[Nsim];
+  TGraph **gDenProf = new TGraph*[Nsim];
 
-  TF1 *fDenProf = new TF1("fDenProf",DensityGauss,zmin,zmax,9);
-  fDenProf->SetParameters(n0,z0,sigma0,n1,z1,sigma1,n2,z2,sigma2);
-  fDenProf->SetNpx(10000);
-
-  TF1 *fDenProf2 = new TF1("fDenProf2",DensityGauss,zmin,zmax,9);
-  fDenProf2->SetParameters(n0,z0,sigma0,n1,z1,2*sigma1,n2,z2,sigma2);
-  fDenProf2->SetNpx(10000);
-
-  TF1 *fDenProf3 = new TF1("fDenProf3",DensityGauss,zmin,zmax,9);
-  fDenProf3->SetParameters(n0,z0,sigma0,n1,z1,3*sigma1,n2,z2,sigma2);
-  fDenProf3->SetNpx(10000);
-
-  TF1 *fDenProf4 = new TF1("fDenProf4",DensityGauss,zmin,zmax,9);
-  fDenProf4->SetParameters(n0,z0,sigma0,n1,z1,4*sigma1,n2,z2,sigma2);
-  fDenProf4->SetNpx(10000);
-
-  TF1 *fDenProf5 = new TF1("fDenProf5",DensityGaussTap,zmin,zmax,9);
-  fDenProf5->SetParameters(n0,z0,sigma0,n1,z1,sigma1,nt,zt,sigmat);
-  fDenProf5->SetNpx(10000);
-
-  const Int_t Nsim = 4;
   Int_t color[Nsim];
   PPalette *pal = new PPalette("pal");
   pal->SetPalette("oli");
+
   for(Int_t i=0;i<Nsim;i++) {
+
+    if(i==4) 
+      fDenProf[i] = new TF1(Form("fDenProf_%i",i),DensityGaussTap,zmin,zmax,9);
+    else
+      fDenProf[i] = new TF1(Form("fDenProf_%i",i),DensityGauss,zmin,zmax,9);
+   
+    fDenProf[i]->SetNpx(10000);
     
     Int_t index =  i * pal->GetNColors() / Nsim;
     color[i] = pal->GetColorIndex(index);
+    
+    if(i==0)
+      color[i] = color[i];
+    else if(i==1)
+      color[i] = kGray+3;
+    else if(i==2)
+      color[i] = kRed-6;
+    else if(i==3)
+      color[i] = kRed-9;
+    else if(i==4)
+      color[i] = kOrange; // kGray+1;
+    else if(i==5)
+      color[i] = kBlue-6;
+    else if(i==6)
+      color[i] = kBlue-9;
+    
+    
+    fDenProf[i]->SetLineColor(color[i]);
+    fDenProf[i]->SetLineWidth(3);
 
-    // switch(i) {
-    // case 0 :
-    //   color[i] = kGray+2;
-    //   break;
-    // case 1 :
-    //   color[i] = kRed-7;
-    //   break;
-    // case 2 :
-    //   color[i] = kGray+3;
-    //   break;
-    // case 3 :
-    //   color[i] = kRed;
-    //   break;
-    // }
+    // if(i==4) 
+    //   fDenProf[i]->SetLineStyle(2);
+    
   }
+    
+  fDenProf[0]->SetParameters(n0,z0,sigma0,n1,z1,0.5*sigma1,n2,z2,sigma2);
   
-  // Canvas setup
+  fDenProf[1]->SetParameters(n0,z0,sigma0,n1,z1,sigma1,n2,z2,sigma2);
+  
+  fDenProf[2]->SetParameters(n0,z0,sigma0,n1,z1,2*sigma1,n2,z2,sigma2);
+  
+  fDenProf[3]->SetParameters(n0,z0,sigma0,n1,z1,3*sigma1,n2,z2,sigma2);
+
+  fDenProf[4]->SetParameters(n0,z0,sigma0,n1,z1,sigma1,nt,zt,sigmat);
+  
+  // Change ramp profile
+  Float_t n05 = 2.2/1.8;
+  Float_t kp5 = TMath::Sqrt(1.0/n05);
+  fDenProf[5]->SetParameters(0.5*n0*n05,z0*kp5,sigma0*kp5,n1*n05,z1*kp5,sigma1*kp5,n2*n05,z2*kp5,sigma2*kp5);
+  
+  // Change ramp profile
+  Float_t n025 = 2.2/1.56;
+  Float_t kp25 = TMath::Sqrt(1.0/n025);
+  fDenProf[6]->SetParameters(0.25*n0*n025,z0*kp25,sigma0*kp25,n1*n025,z1*kp25,sigma1*kp25,n2*n025,z2*kp25,sigma2*kp25);
+
+  // GRAPHS
+  for(Int_t i=0;i<Nsim;i++) {
+    
+    for(Int_t j=0;j<NP;j++) {
+      zarray[j] = zmin + j * (zmax-zmin)/(NP-1);
+      darray[j] = fDenProf[i]->Eval(zarray[j]);
+    }
+    gDenProf[i] = new TGraph(NP,zarray,darray);
+    gDenProf[i]->SetLineColor(color[i]);
+    gDenProf[i]->SetLineWidth(4);
+  }
+
+    // Canvas setup
   // Create the canvas and the pads before the Frame loop
   // Resolution:
-  Int_t sizex = 600;
-  Int_t sizey = 300;
+  // Int_t sizex = 800;
+  // Int_t sizey = 400;
+  Int_t sizex = 1024;
+  Int_t sizey =  380;
+
+  Int_t font = 43;
+  Int_t labelsize = 34;
+  Int_t titlesize = 38;
+  
+  Float_t labeloffset = 0.01;
+  Float_t titleoffsety = 0.5;
+  Float_t titleoffsetx = 1.0;
+  
+  Float_t ticksizex = 0.03;
+  Float_t ticksizey = 0.01;
+
+  // Int_t NdivX = 505;
+  // Int_t NdivY = 505;
+  Int_t NdivX = 6;
+  Int_t NdivY = 6;
+  
+  //  gStyle->SetJoinLinePS(2);
+
+  gStyle->SetTitleFont(font,"xyz");
+  gStyle->SetLabelFont(font,"xyz");
+  
+  gStyle->SetLabelSize(labelsize,"xyz");
+  gStyle->SetTitleSize(titlesize,"xyz");
+    
+  gStyle->SetLabelOffset(labeloffset,"xyz");
+
+  gStyle->SetTitleOffset(titleoffsetx,"x");
+  gStyle->SetTitleOffset(titleoffsety,"yz");
+  
+  gStyle->SetTickLength(ticksizex,"x");
+  gStyle->SetTickLength(ticksizey,"yz");
+
+  Float_t lMargin = 0.15;
+  Float_t rMargin = 0.10;
+  Float_t bMargin = 0.25;
+  Float_t tMargin = 0.05;
+
+  gStyle->SetPadLeftMargin(lMargin);
+  gStyle->SetPadRightMargin(rMargin);
+  gStyle->SetPadBottomMargin(bMargin);
+  gStyle->SetPadTopMargin(tMargin);
+
+  Int_t frameWidth = 3;
+  gStyle->SetLineWidth(frameWidth);
+
+  if(opt.Contains("gridx")) {
+    gStyle->SetPadGridX(1);
+  }
+  if(opt.Contains("gridy")) {
+    gStyle->SetPadGridY(1);
+  }
+  
   char cName[32];
   sprintf(cName,"C");     
   TCanvas *C = (TCanvas*) gROOT->FindObject(cName);
@@ -199,54 +303,17 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
   C->cd();
   C->Clear();
 
-  Float_t lMargin = 0.12;
-  Float_t rMargin = 0.04;
-  Float_t bMargin = 0.20;
-  Float_t tMargin = 0.04;
-
-  gPad->SetLeftMargin(lMargin);
-  gPad->SetRightMargin(rMargin);  
-  gPad->SetBottomMargin(bMargin);
-  gPad->SetTopMargin(tMargin);
-
-  Int_t fonttype = 43;
-  Int_t fontsize = 18;
-  Int_t tfontsize = 20;
-  Int_t txsize = tfontsize;
-  Int_t lxsize = fontsize;
-  Int_t tysize = tfontsize;
-  Int_t lysize = fontsize;
-  Float_t txoffset = 1.1;
-  Float_t lxoffset = 0.02;
-  Float_t tyoffset = 0.7;
-  Float_t lyoffset = 0.01;
-  Float_t tylength = 0.015;
-  Float_t txlength = 0.03;
-
   char name[16];
   sprintf(name,"hFrame");
   TH1F *hFrame = new TH1F(name,"",10,zmin,zmax);
 
-  hFrame->GetXaxis()->SetLabelFont(fonttype);
-  hFrame->GetXaxis()->SetLabelSize(lxsize);
-  hFrame->GetXaxis()->SetLabelOffset(lxoffset);
-  hFrame->GetXaxis()->SetTitleFont(fonttype);
-  hFrame->GetXaxis()->SetTitleSize(txsize);
-  hFrame->GetXaxis()->SetTitleOffset(txoffset);   
-  hFrame->GetXaxis()->SetTickLength(txlength);      
-  
-  hFrame->GetYaxis()->SetLabelFont(fonttype);
-  hFrame->GetYaxis()->SetLabelSize(lysize);
-  hFrame->GetYaxis()->SetLabelOffset(lyoffset);
-  hFrame->GetYaxis()->SetTitleFont(fonttype);
-  hFrame->GetYaxis()->SetTitleSize(tysize);
-  hFrame->GetYaxis()->SetTitleOffset(tyoffset);
-  hFrame->GetYaxis()->SetTickLength(tylength);
-
   hFrame->GetXaxis()->CenterTitle();
-  hFrame->GetYaxis()->CenterTitle();
+  hFrame->GetXaxis()->SetNdivisions(NdivX);
 
-  Float_t maxDen = fDenProf->GetMaximum();
+  hFrame->GetYaxis()->CenterTitle();
+  hFrame->GetYaxis()->SetNdivisions(NdivY);
+
+  Float_t maxDen = fDenProf[0]->GetMaximum();
   hFrame->GetYaxis()->SetRangeUser(0.0, 1.2 * maxDen);  
   
   // hFrame->GetXaxis()->SetTitle("n_{He} [10^{15} e/cm^{3}]");
@@ -284,34 +351,21 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
   lineplateau->SetLineStyle(3);
   lineplateau->Draw();
 
+  TLine *linenres = new TLine(xMin,nres,xMax,nres);
+  linenres->SetLineColor(kGray+2);
+  linenres->SetLineWidth(2);
+  linenres->SetLineStyle(2);
+  linenres->Draw();
+
   // Functions
 
 
-  //  fDenProf4->SetLineColor(kGray);
-  fDenProf4->SetLineColor(color[3]);
-  fDenProf4->SetLineWidth(3);
-  fDenProf4->Draw("same C");
-
-  //  fDenProf3->SetLineColor(kGray+1);
-  fDenProf3->SetLineColor(color[2]);
-  fDenProf3->SetLineWidth(3);
-  fDenProf3->Draw("same C");
-
-  //  fDenProf2->SetLineColor(kGray+2);
-  fDenProf2->SetLineColor(color[1]);
-  fDenProf2->SetLineWidth(3);
-  fDenProf2->Draw("same C");
-
-  //  fDenProf->SetLineColor(kBlack);
-  fDenProf->SetLineColor(color[0]);
-  fDenProf->SetLineWidth(3);
-  fDenProf->Draw("same C");
-
-  //  fDenProf5->SetLineColor(kRed);
-  fDenProf5->SetLineColor(color[4]);
-  fDenProf5->SetLineWidth(3);
-  // fDenProf5->SetLineStyle(3);
-  // fDenProf5->Draw("same C");
+  for(Int_t i=Nsim-1;i>=0;i--) {
+    //for(Int_t i=0;i<Nsim;i++) {
+    if(i==0) continue;
+    //fDenProf[i]->Draw("C same");
+    gDenProf[i]->Draw("C same");
+  }
   
   hFrame->Draw("AXIS same");
 
@@ -321,15 +375,15 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
   			  gPad->GetUxmax(), gPad->GetUymax());
   lFrame->SetFillStyle(0);
   lFrame->SetLineColor(kBlack);
-  lFrame->SetLineWidth(2);
+  lFrame->SetLineWidth(frameWidth);
   lFrame->Draw();
 
-  TLegend *Leg = new TLegend(0.65,0.35,0.85,0.80);
+  TLegend *Leg = new TLegend(0.55,0.40,0.85,0.83);
   PGlobals::SetPaveStyle(Leg);
   Leg->SetTextAlign(12);
   Leg->SetTextColor(kGray+3);
-  Leg->SetTextFont(43);
-  Leg->SetTextSize(14);
+  Leg->SetTextFont(53);
+  Leg->SetTextSize(20);
   Leg->SetLineColor(kGray+1);
   Leg->SetBorderSize(0);
   Leg->SetLineWidth(1);
@@ -337,15 +391,14 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
   Leg->SetFillStyle(1001);
   Leg->SetFillStyle(0); // Hollow
 
-  Leg->AddEntry(fDenProf,"(a): k_{p}^{0}#sigma_{l} = 2.5","L");	
-  Leg->AddEntry(fDenProf2,"(b): k_{p}^{0}#sigma_{l} = 5.0","L");	
-  Leg->AddEntry(fDenProf3,"(c): k_{p}^{0}#sigma_{l} = 7.5","L");	
-  Leg->AddEntry(fDenProf4,"(d): k_{p}^{0}#sigma_{l} = 10","L");	
-  //  Leg->AddEntry(fDenProf5,"(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]","L");	
+  for(Int_t i=0;i<Nsim;i++) {
+    if(i==0) continue;
+    Leg->AddEntry(fDenProf[i],lName[i],"L");
+  }
+  //  Leg->AddEntry(fDenProf5,"(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]","L");  
   Leg->Draw();
   
-  gPad->RedrawAxis("g");   
-
+  
   // Print to file --------------------------------------
   
   C->cd();

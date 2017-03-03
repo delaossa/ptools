@@ -36,7 +36,7 @@ void PGlobals::SetPlasmaStyle() {
 
   PlasmaStyle->SetLineWidth(1);
 
-  PlasmaStyle->SetGridStyle(2);
+  // PlasmaStyle->SetGridStyle(2);
   PlasmaStyle->SetGridColor(kGray+1);
   PlasmaStyle->SetPadGridX(0);
   PlasmaStyle->SetPadGridY(0);

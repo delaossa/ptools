@@ -162,7 +162,9 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   }
   
   gStyle->SetJoinLinePS(2);
-  
+  Int_t frameWidth = 2;
+  gStyle->SetLineWidth(frameWidth);
+    
   // Load PData
   PData *pData = PData::Get(sim.Data());
   pData->LoadFileNames(500);
@@ -219,7 +221,7 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
     szetamax = 4.3 + shiftzeta; 
   }
   
-  Double_t rb0min = 0.0;
+  Double_t rb0min = 0.001;
   Double_t rb0max = 1.499;
 
   // Define density profile
@@ -262,8 +264,173 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   fDenProf->SetParameters(n0,z0,sigma0,n1,z1,sigma1,n2,z2,sigma2);
   fDenProf->SetNpx(10000);
     
+
+  PPalette *pal = new PPalette("pal");
+  pal->SetPalette(kBird);
+  // pal->SetPalette("oli");
+  // pal->SetPalette(kColorPrintableOnGrey);
+  // pal->Invert();
+  
+
+  // Read tracks
+  // --------------------------------
+  Int_t NT = -1;
+  TTree **tracktree = pData->GetTrackTree(trackfile->c_str(),NT);
+
+  cout << Form(" Number of tracks = %i : ",NT) << endl;
+
+  // sort tracks
+  std::sort(&tracktree[0],&tracktree[NT-1],Comp);
+  
+  TGraph **grvszeta = new TGraph*[NT];
+  TGraph **gvrvszeta = new TGraph*[NT];
+  TGraph **gvzvszeta = new TGraph*[NT];
+  
+  //  TH2D *hRbvszeta = new TH2D("hRbvszeta","",50,zetamin,zetamax,50,rb0min,rb0max);
+  Int_t NBinsX = 50;
+  Int_t NBinsY = 100;
+  TH2D *hRbvszeta = new TH2D("hRbvszeta","",NBinsX,zetamin2,zetamax2,NBinsY,0.301,0.99); 
+  TH2D *hn0vszeta = new TH2D("hn0vszeta","",NBinsX,zetamin2,zetamax2,NBinsY,1.0,5.99); 
+  
+  Double_t rmin =  999;
+  Double_t rmax = -999;
+  Double_t zetamint =  999;
+  Double_t zetamaxt = -999;
+  Double_t z;
+  Double_t t;
+  Double_t x;
+  Double_t y;
+  Double_t pz,px,py;
+  Double_t vz,vx,vy;
+  Double_t gamma;
+  Double_t r;
+  Double_t q;
+  Int_t NSel = 0;
+  for(Int_t i=0;i<NT;i++) {
+        
+    tracktree[i]->SetBranchAddress("x1",&z);
+    tracktree[i]->SetBranchAddress("x2",&x);
+    tracktree[i]->SetBranchAddress("x3",&y);
+    tracktree[i]->SetBranchAddress("p1",&pz);
+    tracktree[i]->SetBranchAddress("p2",&px);
+    tracktree[i]->SetBranchAddress("p3",&py);
+    tracktree[i]->SetBranchAddress("t",&t);
+    tracktree[i]->SetBranchAddress("q",&q);
+
+    tracktree[i]->GetEntry(0);
+
+    Float_t den = fDenProf->Eval(z);
+    r = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
+    // r = TMath::Sqrt(x*x + y*y);
+
+    Float_t den0 = den;
+    Double_t rb0 = r;
+
+    tracktree[i]->GetEntry(tracktree[i]->GetEntries()-1);
+    Double_t zetaf = z-t + shiftzeta;
+    
+    // cout << Form(" n = %.2f rb0 = %.2f  zetaf = %.2f  q = %.2f ",den,rb0,zetaf,q) << endl;
+    
+    hRbvszeta->Fill(zetaf,rb0,TMath::Abs(q));
+    hn0vszeta->Fill(zetaf,den0,TMath::Abs(q));
+      
+    grvszeta[i] = NULL;
+    gvrvszeta[i] = NULL;
+    gvzvszeta[i] = NULL;
+    
+    // Cut!!
+    // if(z>45.0 && z<45.05)
+    if(den>2.0 && den<2.03) {
+    // if(den>2.24 && den<2.28)
+    // if(den>3.0 && den<3.03)
+      grvszeta[i] = new TGraph(tracktree[i]->GetEntries());
+      gvrvszeta[i] = new TGraph(tracktree[i]->GetEntries());
+      gvzvszeta[i] = new TGraph(tracktree[i]->GetEntries());
+
+    } else
+      continue;
+
+    if(rb0>rmax) rmax = rb0;
+    if(rb0<rmin) rmin = rb0;
+
+    if(zetaf>zetamaxt) zetamaxt = zetaf;
+    if(zetaf<zetamint) zetamint = zetaf;
+       
+    NSel++;
+    
+    for(Int_t j=0;j<tracktree[i]->GetEntries();j++) {
+      
+      tracktree[i]->GetEntry(j);
+
+      den = fDenProf->Eval(z);
+      //r = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
+      r = TMath::Sqrt(x*x + y*y);
+
+      Double_t p2 = pz*pz+py*py+px*px;
+      gamma = TMath::Sqrt(p2+1);
+
+      vz = pz/gamma;
+      vx = px/gamma;
+      vy = py/gamma;
+
+      Double_t zeta = z-t + shiftzeta;
+      grvszeta[i]->SetPoint(j,zeta,r);
+
+      Double_t vr = TMath::Sqrt(vx*vx+vy*vy);
+      gvrvszeta[i]->SetPoint(j,zeta,vr);
+      gvzvszeta[i]->SetPoint(j,zeta,vz);
+
+
+    }
+    
+    grvszeta[i]->SetName(Form("track_rvsz_%i",i));
+    gvrvszeta[i]->SetName(Form("track_vrvsz_%i",i));
+    gvzvszeta[i]->SetName(Form("track_vzvsz_%i",i));
+    
+  }
+  
+  cout << Form(" Number of tracks selected = %i : ",NSel) << endl;;
+
+  // Plot selected tracks
+  // --------------------------
+
+  // Set color code
+  for(Int_t i=0;i<NT;i++) {
+    if(!grvszeta[i]) continue;
+    
+    tracktree[i]->SetBranchAddress("x1",&z);
+    tracktree[i]->SetBranchAddress("x2",&x);
+    tracktree[i]->SetBranchAddress("x3",&y);
+    tracktree[i]->SetBranchAddress("t",&t);
+    
+    tracktree[i]->GetEntry(0);
+    
+    Float_t den = fDenProf->Eval(z);
+    r = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
+    // r = TMath::Sqrt(x*x + y*y);
+
+    Int_t index =  (r - rmin) * ((pal->GetNColors()-1) / (rmax-rmin));
+    Int_t color = pal->GetColorIndex(index);
+    
+    grvszeta[i]->SetLineColor(color);
+    // grvszeta[i]->SetLineColorAlpha(color,0.8);
+    grvszeta[i]->SetLineWidth(2);
+
+    gvrvszeta[i]->SetLineColor(color);
+    // gvrvszeta[i]->SetLineColorAlpha(color,0.8);
+    gvrvszeta[i]->SetLineWidth(2);
+
+    gvzvszeta[i]->SetLineColor(color);
+    // gvzvszeta[i]->SetLineColorAlpha(color,0.8);
+    gvzvszeta[i]->SetLineWidth(2);
+
+    grvszeta[i]->Draw("C same");
+  }
+  
+  
+
   Int_t sizex = 800;
-  Int_t sizey = 500;
+  Int_t sizey = 900;
 
   char cName[32];
   sprintf(cName,"C");     
@@ -274,28 +441,37 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   C->Clear();
 
   // Setup Pad layout: 
-  Int_t NPad = 1;
+  Int_t NPad = 3;
   TPad **pad = new TPad*[NPad];
   TH1F **hFrame = new TH1F*[NPad];
   
-  Float_t lMargin = 0.12;
+  Float_t lMargin = 0.16;
   Float_t rMargin = 0.04;
-  Float_t bMargin = 0.15;
+  Float_t bMargin = 0.10;
   Float_t tMargin = 0.04;
-  Float_t factor = 0.2;    
+  Float_t mMargin = 0.02;
 
   // Define the frames for plotting
   Int_t fonttype = 43;
-  Int_t fontsize = 24;
-  Int_t tfontsize = 26;
-  Float_t txoffset = 1.2;
-  Float_t lxoffset = 0.02;
-  Float_t tyoffset = 0.8;
+  Int_t fontsize = 32;
+  Int_t tfontsize = 38;
+  Float_t txoffset = 2.3;
+  Float_t lxoffset = 0.01;
+  Float_t tyoffset = 1.6;
   Float_t lyoffset = 0.01;
-  Float_t tylength = 0.015;
+  Float_t tylength = 0.01;
   Float_t txlength = 0.02;
+  Float_t pfactor = 1.4;
+  
+  // Int_t NdivX = 505;
+  // Int_t NdivY = 505;
+  Int_t NdivX = 405;
+  Int_t NdivY = 405;
 
-  PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin);
+
+  // PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin);
+  PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,pfactor,mMargin);
+  
   for(Int_t i=0;i<NPad;i++) {
     char name[16];
     sprintf(name,"pad_%i",i);
@@ -319,8 +495,8 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
     hFrame[i]->GetYaxis()->SetLabelOffset(lyoffset);
     hFrame[i]->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
     hFrame[i]->GetYaxis()->CenterTitle();
-    hFrame[i]->GetYaxis()->SetNdivisions(505);
-
+    hFrame[i]->GetYaxis()->SetNdivisions(NdivY);
+    
     // Format for x axis
     hFrame[i]->GetXaxis()->SetTitleFont(fonttype);
     hFrame[i]->GetXaxis()->SetTitleSize(tfontsize+2);
@@ -328,11 +504,18 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
     hFrame[i]->GetXaxis()->SetLabelFont(fonttype);
     hFrame[i]->GetXaxis()->SetLabelSize(fontsize+2);
     hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
-    hFrame[i]->GetXaxis()->CenterTitle();
     hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+    hFrame[i]->GetXaxis()->CenterTitle();
+    hFrame[i]->GetXaxis()->SetNdivisions(NdivX);
+
+    if(i>0) {
+      hFrame[i]->GetXaxis()->SetLabelOffset(99);
+      hFrame[i]->GetXaxis()->SetTitleOffset(99);
+    }
+
   }
 
-  Int_t ipad = 0;
+  UInt_t ipad = NPad-1;
 
   C->cd(0);
   pad[ipad]->Draw();
@@ -341,103 +524,9 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   hFrame[ipad]->GetYaxis()->SetRangeUser(rb0min,rb0max);
   
   hFrame[ipad]->GetXaxis()->SetTitle("k_{p}^{0} #zeta");
-  hFrame[ipad]->GetYaxis()->SetTitle("k_{p} r");
+  hFrame[ipad]->GetYaxis()->SetTitle("k_{p}^{0} r");
+
   
-  // Read tracks
-  // --------------------------------
-  Int_t NT = -1;
-  TTree **tracktree = pData->GetTrackTree(trackfile->c_str(),NT);
-
-  cout << Form(" Number of tracks = %i : ",NT) << endl;
-
-  // sort tracks
-  std::sort(&tracktree[0],&tracktree[NT-1],Comp);
-  
-  TGraph **grvszeta = new TGraph*[NT];
-
-  //  TH2D *hRbvszeta = new TH2D("hRbvszeta","",50,zetamin,zetamax,50,rb0min,rb0max);
-  Int_t NBinsX = 50;
-  Int_t NBinsY = 100;
-  TH2D *hRbvszeta = new TH2D("hRbvszeta","",NBinsX,zetamin2,zetamax2,NBinsY,0.301,0.99); 
-  TH2D *hn0vszeta = new TH2D("hn0vszeta","",NBinsX,zetamin2,zetamax2,NBinsY,1.0,5.99); 
-  
-  Double_t rmin =  999;
-  Double_t rmax = -999;
-  Double_t zetamint =  999;
-  Double_t zetamaxt = -999;
-  Double_t z;
-  Double_t t;
-  Double_t x;
-  Double_t y;
-  Double_t r;
-  Double_t q;
-  Int_t NSel = 0;
-  for(Int_t i=0;i<NT;i++) {
-        
-    tracktree[i]->SetBranchAddress("x1",&z);
-    tracktree[i]->SetBranchAddress("x2",&x);
-    tracktree[i]->SetBranchAddress("x3",&y);
-    tracktree[i]->SetBranchAddress("t",&t);
-    tracktree[i]->SetBranchAddress("q",&q);
-
-    tracktree[i]->GetEntry(0);
-
-    Float_t den = fDenProf->Eval(z);
-    r = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
-    // r = TMath::Sqrt(x*x + y*y);
-
-    Float_t den0 = den;
-    Double_t rb0 = r;
-
-    tracktree[i]->GetEntry(tracktree[i]->GetEntries()-1);
-    Double_t zetaf = z-t + shiftzeta;
-    
-    // cout << Form(" n = %.2f rb0 = %.2f  zetaf = %.2f  q = %.2f ",den,rb0,zetaf,q) << endl;
-    
-    hRbvszeta->Fill(zetaf,rb0,TMath::Abs(q));
-    hn0vszeta->Fill(zetaf,den0,TMath::Abs(q));
-      
-    grvszeta[i] = NULL;
-    
-    // Cut!!
-    // if(z>45.0 && z<45.05)
-    if(den>2.0 && den<2.03)
-    // if(den>2.24 && den<2.28)
-    // if(den>3.0 && den<3.03)
-      grvszeta[i] = new TGraph(tracktree[i]->GetEntries());
-    else
-      continue;
-
-    if(rb0>rmax) rmax = rb0;
-    if(rb0<rmin) rmin = rb0;
-
-    if(zetaf>zetamaxt) zetamaxt = zetaf;
-    if(zetaf<zetamint) zetamint = zetaf;
-       
-    NSel++;
-    
-    for(Int_t j=0;j<tracktree[i]->GetEntries();j++) {
-      
-      tracktree[i]->GetEntry(j);
-
-      den = fDenProf->Eval(z);
-      //r = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
-      r = TMath::Sqrt(x*x + y*y);
-
-      Double_t zeta = z-t + shiftzeta;
-      grvszeta[i]->SetPoint(j,zeta,r);
-    }
-    
-    grvszeta[i]->SetName(Form("track_%i",i));
-    
-
-  }
-
-  cout << Form(" Number of tracks slected = %i : ",NSel) << endl;;
-
-  // Plot selected tracks
-  // --------------------------
-
   // Plot frame
   hFrame[ipad]->Draw("axis");
 
@@ -498,54 +587,27 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   } else {
     gPad->SetLogz(0);
   }
-  
+
   exPlasma->Draw();
   hDen2D->Draw("col same");
-  
-  
-  PPalette *pal = new PPalette("pal");
-  pal->SetPalette(kBird);
-  // pal->SetPalette("oli");
-  // pal->SetPalette(kColorPrintableOnGrey);
-  // pal->Invert();
-  
-  
+    
   for(Int_t i=0;i<NT;i++) {
     if(!grvszeta[i]) continue;
     
-    tracktree[i]->SetBranchAddress("x1",&z);
-    tracktree[i]->SetBranchAddress("x2",&x);
-    tracktree[i]->SetBranchAddress("x3",&y);
-    tracktree[i]->SetBranchAddress("t",&t);
-
-    tracktree[i]->GetEntry(0);
-
-    Float_t den = fDenProf->Eval(z);
-    r = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
-    // r = TMath::Sqrt(x*x + y*y);
-
-    Int_t index =  (r - rmin) * ((pal->GetNColors()-1) / (rmax-rmin));
-    Int_t color = pal->GetColorIndex(index);
-    //   cout << Form(" r = %.3f  color index = %i",r,index) << endl;
-    grvszeta[i]->SetLineColor(color);
-    // grvszeta[i]->SetLineColorAlpha(color,0.8);
-    grvszeta[i]->SetLineWidth(2);
     grvszeta[i]->Draw("C same");
-    
-    
   }
 
   gPad->Update();
 
   TLine zetalinemin(zetamint,gPad->GetUymin(),zetamint,gPad->GetUymax());
   zetalinemin.SetLineColor(kGray+3);
-  zetalinemin.SetLineStyle(2);
+  zetalinemin.SetLineStyle(3);
   zetalinemin.SetLineWidth(1);
   zetalinemin.Draw();
 
   TLine zetalinemax(zetamaxt,gPad->GetUymin(),zetamaxt,gPad->GetUymax());
   zetalinemax.SetLineColor(kGray+3);
-  zetalinemax.SetLineStyle(2);
+  zetalinemax.SetLineStyle(3);
   zetalinemax.SetLineWidth(1);
   zetalinemax.Draw();
   
@@ -554,7 +616,7 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   
   lFrame->SetFillStyle(0);
   lFrame->SetLineColor(kBlack);
-  lFrame->SetLineWidth(2);
+  lFrame->SetLineWidth(frameWidth);
   lFrame->Draw();
   
   gPad->RedrawAxis("g");
@@ -563,6 +625,85 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
 
 
   C->cd(0);
+
+  ipad--;
+  
+  C->cd(0);
+  pad[ipad]->Draw();
+  pad[ipad]->cd();
+  
+  hFrame[ipad]->GetYaxis()->SetRangeUser(0.001,0.599);
+  
+  hFrame[ipad]->GetXaxis()->SetTitle("k_{p}^{0} #zeta");
+  hFrame[ipad]->GetYaxis()->SetTitle("#beta_{r}");
+  
+  // Plot frame
+  hFrame[ipad]->Draw("axis");
+
+  for(Int_t i=0;i<NT;i++) {
+    if(!gvrvszeta[i]) continue;
+    
+    gvrvszeta[i]->Draw("C same");
+  }
+  
+  gPad->Update();
+  
+  zetalinemin.DrawLine(zetamint,gPad->GetUymin(),zetamint,gPad->GetUymax());
+  zetalinemax.DrawLine(zetamaxt,gPad->GetUymin(),zetamaxt,gPad->GetUymax());
+  
+  lFrame->DrawBox(gPad->GetUxmin(), gPad->GetUymin(),
+		  gPad->GetUxmax(), gPad->GetUymax());
+  
+  gPad->RedrawAxis("g");
+
+  hFrame[ipad]->Draw("axis same");
+
+
+  C->cd(0);
+
+  ipad--;
+  
+  C->cd(0);
+  pad[ipad]->Draw();
+  pad[ipad]->cd();
+  
+  hFrame[ipad]->GetYaxis()->SetRangeUser(-0.599,1.0);
+  
+  hFrame[ipad]->GetXaxis()->SetTitle("k_{p}^{0} #zeta");
+  hFrame[ipad]->GetYaxis()->SetTitle("#beta_{z}");
+  
+  // Plot frame
+  hFrame[ipad]->Draw("axis");
+
+  gPad->Update();
+
+  TLine zeroline(gPad->GetUxmin(),0.0,gPad->GetUxmax(),0.0);
+  zeroline.SetLineColor(kBlack);
+  zeroline.SetLineStyle(2);
+  zeroline.SetLineWidth(frameWidth);
+  zeroline.Draw();
+
+  for(Int_t i=0;i<NT;i++) {
+    if(!gvzvszeta[i]) continue;
+    
+    gvzvszeta[i]->Draw("C same");
+  }
+  
+  
+  zetalinemin.DrawLine(zetamint,gPad->GetUymin(),zetamint,gPad->GetUymax());
+  zetalinemax.DrawLine(zetamaxt,gPad->GetUymin(),zetamaxt,gPad->GetUymax());
+  
+  lFrame->DrawBox(gPad->GetUxmin(), gPad->GetUymin(),
+		  gPad->GetUxmax(), gPad->GetUymax());
+  
+  gPad->RedrawAxis("g");
+
+  hFrame[ipad]->Draw("axis same");
+
+
+  C->cd(0);
+
+  
   // C->cd();
   
   // Print to file -------------------------------------------
@@ -581,7 +722,7 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   //pal2->Invert();
   //pal2->SetPalette(kBird);
   //pal2->SetPalette("oli");
-  pal2->Invert();
+  //pal2->Invert();
   pal2->cd();
 
   TExec *exPal2 = new TExec("exPal2","pal2->cd();");
@@ -598,7 +739,7 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
 
 
   hFrame[ipad]->GetXaxis()->SetTitle("k_{p}^{0} #zeta_{f}");
-  hFrame[ipad]->GetYaxis()->SetTitle("k_{p} r_{b}");
+  hFrame[ipad]->GetYaxis()->SetTitle("k_{p} r_{i}");
   
   hFrame[ipad]->Draw("axis");
 
