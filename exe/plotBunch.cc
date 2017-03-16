@@ -154,6 +154,8 @@ int main(int argc,char *argv[]) {
       opt += "noinfo"; 
     } else if(arg.Contains("--avge")){
       opt += "avge"; 
+    } else if(arg.Contains("--ecorr")){
+      opt += "ecorr"; 
     } else if(arg.Contains("--bw")){
       opt += "bw"; 
     } else if(arg.Contains("--nospec")){
@@ -1034,8 +1036,7 @@ int main(int argc,char *argv[]) {
     Double_t pzmean = ymean;
     Double_t pzrms = yrms;
     Double_t zpzcorr = xyrms;
-    Double_t zpzcorrrel = xyrms/pzmean;
-    Double_t zpzcorrrelb = 100 * xyrms/(pzmean * xrms2 );
+    Double_t zpzcorrrel = 100 * zpzcorr/(pzmean * xrms2);
     
     // Total relative energy spread within FWHM:
     sprintf(hName,"hP1cut");
@@ -1366,7 +1367,7 @@ int main(int argc,char *argv[]) {
       }
     }
     //    cout << " done! " << endl;
-    
+
 
     // Changing to user units: 
     // --------------------------
@@ -1445,8 +1446,7 @@ int main(int argc,char *argv[]) {
       pzmax  *= PConst::ElectronMassE / eneUnit;
       emitz *= (skindepth / spaUnit);
       zpzcorr *= (PConst::ElectronMassE/eneUnit) * (skindepth / spaUnit);
-      zpzcorrrel *= (skindepth / spaUnit);
-      zpzcorrrelb /= (skindepth / spaUnit);
+      zpzcorrrel /= (skindepth / spaUnit);
       
       // Transverse phase-space
       x_mean *= skindepth / tspaUnit;
@@ -1604,6 +1604,7 @@ int main(int argc,char *argv[]) {
 
     // Average emittance
     Double_t emitxavg = 0;
+    
     // Extract from selected slices:
     Double_t norm = 0;
     for(Int_t i=0;i<SNbin;i++) {
@@ -1612,27 +1613,29 @@ int main(int argc,char *argv[]) {
     }
     emitxavg /= norm;
     
-    // Extract from selected slices:
     Double_t emityavg = 0;
-    norm = 0;
-    for(Int_t i=0;i<SNbin;i++) {
-      emityavg += hP3X3sl[i]->GetEntries() * semity[i];
-      norm += hP3X3sl[i]->GetEntries();
+    if(pData->Is3D()) {
+      norm = 0;
+      for(Int_t i=0;i<SNbin;i++) {
+	emityavg += hP3X3sl[i]->GetEntries() * semity[i];
+	norm += hP3X3sl[i]->GetEntries();
+      }
+      emityavg /= norm;
     }
-    emityavg /= norm;
-
     
     cout << "\n  Summary _______________________________________________________ " << endl;
     if(opt.Contains("units")) {
       cout << Form("  Integrated charge (RAW) of specie %3i = %8f %s",index,Charge,chargeSUnit.c_str()) << endl;
-      cout << Form("  Peak current = %6.2f %s",hX1->GetMaximum(),curSUnit.c_str()) << endl;
-      cout << Form("  Total energy = %6.2f %s, rms = %3.1f %s",pzmean,eneSUnit.c_str(),(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str()) << endl;
-      cout << Form("  Length = %6.2f %s (rms)",zrms,spaSUnit.c_str()) << endl;
-      cout << Form("  Width x = %6.2f %s (rms)",x_rms,tspaSUnit.c_str()) << endl;
-      cout << Form("  Trans. emit. x = %6.2f %s",emitx,emitSUnit.c_str()) << endl;
+      cout << Form("  Peak current = %6.3f %s",hX1->GetMaximum(),curSUnit.c_str()) << endl;
+      cout << Form("  Total energy = %6.3f %s, rms = %3.1f %s",pzmean,eneSUnit.c_str(),(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str()) << endl;
+      cout << Form("  Corr. energy spread = %.3f \%/%s",zpzcorrrel,spaSUnit.c_str()) << endl;
+      cout << Form("  Minimum energy = %.3f %s",MinP1 *  PConst::ElectronMassE / eneUnit,eneSUnit.c_str()) << endl;
+      cout << Form("  Length = %6.3f %s (rms)",zrms,spaSUnit.c_str()) << endl;
+      cout << Form("  Width x = %6.3f %s (rms)",x_rms,tspaSUnit.c_str()) << endl;
+      cout << Form("  Trans. emit. x = %6.3f %s",emitx,emitSUnit.c_str()) << endl;
       if(pData->Is3D()) {
-	cout << Form("  Width y = %6.2f %s (rms)",y_rms,tspaSUnit.c_str()) << endl;
-	cout << Form("  Trans. emit. y = %6.2f %s",emity,emitSUnit.c_str()) << endl;
+	cout << Form("  Width y = %6.3f %s (rms)",y_rms,tspaSUnit.c_str()) << endl;
+	cout << Form("  Trans. emit. y = %6.3f %s",emity,emitSUnit.c_str()) << endl;
       }
     }
     
@@ -1740,7 +1743,7 @@ int main(int argc,char *argv[]) {
       }  
 
       gPzcorrrelvsTime->Set(nPoints+1);
-      gPzcorrrelvsTime->SetPoint(nPoints,Time,zpzcorrrelb);
+      gPzcorrrelvsTime->SetPoint(nPoints,Time,zpzcorrrel);
       gPzcorrrelvsTime->Write(gName,TObject::kOverwrite);
 
 
@@ -2436,7 +2439,7 @@ int main(int argc,char *argv[]) {
       textMom->SetTextSize(22);
       if(opt.Contains("fwhm")) {
 	if(opt.Contains("units") && pData->GetPlasmaDensity())
-	  sprintf(ctext,"#LTp_{z}#GT = %5.2f %s/c", pzmeanFWHM, eneSUnit.c_str());
+	  sprintf(ctext,"#LTp_{z}#GT = %5.3f %s/c", pzmeanFWHM, eneSUnit.c_str());
 	else
 	  sprintf(ctext,"#LTp_{z}#GT = %5.2f mc", pzmeanFWHM);    
       } else {
@@ -2464,12 +2467,17 @@ int main(int argc,char *argv[]) {
 	sprintf(ctext,"k_{p} #Delta#zeta = %5.2f",zrms);
       
       textInfo->AddText(ctext);
-      if(opt.Contains("fwhm"))
-	sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
-      else
-	sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
-      textInfo->AddText(ctext);
 
+      if(opt.Contains("ecorr")) {
+	sprintf(ctext,"#deltap_{z,corr} = %4.2f %/%s",zpzcorrrel,spaSUnit.c_str());
+      } else {
+	if(opt.Contains("fwhm"))
+	  sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
+	else
+	  sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
+      }
+      textInfo->AddText(ctext);
+      
       if(opt.Contains("avge")) {
 	if(opt.Contains("units"))
 	  sprintf(ctext,"#LT#varepsilon_{n,x}#GT = %5.2f %s",emitxavg,emitSUnit.c_str());

@@ -37,31 +37,23 @@ void PlotEnergySpreadComp(const TString &options="") {
 
   TString opt = options;
 
-  // const Int_t Nsim = 5;
-  // char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
-  // 			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
-  // 			  "flash_v2.5kA.G.ZH.DDR.30.3D",
-  // 			  "flash_v2.5kA.G.ZH.DDR.40.3D",
-  // 			  "flash_v2.5kA.G.ZH.DDR.10.tap1.77.std.3D"};
-  
-  // char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 2.5",
-  //  			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
-  //  			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
-  // 			  "(d): k_{p}^{0}#sigma_{l} = 10.0",
-  // 			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
-
-  const Int_t Nsim = 5;
-  char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
+  const Int_t Nsim = 7;
+  char sName[Nsim][56] = {"flash_v2.5kA.G.ZH.DDR.5.FinalSet.3D",
+			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.3D",
+   			  "flash_v2.5kA.G.ZH.DDR.20.FinalSet.3D",
   			  "flash_v2.5kA.G.ZH.DDR.30.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.40.FinalSet.3D",
-  			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.tap1.5.3D"};
+			  "flash_v2.5kA.G.ZH.DDR.10.FinalSet.tap1.5.3D",
+  			  //"flash_v2.5kA.G.ZH.DDR.40.FinalSet.3D"};
+			  "flash_v2.5kA.G.ZH.DDR.10.n5.FinalSet.3D",
+     			  "flash_v2.5kA.G.ZH.DDR.10.n2.5.FinalSet.3D"};
   
-  char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 2.5",
-   			  "(b): k_{p}^{0}#sigma_{l} = 5.0",
-   			  "(c): k_{p}^{0}#sigma_{l} = 7.5",
-  			  "(d): k_{p}^{0}#sigma_{l} = 10.0",
-  			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]"};
+  char lName[Nsim][56] = {"(a): k_{p}^{0}#sigma_{l} = 1.25",
+			  "(b): k_{p}^{0}#sigma_{l} = 2.5",
+    			  "(c): k_{p}^{0}#sigma_{l} = 5.0",
+    			  "(d): k_{p}^{0}#sigma_{l} = 7.5",
+			  "(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]",
+   			  "(f): k_{p}^{0}#sigma_{l} = 2.5",
+   			  "(g): k_{p}^{0}#sigma_{l} = 2.5"};
   
   
   // Load first simulation data (for instance)
@@ -102,22 +94,22 @@ void PlotEnergySpreadComp(const TString &options="") {
 
     Int_t index =  i * pal->GetNColors() / Nsim;
     color[i] = pal->GetColorIndex(index);
-
-    // switch(i) {
-    // case 0 :
-    //   color[i] = kGray+2;
-    //   break;
-    // case 1 :
-    //   color[i] = kRed-7;
-    //   break;
-    // case 2 :
-    //   color[i] = kGray+3;
-    //   break;
-    // case 3 :
-    //   color[i] = kRed;
-    //   break;
-    // }
     
+    if(i==0)
+      color[i] = color[i];
+    else if(i==1)
+      color[i] = kGray+3;
+    else if(i==2)
+      color[i] = kRed-6;
+    else if(i==3)
+      color[i] = kRed-9;
+    else if(i==4)
+      color[i] = kOrange;//kGray+1;
+    else if(i==5)
+      color[i] = kBlue-6;
+    else if(i==6)
+      color[i] = kBlue-9;
+     
     TString filename = Form("./%s/Plots/Bunch/plasma/Bunch-Evolution-%s.root",sName[i],sName[i]);
     sFile[i] = new TFile(filename,"READ");
     
@@ -187,12 +179,67 @@ void PlotEnergySpreadComp(const TString &options="") {
     
   }
   
-  // Canvas setup
+   // Canvas setup
   // Create the canvas and the pads before the Frame loop
   // Resolution:
-  Int_t sizex = 800;
-  Int_t sizey = 500;
+  // Int_t sizex = 800;
+  // Int_t sizey = 400;
+  Int_t sizex = 1024;
+  Int_t sizey =  380;
 
+  Int_t font = 43;
+  Int_t labelsize = 34;
+  Int_t titlesize = 38;
+  
+  Float_t labeloffset = 0.01;
+  Float_t titleoffsety = 0.5;
+  Float_t titleoffsetx = 1.0;
+  
+  Float_t ticksizex = 0.03;
+  Float_t ticksizey = 0.01;
+
+  // Int_t NdivX = 505;
+  // Int_t NdivY = 505;
+  Int_t NdivX = 6;
+  Int_t NdivY = 3;
+  
+  //  gStyle->SetJoinLinePS(2);
+
+  gStyle->SetTitleFont(font,"xyz");
+  gStyle->SetLabelFont(font,"xyz");
+  
+  gStyle->SetLabelSize(labelsize,"xyz");
+  gStyle->SetTitleSize(titlesize,"xyz");
+    
+  gStyle->SetLabelOffset(labeloffset,"xyz");
+
+  gStyle->SetTitleOffset(titleoffsetx,"x");
+  gStyle->SetTitleOffset(titleoffsety,"yz");
+  
+  gStyle->SetTickLength(ticksizex,"x");
+  gStyle->SetTickLength(ticksizey,"yz");
+
+  Float_t lMargin = 0.15;
+  Float_t rMargin = 0.10;
+  Float_t bMargin = 0.25;
+  Float_t tMargin = 0.05;
+
+  gStyle->SetPadLeftMargin(lMargin);
+  gStyle->SetPadRightMargin(rMargin);
+  gStyle->SetPadBottomMargin(bMargin);
+  gStyle->SetPadTopMargin(tMargin);
+
+  Int_t frameWidth = 3;
+  gStyle->SetLineWidth(frameWidth);
+
+  gStyle->SetPadGridY(1);
+  if(opt.Contains("gridx")) {
+    gStyle->SetPadGridX(1);
+  }
+  if(opt.Contains("gridy")) {
+    gStyle->SetPadGridY(1);
+  }
+  
   char cName[32];
   sprintf(cName,"C");     
   TCanvas *C = (TCanvas*) gROOT->FindObject(cName);
@@ -210,30 +257,13 @@ void PlotEnergySpreadComp(const TString &options="") {
   }
 
   zmin = 2.5;
-  zmax = 90;
+  zmax = 50;
    
   // Setup Pad layout: 
   Int_t NPad = 1;
   TPad **pad = new TPad*[NPad];
   TH1F **hFrame = new TH1F*[NPad];
   
-  Float_t lMargin = 0.12;
-  Float_t rMargin = 0.04;
-  Float_t bMargin = 0.15;
-  Float_t tMargin = 0.04;
-  Float_t factor = 0.2;    
-
-  // Define the frames for plotting
-  Int_t fonttype = 43;
-  Int_t fontsize = 24;
-  Int_t tfontsize = 26;
-  Float_t txoffset = 1.2;
-  Float_t lxoffset = 0.02;
-  Float_t tyoffset = 0.8;
-  Float_t lyoffset = 0.01;
-  Float_t tylength = 0.015;
-  Float_t txlength = 0.02;
-
   PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin);
   for(Int_t i=0;i<NPad;i++) {
     char name[16];
@@ -250,25 +280,14 @@ void PlotEnergySpreadComp(const TString &options="") {
     Float_t yFactor = pad[0]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
     
     // Format for y axis
-    hFrame[i]->GetYaxis()->SetTitleFont(fonttype);
-    hFrame[i]->GetYaxis()->SetTitleSize(tfontsize);
-    hFrame[i]->GetYaxis()->SetTitleOffset(tyoffset);
-    hFrame[i]->GetYaxis()->SetLabelFont(fonttype);
-    hFrame[i]->GetYaxis()->SetLabelSize(fontsize);
-    hFrame[i]->GetYaxis()->SetLabelOffset(lyoffset);
-    hFrame[i]->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
+    hFrame[i]->GetYaxis()->SetTickLength(xFactor*ticksizey/yFactor);
     hFrame[i]->GetYaxis()->CenterTitle();
-    hFrame[i]->GetYaxis()->SetNdivisions(505);
+    hFrame[i]->GetYaxis()->SetNdivisions(NdivY);
 
     // Format for x axis
-    hFrame[i]->GetXaxis()->SetTitleFont(fonttype);
-    hFrame[i]->GetXaxis()->SetTitleSize(tfontsize+2);
-    hFrame[i]->GetXaxis()->SetTitleOffset(txoffset);
-    hFrame[i]->GetXaxis()->SetLabelFont(fonttype);
-    hFrame[i]->GetXaxis()->SetLabelSize(fontsize+2);
-    hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
+    hFrame[i]->GetXaxis()->SetTickLength(yFactor*ticksizex/xFactor);      
     hFrame[i]->GetXaxis()->CenterTitle();
-    hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+    hFrame[i]->GetXaxis()->SetNdivisions(NdivX);
   }
 
   Double_t mfactor = 0.1;
@@ -278,8 +297,8 @@ void PlotEnergySpreadComp(const TString &options="") {
   Double_t zrange = zmax - zmin;
   //Double_t pzsmin = 1.0;
   //Double_t pzsmax = 3.49;
-  Double_t pzsmin = -2.99;
-  Double_t pzsmax = -0.01;
+  Double_t pzsmin = -3.19;
+  Double_t pzsmax = -0.8;
   Double_t pzsrange = pzsmax - pzsmin;
   
   TLegend *Leg = new TLegend(zmin + 0.02 * zrange, pzsmax - 0.4*pzsrange , zmin + 0.3 * zrange, pzsmax - 0.05 * erange,"","tl");
@@ -307,6 +326,10 @@ void PlotEnergySpreadComp(const TString &options="") {
   hFrame[ipad]->GetYaxis()->SetTitle("#deltap_{z,corr} [%/#mum]");
 
   hFrame[ipad]->Draw("AXIS");
+
+  gPad->Update();
+  gPad->RedrawAxis("g");
+  gPad->RedrawAxis();
   
   TLine *lineZero = new TLine(zmin,0.0,zmax,0.0);
   lineZero->SetLineColor(kGray+2);
@@ -314,6 +337,7 @@ void PlotEnergySpreadComp(const TString &options="") {
   // lineZero->Draw();
 
   for(Int_t i=0;i<Nsim;i++) {
+    if(i==0) continue;
     //gPz[i]->Draw("L");
     //gPzup[i]->Draw("L");
     //gPzdo[i]->Draw("L");
@@ -324,18 +348,15 @@ void PlotEnergySpreadComp(const TString &options="") {
     Leg->AddEntry(gPz[i],lName[i],"L");
   }
   
-  Leg->Draw();
+  // Leg->Draw();
 
   gPad->Update();
   TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
 			  gPad->GetUxmax(), gPad->GetUymax());
   lFrame->SetFillStyle(0);
   lFrame->SetLineColor(kBlack);
-  lFrame->SetLineWidth(2);
+  lFrame->SetLineWidth(frameWidth);
   lFrame->Draw();
-  
-  gPad->RedrawAxis("g");
-
   
   ipad++;
   
