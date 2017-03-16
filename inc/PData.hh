@@ -125,6 +125,7 @@ public:
   string *GetCurrentFileName(UInt_t i, UInt_t j=0) { return sJ[j]->at(i); }
   string *GetEfieldFileName(UInt_t i) { return sEF->at(i); }
   string *GetBfieldFileName(UInt_t i) { return sBF->at(i); }
+  string *GetAmodFileName(UInt_t i) { return sA->at(i); }
   virtual string  *GetWfieldFileName(UInt_t i) { return 0; }
   virtual UInt_t  NRawSpecies() { return species.size(); }  
   virtual string  GetRawSpeciesName(UInt_t i) { return species.at(i); }
@@ -462,6 +463,7 @@ protected:
   vector<string*>           *sJ[3];   // vector of files with the Currents.
   vector<string*>             *sEF;   // vector of files with the Electric field.
   vector<string*>             *sBF;   // vector of files with the Magnetic field. 
+  vector<string*>              *sA;   // vector of files with the laser envelope
   vector<string*>            *sRAW;   // vector of files with RAW data.
   vector<string*>          *sTrack;   // vector of files with particle tracking info
   vector<string>           pspaces;   // vector of phase spaces names.

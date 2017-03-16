@@ -553,11 +553,11 @@ int main(int argc,char *argv[]) {
       else if(i==2)
 	hE2D[i]->GetZaxis()->SetTitle("E_{y}/E_{0}");
     
+      // 1D histograms
       sprintf(hName,"hE1D_%i",i);
       hE1D[i] = (TH1F*) gROOT->FindObject(hName);
       if(hE1D[i]) delete hE1D[i];
-      
-      // 1D histograms
+
       char nam[3];
       if(pData->isHiPACE()){
 	if(i==0)
@@ -683,6 +683,10 @@ int main(int argc,char *argv[]) {
 	hB2D[i]->GetZaxis()->SetTitle("B_{y}/E_{0}");
 
       // 1D histograms
+      sprintf(hName,"hB1D_%i",i);
+      hB1D[i] = (TH1F*) gROOT->FindObject(hName);
+      if(hB1D[i]) delete hB1D[i];
+      
       char nam[3];
       if(pData->isHiPACE()){
 	if(i==0)
@@ -750,7 +754,100 @@ int main(int argc,char *argv[]) {
 
     // Get vector potential of the radiation
     TH2F *hA2D = NULL;
-    TH1D *hA1D = NULL;
+    TH1F *hA1D = NULL;
+
+    if(pData->GetAmodFileName(0)) {
+
+      cout << Form(" -> Getting laser envelope ") << i+1 << endl;
+    
+      char hName[24];
+      sprintf(hName,"hA2D");
+      hA2D = (TH2F*) gROOT->FindObject(hName);
+      if(hA2D) delete hA2D;
+
+      if(pData->Is3D()) {
+
+	if(opt.Contains("zyslc"))
+	  hA2D = pData->GetH2SliceZY(pData->GetAmodFileName(0)->c_str(),"a_mod",-1,NonBin,opt+"avg");
+	else
+	  hA2D = pData->GetH2SliceZX(pData->GetAmodFileName(0)->c_str(),"a_mod",-1,NonBin,opt+"avg");
+
+      } else {
+	hA2D = pData->GetH2(pData->GetAmodFileName(0)->c_str(),"a_mod",opt);
+      }
+      
+      hA2D->SetName(hName);   
+      hA2D->GetXaxis()->CenterTitle();
+      hA2D->GetYaxis()->CenterTitle();
+      hA2D->GetZaxis()->CenterTitle();
+      if(opt.Contains("comov"))
+	hA2D->GetXaxis()->SetTitle("k_{p} #zeta");
+      else
+	hA2D->GetXaxis()->SetTitle("k_{p} z");
+    
+      if(pData->IsCyl()) 
+	hA2D->GetYaxis()->SetTitle("k_{p} r");
+      else {
+	if(!opt.Contains("zyslc"))
+	  hA2D->GetYaxis()->SetTitle("k_{p} x");
+	else
+	  hA2D->GetYaxis()->SetTitle("k_{p} y");
+      }
+      
+      hA2D->GetZaxis()->SetTitle("|a|");
+
+      // 1D histograms
+      sprintf(hName,"hA1D");
+      hA1D = (TH1F*) gROOT->FindObject(hName);
+      if(hA1D) delete hA1D;
+
+      if(pData->Is3D()) {
+	
+	if(!opt.Contains("alt1D")){
+	  if(i==0) 
+	    hA1D = pData->GetH1SliceZ3D(pData->GetAmodFileName(0)->c_str(),"a_mod",-1,NonBin,-1,NonBin,opt+"avg");
+	  else { // In case of transverse fields, the 1D line is taken offaxis
+	    if(opt.Contains("zyslc")) 
+	      hA1D = pData->GetH1SliceZ3D(pData->GetAmodFileName(0)->c_str(),"a_mod",-1,NonBin,-NofBin,NonBin,opt+"avg");
+	    else
+	      hA1D = pData->GetH1SliceZ3D(pData->GetAmodFileName(0)->c_str(),"a_mod",-NofBin,NonBin,-1,NonBin,opt+"avg");
+	  }
+	    
+	} else {  // Alternative
+	  cout << " Alternative! " << endl;
+	  if(i==0) {
+	    hA1D = (TH1F*) hA2D->ProjectionX(hName,FirstxBin,LastxBin);
+	    hA1D->Scale(1.0/(LastxBin-FirstxBin+1));
+	  } else { // In case of transverse fields, the 1D line is taken off-axis 
+	    hA1D = (TH1F*) hA2D->ProjectionX(hName,FirstOffxBin,LastOffxBin);
+	    hA1D->Scale(1.0/(LastOffxBin-FirstOffxBin+1));
+	  }
+	}
+
+
+      } else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
+      
+	hA1D = pData->GetH1SliceZ(pData->GetAmodFileName(0)->c_str(),"a_mod",1,NonBin,opt+"avg");
+      
+      } else { // 2D cartesian
+      
+	if(i==0) 
+	  hA1D = pData->GetH1SliceZ(pData->GetAmodFileName(0)->c_str(),"a_mod",-1,NonBin,opt+"avg");
+	else  
+	  hA1D = pData->GetH1SliceZ(pData->GetAmodFileName(0)->c_str(),"a_mod",-NofBin,NonBin,opt+"avg");
+
+      }
+      
+      hA1D->SetName(hName);
+      if(opt.Contains("comov"))
+	hA1D->GetXaxis()->SetTitle("#zeta [c/#omega_{p}]");
+      else
+	hA1D->GetXaxis()->SetTitle("z [c/#omega_{p}]");
+    
+      hA1D->GetYaxis()->SetTitle("|a|");
+            
+    }
+    
     // (substract the electro-estatic fields from the total)
     if(hDen2D[0] && opt.Contains("rad")) {
 
@@ -874,7 +971,7 @@ int main(int argc,char *argv[]) {
       
       Float_t lOmega = pData->GetLaserOmega() / pData->GetPlasmaFrequency();
       hA2D->Scale(1.0/lOmega);
-      hA1D = hA2D->ProjectionX("hA1D",hA2D->GetNbinsY()/2,hA2D->GetNbinsY()/2);
+      hA1D = (TH1F*) hA2D->ProjectionX("hA1D",hA2D->GetNbinsY()/2,hA2D->GetNbinsY()/2);
       hA1D->GetXaxis()->SetTitle(hA2D->GetXaxis()->GetTitle());
       hA1D->GetYaxis()->SetTitle(hA2D->GetZaxis()->GetTitle());
       

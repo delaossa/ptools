@@ -19,7 +19,7 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   species.clear(); 
   pspaces.clear();
 
-  sCHG = sEF = sBF = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -51,7 +51,7 @@ PData::PData(const char * name) : TNamed(name,name) {
   species.clear(); 
   pspaces.clear();
 
-  sCHG = sEF = sBF = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -83,7 +83,7 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   species.clear(); 
   pspaces.clear();
   
-  sCHG = sEF = sBF = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -382,6 +382,7 @@ void PData::LoadFileNames(Int_t t) {
   sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
   sEF  = new vector<string*>(3,NULL);
   sBF  = new vector<string*>(3,NULL);
+  sA   = new vector<string*>(1,NULL);
   sRAW = new vector<string*>(NRawSpecies(),NULL);
   sTrack = new vector<string*>(NRawSpecies(),NULL);
 
@@ -473,7 +474,17 @@ void PData::LoadFileNames(Int_t t) {
 	continue;
       }
     }
-  
+
+    // Get laser envelope
+    char aName[16];
+    sprintf(aName,"a_mod");
+    if(files[i].find(aName) != string::npos) {
+      if(files[i].find("savg") == string::npos)
+	sA->at(0) = new string(files[i]);
+      else if(!sA->at(0))
+	sA->at(0) = new string(files[i]);
+    }
+    
   }
   
   // Get the vector of particle tracking files.
@@ -634,6 +645,12 @@ void PData::PrintData(Option_t *option) {
       if(sBF->at(ief))
 	cout << " - " << sBF->at(ief)->c_str() << endl;
   }
+  cout << endl;
+
+  cout << "Data for laser envelope: " << endl;
+  if(sA->at(0))
+    cout << " - " << sA->at(0)->c_str() << endl;
+
   cout << endl;
   
 }
@@ -813,7 +830,13 @@ void PData::Clear(Option_t *option)
     delete sBF;
     sBF = NULL;
   }
-  
+
+  if(sA) {
+    FreeClear(*sA);
+    delete sA;
+    sA = NULL;
+  }
+
   if(sRAW) {
     FreeClear(*sRAW);
     delete sRAW;
