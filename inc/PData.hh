@@ -80,7 +80,13 @@ struct pparam {
   Double_t denMin2;
   Double_t denMax2;
   Double_t denMin3;
-  Double_t denMax3;  
+  Double_t denMax3;
+
+  // EM-fields ranges
+  Double_t E1Min;
+  Double_t E1Max;
+  Double_t EtMin;
+  Double_t EtMax;
 };
 
 
@@ -542,6 +548,10 @@ void PData::ResetParameters() {
 
   // Density ranges
   pParam.denMin = pParam.denMax = pParam.denLoc = pParam.denMin1 = pParam.denMax1 = pParam.denMin2 = pParam.denMax2 = pParam.denMin3 = pParam.denMax3 = -999.;
+
+  // Field ranges
+  pParam.E1Min = pParam.EtMin = 999.;
+  pParam.E1Max = pParam.EtMax = -999.;
 }
 
 

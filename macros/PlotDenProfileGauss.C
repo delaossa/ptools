@@ -156,9 +156,9 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
 			   "(a) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 2.5",
 			   "(b) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 5.0",
 			   "(c) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 7.5",
-			   "(d) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 2.5 [tap]",
-			   "(e) #tilde{n}_{top} =  5,  #tilde{#sigma}_{l} = 2.5",
-			   "(f) #tilde{n}_{top} = 2.5,  #tilde{#sigma}_{l} = 2.5"};
+			   "(d) #tilde{n}_{top} =  5,  #tilde{#sigma}_{l} = 2.5",
+			   "(e) #tilde{n}_{top} = 2.5,  #tilde{#sigma}_{l} = 2.5",
+			   "(f) #tilde{n}_{top} = 10,  #tilde{#sigma}_{l} = 2.5 [tap]"};
   
   TF1 **fDenProf = new TF1*[Nsim];
   TGraph **gDenProf = new TGraph*[Nsim];
@@ -169,7 +169,7 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
 
   for(Int_t i=0;i<Nsim;i++) {
 
-    if(i==4) 
+    if(i==6) 
       fDenProf[i] = new TF1(Form("fDenProf_%i",i),DensityGaussTap,zmin,zmax,9);
     else
       fDenProf[i] = new TF1(Form("fDenProf_%i",i),DensityGauss,zmin,zmax,9);
@@ -188,11 +188,11 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
     else if(i==3)
       color[i] = kRed-9;
     else if(i==4)
-      color[i] = kOrange; // kGray+1;
-    else if(i==5)
       color[i] = kBlue-6;
-    else if(i==6)
+    else if(i==5)
       color[i] = kBlue-9;
+    else if(i==6)
+      color[i] = kOrange; // kGray+1;
     
     
     fDenProf[i]->SetLineColor(color[i]);
@@ -211,17 +211,17 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
   
   fDenProf[3]->SetParameters(n0,z0,sigma0,n1,z1,3*sigma1,n2,z2,sigma2);
 
-  fDenProf[4]->SetParameters(n0,z0,sigma0,n1,z1,sigma1,nt,zt,sigmat);
+  fDenProf[6]->SetParameters(n0,z0,sigma0,n1,z1,sigma1,nt,zt,sigmat);
   
   // Change ramp profile
   Float_t n05 = 2.2/1.8;
   Float_t kp5 = TMath::Sqrt(1.0/n05);
-  fDenProf[5]->SetParameters(0.5*n0*n05,z0*kp5,sigma0*kp5,n1*n05,z1*kp5,sigma1*kp5,n2*n05,z2*kp5,sigma2*kp5);
+  fDenProf[4]->SetParameters(0.5*n0*n05,z0*kp5,sigma0*kp5,n1*n05,z1*kp5,sigma1*kp5,n2*n05,z2*kp5,sigma2*kp5);
   
   // Change ramp profile
   Float_t n025 = 2.2/1.56;
   Float_t kp25 = TMath::Sqrt(1.0/n025);
-  fDenProf[6]->SetParameters(0.25*n0*n025,z0*kp25,sigma0*kp25,n1*n025,z1*kp25,sigma1*kp25,n2*n025,z2*kp25,sigma2*kp25);
+  fDenProf[5]->SetParameters(0.25*n0*n025,z0*kp25,sigma0*kp25,n1*n025,z1*kp25,sigma1*kp25,n2*n025,z2*kp25,sigma2*kp25);
 
   // GRAPHS
   for(Int_t i=0;i<Nsim;i++) {
@@ -363,7 +363,8 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
   for(Int_t i=Nsim-1;i>=0;i--) {
     //for(Int_t i=0;i<Nsim;i++) {
     if(i==0) continue;
-    //fDenProf[i]->Draw("C same");
+    if(i==3) 
+      gDenProf[6]->Draw("C same");
     gDenProf[i]->Draw("C same");
   }
   
@@ -395,7 +396,7 @@ void PlotDenProfileGauss(const TString &sim, const Float_t zmin0 = 0, const Floa
     if(i==0) continue;
     Leg->AddEntry(fDenProf[i],lName[i],"L");
   }
-  //  Leg->AddEntry(fDenProf5,"(e): k_{p}^{0}#sigma_{l} = 2.5 [tap]","L");  
+  
   Leg->Draw();
   
   

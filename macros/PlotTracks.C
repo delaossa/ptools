@@ -62,9 +62,9 @@ void DrawErrors(TProfile *hProf,Float_t xmin = -999.0, Float_t xmax = -999.0,
     Np++;
   }
   
-  //grapherr = new TGraphErrors(Np,x,y,ex,ey);
-  //grapherr->SetName("grapherr");
-  //grapherr->Draw("3");
+  // grapherr = new TGraphErrors(Np,x,y,ex,ey);
+  // grapherr->SetName("grapherr");
+  // grapherr->Draw("3");
 
   TGraph *grapherravg = new TGraph(Np,x,y); 
   TGraph *grapherrup = new TGraph(Np,x,yup); 
@@ -166,18 +166,19 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   gStyle->SetLineWidth(frameWidth);
     
   // Load PData
+  Int_t time = 820;
   PData *pData = PData::Get(sim.Data());
-  pData->LoadFileNames(500);
+  pData->LoadFileNames(time);
   pData->PrintData();
+  
   string *trackfile = pData->GetTrackFileName(index);
   
-  // cout << "\n EEEEEEEEEEEEEEE \n" << endl;
   // if(trackfile != NULL) {
   //   cout << Form("\n Track file name : %s \n",trackfile->c_str()) << endl;
   // } else {
   //   return 0;
   // }
-    
+  
   // Some plasma constants
   Double_t np = pData->GetPlasmaDensity();
   Double_t kp = pData->GetPlasmaK();
@@ -241,9 +242,6 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   Double_t n2 = 0;
   Double_t z2 = 10000;
   Double_t sigma2 = 0.0;
-  Double_t nt = 1.5;
-  Double_t zt = 100;
-  Double_t sigmat = 5.0;
   
   if(opt.Contains("units")) {
     n0 *= np;
@@ -255,23 +253,18 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
     n2 *= np;
     z2 *= skd;
     sigma2 *= skd;
-    nt *= np;
-    zt *= skd;
-    sigmat *= skd;
   }
 
   TF1 *fDenProf = new TF1("fDenProf",DensityGauss,zmin,zmax,9);
   fDenProf->SetParameters(n0,z0,sigma0,n1,z1,sigma1,n2,z2,sigma2);
   fDenProf->SetNpx(10000);
     
-
   PPalette *pal = new PPalette("pal");
   pal->SetPalette(kBird);
   // pal->SetPalette("oli");
   // pal->SetPalette(kColorPrintableOnGrey);
   // pal->Invert();
-  
-
+ 
   // Read tracks
   // --------------------------------
   Int_t NT = -1;
@@ -287,9 +280,21 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   TGraph **gvzvszeta = new TGraph*[NT];
   
   //  TH2D *hRbvszeta = new TH2D("hRbvszeta","",50,zetamin,zetamax,50,rb0min,rb0max);
-  Int_t NBinsX = 50;
   Int_t NBinsY = 100;
-  TH2D *hRbvszeta = new TH2D("hRbvszeta","",NBinsX,zetamin2,zetamax2,NBinsY,0.301,0.99); 
+
+  // BOX limits
+  Double_t X1MIN = pData->GetXMin(0);
+  Double_t X1MAX = pData->GetXMax(0);
+
+  Double_t dx1 = pData->GetDX(0);
+  Double_t dzf = 2.0;
+  Double_t ddx1 = dzf * dx1;
+  zetamin2 = floor((zetamin2-X1MIN)/ddx1) * ddx1 + X1MIN;  
+  zetamax2 = floor((zetamax2-X1MIN)/ddx1) * ddx1 + X1MIN;  
+  
+  Int_t NBinsX = ceil ((zetamax2 - zetamin2)/(ddx1));
+  
+  TH2D *hRbvszeta = new TH2D("hRbvszeta","",NBinsX,zetamin2,zetamax2,NBinsY,0.301,1.099); 
   TH2D *hn0vszeta = new TH2D("hn0vszeta","",NBinsX,zetamin2,zetamax2,NBinsY,1.0,5.99); 
   
   Double_t rmin =  999;
@@ -320,8 +325,8 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
     tracktree[i]->GetEntry(0);
 
     Float_t den = fDenProf->Eval(z);
-    r = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
-    // r = TMath::Sqrt(x*x + y*y);
+    Float_t kpr = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
+    Float_t r = TMath::Sqrt(x*x + y*y);
 
     Float_t den0 = den;
     Double_t rb0 = r;
@@ -331,7 +336,8 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
     
     // cout << Form(" n = %.2f rb0 = %.2f  zetaf = %.2f  q = %.2f ",den,rb0,zetaf,q) << endl;
     
-    hRbvszeta->Fill(zetaf,rb0,TMath::Abs(q));
+    //hRbvszeta->Fill(zetaf,rb0,TMath::Abs(q));
+    hRbvszeta->Fill(zetaf,kpr,TMath::Abs(q));
     hn0vszeta->Fill(zetaf,den0,TMath::Abs(q));
       
     grvszeta[i] = NULL;
@@ -376,11 +382,21 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
       Double_t zeta = z-t + shiftzeta;
       grvszeta[i]->SetPoint(j,zeta,r);
 
-      Double_t vr = TMath::Sqrt(vx*vx+vy*vy);
-      gvrvszeta[i]->SetPoint(j,zeta,vr);
       gvzvszeta[i]->SetPoint(j,zeta,vz);
 
+      Double_t vr = TMath::Sqrt(vx*vx+vy*vy);
 
+      // Double_t cphi = x/r;
+      // Double_t sphi = y/r;
+      // Double_t vr;
+      // if(vx>vy)
+      // 	vr = vx/cphi;
+      // else
+      // 	vr = vy/sphi;
+      
+      gvrvszeta[i]->SetPoint(j,zeta,vr);
+      
+      
     }
     
     grvszeta[i]->SetName(Form("track_rvsz_%i",i));
@@ -406,8 +422,8 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
     tracktree[i]->GetEntry(0);
     
     Float_t den = fDenProf->Eval(z);
-    r = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
-    // r = TMath::Sqrt(x*x + y*y);
+    Float_t kpr = TMath::Sqrt(den) * TMath::Sqrt(x*x + y*y);
+    Float_t r = TMath::Sqrt(x*x + y*y);
 
     Int_t index =  (r - rmin) * ((pal->GetNColors()-1) / (rmax-rmin));
     Int_t color = pal->GetColorIndex(index);
@@ -426,8 +442,6 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
 
     grvszeta[i]->Draw("C same");
   }
-  
-  
 
   Int_t sizex = 800;
   Int_t sizey = 900;
@@ -447,7 +461,7 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   
   Float_t lMargin = 0.16;
   Float_t rMargin = 0.04;
-  Float_t bMargin = 0.10;
+  Float_t bMargin = 0.12;
   Float_t tMargin = 0.04;
   Float_t mMargin = 0.02;
 
@@ -455,7 +469,7 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   Int_t fonttype = 43;
   Int_t fontsize = 32;
   Int_t tfontsize = 38;
-  Float_t txoffset = 2.3;
+  Float_t txoffset = 2.8;
   Float_t lxoffset = 0.01;
   Float_t tyoffset = 1.6;
   Float_t lyoffset = 0.01;
@@ -467,7 +481,6 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   // Int_t NdivY = 505;
   Int_t NdivX = 405;
   Int_t NdivY = 405;
-
 
   // PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin);
   PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,pfactor,mMargin);
@@ -491,12 +504,12 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
     hFrame[i]->GetYaxis()->SetTitleSize(tfontsize);
     hFrame[i]->GetYaxis()->SetTitleOffset(tyoffset);
     hFrame[i]->GetYaxis()->SetLabelFont(fonttype);
-    hFrame[i]->GetYaxis()->SetLabelSize(fontsize);
+    hFrame[i]->GetYaxis()->SetLabelSize(fontsize-2);
     hFrame[i]->GetYaxis()->SetLabelOffset(lyoffset);
     hFrame[i]->GetYaxis()->SetTickLength(xFactor*tylength/yFactor);
     hFrame[i]->GetYaxis()->CenterTitle();
     hFrame[i]->GetYaxis()->SetNdivisions(NdivY);
-    
+
     // Format for x axis
     hFrame[i]->GetXaxis()->SetTitleFont(fonttype);
     hFrame[i]->GetXaxis()->SetTitleSize(tfontsize+2);
@@ -590,7 +603,9 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
 
   exPlasma->Draw();
   hDen2D->Draw("col same");
-    
+
+  gPad->RedrawAxis("g");
+
   for(Int_t i=0;i<NT;i++) {
     if(!grvszeta[i]) continue;
     
@@ -602,13 +617,13 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   TLine zetalinemin(zetamint,gPad->GetUymin(),zetamint,gPad->GetUymax());
   zetalinemin.SetLineColor(kGray+3);
   zetalinemin.SetLineStyle(3);
-  zetalinemin.SetLineWidth(1);
+  zetalinemin.SetLineWidth(2);
   zetalinemin.Draw();
 
   TLine zetalinemax(zetamaxt,gPad->GetUymin(),zetamaxt,gPad->GetUymax());
   zetalinemax.SetLineColor(kGray+3);
   zetalinemax.SetLineStyle(3);
-  zetalinemax.SetLineWidth(1);
+  zetalinemax.SetLineWidth(2);
   zetalinemax.Draw();
   
   TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
@@ -618,11 +633,8 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   lFrame->SetLineColor(kBlack);
   lFrame->SetLineWidth(frameWidth);
   lFrame->Draw();
-  
-  gPad->RedrawAxis("g");
 
   hFrame[ipad]->Draw("axis same");
-
 
   C->cd(0);
 
@@ -633,6 +645,7 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   pad[ipad]->cd();
   
   hFrame[ipad]->GetYaxis()->SetRangeUser(0.001,0.599);
+  //hFrame[ipad]->GetYaxis()->SetRangeUser(-0.999,0.999);
   
   hFrame[ipad]->GetXaxis()->SetTitle("k_{p}^{0} #zeta");
   hFrame[ipad]->GetYaxis()->SetTitle("#beta_{r}");
@@ -640,6 +653,8 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   // Plot frame
   hFrame[ipad]->Draw("axis");
 
+  gPad->RedrawAxis("g");
+  
   for(Int_t i=0;i<NT;i++) {
     if(!gvrvszeta[i]) continue;
     
@@ -654,8 +669,6 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   lFrame->DrawBox(gPad->GetUxmin(), gPad->GetUymin(),
 		  gPad->GetUxmax(), gPad->GetUymax());
   
-  gPad->RedrawAxis("g");
-
   hFrame[ipad]->Draw("axis same");
 
 
@@ -683,6 +696,8 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   zeroline.SetLineWidth(frameWidth);
   zeroline.Draw();
 
+  gPad->RedrawAxis("g");
+
   for(Int_t i=0;i<NT;i++) {
     if(!gvzvszeta[i]) continue;
     
@@ -696,14 +711,10 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   lFrame->DrawBox(gPad->GetUxmin(), gPad->GetUymin(),
 		  gPad->GetUxmax(), gPad->GetUymax());
   
-  gPad->RedrawAxis("g");
-
   hFrame[ipad]->Draw("axis same");
-
 
   C->cd(0);
 
-  
   // C->cd();
   
   // Print to file -------------------------------------------
@@ -713,8 +724,8 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   
   // ---------------------------------------------------------
 
-
-  //  C->Clear();
+  // New plot over the same canvas
+  ipad = NPad-1;
   
   PPalette *pal2 = new PPalette("pal2");
   pal2->SetPalette(kColorPrintableOnGrey);
@@ -733,16 +744,16 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   pad[ipad]->cd();
   gPad->SetLogz(0);
 
-
   hFrame[ipad]->SetBins(10,hRbvszeta->GetXaxis()->GetXmin(),hRbvszeta->GetXaxis()->GetXmax());
   hFrame[ipad]->GetYaxis()->SetRangeUser(hRbvszeta->GetYaxis()->GetXmin(),hRbvszeta->GetYaxis()->GetXmax());
-
 
   hFrame[ipad]->GetXaxis()->SetTitle("k_{p}^{0} #zeta_{f}");
   hFrame[ipad]->GetYaxis()->SetTitle("k_{p} r_{i}");
   
   hFrame[ipad]->Draw("axis");
 
+  gPad->RedrawAxis("g");
+  
   TProfile *hRbvszetaProf = hRbvszeta->ProfileX("hRbvszetaProf",1,-1,"s");
 
   exPal2->Draw();
@@ -759,12 +770,13 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
 
   Int_t linecolor = kGray+3;
   DrawErrors(hRbvszetaProf,szetamin,szetamax,linecolor,linecolor);
-  
-  fOutName = Form("./%s/Plots/Tracks/%s/Tracks-hRbvszeta-%s-%s",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
-  PGlobals::imgconv(C,fOutName,opt);
+
+  hFrame[ipad]->Draw("axis same");
 
   // -----
   C->cd(0);
+  ipad--;
+  
   pad[ipad]->Draw();
   pad[ipad]->cd();
 
@@ -772,9 +784,14 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   hFrame[ipad]->GetYaxis()->SetRangeUser(hn0vszeta->GetYaxis()->GetXmin(),hn0vszeta->GetYaxis()->GetXmax());
 
   hFrame[ipad]->GetXaxis()->SetTitle("k_{p}^{0} #zeta_{f}");
-  hFrame[ipad]->GetYaxis()->SetTitle("n_{p}^{i}");
+  hFrame[ipad]->GetYaxis()->SetTitle("n_{i}/n_{0}");
 
+  hFrame[ipad]->GetYaxis()->LabelsOption("h");
+  hFrame[ipad]->GetYaxis()->SetDrawOption("L");
+  hFrame[ipad]->GetYaxis()->ChangeLabel(1,-1,0);//-1,-1,3,-1,"6th label");
   hFrame[ipad]->Draw("axis");
+
+  gPad->RedrawAxis("g");
 
   TProfile *hn0vszetaProf = hn0vszeta->ProfileX("hn0vszetaProf",1,-1,"s");
 
@@ -788,8 +805,47 @@ void PlotTracks( const TString &sim, Int_t index = 0, const TString &options="")
   //hn0vszetaProf->Draw("same");
 
   DrawErrors(hn0vszetaProf,szetamin,szetamax,linecolor,linecolor);
+
+  hFrame[ipad]->Draw("axis same");
+
   
+  // -----
+  C->cd(0);
+  ipad--;
   
+  pad[ipad]->Draw();
+  pad[ipad]->cd();
+
+  hFrame[ipad]->SetBins(10,hn0vszeta->GetXaxis()->GetXmin(),hn0vszeta->GetXaxis()->GetXmax());
+  hFrame[ipad]->GetYaxis()->SetRangeUser(0.001,0.0399);
+  
+  hFrame[ipad]->GetXaxis()->SetTitle("k_{p}^{0} #zeta_{f}");
+  hFrame[ipad]->GetYaxis()->SetTitle("k_{p}^{0} #varepsilon_{n}");
+
+  hFrame[ipad]->Draw("axis");
+
+  //
+  TString filename = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s_%i.root",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
+  TFile *sFile = new TFile(filename,"READ");
+
+  cout << Form("\n Reading bunch file : %s \n",filename.Data()) << endl;
+  TGraph *gEmitx = NULL;
+  TGraph *gEmity = NULL;
+  if(sFile) {
+    gEmitx = (TGraph*) sFile->Get("gEmitx");
+    gEmity = (TGraph*) sFile->Get("gEmity");
+  } else {
+    cout << Form("  [no file]") << endl;
+  }
+
+  gPad->RedrawAxis("g");
+
+  gEmity->Draw("LP");
+  gEmitx->Draw("LP");
+
+  hFrame[ipad]->Draw("axis same");
+
+
   fOutName = Form("./%s/Plots/Tracks/%s/Tracks-hn0vszeta-%s-%s",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
   PGlobals::imgconv(C,fOutName,opt);
   

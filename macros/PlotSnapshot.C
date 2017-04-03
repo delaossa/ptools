@@ -607,7 +607,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hETotal2D->GetXaxis()->SetRangeUser(xMin,xMax);
   }
 
-
+  
   // ----- z Zoom ---------- Plasma palette -----------
   // Set the range of the plasma charge density histogram for maximum constrast 
   // using a dynamic palette that adjusts the base value to a certain color.
@@ -664,7 +664,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	Min[i] = 1.01E-3 * Base;
 
     }
-    
+
     if(i==2) {
       Min[i] = 1.01E-3 * Base;
       //   //Min[i] = 5.01E-3 * Base;
@@ -678,36 +678,49 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(pData->GetDenMax(i)>0)
       Max[i] = pData->GetDenMax(i);
     else if(pData->GetDenMax(i)==0) {
-      delete hDen2D[i];
-      hDen2D[i] = NULL;
+      // here there was a problem when using <= instead of ==
+      // the reason is that denMax parameters are negative (-999.) by default
+      if(hDen2D[i]) {
+	delete hDen2D[i];
+	hDen2D[i] = NULL;
+      }
 
-      delete hDen1D[i];
-      hDen1D[i] = NULL;
+      if(hDen1D[i]) {
+	delete hDen1D[i];
+	hDen1D[i] = NULL;
+      }
 
-      delete hCur1D[i];
-      hCur1D[i] = NULL;
-
-    }
-
-    if( hDen2D[i]->GetMaximum() < pData->GetDenMin(i)) {
-      delete hDen2D[i];
-      hDen2D[i] = NULL;
-
-      delete hDen1D[i];
-      hDen1D[i] = NULL;
-
-      delete hCur1D[i];
-      hCur1D[i] = NULL;
+      if(hCur1D[i]) {
+	delete hCur1D[i];
+	hCur1D[i] = NULL;
+      }
 
     }
-    
+
+    if(hDen2D[i]->GetMaximum() < pData->GetDenMin(i)) {
+      if(hDen2D[i]) {
+	delete hDen2D[i];
+	hDen2D[i] = NULL;
+      }
+
+      if(hDen1D[i]) {
+	delete hDen1D[i];
+	hDen1D[i] = NULL;
+      }
+
+      if(hCur1D[i]) {
+	delete hCur1D[i];
+	hCur1D[i] = NULL;
+      }
+    }
+
     if(pData->GetDenMin(i)>0) {
       Min[i] = pData->GetDenMin(i);
       if(pData->GetDenMax(i)==0) {
 	if(opt.Contains("logz") && (Max[i]<10*Min[i])) Max[i] = 1.01E1 * Min[i];
       }
     }
-      
+    
     if(pData->GetDenLoc(i)>0) {
       localden = pData->GetDenLoc(i);
       baseden = localden;
@@ -716,12 +729,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,Min[i],Max[i]) << endl;
     }
     
-    
     if(hDen2D[i])
       hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
 
   }
-  
+
   // Dynamic plasma palette
   PPalette * plasmaPalette = (PPalette*) gROOT->FindObject("plasma");
   if(!plasmaPalette) {
@@ -1113,7 +1125,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   // Plotting
   // ------------------------------------------------------------
-  
+ 
   // Canvas setup
   Int_t NPad = BitCounter(mask);
   if(NPad==0) NPad = 1;
@@ -1146,6 +1158,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   else
     PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,pfactor,mMargin);
 
+
   // Define the frames for plotting
   Int_t fonttype = 43;
   Int_t fontsize = 38;
@@ -1176,18 +1189,21 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(opt.Contains("trans"))
       pad[i]->SetFillStyle(4000);
     pad[i]->SetFrameFillStyle(4000);
-
+    
     sprintf(name,"hFrame_%i",i);
     hFrame[i] = (TH2F*) gROOT->FindObject(name);
     if(hFrame[i]) delete hFrame[i];
-    
+
     if(hDen2D[0]) 
       hFrame[i] = (TH2F*) hDen2D[0]->Clone(name);
-    else if(hDen2D[1])
-      hFrame[i] = (TH2F*) hDen2D[1]->Clone(name);
+    else if (Nspecies>1){
+      if(hDen2D[1])
+	hFrame[i] = (TH2F*) hDen2D[1]->Clone(name);
+    }
     else if(hA2D)
       hFrame[i] = (TH2F*) hA2D->Clone(name);
-         
+    
+    // hFrame[i] = (TH2F*) h2D->Clone(name);
     hFrame[i]->Reset();
 
     Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
@@ -1300,7 +1316,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
   // Data about Ez
   //  cout << Form("Ez max (driver) = %.2f",EzExtr[0]) << endl;
-
+  
   // Get position of the injected beam:
   Float_t zInjBeam = -999;
   Float_t zrmsInjBeam = -999;

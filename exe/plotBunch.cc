@@ -1381,6 +1381,9 @@ int main(int argc,char *argv[]) {
       Float_t factor =  (pData->GetBeamRmsX()/skindepth) * TMath::Sqrt(2.0*TMath::Pi());
       Charge *= factor; 
     }
+
+    Float_t dz = (x1Max-x1Min)/x1Nbin;
+    hX1->Scale( (Q0/(dz*skindepth)) * PConst::c_light / PConst::I0);
     
     if(opt.Contains("units") && n0) {
       Charge *= Q0;
@@ -1419,9 +1422,10 @@ int main(int argc,char *argv[]) {
       hP1->GetYaxis()->SetTitle(Form("p_{z} [%s/c]",eneSUnit.c_str()));
 
       hX1->SetBins(x1Nbin,x1Min,x1Max);
-      Double_t dt = ((x1Max - x1Min)/x1Nbin) * spaUnit / PConst::c_light;
-      hX1->Scale(Q0 / dt);
+      // Double_t dt = ((x1Max - x1Min)/x1Nbin) * spaUnit / PConst::c_light;
+      // hX1->Scale(Q0 / dt);
 
+      hX1->Scale(PConst::I0);
       if(opt.Contains("best")) {
 	PUnits::BestUnit bcurSUnit(hX1->GetMaximum(),"Current");
 	bcurSUnit.GetBestUnits(curUnit,curSUnit);
@@ -1623,8 +1627,8 @@ int main(int argc,char *argv[]) {
       emityavg /= norm;
     }
     
-    cout << "\n  Summary _______________________________________________________ " << endl;
     if(opt.Contains("units")) {
+      cout << "\n  Summary _______________________________________________________ " << endl;
       cout << Form("  Integrated charge (RAW) of specie %3i = %8f %s",index,Charge,chargeSUnit.c_str()) << endl;
       cout << Form("  Peak current = %6.3f %s",hX1->GetMaximum(),curSUnit.c_str()) << endl;
       cout << Form("  Total energy = %6.3f %s, rms = %3.1f %s",pzmean,eneSUnit.c_str(),(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str()) << endl;
