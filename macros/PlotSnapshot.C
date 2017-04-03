@@ -817,12 +817,25 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     else
       Emax[i] = -Emin[i];
 
-    if(i!=0) {
+    if(i==0) {
+      if(pData->GetE1Min() != 999.) {
+        Emin[0] = pData->GetE1Min();
+	if(opt.Contains("units"))
+	  Emin[0] *= E0 / eUnit; 
+      }
+
+      if(pData->GetE1Max() != -999.) {
+        Emax[0] = pData->GetE1Max();
+	if(opt.Contains("units"))
+	  Emax[0] *= E0 / eUnit; 
+      }
+      
+    } else {
       Emin[i] = Emin[0];
       Emax[i] = Emax[0];
     }
+    
     hE2D[i]->GetZaxis()->SetRangeUser(Emin[i],Emax[i]); 
-   
   }
 
   Float_t ETmin = 0.0001;  

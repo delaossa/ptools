@@ -251,6 +251,20 @@ public:
       return -999.0;
   }
 
+  Double_t  GetE1Min()  {
+    return pParam.E1Min;
+  }
+  Double_t  GetE1Max()  {
+    return pParam.E1Max;
+  }
+
+  Double_t  GetEtMin()  {
+    return pParam.EtMin;
+  }
+  Double_t  GetEtMax()  {
+    return pParam.EtMax;
+  }
+
   Double_t  GetDenLoc(Int_t i = 0)  {
     if(i==0)
       return pParam.denLoc;
