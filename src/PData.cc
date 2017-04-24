@@ -655,10 +655,11 @@ void PData::PrintData(Option_t *option) {
   }
   cout << endl;
 
-  cout << "Data for laser envelope: " << endl;
-  if(sA->at(0))
-    cout << " - " << sA->at(0)->c_str() << endl;
-
+  if(sA) {
+    cout << "Data for laser envelope: " << endl;
+    if(sA->at(0))
+      cout << " - " << sA->at(0)->c_str() << endl;
+  }
   cout << endl;
   
 }

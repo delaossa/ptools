@@ -814,7 +814,8 @@ Double_t PDataHiP::Shift(TString option) {
   Double_t shiftx1 = 0;
   if(opt.Contains("center")) {
     Double_t kp = GetPlasmaK();
-    shiftx1 += GetXMin(0) + GetBeamStart()*kp;   // Centers on the beam
+    //    shiftx1 += GetXMin(0) + GetBeamStart()*kp;   // Centers on the beam
+    shiftx1 += GetBeamStart()*kp;   // Centers on the beam
   }
   
   return shiftx1;
@@ -827,7 +828,8 @@ Double_t PDataHiP::ShiftT(TString option) {
   Double_t shiftt = 0;
   Double_t kp = GetPlasmaK();
   if(opt.Contains("center")) {
-    shiftt += GetXMin(0) + GetBeamStart()*kp - GetPlasmaStart()*kp;
+    //    shiftt += GetXMin(0) + GetBeamStart()*kp - GetPlasmaStart()*kp;
+    shiftt += GetBeamStart()*kp - GetPlasmaStart()*kp;
   }
   
   return shiftt;

@@ -743,18 +743,21 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   Float_t basePos = 0.5;
   Float_t localPos = basePos;
+  Float_t onePos = basePos;
   if( hDen2D[0] ) {
     const Int_t NRGBs = 3;
-    const Int_t NCont = 64;
+    const Int_t NCont = 255;
     if(Max[0]!=Min[0]) {
       if(opt.Contains("logz")) {
 	Float_t a = 1.0/(TMath::Log10(Max[0])-TMath::Log10(Min[0]));
 	Float_t b = TMath::Log10(Min[0]);
 	basePos = a*(TMath::Log10(baseden) - b);
 	localPos = a*(TMath::Log10(localden) - b);
+	onePos = a*(TMath::Log10(1.0) - b);
       } else {
 	basePos = (1.0/(Max[0]-Min[0]))*(baseden - Min[0]);
 	localPos = (1.0/(Max[0]-Min[0]))*(localden - Min[0]);
+	onePos = (1.0/(Max[0]-Min[0]))*(1.0 - Min[0]);
       }
       // cout << Form(" Local density = %.2f    Local position  = %f ",localden,localPos) << endl;
     }
@@ -768,7 +771,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   }
   
 	       
-  // Redefines the ground color of the electron palette to match background plasmas.
+  // Redefines the ground color of the electron palette to match background plasma.
   PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
   if(!beamPalette) {
     beamPalette = new PPalette("beam");
@@ -776,7 +779,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   }
   
   if(opt.Contains("mbeam") && hDen2D[0]) {
-    Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
+    //  Int_t localcolorindex =  TMath::Nint(localPos * plasmaPalette->GetNColors());
+    Int_t localcolorindex =  TMath::Nint(onePos * plasmaPalette->GetNColors());
     Int_t rootcolorindex = plasmaPalette->GetColor(localcolorindex);
     TColor *localcolor = gROOT->GetColor(rootcolorindex);
     Float_t r,g,b;
@@ -785,7 +789,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     cout << Form(" N colors = %i   Local position = %f  Color index  = %i  RGB = (%.2f,%.2f,%.2f)", plasmaPalette->GetNColors(), localPos, rootcolorindex, r, g, b) << endl;
 
     const Int_t elecNRGBs = 5;
-    const Int_t elecNCont = 64;
+    const Int_t elecNCont = 255;
     Double_t elecStops[elecNRGBs] = { 0.00, 0.40, 0.50, 0.60, 1.00};
     Double_t elecRed[elecNRGBs] =   { r, 0.22, 0.39, 0.70, 1.00};
     Double_t elecGreen[elecNRGBs] = { g, 0.34, 0.05, 0.20, 1.00};
@@ -858,6 +862,44 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Fmin = Emin[0];
     Fmax = Emax[0];
     hFocus2D->GetZaxis()->SetRangeUser(Fmin,Fmax);
+  }
+  
+  // calculate \partial_x W_x
+  TH2F *hdW2D = NULL;
+  TH1F *hdW1D = NULL;
+
+  Float_t kmax = -999.;
+  Float_t kmin = 999.;
+  if( (mask & 0x200) && hFocus2D) {
+
+    hdW2D = (TH2F*) hFocus2D->Clone("hdW2D");
+    hdW2D->Reset();
+    
+    Int_t NBinsZ = hFocus2D->GetXaxis()->GetNbins();
+    Int_t NBinsX = hFocus2D->GetYaxis()->GetNbins();
+    Double_t dx = hFocus2D->GetYaxis()->GetBinWidth(1);
+    for(Int_t i=1; i<=NBinsZ; i++) {
+      for(Int_t j=1; j<=NBinsX; j++) {
+	
+	Float_t der = 0.;
+	if(j>2 && j<NBinsX-2) {
+	  der =  4.0 / 3.0 * (hFocus2D->GetBinContent(i,j+1) - hFocus2D->GetBinContent(i,j-1)) / (2.0 * dx)
+	    - 1.0 / 3.0 * (hFocus2D->GetBinContent(i,j+2) - hFocus2D->GetBinContent(i,j-2)) / (4.0 * dx) ;	  
+	}
+
+	// cout << Form(" Bin (%i,%i) = %f",i,j,der) << endl;
+	hdW2D->SetBinContent(i,j,der);
+
+	if(der>kmax) kmax = der;
+	if(der<kmin) kmin = der;
+      }
+    }
+
+    //    hdW2D->ResetStats();
+    Int_t firstBin = NBinsX/2 - 1;
+    Int_t lastBin = NBinsX/2 + 1;
+    hdW1D = (TH1F*) hdW2D->ProjectionX(hName,firstBin,lastBin);
+    hdW1D->Scale(1.0/(lastBin-firstBin+1));
   }
   
   // CROSSINGS
@@ -1153,7 +1195,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   C->SetFillStyle(4000);
 
   UInt_t lineColor = kOrange+10;
-  UInt_t lineColor2 =  TColor::GetColor(196,30,78);
+  //  UInt_t lineColor2 =  TColor::GetColor(196,30,78);
+  //  UInt_t lineColor2 = kGray+2;
+  UInt_t lineColor2 = lineColor;
   
   // Setup Pad layout:
   TPad **pad = new TPad*[NPad];
@@ -1628,6 +1672,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     } else if (Nspecies==3) {
   
+      // Injected electrons ?
+      if(hDen2D[2] && noIndex!=2) {
+	exBeam2->Draw();
+	//exBeam->Draw();
+	hDen2D[2]->Draw(drawopt);
+      }
+
       // Plasma
       if(hDen2D[0] && noIndex!=0) {
 	exPlasma->Draw();
@@ -1639,13 +1690,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	exBeam->Draw();
 	//exPlasma->Draw();
 	hDen2D[1]->Draw(drawopt);
-      }
-
-      // Injected electrons ?
-      if(hDen2D[2] && noIndex!=2) {
-	exBeam2->Draw();
-	//exBeam->Draw();
-	hDen2D[2]->Draw(drawopt);
       }
 
     } else if (Nspecies==4) {
@@ -1994,7 +2038,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	hE1Dclone->SetBinContent(j+1,(hE1Dclone->GetBinContent(j+1)-Emin[0])*slope + y1);
       }
       hE1Dclone->SetLineStyle(1);
-      hE1Dclone->SetLineWidth(3);
+      hE1Dclone->SetLineWidth(2);
       //hE1Dclone->SetLineWidth(2);
 
       hE1Dclone->SetLineColor(lineColor2);
@@ -2044,18 +2088,22 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	// Fit the 
 	Float_t curInjmin =  0.00;
 	Float_t curInjmax =  hCur1D[2]->GetMaximum();
-	Float_t y1 = yMin + yRange/80.;
-	Float_t y2 = y1 + yRange/2.8 - 2*yRange/80.;
-	Float_t slope = (y2-y1)/(curInjmax-curInjmin);
-  
-	TLine *lineCurzero = new TLine(xMin,(0.0-curInjmin)*slope + y1,xMax,(0.0-curInjmin)*slope + y1);
-	lineCurzero->SetLineColor(kGray+1);
-	lineCurzero->SetLineStyle(2);
-	lineCurzero->SetLineWidth(1);
-	lineCurzero->Draw();
+	
+	// Float_t y1 = yMin + yRange/80.;
+	// Float_t y2 = y1 + yRange/2.8 - 2*yRange/80.;
+	// Float_t slope = (y2-y1)/(curInjmax-curInjmin);
+	Float_t slope = (yaxismax - yaxismin)/(curInjmax - curInjmin);
+   
+	// TLine *lineCurzero = new TLine(xMin,(0.0-curInjmin)*slope + y1,xMax,(0.0-curInjmin)*slope + y1);
+	// lineCurzero->SetLineColor(kGray+1);
+	// lineCurzero->SetLineStyle(2);
+	// lineCurzero->SetLineWidth(1);
+	// lineCurzero->Draw();
        
 	for(Int_t j=0;j<hCur1D[2]->GetNbinsX();j++) {
-	  hCur1D[2]->SetBinContent(j+1,(hCur1D[2]->GetBinContent(j+1)-curInjmin)*slope + y1);
+	  Float_t content = hCur1D[2]->GetBinContent(j+1);
+	  
+	  hCur1D[2]->SetBinContent(j+1,(content - curInjmin) * slope + yaxismin);
 	}
 	hCur1D[2]->SetLineStyle(1);
 	hCur1D[2]->SetLineWidth(2);
@@ -3475,6 +3523,122 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     C->cd(0);
   }
 
+
+  if(mask & 0x200) {
+    pad[ip]->Draw();
+    pad[ip]->cd(); // <---------------------------------------------------------- 9th panel
+    // if(opt.Contains("logz")) {
+    //   pad[ip]->SetLogz(1);
+    // } else {
+    //   pad[ip]->SetLogz(0);
+    // }
+
+    cout << Form(" kmax = %f  kmin = %f",kmax,kmin) << endl;
+    
+    // if(kmax > TMath::Abs(kmin))
+    //   kmin = -kmax;
+    // else
+    //   kmax = -kmin;
+
+    kmax = 0.8;
+    kmin = - kmax;
+        
+    hdW2D->GetZaxis()->SetRangeUser(kmin,kmax); 
+    hdW2D->GetZaxis()->SetTitle("K_{x} [E_{0} k_{p}]");
+        
+    hFrame[ip]->Draw("axis");
+    
+    Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[ip]->GetAbsWNDC();
+    Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[ip]->GetAbsHNDC();
+    //hdW2D->GetZaxis()->SetNdivisions(503);
+    hdW2D->GetZaxis()->SetTitleFont(fonttype);
+    hdW2D->GetZaxis()->SetTitleOffset(tzoffset);
+    hdW2D->GetZaxis()->SetTitleSize(tzsize);
+    hdW2D->GetZaxis()->SetLabelFont(fonttype);
+    hdW2D->GetZaxis()->SetLabelSize(lzsize);
+    hdW2D->GetZaxis()->SetLabelOffset(lyoffset);
+    hdW2D->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
+
+  
+    exField->Draw();
+    hdW2D->Draw(drawopt + "0");
+
+    if(hdW1D) {
+      Float_t rightmin = kmin;
+      Float_t rightmax = kmax;
+      Float_t slope = (yMax-yMin)/(rightmax-rightmin);
+      
+      for(Int_t j=0;j<hdW1D->GetNbinsX();j++) {
+	hdW1D->SetBinContent(j+1,slope*(hdW1D->GetBinContent(j+1)-rightmin)+yMin);
+      }
+    }
+    
+    // if(opt.Contains("off")) {
+    //   TLine *lineOff = new TLine(xMin,xoff,xMax,xoff);
+    //   lineOff->SetLineColor(lineColor);
+    //   lineOff->SetLineStyle(2);
+    //   lineOff->Draw();
+    // }
+    
+    if(opt.Contains("zero")) {
+      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      lineZero->SetLineColor(lineColor);
+      lineZero->SetLineStyle(2);
+      lineZero->Draw();
+    }
+    
+    if(opt.Contains("sline")) {
+      if(zStartPlasma>xMin && zStartPlasma<xMax)
+	lineStartPlasma->Draw();
+      if(zStartNeutral>xMin && zStartNeutral<xMax)
+	lineStartNeutral->Draw();
+      if(zEndNeutral>xMin && zEndNeutral<xMax)
+	lineEndNeutral->Draw();
+    }
+
+    if(hdW1D) {
+      hdW1D->SetLineStyle(1);
+      hdW1D->SetLineWidth(2);
+      hdW1D->SetLineColor(lineColor);
+      hdW1D->Draw("same L");
+    }
+    
+    pad[ip]->Update();
+  
+    y1 = pad[ip]->GetBottomMargin();
+    y2 = 1 - pad[ip]->GetTopMargin();
+    x1 = pad[ip]->GetLeftMargin();
+    x2 = 1 - pad[ip]->GetRightMargin();
+  
+    palette = (TPaletteAxis*) hdW2D->GetListOfFunctions()->FindObject("palette");  
+    if(palette) {
+      palette->SetY2NDC(y2 - 0.0);
+      palette->SetY1NDC(y1 + 0.0);
+      palette->SetX1NDC(x2 + 0.01);
+      palette->SetX2NDC(x2 + 0.03);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(1);
+
+      TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
+      pFrame->SetFillStyle(0);
+      pFrame->SetLineColor(kBlack);
+      pFrame->SetShadowColor(0);
+      pFrame->Draw();
+
+    }
+
+    TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+			    gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(PGlobals::frameColor);
+    lFrame->SetLineWidth(PGlobals::frameWidth);
+    lFrame->Draw();
+
+    pad[ip]->RedrawAxis(); 
+
+    ip--;
+    C->cd(0);
+  }
 
   // Writing the figure
   TString fOutName = Form("./%s/Plots/Snapshots/Snapshot%s-%s_%i",pData->GetPath().c_str(),imask.c_str(),pData->GetName(),timestep);

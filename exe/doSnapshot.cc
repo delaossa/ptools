@@ -182,6 +182,17 @@ int main(int argc,char *argv[]) {
     if(!pData->IsInit()) continue;
     if(time==iStart) pData->PrintData();
 
+    Bool_t ok = false;
+    Int_t Nspecies = pData->NSpecies();
+    for(Int_t i=0;i<Nspecies;i++) {
+      if(!pData->GetChargeFileName(i)) 
+	continue;
+
+      ok = true;
+    }
+
+    if(!ok) continue;
+    
     // Time in OU
     Double_t Time = pData->GetRealTime();
     // cout << Form(" Real time = %.2f  ",Time);
@@ -284,7 +295,6 @@ int main(int argc,char *argv[]) {
     Float_t maxCur = -999.0;
     
     // Get charge density histos
-    Int_t Nspecies = pData->NSpecies();
     TH2F **hDen2D = new TH2F*[Nspecies];
     // Get charge density on-axis
     TH1F **hDen1D = new TH1F*[Nspecies];
