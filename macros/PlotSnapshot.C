@@ -2162,7 +2162,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hE2D[0]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
     
     exField->Draw();
-    hE2D[0]->Draw(drawopt);
+    hE2D[0]->Draw(drawopt + "0");
 
     if(opt.Contains("1dline")) {
       lineYzero->Draw();
