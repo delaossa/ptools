@@ -38,12 +38,14 @@ namespace PGlobals {
   static const Int_t energyLine = kOrange+7;
   static const Int_t energyFill = energyLine;
   // static const Int_t frameColor = kGray+3; 
-  // static const Int_t fontColor = kGray+3; 
+  // static const Int_t fontColor = kGray+3;
+
+  
   static const Int_t frameColor = kBlack; 
   static const Int_t fontColor = kBlack; 
   static const Int_t fontType = 43; 
-  static const Int_t titleSize = 24; 
-  static const Int_t labelSize = 22; 
+  static const Int_t titleSize = 36; 
+  static const Int_t labelSize = 32; 
   static const Int_t frameWidth = 2; 
 
 

@@ -35,7 +35,7 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   TString opt = options;
  
   // Palettes!
-  gROOT->Macro("PPalettes.C");
+  // gROOT->Macro("PPalettes.C");
 
   if(opt.Contains("grid")) {
     gStyle->SetPadGridX(1);
@@ -44,19 +44,19 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   gStyle->SetTitleAlign(22);
   gStyle->SetPadRightMargin(0.17);   // Margin for palettes in 2D histos
   //gStyle->SetTitleOffset(0.9,"z");
-  gStyle->SetLabelFont(42,"xyz");
-  gStyle->SetTitleFont(42,"xyz");
+  gStyle->SetLabelFont(43,"xyz");
+  gStyle->SetTitleFont(43,"xyz");
+
+  gStyle->SetLabelSize(24, "xyz");
+  gStyle->SetTitleSize(36, "xyz");
+
+  gStyle->SetLabelOffset(0.01, "xyz");
+  gStyle->SetTitleOffset(1.6,"xyz");
 
   // Load PData
   PData *pData = PData::Get(sim.Data());
   pData->LoadFileNames(time);
   if(!pData->IsInit()) return;
-
-  Bool_t CYL = kFALSE;
-  if(sim.Contains("cyl")) CYL = kTRUE; 
-    
-  Bool_t ThreeD = kFALSE;
-  if(sim.Contains("3D")) ThreeD = kTRUE; 
 
   // Some plasma constants
   Double_t n0 = pData->GetPlasmaDensity();
@@ -93,7 +93,7 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   
 
   // Pointer to data TTree
-  TTree *tree = pData->GetTreeRaw(pData->GetRawFileName(index)->c_str(),opt);
+  TTree *tree = pData->GetRawTree(pData->GetRawFileName(index)->c_str(),opt);
   
   // Get phasespace histos
   TH2F *hPzvsZ = NULL;
@@ -133,9 +133,10 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   // Info for the plots
   char ctext[128];
   TPaveText *textInfo = new TPaveText(0.55,0.55,0.82,0.8,"NDC");
-  PGlobals::SetPaveTextStyle(textInfo,32); 
+  PGlobals::SetPaveTextStyle(textInfo,33); 
   textInfo->SetTextColor(kGray+2);
-  textInfo->SetTextFont(42);
+  textInfo->SetTextFont(43);
+  textInfo->SetTextSize(18);
   sprintf(ctext,"Integral = %5.2f",integral);
   textInfo->AddText(ctext);
   sprintf(ctext,"#LT#zeta#GT = %5.2f k_{p}^{-1}",zMean);
@@ -174,21 +175,23 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
     ifile = new TFile(filename,"RECREATE");
   }  
   
-  const Int_t Nvar = 8;
-  Float_t var[Nvar];  
-  char varname[Nvar][4] = {{"ene"},{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+  UInt_t Nvar = 7;
+  if(!pData->Is3D()) Nvar = 6;
+
+  Float_t *var = new Float_t[Nvar];  
+  char varname[7][4] = {{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
   
   TTree *treeNew = new TTree("RawTreeNew","");
-  for(Int_t i=0;i<Nvar;i++) {
+  for(UInt_t i=0;i<Nvar;i++) {
     tree->SetBranchAddress(varname[i],&var[i]);
-
+    
 
     char varinfo[6];
     sprintf(varinfo,"%s/F",varname[i]);
     treeNew->Branch(varname[i],&var[i],varinfo);
   } 
-
-
+  
+  
   // Main loop for randomizing and converting
   filename = Form("./%s/Plots/RawConvert/RawConvert-%s",sim.Data(),sim.Data());
   filename += Form("_%i.raw",time);
@@ -196,27 +199,22 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   fData.open(filename.Data(),ios::out);
 
   if(!opt.Contains("astra")) {
-    for(Int_t i=0;i<Nvar;i++) {
+    for(UInt_t i=0;i<Nvar;i++) {
       fData << Form("%10s ",varname[i]); 
     }
     fData << endl << Form(" -------------------------------------------------------------------------------------- ") << endl;
   }
 
   // Converting charge. Base volume element is needed:
-  Double_t dx1 = 0.05;
-  Double_t dx2 = 0.06;
-  Double_t dx3 = 0.06;
-  
-  if(sim.Contains("DR")) {
-    dx1 = 0.04;
-    dx2 = 0.04;
-    dx3 = 0.04;
-  } else if(sim.Contains("pitz")) {
-    dx1 = 0.1;
-    dx2 = 0.04;
-    dx3 = 0.04;    
-  }
-  
+  Double_t dx1, dx2, dx3;
+    
+  dx1 = pData->GetDX(0);
+  dx2 = pData->GetDX(1);    
+  if(pData->Is3D())
+    dx3 = pData->GetDX(2);
+  else
+    dx3 = 1.0;
+
   Double_t dV = (dx1*skindepth)*(dx2*skindepth)*(dx3*skindepth);
   Double_t Q0 = n0 * dV;
   Double_t QTotal = 0.00;
@@ -227,43 +225,43 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   for(Int_t i=0;i<nentries;i++) {
     tree->GetEntry(i);
 
-    if( (i % 100000) == 0 )
+    if( ((i % 100000) == 0) && (i!=0)  )
       cout << i << " macroparticles processed " << endl;
 
-    QTotal += var[4] *  Q0 * PConst::ElectronCharge/PUnits::picocoulomb;
+    QTotal += var[3] *  Q0 * PConst::ElectronCharge/PUnits::picocoulomb;
 
     // Random number between 0. and "q".
     Float_t rw = ran->Uniform(maxW/factor);
     
-    //    cout << Form(" wi = %f    rw = %f   maxW = %f ",var[4],rw,maxW) << endl;
+    //    cout << Form(" wi = %f    rw = %f   maxW = %f ",var[3],rw,maxW) << endl;
 
-    if(rw>fabs(var[4])) continue;
+    if(rw>fabs(var[3])) continue;
     
     //    cout << "eeooo" << endl;
 
-    var[4] = -maxW/factor;
+    var[3] = -maxW/factor;
 
-    QTotalNew += var[4] *  Q0 * PConst::ElectronCharge/PUnits::picocoulomb;
+    QTotalNew += var[3] *  Q0 * PConst::ElectronCharge/PUnits::picocoulomb;
     
     var[5] -= shiftz;
     treeNew->Fill();
     
     // Damping to ASCII file:
     if(!opt.Contains("astra")) {
-      for(Int_t j=0;j<Nvar;j++) {
+      for(UInt_t j=0;j<Nvar;j++) {
 	fData << Form("%10.4f ",var[j]);
       }
       fData << endl;
     } else {
       fData << Form("%12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f ",
-		    var[7] * skindepth / PUnits::um,
 		    var[6] * skindepth / PUnits::um,
-		    (var[5]-zMean) * skindepth / PUnits::um,
-		    var[3] * pData->GetBeamMass() / PUnits::MeV,
+		    var[5] * skindepth / PUnits::um,
+		    (var[4]-zMean) * skindepth / PUnits::um,
 		    var[2] * pData->GetBeamMass() / PUnits::MeV,
 		    var[1] * pData->GetBeamMass() / PUnits::MeV,
+		    var[0] * pData->GetBeamMass() / PUnits::MeV,
 		    -999.0,
-		    var[4] * Q0 * PConst::ElectronCharge/PUnits::femptocoulomb,
+		    var[3] * Q0 * PConst::ElectronCharge/PUnits::femptocoulomb,
 		    0.0) << endl;
     }
   }
@@ -301,9 +299,10 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   
   
   TPaveText *textInfoNew = new TPaveText(0.55,0.55,0.82,0.8,"NDC");
-  PGlobals::SetPaveTextStyle(textInfoNew,32); 
+  PGlobals::SetPaveTextStyle(textInfoNew,33); 
   textInfoNew->SetTextColor(kGray+2);
-  textInfoNew->SetTextFont(42);
+  textInfoNew->SetTextFont(43);
+  textInfoNew->SetTextSize(18);
   sprintf(ctext,"Integral = %5.2f",integral);
   textInfoNew->AddText(ctext);
   sprintf(ctext,"#LT#zeta#GT = %5.2f k_{p}^{-1}",zMean);
@@ -319,16 +318,12 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   // -----------------------------------------------
     
   // Canvas setup
-  TCanvas *C;
-  if(opt.Contains("hres") && !opt.Contains("pdf")) // high resolution for plain graphics output.
-    C = new TCanvas("C","Phasespaces",1000,750);
-  else
-    C = new TCanvas("C","Phasespaces",800,1000);
-
-    
+  TCanvas *C = new TCanvas("C","Phasespaces",800,1200);
+      
   // Text objects
   TPaveText *textTime = new TPaveText(0.55,0.85,0.82,0.9,"NDC");
-  PGlobals::SetPaveTextStyle(textTime,32); 
+  PGlobals::SetPaveTextStyle(textTime,32);
+  textTime->SetTextSize(18);
   if(opt.Contains("units") && pData->GetPlasmaDensity()) 
     sprintf(ctext,"z = %5.1f mm", Time * skindepth / PUnits::mm);
   else
@@ -338,12 +333,14 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
 
   TPaveText *textLabel = new TPaveText(0.20,0.20,0.40,0.30,"NDC");
   PGlobals::SetPaveTextStyle(textLabel,32); 
+  textLabel->SetTextSize(18);
   sprintf(ctext,"Original distribution.");
   textLabel->AddText(ctext);
-
+  
 
   TPaveText *textLabelNew = new TPaveText(0.20,0.20,0.40,0.30,"NDC");
   PGlobals::SetPaveTextStyle(textLabelNew,32); 
+  textLabelNew->SetTextSize(18);
   textLabelNew->SetTextColor(kRed);
   sprintf(ctext,"New distribution.");
   textLabelNew->AddText(ctext);
@@ -378,11 +375,15 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
 
 
   // Set palette:
-  PPalette * pPalette = (PPalette*) gROOT->FindObject("electron");
+  PPalette * pPalette = (PPalette*) gROOT->FindObject("beam");
+  if(!pPalette) {
+    pPalette = new PPalette("beam");
+    pPalette->SetPalette("elec");
+  }
   pPalette->cd();
-
+  
   hPzvsZ->Draw("colz");
-
+  
   gPad->Update();
   
   textTime->Draw();
@@ -411,7 +412,10 @@ void PlotRawConvert( const TString &sim, Int_t time, Int_t index = 0, Float_t fa
   // ---------------------------------------------------------
 
 
-  treeNew->Write("RawTreeNew",TObject::kOverwrite);  
+  treeNew->Write("RawTreeNew",TObject::kOverwrite);
+
+  
+  
   ifile->Close();
 
 }

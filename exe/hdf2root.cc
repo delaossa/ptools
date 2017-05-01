@@ -151,8 +151,8 @@ void GroupToTree(Group *group, TTree *dataTree, TTree *attrTree, Bool_t ver, Boo
     dataSets.push_back(new DataSet(group->openDataSet(dataNames[iN].Data()))) ;
     DataSpace dataSpace = dataSets[iN]->getSpace();
 
-    const DataType type = dataSets[iN]->getDataType();
-    char rType = map_h5type_to_root(type);
+    DataType type = dataSets[iN]->getDataType();
+    char rType = map_h5type_to_root(&type);
     if(ver)
       cout << Form(" , type = %c",rType);
     if(rType==0) {
@@ -273,8 +273,8 @@ void GroupToTree(Group *group, TTree *dataTree, TTree *attrTree, Bool_t ver, Boo
       cout << Form(" Attibute %2i : %18s",iattN,attrNames[iattN].Data());
     DataSpace attrSpace = attr[iattN]->getSpace();
 
-    const DataType type = attr[iattN]->getDataType();
-    char rType = map_h5type_to_root(type);
+    DataType type = attr[iattN]->getDataType();
+    char rType = map_h5type_to_root(&type);
     char rClass = map_h5class_to_root(type.getClass());
     if(rType==0) {
       if(rClass!=0) {
@@ -354,8 +354,8 @@ void GroupToTree(Group *group, TTree *dataTree, TTree *attrTree, Bool_t ver, Boo
 	cout << Form(" Attibute %2i : %18s",iattN,attrNames[iattN].Data());
       DataSpace attrSpace = attr[iattN]->getSpace();
       
-      const DataType type = attr[iattN]->getDataType();
-      char rType = map_h5type_to_root(type);
+      DataType type = attr[iattN]->getDataType();
+      char rType = map_h5type_to_root(&type);
       char rClass = map_h5class_to_root(type.getClass());
       if(rType==0) {
 	if(rClass!=0) {

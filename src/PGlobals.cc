@@ -36,15 +36,15 @@ void PGlobals::SetPlasmaStyle() {
 
   PlasmaStyle->SetLineWidth(1);
 
-  PlasmaStyle->SetGridStyle(2);
+  // PlasmaStyle->SetGridStyle(2);
   PlasmaStyle->SetGridColor(kGray+1);
   PlasmaStyle->SetPadGridX(0);
   PlasmaStyle->SetPadGridY(0);
     
   PlasmaStyle->SetLegendBorderSize(0);
       
-  PlasmaStyle->SetCanvasDefH(500);
   PlasmaStyle->SetCanvasDefW(800);
+  PlasmaStyle->SetCanvasDefH(600);
   // set the paper & margin sizes
   PlasmaStyle->SetPaperSize(TStyle::kA4);
   PlasmaStyle->SetPadTopMargin(0.05);
@@ -75,17 +75,19 @@ void PGlobals::SetPlasmaStyle() {
   PlasmaStyle->SetTitleFont(fontType,"xyz");
   PlasmaStyle->SetLabelFont(fontType,"xyz");
 
-  PlasmaStyle->SetLabelSize(labelSize, "xyz");
-  PlasmaStyle->SetTitleSize(titleSize, "xyz");
-
   PlasmaStyle->SetTextColor(fontColor);
   PlasmaStyle->SetTitleColor(fontColor, "xyz");
   PlasmaStyle->SetLabelColor(fontColor, "xyz");
-    
-  // axis's title and label sizes
-  PlasmaStyle->SetLabelOffset(0.01, "xyz");
-  PlasmaStyle->SetTitleOffset(1.2,"xyz");
 
+  // axis's title and label sizes
+  PlasmaStyle->SetLabelSize(labelSize, "xyz");
+  PlasmaStyle->SetTitleSize(titleSize, "xyz");
+    
+  PlasmaStyle->SetLabelOffset(0.01, "xyz");
+  PlasmaStyle->SetTitleOffset(1.1,"xy");
+  PlasmaStyle->SetTitleOffset(1.2,"z");
+  PlasmaStyle->SetTickLength(0.018,"x");
+  PlasmaStyle->SetTickLength(0.01,"yz");
   PlasmaStyle->SetNdivisions(505,"xyz");
 
 
@@ -124,10 +126,11 @@ void PGlobals::SetH1LabelSize(TH1 *histo) {
   histo->SetLabelOffset(0.01,"xyz");
  
   histo->SetTitleSize(titleSize,"xyz");
-  histo->SetTitleOffset(1.2,"xyz");
+  histo->SetTitleOffset(1.4,"xyz");
     
-  histo->SetTickLength(0.018,"xyz");
-    
+  histo->SetTickLength(0.018,"x");
+  histo->SetTickLength(0.01,"yz");
+  
   histo->GetXaxis()->CenterTitle();
   histo->GetYaxis()->CenterTitle();
   histo->GetZaxis()->CenterTitle();

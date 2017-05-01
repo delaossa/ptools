@@ -35,8 +35,10 @@
   if(!laserPalette) {
     laserPalette = new PPalette("laser");
     // laserPalette->SetPalette("greengray");
-    laserPalette->SetPalette(kBird);
-    //laserPalette->SetPalette("red");
+    // laserPalette->SetPalette(kBird);
+    // laserPalette->SetPalette("red");
+    laserPalette->SetPalette(kColorPrintableOnGrey);
+    laserPalette->Invert();
   }
 
   PPalette *fieldPalette = (PPalette*) gROOT->FindObject("field");

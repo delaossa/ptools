@@ -21,6 +21,8 @@
 #include <TExec.h>
 #include <TGaxis.h>
 #include <TPaletteAxis.h>
+#include <TGraphSmooth.h>
+
 
 #include "PData.hh"
 #include "PGlobals.hh"
@@ -88,6 +90,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   TGraph **gVextr = NULL;
   TGraph **gVextr_alt = NULL;
   TGraph **gVextr_avg = NULL;
+  TGraphSmooth **gsmooth = NULL;
 
   const Int_t NAtoms = 3;
   char atNames[NAtoms][4] = {"H","He","He2"};
@@ -255,6 +258,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
       gVextr = new TGraph*[NVCross];
       gVextr_alt = new TGraph*[NVCross];
       gVextr_avg = new TGraph*[NVCross];
+      gsmooth = new TGraphSmooth*[NVCross];
       
       for(Int_t ic = 0;ic<NVCross;ic++) {
 	gVcross[ic] = new TGraph(NTBins);
@@ -638,14 +642,14 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
  
   hEvsTime[0]->GetYaxis()->SetLabelFont(43);
   hEvsTime[0]->GetYaxis()->SetLabelSize(32);
-  //  hEvsTime[0]->GetYaxis()->SetLabelOffset(0.8);
+  // hEvsTime[0]->GetYaxis()->SetLabelOffset(0.8);
   hEvsTime[0]->GetYaxis()->SetTitleFont(43);
   hEvsTime[0]->GetYaxis()->SetTitleSize(36);
   hEvsTime[0]->GetYaxis()->SetTitleOffset(0.9);
 
   hEvsTime[0]->GetXaxis()->SetLabelFont(43);
   hEvsTime[0]->GetXaxis()->SetLabelSize(32);
-  //  hEvsTime[0]->GetXaxis()->SetLabelOffset(0.8);
+  // hEvsTime[0]->GetXaxis()->SetLabelOffset(0.8);
   hEvsTime[0]->GetXaxis()->SetTitleFont(43);
   hEvsTime[0]->GetXaxis()->SetTitleSize(36);
   hEvsTime[0]->GetXaxis()->SetTitleOffset(0.95);
@@ -700,28 +704,31 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
  
   Emax = hEvsTime[1]->GetMaximum();
   Emin = hEvsTime[1]->GetMinimum();
-  hEvsTime[1]->GetZaxis()->SetRangeUser(Emin,Emax); 
- 
-  // Dynamic Ex palette
-  const Int_t exPNRGBs = 6;
-  const Int_t exPNCont = 64;
-  Float_t zeroPos = -Emin/(Emax-Emin);
-  
-  Double_t exPStops[exPNRGBs] = { 0.00, zeroPos-3.0/exPNCont,zeroPos-1.0/exPNCont, zeroPos, zeroPos+1.0/exPNCont, 1.00 };
-  Double_t exPRed[exPNRGBs]   = { 0.106, 0.698, 0.90, 0.90, 0.965, 0.518 };
-  Double_t exPGreen[exPNRGBs] = { 0.078, 0.818, 0.90, 0.90, 0.925, 0.078 };
-  Double_t exPBlue[exPNRGBs]  = { 0.518, 0.880, 0.90, 0.90, 0.353, 0.106 };
-   
+  hEvsTime[1]->GetZaxis()->SetRangeUser(Emin,Emax);
 
-  PPalette * exPalette = (PPalette*) gROOT->FindObject("ex");
-  if(!exPalette) {
-    exPalette = new PPalette("ex");
-    exPalette->CreateGradientColorTable(exPNRGBs, exPStops, 
-					exPRed, exPGreen, exPBlue, exPNCont);
-  } else {
-    exPalette->ChangeGradientColorTable(exPNRGBs, exPStops, 
-					exPRed, exPGreen, exPBlue);
-  }
+  hEvsTime[1]->GetYaxis()->SetLabelFont(43);
+  hEvsTime[1]->GetYaxis()->SetLabelSize(32);
+  //  hEvsTime[1]->GetYaxis()->SetLabelOffset(0.8);
+  hEvsTime[1]->GetYaxis()->SetTitleFont(43);
+  hEvsTime[1]->GetYaxis()->SetTitleSize(36);
+  hEvsTime[1]->GetYaxis()->SetTitleOffset(0.9);
+
+  hEvsTime[1]->GetXaxis()->SetLabelFont(43);
+  hEvsTime[1]->GetXaxis()->SetLabelSize(32);
+  //  hEvsTime[1]->GetXaxis()->SetLabelOffset(0.8);
+  hEvsTime[1]->GetXaxis()->SetTitleFont(43);
+  hEvsTime[1]->GetXaxis()->SetTitleSize(36);
+  hEvsTime[1]->GetXaxis()->SetTitleOffset(0.95);
+
+
+  hEvsTime[1]->GetZaxis()->SetLabelFont(43);
+  hEvsTime[1]->GetZaxis()->SetLabelSize(32);
+  // hEvsTime[1]->GetZaxis()->SetLabelOffset(0.8);
+  hEvsTime[1]->GetZaxis()->SetTitleFont(43);
+  hEvsTime[1]->GetZaxis()->SetTitleSize(36);
+  hEvsTime[1]->GetZaxis()->SetTitleOffset(0.9);
+
+  
   
   hEvsTime[1]->Draw("colz");
 
@@ -754,7 +761,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     
     // Canvas setup
     TCanvas *C1 = new TCanvas("C1","Evolution of Electric fields",sizex,sizey);
-    gPad->SetTickx(0);
+    gPad->SetTickx(1);
     gPad->SetTicky(0);
 
 
@@ -784,12 +791,32 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   
     hFrame1->GetYaxis()->SetRangeUser(Ez0,Ez1);
     hFrame1->GetXaxis()->SetTitle(hEvsTime[0]->GetXaxis()->GetTitle());
-    hFrame1->GetYaxis()->SetTitle("E_{z}/E_{0}");
+    hFrame1->GetYaxis()->SetTitle(hEvsTime[0]->GetZaxis()->GetTitle());
     PGlobals::SetH1LabelSize(hFrame1);
+
+    hFrame1->GetYaxis()->SetLabelFont(43);
+    hFrame1->GetYaxis()->SetLabelSize(32);
+    //  hFrame1->GetYaxis()->SetLabelOffset(0.8);
+    hFrame1->GetYaxis()->SetTitleFont(43);
+    hFrame1->GetYaxis()->SetTitleSize(36);
+    hFrame1->GetYaxis()->SetTitleOffset(0.9);
+    hFrame1->GetYaxis()->CenterTitle(0);
+    
+    hFrame1->GetXaxis()->SetLabelFont(43);
+    hFrame1->GetXaxis()->SetLabelSize(32);
+    //  hFrame1->GetXaxis()->SetLabelOffset(0.8);
+    hFrame1->GetXaxis()->SetTitleFont(43);
+    hFrame1->GetXaxis()->SetTitleSize(36);
+    hFrame1->GetXaxis()->SetTitleOffset(0.95);
     
     hFrame1->Draw("axis");
 
     gPad->Update();
+
+    TLine *linezero = new TLine(hFrame1->GetXaxis()->GetXmin(),0.0,hFrame1->GetXaxis()->GetXmax(),0.0);
+    linezero->SetLineColor(kGray+2);
+    linezero->SetLineStyle(2);
+    linezero->Draw();
 
     if(!opt.Contains("nocross")) {
 
@@ -804,13 +831,21 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
 
 	for(Int_t k=0; k < gEextr[0][ic]->GetN(); k++) {
 	  //cout << "PEPEEEEEEEEEEE" << endl;
-	  if(fabs(yEextr[k])>1000) {
+	  if(fabs(yEextr[k])>100000) {
 	    gEextr[0][ic]->RemovePoint(k);
 	    k--;
 	  }
 	}
-      
-	gEextr[0][ic]->Draw("L");
+
+	//if(gsmooth[ic]) delete gsmooth[ic];
+	gsmooth[ic] = new TGraphSmooth("kk");
+
+	TGraph *gEextrSmooth = gsmooth[ic]->SmoothSuper(gEextr[0][ic],"",0.0);
+	gEextrSmooth->SetLineWidth(3);
+	if(ic%2-1) gEextrSmooth->SetLineColor(kRed-2);
+	else  gEextrSmooth->SetLineColor(kBlue-2);
+	gEextrSmooth->Draw("C");
+	//gEextr[0][ic]->Draw("L");
       
       }
     }
@@ -826,24 +861,31 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     for(Int_t j=0;j<gTRatio->GetN();j++) {
       gTRatio->SetPoint(j,xTR[j],yTR[j]*slope + gPad->GetUymin());
     }
-  
-    gTRatio->SetLineWidth(2);
-    gTRatio->SetLineColor(kRed);
-    gTRatio->Draw("L");
+
+    TGraphSmooth *gsmooth2 = new TGraphSmooth("kk2");
+    TGraph *gTRatioSmooth = gsmooth2->SmoothSuper(gTRatio,"",0.0);
+
+    gTRatioSmooth->SetLineWidth(3);
+    gTRatioSmooth->SetLineStyle(2);
+    gTRatioSmooth->SetLineColor(kRed);
+    gTRatioSmooth->Draw("C");
   
     //draw an axis on the right side
     TGaxis *axis = new TGaxis(gPad->GetUxmax(),gPad->GetUymin(),gPad->GetUxmax(),
-			      gPad->GetUymax(),rightmin,rightmax,505,"+L");
+			      gPad->GetUymax(),rightmin,rightmax,505,"+LS");
   
     axis->SetLineWidth(1);
-    axis->SetLineColor(gTRatio->GetLineColor());
-    axis->SetLabelColor(gTRatio->GetLineColor());
-    // axis->SetLabelSize(0.05);
-    // axis->SetTitleSize(0.06);
-    // axis->SetTitleOffset(0.7);
-    axis->SetTitle("|E^{-} / E^{+}|");
+    axis->SetLineColor(gTRatioSmooth->GetLineColor());
+    axis->SetLabelColor(gTRatioSmooth->GetLineColor());
+    axis->SetLabelFont(43);
+    axis->SetLabelSize(32);
+    axis->SetTitleFont(43);
+    axis->SetTitleSize(36);
+    axis->SetTitleOffset(0.9);
+    axis->SetTickLength(0.018);
+    axis->SetTitle("Max. R");
     axis->CenterTitle();
-    axis->SetTitleColor(gTRatio->GetLineColor());
+    axis->SetTitleColor(gTRatioSmooth->GetLineColor());
   
     axis->Draw();
 
@@ -874,7 +916,7 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
       Vmin = -Vmax;
     else
       Vmax = -Vmin;
-    hVvsTime->GetZaxis()->SetRangeUser(Emin,Emax); 
+    hVvsTime->GetZaxis()->SetRangeUser(Vmin,Vmax); 
  
     hVvsTime->GetYaxis()->SetLabelFont(43);
     hVvsTime->GetYaxis()->SetLabelSize(32);
@@ -963,8 +1005,8 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     
     // Canvas setup
     TCanvas *CV1 = new TCanvas("CV1","Evolution of potential extremes",sizex,sizey);
-    gPad->SetTickx(0);
-    gPad->SetTicky(0);
+    gPad->SetTickx(1);
+    gPad->SetTicky(1);
 
 
     TLegend *Leg = new TLegend(0.20,0.20,0.35,0.40);
@@ -993,12 +1035,31 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   
     hFrame2->GetYaxis()->SetRangeUser(Psi0,Psi1);
     hFrame2->GetXaxis()->SetTitle(hVvsTime->GetXaxis()->GetTitle());
-    hFrame2->GetYaxis()->SetTitle("#psi");
+    hFrame2->GetYaxis()->SetTitle(hVvsTime->GetZaxis()->GetTitle());
     PGlobals::SetH1LabelSize(hFrame2);
+
+    hFrame2->GetYaxis()->SetLabelFont(43);
+    hFrame2->GetYaxis()->SetLabelSize(32);
+    //  hFrame2->GetYaxis()->SetLabelOffset(0.8);
+    hFrame2->GetYaxis()->SetTitleFont(43);
+    hFrame2->GetYaxis()->SetTitleSize(36);
+    hFrame2->GetYaxis()->SetTitleOffset(0.9);
     
+    hFrame2->GetXaxis()->SetLabelFont(43);
+    hFrame2->GetXaxis()->SetLabelSize(32);
+    //  hFrame2->GetXaxis()->SetLabelOffset(0.8);
+    hFrame2->GetXaxis()->SetTitleFont(43);
+    hFrame2->GetXaxis()->SetTitleSize(36);
+    hFrame2->GetXaxis()->SetTitleOffset(0.95);
+        
     hFrame2->Draw("axis");
 
     gPad->Update();
+
+    TLine *linezero = new TLine(hFrame2->GetXaxis()->GetXmin(),0.0,hFrame2->GetXaxis()->GetXmax(),0.0);
+    linezero->SetLineColor(kGray+2);
+    linezero->SetLineStyle(2);
+    linezero->Draw();
 
     if(!opt.Contains("nocross")) {
 
@@ -1017,11 +1078,18 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
 	    k--;
 	  }
 	}
-      
-	gVextr[ic]->Draw("L");
-	gVextr_alt[ic]->Draw("L");
-	gVextr_avg[ic]->Draw("L");
-      
+
+	// if(gsmooth[ic]) delete gsmooth[ic];
+	gsmooth[ic] = new TGraphSmooth("kk");
+	TGraph *gVextrSmooth = gsmooth[ic]->SmoothSuper(gVextr[ic],"",0.0);
+	gVextrSmooth->SetLineWidth(3);
+	if(ic%2-1) gVextrSmooth->SetLineColor(kRed-2);
+	else  gVextrSmooth->SetLineColor(kBlue-2);
+	gVextrSmooth->Draw("C");
+	//gVextr[ic]->Draw("L");
+	//gVextr_alt[ic]->Draw("L");
+	//gVextr_avg[ic]->Draw("L");
+	
       }
     }
 
@@ -1051,9 +1119,23 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   
     hFrame3->GetYaxis()->SetRangeUser(Psi0,Psi1);
     hFrame3->GetXaxis()->SetTitle("n/n_{0}");
-    hFrame3->GetYaxis()->SetTitle("#psi");
+    hFrame3->GetYaxis()->SetTitle(hVvsTime->GetZaxis()->GetTitle());
     PGlobals::SetH1LabelSize(hFrame3);
+
+    hFrame3->GetYaxis()->SetLabelFont(43);
+    hFrame3->GetYaxis()->SetLabelSize(32);
+    //  hFrame3->GetYaxis()->SetLabelOffset(0.8);
+    hFrame3->GetYaxis()->SetTitleFont(43);
+    hFrame3->GetYaxis()->SetTitleSize(36);
+    hFrame3->GetYaxis()->SetTitleOffset(0.9);
     
+    hFrame3->GetXaxis()->SetLabelFont(43);
+    hFrame3->GetXaxis()->SetLabelSize(32);
+    //  hFrame3->GetXaxis()->SetLabelOffset(0.8);
+    hFrame3->GetXaxis()->SetTitleFont(43);
+    hFrame3->GetXaxis()->SetTitleSize(36);
+    hFrame3->GetXaxis()->SetTitleOffset(0.95);
+
     hFrame3->Draw("axis");
 
     gPad->Update();
@@ -1098,29 +1180,33 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
  
     Float_t Fmax = hFvsTime->GetMaximum();
     Float_t Fmin = hFvsTime->GetMinimum();
-    hFvsTime->GetZaxis()->SetRangeUser(Fmin,Fmax); 
+    hFvsTime->GetZaxis()->SetRangeUser(Fmin,Fmax);
+
+    hFvsTime->GetYaxis()->SetLabelFont(43);
+    hFvsTime->GetYaxis()->SetLabelSize(32);
+    // hFvsTime->GetYaxis()->SetLabelOffset(0.8);
+    hFvsTime->GetYaxis()->SetTitleFont(43);
+    hFvsTime->GetYaxis()->SetTitleSize(36);
+    hFvsTime->GetYaxis()->SetTitleOffset(0.9);
+
+    hFvsTime->GetXaxis()->SetLabelFont(43);
+    hFvsTime->GetXaxis()->SetLabelSize(32);
+    // hFvsTime->GetXaxis()->SetLabelOffset(0.8);
+    hFvsTime->GetXaxis()->SetTitleFont(43);
+    hFvsTime->GetXaxis()->SetTitleSize(36);
+    hFvsTime->GetXaxis()->SetTitleOffset(0.95);
+
+
+    hFvsTime->GetZaxis()->SetLabelFont(43);
+    hFvsTime->GetZaxis()->SetLabelSize(32);
+    // hFvsTime->GetZaxis()->SetLabelOffset(0.8);
+    hFvsTime->GetZaxis()->SetTitleFont(43);
+    hFvsTime->GetZaxis()->SetTitleSize(36);
+    hFvsTime->GetZaxis()->SetTitleOffset(0.9);
+
+    
     //if(Fmax<0.1) Fmax = 0.1;
-  
-    // Dynamic focusing palette
-    const Int_t focPNRGBs = 6;
-    const Int_t focPNCont = 64;
-    zeroPos = -Fmin/(Fmax-Fmin);
-  
-    Double_t focPStops[focPNRGBs] = { 0.00, zeroPos-3.0/focPNCont,zeroPos-1.0/focPNCont, zeroPos, zeroPos+3.0/focPNCont, 1.00 };
-    Double_t focPRed[focPNRGBs]   = { 0.106, 0.698, 0.90, 0.90, 0.965, 0.518 };
-    Double_t focPGreen[focPNRGBs] = { 0.078, 0.818, 0.90, 0.90, 0.925, 0.078 };
-    Double_t focPBlue[focPNRGBs]  = { 0.518, 0.880, 0.90, 0.90, 0.353, 0.106 };
-   
-    PPalette * focPalette = (PPalette*) gROOT->FindObject("focus");
-    if(!focPalette) {
-      focPalette = new PPalette("foc");
-      focPalette->CreateGradientColorTable(focPNRGBs, focPStops, 
-					  focPRed, focPGreen, focPBlue, focPNCont);
-    } else {
-      focPalette->ChangeGradientColorTable(focPNRGBs, focPStops, 
-					  focPRed, focPGreen, focPBlue);
-    }
-  
+    
     hFvsTime->Draw("colz");
 
     gPad->Update();
@@ -1244,6 +1330,20 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
   hFrame4->GetYaxis()->SetTitle("#Delta#zeta");
 
   PGlobals::SetH1LabelSize(hFrame4);
+  hFrame4->GetYaxis()->SetLabelFont(43);
+  hFrame4->GetYaxis()->SetLabelSize(32);
+  //  hFrame4->GetYaxis()->SetLabelOffset(0.8);
+  hFrame4->GetYaxis()->SetTitleFont(43);
+  hFrame4->GetYaxis()->SetTitleSize(36);
+  hFrame4->GetYaxis()->SetTitleOffset(0.9);
+  
+  hFrame4->GetXaxis()->SetLabelFont(43);
+  hFrame4->GetXaxis()->SetLabelSize(32);
+  //  hFrame4->GetXaxis()->SetLabelOffset(0.8);
+  hFrame4->GetXaxis()->SetTitleFont(43);
+  hFrame4->GetXaxis()->SetTitleSize(36);
+  hFrame4->GetXaxis()->SetTitleOffset(0.95);
+  
   hFrame4->Draw("axis");
   
   gPad->Update();
@@ -1334,6 +1434,29 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     hRmsvsTime->GetZaxis()->SetRangeUser(0,Rmsmax);   
     PGlobals::SetH1LabelSize(hRmsvsTime);
     hRmsvsTime->GetZaxis()->SetTitle("#sigma_{x} [#mum]");
+
+    hRmsvsTime->GetYaxis()->SetLabelFont(43);
+    hRmsvsTime->GetYaxis()->SetLabelSize(32);
+    // hRmsvsTime->GetYaxis()->SetLabelOffset(0.8);
+    hRmsvsTime->GetYaxis()->SetTitleFont(43);
+    hRmsvsTime->GetYaxis()->SetTitleSize(36);
+    hRmsvsTime->GetYaxis()->SetTitleOffset(0.9);
+
+    hRmsvsTime->GetXaxis()->SetLabelFont(43);
+    hRmsvsTime->GetXaxis()->SetLabelSize(32);
+    // hRmsvsTime->GetXaxis()->SetLabelOffset(0.8);
+    hRmsvsTime->GetXaxis()->SetTitleFont(43);
+    hRmsvsTime->GetXaxis()->SetTitleSize(36);
+    hRmsvsTime->GetXaxis()->SetTitleOffset(0.95);
+
+
+    hRmsvsTime->GetZaxis()->SetLabelFont(43);
+    hRmsvsTime->GetZaxis()->SetLabelSize(32);
+    // hRmsvsTime->GetZaxis()->SetLabelOffset(0.8);
+    hRmsvsTime->GetZaxis()->SetTitleFont(43);
+    hRmsvsTime->GetZaxis()->SetTitleSize(36);
+    hRmsvsTime->GetZaxis()->SetTitleOffset(0.9);
+    
     hRmsvsTime->Draw("colz");
 
     gPad->Update();
@@ -1371,7 +1494,30 @@ void PlotEvolutions(const TString &sim, const TString &options="png") {
     beamPalette->cd();
 
     hDen1DvsTime->GetZaxis()->SetRangeUser(0,Denmax);   
-    PGlobals::SetH1LabelSize(hDen1DvsTime); 
+    PGlobals::SetH1LabelSize(hDen1DvsTime);
+
+    hDen1DvsTime->GetYaxis()->SetLabelFont(43);
+    hDen1DvsTime->GetYaxis()->SetLabelSize(32);
+    // hDen1DvsTime->GetYaxis()->SetLabelOffset(0.8);
+    hDen1DvsTime->GetYaxis()->SetTitleFont(43);
+    hDen1DvsTime->GetYaxis()->SetTitleSize(36);
+    hDen1DvsTime->GetYaxis()->SetTitleOffset(0.9);
+
+    hDen1DvsTime->GetXaxis()->SetLabelFont(43);
+    hDen1DvsTime->GetXaxis()->SetLabelSize(32);
+    // hDen1DvsTime->GetXaxis()->SetLabelOffset(0.8);
+    hDen1DvsTime->GetXaxis()->SetTitleFont(43);
+    hDen1DvsTime->GetXaxis()->SetTitleSize(36);
+    hDen1DvsTime->GetXaxis()->SetTitleOffset(0.95);
+
+
+    hDen1DvsTime->GetZaxis()->SetLabelFont(43);
+    hDen1DvsTime->GetZaxis()->SetLabelSize(32);
+    // hDen1DvsTime->GetZaxis()->SetLabelOffset(0.8);
+    hDen1DvsTime->GetZaxis()->SetTitleFont(43);
+    hDen1DvsTime->GetZaxis()->SetTitleSize(36);
+    hDen1DvsTime->GetZaxis()->SetTitleOffset(0.9);
+    
     hDen1DvsTime->Draw("colz");
 
     gPad->Update();

@@ -45,7 +45,7 @@ void draw_palette(int p, TString n){
      c->Print("palettes.pdf", Form("Title:%s",n.Data()));
 }
 
-void palettes() {
+void paldemo() {
    gROOT->SetBatch(1);
    c  = new TCanvas("c","Contours",0,0,500,500);
    draw_palette(kDeepSea, "Deap Sea");

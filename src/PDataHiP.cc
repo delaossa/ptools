@@ -81,14 +81,14 @@ void PDataHiP::Clear(Option_t *option) {
 }
 //_______________________________________________________________________
 void PDataHiP::LoadFileNames(Int_t t) {
-  
+
   if(time == t && Init) {
     // cout << "Time step already loaded: doing nothing." << endl;
     cout << " ... " << endl << endl;
     return;  
   }
-  
-  Clear();
+
+  PDataHiP::Clear();
   
   time = t;
 
@@ -114,7 +114,6 @@ void PDataHiP::LoadFileNames(Int_t t) {
     Init = kFALSE;
     return;
   }
-
   
   // Initialize the pointers to NULLS
   sCHG = new vector<string*>(NSpecies(),NULL);
@@ -123,7 +122,10 @@ void PDataHiP::LoadFileNames(Int_t t) {
   sWF  = new vector<string*>(2,NULL);
   sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
 
-
+  for(UInt_t i=0;i<3;i++) {
+    sJ[i] = new vector<string*>(NSpecies(),NULL);    
+  }
+  
   // Fishing the pieces ...
   for(UInt_t i=0;i<files.size();i++) {
         
@@ -154,12 +156,11 @@ void PDataHiP::LoadFileNames(Int_t t) {
       
       string rawname = between(files[i],s_beg,s_end);
       rawspecies.push_back(rawname);
-      //  cout << Form(" Raw species name = %s",rawname.c_str()) << endl;
+      // cout << Form(" Raw species name = %s",rawname.c_str()) << endl;
     }
     
     
     // Get Electromagnetic fields files:
-    
     for(UInt_t j=0;j<3;j++) {
       char eName[16];
       if(j==0) {
@@ -188,9 +189,10 @@ void PDataHiP::LoadFileNames(Int_t t) {
       }
     }
   }
-  
-  sRAW = new vector<string*>(NRawSpecies(),NULL);
 
+  sRAW = new vector<string*>(NRawSpecies(),NULL);
+  sTrack = new vector<string*>(NRawSpecies(),NULL);
+  
   // Put the driver first
   for(UInt_t i=0;i<NRawSpecies();i++) {
     if(rawspecies[i].find("driver") != string::npos)
@@ -223,7 +225,6 @@ void PDataHiP::LoadFileNames(Int_t t) {
       if(GetChargeFileName(j)) {
 	rtime = GetRealTimeFromFile(GetChargeFileName(j)->c_str());
 	tfound = kTRUE;
-	cout << Form(" - Time from start = %6.2f ",rtime) << endl;
     	continue;
       }
     }
@@ -233,7 +234,6 @@ void PDataHiP::LoadFileNames(Int_t t) {
     for(UInt_t j=0;j<NRawSpecies();j++) {
       if(GetRawFileName(j)) {
 	rtime = GetRealTimeFromFile(GetRawFileName(j)->c_str());
-	cout << Form(" - Time from start = %6.2f ",rtime) << endl;
     	continue;
       }
     }
@@ -275,7 +275,7 @@ void PDataHiP::LoadFileNames(Int_t t) {
   } else {
     XMAXR[2] = pParam.x3Max;
   }
-  
+
   Init = kTRUE;  
 }
 
@@ -353,7 +353,8 @@ void PDataHiP::ReadOutputSummary(const char * pfile)
 	iline++;
 	
       }
-    
+
+    cout << endl;
     ifile.close();
     
   } else {
@@ -662,6 +663,142 @@ TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *datanameold, Int_t
 }
 
 //_______________________________________________________________________
+TH2F* PDataHiP::GetH2SliceZY(const char *filename,const char *datanameold, Int_t Firstx2Bin, Int_t Lastx2Bin, const char *options) {
+  
+  // Check for valid HDF5 file 
+  if (!H5File::isHdf5(filename))    
+    return NULL;
+  
+  // Save memory and time with an specific range selection.
+
+  // Options
+  TString opt = options;
+
+  // Open input HDF5 file
+  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  
+  // Open main group for data reading
+  Group *root = new Group(h5.openGroup("/"));
+
+  // Read data
+  // ----------
+  H5std_string strreadbuf ("");
+  StrType strdatatype(PredType::C_S1, 32); 
+  Attribute *att = new Attribute(root->openAttribute("NAME"));
+  att->read(strdatatype,strreadbuf); 
+  att->close();
+  delete att;
+  const char *dataname = strreadbuf.c_str();
+  
+  //  cout << Form(" Dataname = %s ", dataname) << endl;
+
+  DataSet  *dataSet = new DataSet(root->openDataSet(dataname));
+  DataSpace dataSpace = dataSet->getSpace();
+  const DataType type = dataSet->getDataType();
+  
+  Int_t rank = dataSpace.getSimpleExtentNdims();
+  hsize_t  *dataDims = new hsize_t[rank];
+  dataSpace.getSimpleExtentDims(dataDims,NULL);
+
+  // x2 slice
+  if(Lastx2Bin>=(Int_t)dataDims[1]) Lastx2Bin = dataDims[1] - 1;
+  
+  if(Firstx2Bin<0)
+    DoSlice(dataDims[1],Firstx2Bin,Lastx2Bin);
+  
+  if(Lastx2Bin<Firstx2Bin) 
+    Lastx2Bin = Firstx2Bin;
+
+  UInt_t x2Dim = Lastx2Bin - Firstx2Bin + 1; 
+ 
+  //----------
+  // Fix average problem.
+  UInt_t x1AvgFactor = GetNX(0)/dataDims[0];
+  UInt_t x1Dim = GetX1N()/x1AvgFactor;
+  Double_t x1Min = GetX1Min();
+  Double_t x1Max = GetX1Max();
+
+  UInt_t x3AvgFactor = GetNX(2)/dataDims[2];
+  UInt_t x3Dim = GetX3N()/x3AvgFactor;
+  Double_t x3Min = GetX3Min();
+  Double_t x3Max = GetX3Max();
+   
+  hsize_t  *count  = new hsize_t[rank];
+  count[0] = x1Dim;
+  count[1] = x2Dim;
+  count[2] = x3Dim;
+
+  hsize_t  *offset = new hsize_t[rank];  
+  offset[0] = GetX1iMin()/x1AvgFactor;
+  offset[1] = Firstx2Bin;
+  offset[2] = GetX3iMin()/x3AvgFactor; 
+
+  //  cout << Form(" x1Dim = %i  offset = %i", count[0], offset[0]) << endl;
+  //  cout << Form(" x2Dim = %i  offset = %i", count[1], offset[1]) << endl;
+  //  cout << Form(" x3Dim = %i  offset = %i", count[2], offset[2]) << endl;
+
+  Float_t *data = new Float_t[x1Dim * x2Dim * x3Dim];
+
+  DataSpace memSpace(rank,count);
+  dataSpace.selectHyperslab(H5S_SELECT_SET,count,offset);
+  dataSet->read(data,PredType::NATIVE_FLOAT,memSpace,dataSpace);
+  dataSet->close();
+
+  root->close();
+  
+  Float_t x1x3Array[x1Dim][x3Dim];
+  memset(x1x3Array,0,sizeof(Float_t)*x1Dim*x3Dim);
+   
+  // Sum the values 
+  string sdata = dataname;
+  for(UInt_t i=0;i<x1Dim;i++) {
+    for(UInt_t j=0;j<x2Dim;j++) {
+      for(UInt_t k=0;k<x3Dim;k++) {
+	UInt_t index = (long)i*(long)x2Dim*(long)x3Dim + (long)j*(long)x3Dim + (long)k;
+	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
+	  x1x3Array[i][k] += -data[index];
+	else
+	  x1x3Array[i][k] +=  data[index]; 
+      }
+    }
+  }
+  
+  // Histogram centering
+  Double_t shiftx1 = Shift(opt);  
+  Double_t shiftx3 = 0;
+  if(opt.Contains("center")) 
+    if(!opt.Contains("cyl"))
+      shiftx3 += (x3Min + x3Max)/2.;
+  
+  x1Min -= shiftx1;
+  x1Max -= shiftx1;
+  
+  x3Min -= shiftx3;
+  x3Max -= shiftx3;
+
+  UInt_t x2AvgFactor = GetNX(1)/dataDims[1];
+  Double_t dx2 = GetDX(1) * x2AvgFactor;
+
+  TH2F *h2D = new TH2F(); 
+  h2D->SetBins(x1Dim,x1Min,x1Max,x3Dim,x3Min,x3Max); 
+  for(UInt_t i=0;i<x1Dim;i++) 
+    for(UInt_t j=0;j<x3Dim;j++) { 
+      Double_t content = x1x3Array[i][j];
+      if(opt.Contains("avg")) content /= x2Dim;
+      else if(opt.Contains("int")) content *= dx2;
+      h2D->SetBinContent(i+1,j+1,content);
+    }
+    
+  delete count;
+  delete offset;
+  delete dataSet;
+  delete root;
+  delete data;
+  
+  return h2D;
+}
+
+//_______________________________________________________________________
 string*  PDataHiP::GetWfieldFileName(UInt_t i) { return sWF->at(i); }
 
 //_______________________________________________________________________
@@ -677,7 +814,8 @@ Double_t PDataHiP::Shift(TString option) {
   Double_t shiftx1 = 0;
   if(opt.Contains("center")) {
     Double_t kp = GetPlasmaK();
-    shiftx1 += GetXMin(0) + GetBeamStart()*kp;   // Centers on the beam
+    //    shiftx1 += GetXMin(0) + GetBeamStart()*kp;   // Centers on the beam
+    shiftx1 += GetBeamStart()*kp;   // Centers on the beam
   }
   
   return shiftx1;
@@ -690,7 +828,8 @@ Double_t PDataHiP::ShiftT(TString option) {
   Double_t shiftt = 0;
   Double_t kp = GetPlasmaK();
   if(opt.Contains("center")) {
-    shiftt += GetXMin(0) + GetBeamStart()*kp - GetPlasmaStart()*kp;
+    //    shiftt += GetXMin(0) + GetBeamStart()*kp - GetPlasmaStart()*kp;
+    shiftt += GetBeamStart()*kp - GetPlasmaStart()*kp;
   }
   
   return shiftt;

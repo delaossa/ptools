@@ -1,7 +1,8 @@
 #!/bin/tcsh
 
 # Setting up Root environment....
-setenv ROOTSYS $SOFT/root
+setenv ROOTSYS $SOFT/root-6.06.08
+#setenv ROOTSYS /afs/desy.de/products/root/amd64_rhel60/6.02.00/
 setenv LD_LIBRARY_PATH $ROOTSYS/lib:$LD_LIBRARY_PATH
 setenv PATH $ROOTSYS/bin:$PATH
 

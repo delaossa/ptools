@@ -86,16 +86,26 @@ void PlotCentroidCompS2E(const TString &options="") {
   // 			  "k_{#beta,0}L = 10 (R_{56} zero ES)"};
 
   const Int_t Nsim = 4;
-  char sName[Nsim][56] = {"flash-500pC-2kA-JZ-2016.06.tap10.3D",
-   			  "flash-500pC-2kA-JZ-2016.06.tap10.R56max.3D",
+  char sName[Nsim][56] = {//"flash-500pC-2kA-JZ-2016.06.tap10.3D",
+   			  //"flash-500pC-2kA-JZ-2016.06.tap10.R56max.3D",
    			  "flash-500pC-2kA-JZ-2016.06.tap10.R56zero.3D",
-  			  "flash-500pC-2kA-JZ-2016.06.tap10.R56zero.ES.3D"};
+  			  "flash-500pC-2kA-JZ-2016.06.tap10.R56zero.ES.3D",
+ 			  "flash-500pC-3kA-JZ-2016.06.tap10.R56zero.3D",
+			  "flash-500pC-3kA-JZ-2016.06.tap10.R56zero.ES.3D"};
 
-  char lName[Nsim][56] = {"R_{56} opt",
-   			  "R_{56} max",
-   			  "R_{56} zero (corr.)",
-   			  "R_{56} zero (corr.) ES (25 #mum Al)"};
-
+  // char lName[Nsim][56] = {//"2 kA R_{56} opt",
+  //  			  //"2 kA R_{56} max",
+  //  			  "2 kA R_{56} zero",
+  // 			  //   			  "R_{56} zero ES (25 #mum Al)"};
+  //  			  "2 kA R_{56} zero ES",
+  //  			  "3 kA R_{56} zero",
+  // 			  "3 kA R_{56} zero ES"};
+  char lName[Nsim][56] = {"(a): 2 kA",
+			  //   			  "R_{56} zero ES (25 #mum Al)"};
+   			  "(b): 2 kA (emit. spoiler)",
+   			  "(c): 3 kA",
+			  "(d): 3 kA (emit. spoiler)"};
+  
   
   // Load first simulation data (for instance)
   PData *pData = PData::Get(sName[0]);
@@ -131,14 +141,31 @@ void PlotCentroidCompS2E(const TString &options="") {
   PPalette *pal = new PPalette("pal");
   pal->SetPalette("oli");
 
-  Double_t Max = -99999;
-  Double_t Min = 99999;
+  Double_t xMax = -99999;
+  Double_t xMin = 99999;
+  Double_t yMax = -99999;
+  Double_t yMin = 99999;
   
   for(Int_t i=0;i<Nsim;i++) {
 
     Int_t index =  i * pal->GetNColors() / Nsim;
     color[i] = pal->GetColorIndex(index);
 
+    // switch(i) {
+    // case 0 :
+    //   color[i] = kGray+2;
+    //   break;
+    // case 1 :
+    //   color[i] = kRed-7;
+    //   break;
+    // case 2 :
+    //   color[i] = kGray+3;
+    //   break;
+    // case 3 :
+    //   color[i] = kRed;
+    //   break;
+    // }
+    
     TString filename = Form("./%s/Plots/Bunch/beam-driver/Bunch-Evolution-%s.root",sName[i],sName[i]);
     sFile[i] = new TFile(filename,"READ");
     
@@ -159,8 +186,8 @@ void PlotCentroidCompS2E(const TString &options="") {
       Xup[i][j] = X[i][j] + Xrms[i][j];
       Xdo[i][j] = X[i][j] - Xrms[i][j];
 
-      if( Xup[i][j] > Max) Max =  Xup[i][j];
-      if( Xdo[i][j] < Min) Min =  Xdo[i][j];
+      if( Xup[i][j] > xMax) xMax =  Xup[i][j];
+      if( Xdo[i][j] < xMin) xMin =  Xdo[i][j];
       
     }
 
@@ -169,11 +196,11 @@ void PlotCentroidCompS2E(const TString &options="") {
 
     gXup[i]->SetLineWidth(1);
     gXup[i]->SetLineColor(color[i]);
-    gXup[i]->SetLineStyle(2);
+    gXup[i]->SetLineStyle(3);
     
     gXdo[i]->SetLineWidth(1);
     gXdo[i]->SetLineColor(color[i]);
-    gXdo[i]->SetLineStyle(2);
+    gXdo[i]->SetLineStyle(3);
 
     gX[i]->SetLineWidth(3);
     gX[i]->SetLineColor(color[i]);
@@ -194,8 +221,8 @@ void PlotCentroidCompS2E(const TString &options="") {
       Yup[i][j] = Y[i][j] + Yrms[i][j];
       Ydo[i][j] = Y[i][j] - Yrms[i][j];
 
-      if( Yup[i][j] > Max) Max =  Yup[i][j];
-      if( Ydo[i][j] < Min) Min =  Ydo[i][j];
+      if( Yup[i][j] > yMax) yMax =  Yup[i][j];
+      if( Ydo[i][j] < yMin) yMin =  Ydo[i][j];
       
     }
 
@@ -218,8 +245,13 @@ void PlotCentroidCompS2E(const TString &options="") {
   // Canvas setup
   // Create the canvas and the pads before the Frame loop
   // Resolution:
-  Int_t sizex = 600;
-  Int_t sizey = 600;
+  Int_t sizex = 800;
+  Int_t sizey = 500;
+
+  if(opt.Contains("xy")) {
+    sizey = 800;
+  }
+  
   char cName[32];
   sprintf(cName,"C");     
   TCanvas *C = (TCanvas*) gROOT->FindObject(cName);
@@ -235,33 +267,58 @@ void PlotCentroidCompS2E(const TString &options="") {
     if(T[i][0]<zmin) zmin = T[i][0];
     if(T[i][N[i]-1]>zmax) zmax = T[i][N[i]-1];
   }
+
+  zmax = 100;
   
   TLine *lineZero = new TLine(zmin,0.0,zmax,0.0);
   lineZero->SetLineColor(kGray+2);
   lineZero->SetLineStyle(2);
  
   // Setup Pad layout: 
-  const Int_t NPad = 3;
-  TPad *pad[NPad];
-  TH1F *hFrame[NPad];
+  Int_t NPad = 2;
 
+  if(opt.Contains("xy"))
+    NPad = 3;
+  
+  TPad **pad = new TPad*[NPad];
+  TH1F **hFrame = new TH1F*[NPad];
+  
   Float_t lMargin = 0.12;
   Float_t rMargin = 0.04;
-  Float_t bMargin = 0.10;
+  Float_t bMargin = 0.15;
   Float_t tMargin = 0.04;
   Float_t factor = 0.2;    
-  PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor,0.01);
 
   // Define the frames for plotting
   Int_t fonttype = 43;
-  Int_t fontsize = 18;
-  Int_t tfontsize = 20;
-  Float_t txoffset = 2.2;
+  Int_t fontsize = 24;
+  Int_t tfontsize = 26;
+  Float_t txoffset = 1.4;
   Float_t lxoffset = 0.02;
-  Float_t tyoffset = 1.4;
+  Float_t tyoffset = 1.0;
   Float_t lyoffset = 0.01;
   Float_t tylength = 0.015;
   Float_t txlength = 0.02;
+
+  if(opt.Contains("xy")) {
+    lMargin = 0.12;
+    rMargin = 0.04;
+    bMargin = 0.10;
+    tMargin = 0.04;
+    factor = 0.2;    
+
+    fontsize = 24;
+    tfontsize = 26;
+    txoffset = 2.2;
+    lxoffset = 0.02;
+    tyoffset = 1.4;
+    lyoffset = 0.01;
+    tylength = 0.015;
+    txlength = 0.02;
+  }
+
+  PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor,0.02);
+
   for(Int_t i=0;i<NPad;i++) {
     char name[16];
     sprintf(name,"pad_%i",i);
@@ -300,51 +357,65 @@ void PlotCentroidCompS2E(const TString &options="") {
   }
 
   Double_t mfactor = 0.1;
-  if(Max>-Min) Min = -Max;
-  if(-Min>Max) Max = -Min;
+  if(xMax>-xMin) xMin = -xMax;
+  if(-xMin>xMax) xMax = -xMin;
+  if(yMax>-yMin) yMin = -yMax;
+  if(-yMin>yMax) yMax = -yMin;
 
-  Double_t xrange = zmax - zmin;
-  Double_t yrange = Nsim * (Max - Min)/4.0;
-  TLegend *Leg = new TLegend(zmin + 0.02 * xrange, Max - 0.3*yrange , zmin + 0.4 * xrange, Max - 0.01 * yrange,"","tl");
+  Double_t xmin =  xMin-(xMax-xMin)*mfactor;
+  Double_t xmax =  xMax+(xMax-xMin)*mfactor;
+  Double_t xrange = xmax - xmin;
+  Double_t ymin =  yMin-(yMax-yMin)*mfactor;
+  Double_t ymax =  yMax+(yMax-yMin)*mfactor;
+  Double_t yrange = ymax - ymin;
+  Double_t zrange = zmax - zmin;
+
+  TLegend *Leg = new TLegend(zmin + 0.02 * zrange, xmax - 0.3*xrange , zmin + 0.4 * zrange, xmax - 0.05 * xrange,"","tl");
   PGlobals::SetPaveStyle(Leg);
   Leg->SetTextAlign(12);
   Leg->SetTextColor(kGray+3);
-  Leg->SetTextFont(42);
+  Leg->SetTextFont(43);
+  Leg->SetTextSize(16);
   Leg->SetLineColor(1);
   Leg->SetBorderSize(0);
   Leg->SetFillColor(0);
   Leg->SetFillStyle(1001);
   Leg->SetFillStyle(0); // Hollow  
 
-  C->cd(0);
-  pad[0]->Draw();
-  pad[0]->cd();
+  Int_t ipad = 0;
 
-  hFrame[0]->GetYaxis()->SetRangeUser(Min-(Max-Min)*mfactor,Max+(Max-Min)*mfactor);  
+  if(opt.Contains("xy")) {
+    C->cd(0);
+    pad[ipad]->Draw();
+    pad[ipad]->cd();
+
+    hFrame[ipad]->GetYaxis()->SetRangeUser(ymin,ymax);  
   
-  hFrame[0]->GetXaxis()->SetTitle("z [mm]");
-  hFrame[0]->GetYaxis()->SetTitle("y [#mum]");
+    hFrame[ipad]->GetXaxis()->SetTitle("z [mm]");
+    hFrame[ipad]->GetYaxis()->SetTitle("y [#mum]");
 
-  hFrame[0]->Draw("AXIS");
+    hFrame[ipad]->Draw("AXIS");
 
-  lineZero->Draw();
+    lineZero->Draw();
 
-  for(Int_t i=0;i<Nsim;i++) {
-    gY[i]->Draw("L");
-    gYup[i]->Draw("L");
-    gYdo[i]->Draw("L");
+    for(Int_t i=0;i<Nsim;i++) {
+      gY[i]->Draw("L");
+      gYup[i]->Draw("L");
+      gYdo[i]->Draw("L");
+    }
+    ipad++;
   }
   
   C->cd(0);
-  pad[1]->Draw();
-  pad[1]->cd();
+  pad[ipad]->Draw();
+  pad[ipad]->cd();
 
-  hFrame[1]->GetYaxis()->SetRangeUser(Min-(Max-Min)*mfactor,Max+(Max-Min)*mfactor);  
+  hFrame[ipad]->GetYaxis()->SetRangeUser(xmin,xmax);
   
-  hFrame[1]->GetXaxis()->SetTitle("z [mm]");
-  hFrame[1]->GetYaxis()->SetTitle("x [#mum]");
+  hFrame[ipad]->GetXaxis()->SetTitle("z [mm]");
+  hFrame[ipad]->GetYaxis()->SetTitle("x [#mum]");
 
-  hFrame[1]->Draw("AXIS");
+  hFrame[ipad]->Draw("AXIS");
 
   lineZero->Draw();
 
@@ -356,10 +427,12 @@ void PlotCentroidCompS2E(const TString &options="") {
     Leg->AddEntry(gX[i],lName[i],"L");
   }
   Leg->Draw();
+
+  ipad++;
   
   C->cd(0);
-  pad[2]->Draw();
-  pad[2]->cd();
+  pad[ipad]->Draw();
+  pad[ipad]->cd();
 
   TF1 **fDen = new TF1*[Nsim]; 
   
@@ -384,13 +457,13 @@ void PlotCentroidCompS2E(const TString &options="") {
 
   Float_t denmintap = TMath::Power(1.0-(-Ltap/lambda),-4.0);
   cout << Form("  denmin = %.4f",denmintap) << endl;
-  hFrame[2]->GetYaxis()->SetRangeUser(denmintap,1.4);  
+  hFrame[ipad]->GetYaxis()->SetRangeUser(denmintap,1.4);  
   
-  // hFrame[2]->GetXaxis()->SetTitle("n_{He} [10^{15} e/cm^{3}]");
-  hFrame[2]->GetXaxis()->SetTitle("");
-  hFrame[2]->GetYaxis()->SetTitle("n/n_{0}");
+  // hFrame[ipad]->GetXaxis()->SetTitle("n_{He} [10^{15} e/cm^{3}]");
+  hFrame[ipad]->GetXaxis()->SetTitle("");
+  hFrame[ipad]->GetYaxis()->SetTitle("n/n_{0}");
   
-  hFrame[2]->Draw("AXIS");
+  hFrame[ipad]->Draw("AXIS");
 
   lineZero->Draw();
 
@@ -405,17 +478,13 @@ void PlotCentroidCompS2E(const TString &options="") {
   fDen[1]->SetNpx(1000);
   fDen[1]->Draw("same C");
  
-  
-  // Print to file --------------------------------------
-  
   C->cd();
   
-  // Print to a file
-  // Output file
+  // Print to file -------------------------------------------
+
   TString fOutName = Form("./CentroidCompS2E/CentroidCompS2E");
-  //fOutName += Form("_%i",time);
-  
   PGlobals::imgconv(C,fOutName,opt);
+
   // ---------------------------------------------------------
   
   

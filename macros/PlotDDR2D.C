@@ -292,7 +292,7 @@ void PlotDDR2D( const TString &options="" ){
   gPad->Update();
   gPad->RedrawAxis("G");
 
-  betaphvsz2->Draw("C");
+  //betaphvsz2->Draw("C");
   betaphvsz->Draw("C");
 
   // Get Data from PIC simulations with test ramp
@@ -334,14 +334,11 @@ void PlotDDR2D( const TString &options="" ){
   color2[0] = kBlue-9;
   color2[1] = kBlue-6;
   color2[2] = kBlue-2;
-  // color[3] = kBlue-3;
-  // color[4] = kBlue-4;
 
   color[0] = kRed-9;
   color[1] = kRed-6;
   color[2] = kRed-2;
-  // color2[3] = kRed-3;
-  // color2[4] = kRed-4;
+
   
   
   const Int_t NRGBs = 2;
@@ -683,7 +680,7 @@ void PlotDDR2D( const TString &options="" ){
   Double_t contsim[Nsim];
   for(Int_t i=0; i<Nsim; i++) {
     contsim[i] = betamax[i];
-    //   cout << Form("sim %i:  beta_max = %.4f",i,contsim[i]) << endl;
+    cout << Form("sim %i:  beta_max = %.4f",i,contsim[i]) << endl;
   }
   
   hClone->SetContour(Nsim,contsim);
@@ -1338,7 +1335,7 @@ void PlotDDR2D( const TString &options="" ){
   Float_t Bmin = -1.4;
   Float_t Bmax = 1.4;
   
-  hFrame->GetYaxis()->SetTitle("#beta");
+  hFrame->GetYaxis()->SetTitle("#beta_{z}");
   hFrame->GetYaxis()->SetRangeUser(Bmin,Bmax);
   hFrame->Draw("axis");
 

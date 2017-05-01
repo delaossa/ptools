@@ -16,10 +16,10 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   rtime = 0;
   simPath = name;
 
-  species.clear();
+  species.clear(); 
   pspaces.clear();
 
-  sCHG = sEF = sBF = sRAW = NULL;
+  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -48,10 +48,10 @@ PData::PData(const char * name) : TNamed(name,name) {
   rtime = 0;
   simPath = name;
 
-  species.clear();
+  species.clear(); 
   pspaces.clear();
 
-  sCHG = sEF = sBF = sRAW = NULL;
+  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -80,10 +80,10 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   rtime = 0;
   simPath = name;
 
-  species.clear();
+  species.clear(); 
   pspaces.clear();
   
-  sCHG = sEF = sBF = sRAW = NULL;
+  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -149,7 +149,7 @@ void PData::ReadParameters(const char * pfile)
   
   ifile.open(ifilename.c_str(),ios::in);
   if (ifile.is_open()) {
-    cout << "PData:: Reading parameters file: " << ifilename.c_str() << endl;
+    cout << "\n PData:: Reading parameters file: " << ifilename.c_str() << endl;
 
     string line;
     while ( getline(ifile,line) )
@@ -241,6 +241,8 @@ void PData::ReadParameters(const char * pfile)
 	  iss >> pParam.denMin;
 	else if(word.find("denMax0") != string::npos)
 	  iss >> pParam.denMax;
+	else if(word.find("denLoc0") != string::npos)
+	  iss >> pParam.denLoc;
 	else if(word.find("denMin1") != string::npos)
 	  iss >> pParam.denMin1;
 	else if(word.find("denMax1") != string::npos)
@@ -253,10 +255,19 @@ void PData::ReadParameters(const char * pfile)
 	  iss >> pParam.denMin3;
 	else if(word.find("denMax3") != string::npos)
 	  iss >> pParam.denMax3;
+	else if(word.find("E1Max") != string::npos)
+	  iss >> pParam.E1Max;
+	else if(word.find("E1Min") != string::npos)
+	  iss >> pParam.E1Min;
+	else if(word.find("EtMax") != string::npos)
+	  iss >> pParam.EtMax;
+	else if(word.find("EtMin") != string::npos)
+	  iss >> pParam.EtMin;
 
 	word.clear();
       }
-    
+
+    cout << endl;
     ifile.close();
     
   } else {
@@ -283,45 +294,71 @@ void PData::LoadFileNames(Int_t t) {
   string Dir;
   
   // Get the list of different species
+  vector<string> sptemp;
   Dir = simPath + "/MS/DENSITY";
-  ListDir(Dir,string(""),species,"nam");
+  ListDir(Dir,string(""),sptemp,"nam");
 
+  // Get the list of RAW species
+  Dir = simPath + "/MS/RAW";
+  ListDir(Dir,string(""),sptemp,"nam");
+
+  // Eliminate redundancies
+  for(UInt_t i=0;i<sptemp.size();i++) {
+    for(UInt_t j=0;j<i;j++) {
+      if(sptemp[j] == sptemp[i]) {
+	sptemp.erase(sptemp.begin()+i);
+	i--;
+	break;
+      }
+    }
+  }
+  
   // It is very important the order of the species:
   // The analisys macros always assume that the plasma specie is the first one of the list.
   // The electron bunch, for instance, uses to be the second.
   // We swap here the order (if necessary) to put the "plasma" species at first.
-  for(UInt_t i=0;i<species.size();i++) {
-    if(species[i].find("plasma") != string::npos)
-      if(i!=0 && species.size()>0) {
-	string temp = species[0];
-	species[0] = species[i];
-	species[i] = temp;
+  for(UInt_t i=0;i<sptemp.size();i++) {
+    if(sptemp[i].find("plasma") != string::npos)
+      if(i!=0 && sptemp.size()>0) {
+	string temp = sptemp[0];
+	sptemp[0] = sptemp[i];
+	sptemp[i] = temp;
 	i--;
 	continue;
       }
-    if(species[i].find("driver") != string::npos)
-      if(i!=1 && species.size()>1) {
-	string temp = species[1];
-	species[1] = species[i];
-	species[i] = temp;
+    if(sptemp[i].find("driver") != string::npos)
+      if(i!=1 && sptemp.size()>1) {
+	string temp = sptemp[1];
+	sptemp[1] = sptemp[i];
+	sptemp[i] = temp;
 	i--;
 	continue;
       }
-    if( (species[i].find("high") != string::npos) ||
-	(species[i].find("1") != string::npos))
-      if(i!=2 && species.size()>2) {
-	string temp = species[2];
-	species[2] = species[i];
-	species[i] = temp;
+    if( (sptemp[i].find("high") != string::npos) ||
+	(sptemp[i].find("1") != string::npos))
+      if(i!=2 && sptemp.size()>2) {
+	string temp = sptemp[2];
+	sptemp[2] = sptemp[i];
+	sptemp[i] = temp;
 	i--;
 	continue;
       }
   }
+
+  for(UInt_t i=0;i<sptemp.size();i++) {
+    species.push_back(sptemp[i]);
+    //cout << Form(" Species = %s", species[i].c_str()) << endl;
+  }
+  
+  // cout << Form("\n Number species = %i",species.size()) << endl;
+  // for(UInt_t i=0;i<species.size();i++) {
+  //   cout << Form(" Species = %s", species[i].c_str()) << endl;
+  // }
   
   // Get the list of different phase spaces
   Dir = simPath + "/MS/PHA";
   ListDir(Dir,string(""),pspaces,"nam");
-  
+    
   // Time
   char stime[10];
   if(time<1e1) sprintf(stime,"00000%1i",time);
@@ -350,10 +387,12 @@ void PData::LoadFileNames(Int_t t) {
   
   // Initialize the pointers to NULLS
   sCHG = new vector<string*>(NSpecies(),NULL);
+  sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
   sEF  = new vector<string*>(3,NULL);
   sBF  = new vector<string*>(3,NULL);
-  sRAW = new vector<string*>(NSpecies(),NULL);
-  sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
+  sA   = new vector<string*>(1,NULL);
+  sRAW = new vector<string*>(NRawSpecies(),NULL);
+  sTrack = new vector<string*>(NRawSpecies(),NULL);
 
   for(UInt_t i=0;i<3;i++) {
     sJ[i] = new vector<string*>(NSpecies(),NULL);    
@@ -394,9 +433,6 @@ void PData::LoadFileNames(Int_t t) {
 	  else if(!sCHG->at(j))
 	    sJ[2]->at(j) = new string(files[i]);
 	  
-	} else if((files[i].find("RAW") != string::npos) && (files[i].find(".h5") != string::npos)) {
-	  sRAW->at(j) = new string(files[i]);
-
 	} else if(files[i].find("PHA") != string::npos) {
 	  // Loop over Phase spaces
 	  for(UInt_t ip=0;ip<NPhaseSpaces();ip++) {
@@ -408,7 +444,20 @@ void PData::LoadFileNames(Int_t t) {
 	}
       }
     }
-    
+
+    // Get RAW species files:
+    for(UInt_t j=0;j<NRawSpecies();j++) {
+
+      if(files[i].find(species[j]) != string::npos) {
+	
+	if((files[i].find("RAW") != string::npos) && (files[i].find(".h5") != string::npos)) {
+	  sRAW->at(j) = new string(files[i]);
+	}
+
+	continue;
+      }
+    }
+        
     // Get Electromagnetic fields files:
     for(UInt_t j=0;j<3;j++) {
       char eName[16];
@@ -433,28 +482,65 @@ void PData::LoadFileNames(Int_t t) {
 	continue;
       }
     }
-  
-  }
 
+    // Get laser envelope
+    char aName[16];
+    sprintf(aName,"a_mod");
+    if(files[i].find(aName) != string::npos) {
+      if(files[i].find("savg") == string::npos)
+	sA->at(0) = new string(files[i]);
+      else if(!sA->at(0))
+	sA->at(0) = new string(files[i]);
+    }
+    
+  }
+  
+  // Get the vector of particle tracking files.
+  vector<string> tfiles;
+  Dir = simPath + "/MS/TRACKS";
+  ListDir(Dir,".h5",tfiles,"recursive");
+  
+  // Fishing the pieces ...
+  for(UInt_t i=0;i<tfiles.size();i++) {
+
+    // Get RAW species files:
+    for(UInt_t j=0;j<NRawSpecies();j++) {
+      
+      if(tfiles[i].find(species[j]) != string::npos) {
+	if((tfiles[i].find("tracks") != string::npos) && (tfiles[i].find(".h5") != string::npos)) {
+	  sTrack->at(j) = new string(tfiles[i]);
+	}
+	
+	continue;
+      }
+    }
+  }
+  
+  
   if(species.size()) {
-    rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
-    GetBoxDimensionsFromFile(GetChargeFileName(0)->c_str());
+    if(sCHG->at(0)) {
+      rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
+      GetBoxDimensionsFromFile(GetChargeFileName(0)->c_str());
+    } else if(sRAW->at(0)) {
+      rtime = GetRealTimeFromFile(GetRawFileName(0)->c_str());
+      GetBoxDimensionsFromFile(GetRawFileName(0)->c_str());
+    }
   } else {
-    cout << "PData:: No species folders in this simulation: " << GetPath() << "." << endl;
-    cout << "Checking the fields..." << endl;
+    // cout << "PData:: No species folders in this simulation: " << GetPath() << "." << endl;
+    // cout << "Checking the fields..." << endl;
     
     for(UInt_t i=0;i<3;i++) { 
       if(sEF->at(i)) {
 	rtime = GetRealTimeFromFile(GetEfieldFileName(i)->c_str());
 	GetBoxDimensionsFromFile(GetEfieldFileName(i)->c_str());
 	break;
-      }
+      } else
+	continue;
     }
+    
     
   }
 
-  
-  
   // Defines the sub-range for the analysis.
   // Here at initialization, it is set to the whole simulation range.
   Double_t shiftx1 = Shift("comov");  
@@ -550,6 +636,13 @@ void PData::PrintData(Option_t *option) {
       cout << " - " << sRAW->at(is)->c_str() << endl;
   }
   cout << endl;
+
+  cout << "Data for TRACKING macroparticles:" << endl;
+  for(UInt_t is=0;is<NRawSpecies();is++) {
+    if(sTrack->at(is)) 
+      cout << " - " << sTrack->at(is)->c_str() << endl;
+  }
+  cout << endl;
   
   cout << "Data for Electromagnetic fields: " << endl;
   for(UInt_t ief=0;ief<3;ief++) {
@@ -559,6 +652,13 @@ void PData::PrintData(Option_t *option) {
     if(sBF)
       if(sBF->at(ief))
 	cout << " - " << sBF->at(ief)->c_str() << endl;
+  }
+  cout << endl;
+
+  if(sA) {
+    cout << "Data for laser envelope: " << endl;
+    if(sA->at(0))
+      cout << " - " << sA->at(0)->c_str() << endl;
   }
   cout << endl;
   
@@ -719,6 +819,14 @@ void PData::Clear(Option_t *option)
     delete sCHG;
     sCHG = NULL;
   }
+
+  for(UInt_t i=0;i<3;i++) {
+    if(sJ[i]) {
+      FreeClear(*sJ[i]);
+      delete sJ[i];
+      sJ[i] = NULL;
+    }
+  }
   
   if(sEF) {
     FreeClear(*sEF);
@@ -731,11 +839,23 @@ void PData::Clear(Option_t *option)
     delete sBF;
     sBF = NULL;
   }
-  
+
+  if(sA) {
+    FreeClear(*sA);
+    delete sA;
+    sA = NULL;
+  }
+
   if(sRAW) {
     FreeClear(*sRAW);
     delete sRAW;
     sRAW = NULL;
+  }
+
+  if(sTrack) {
+    FreeClear(*sTrack);
+    delete sTrack;
+    sTrack = NULL;
   }
 
   if(sPHA) {
@@ -746,8 +866,8 @@ void PData::Clear(Option_t *option)
     sPHA = NULL;
   }
   
-  species.clear();
-  pspaces.clear();
+  species.clear(); 
+  pspaces.clear();  
   
 }
 
@@ -1091,20 +1211,46 @@ TH1F* PData::GetH1SliceX(const char *filename,const char *dataname,Int_t Firstx1
   return h1D;
 }
 //_______________________________________________________________________
-TTree* PData::GetTreeRaw(const char *filename, const char *options) {
+TTree* PData::GetRawTree(const char *filename, const char *options) {
   
   // Options
   TString opt = options;
 
   // Open input HDF5 file
-  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  // H5File h5 = H5File(filename,H5F_ACC_RDONLY);
   
   // Open main group for data reading
-  Group *root = new Group(h5.openGroup("/"));
+  // Group *root = new Group(h5.openGroup("/"));
   
+  // TTree *tree = new TTree("RawTree","");
+  // - not working -
+  // GroupToTree(root,tree,kTRUE,kTRUE);  // kTRUE for sequential reading.
+
+  UInt_t Nvar = 7;
+  if(!Is3D()) Nvar = 6;
+  char varname[7][4] = {{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+
+  
+  Float_t **var;
+  var = new Float_t*[Nvar];
+  UInt_t Np = GetRawArray(filename,var);
+
   TTree *tree = new TTree("RawTree","");
-  GroupToTree(root,tree,kTRUE);  // kTRUE for sequential reading.
-  tree->Print();
+  
+  // Define the branches
+  Float_t *darray = new Float_t[Nvar];
+  for(UInt_t i=0;i<Nvar;i++) {
+    tree->Branch(varname[i],&darray[i],Form("%s/F",varname[i]));
+  }
+
+  for(UInt_t j=0;j<Np;j++) {
+    for(UInt_t i=0;i<Nvar;i++)
+      darray[i] = var[i][j];
+    
+    tree->Fill();
+  }
+  
+  // tree->Print();
 
   return tree;
 }
@@ -1515,7 +1661,133 @@ void PData::GetH1RawCut2(const char *filename,const char *dataname,
 
 }
 
+//_______________________________________________________________________
+TTree** PData::GetTrackTree(const char *filename,Int_t &NTracks, const char *options) {
+  
+  // Options
+  TString opt = options;
 
+  // Open input HDF5 file
+  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  
+  // Open main group for data reading
+  Group *root = new Group(h5.openGroup("/"));
+
+  UInt_t Nvar = 8;
+  if(!Is3D()) Nvar = 7;
+  char varname[8][4] = {{"t"},{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+
+  Int_t NOBJ = root->getNumObjs();
+  TTree **tree = new TTree*[NOBJ];
+  Int_t NT = 0;
+  for(Int_t i=0; (i<NOBJ) && ( (NTracks<0) || (NT<NTracks) ); i++) {
+    char gname[128];
+    root->getObjnameByIdx( i, gname, 128 );
+    //cout << Form(" Group name = %s",gname) << endl;
+    Group *track = new Group(h5.openGroup(Form("/%s",gname)));
+    if(track == NULL) continue;
+
+    Double_t **var = new Double_t*[Nvar];
+    
+    DataSet *dataSet = NULL;
+    UInt_t Np = 0;
+    
+    for(UInt_t i=0;i<Nvar;i++) {
+      
+      dataSet = new DataSet(track->openDataSet(varname[i]));
+      Int_t rank = dataSet->getSpace().getSimpleExtentNdims();
+      hsize_t  *dataDims = new hsize_t[rank];
+      dataSet->getSpace().getSimpleExtentDims(dataDims,NULL);
+      if(i==0) Np = dataDims[0];  
+    
+      var[i] = new Double_t[Np];
+      
+      DataSpace memspace(rank,dataDims);
+      dataSet->read(var[i],PredType::NATIVE_DOUBLE,memspace,dataSet->getSpace());
+      dataSet->close();
+
+      delete dataSet;
+    }
+    track->close(); 
+
+    tree[NT] = new TTree(Form("TrackTree_%i",NT),"");
+    // Define the branches
+    Double_t *darray = new Double_t[Nvar];
+    for(UInt_t i=0;i<Nvar;i++) {
+      tree[NT]->Branch(varname[i],&darray[i],Form("%s/D",varname[i]));
+    }
+
+    // Fill the tree
+    for(UInt_t j=0;j<Np;j++) {
+      for(UInt_t i=0;i<Nvar;i++)
+	darray[i] = var[i][j];
+      
+      tree[NT]->Fill();
+    }
+    
+    NT++;
+    
+    delete track;
+  }
+  
+  NTracks = NT;
+  return tree;
+}
+
+
+//_______________________________________________________________________
+UInt_t PData::GetTrackArray(const char *filename, Double_t ***var, Int_t *np, const char *options) {
+  
+  // Options
+  TString opt = options;
+
+  // Open input HDF5 file
+  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  
+  // Open main group for data reading
+  Group *root = new Group(h5.openGroup("/"));
+  Int_t NOBJ = root->getNumObjs();
+  var = new Double_t**[NOBJ];
+  np = new Int_t[NOBJ];
+  for(Int_t i=0; (i<NOBJ); i++) {
+    char gname[128];
+    root->getObjnameByIdx( i, gname, 128 );
+    Group *track = new Group(h5.openGroup(Form("/%s",gname)));
+    if(track == NULL) continue;
+   
+    UInt_t Nvar = 8;
+    if(!Is3D()) Nvar = 7;
+    char varname[8][4] = {{"t"},{"p1"},{"p2"},{"p3"},{"q"},{"x1"},{"x2"},{"x3"}};
+
+    var[i] = new Double_t*[Nvar];
+    
+    DataSet *dataSet[Nvar];
+    UInt_t Ntime = 0;
+    for(UInt_t j=0;j<Nvar;j++) {
+    
+      dataSet[j] = new DataSet(track->openDataSet(varname[j]));
+      Int_t rank = dataSet[j]->getSpace().getSimpleExtentNdims();
+      hsize_t  *dataDims = new hsize_t[rank];
+      dataSet[j]->getSpace().getSimpleExtentDims(dataDims,NULL);
+      if(j==0) {
+	Ntime = dataDims[0];  
+	np[i] = Ntime;
+      }
+      var[i][j] = new Double_t[Ntime];
+      
+      DataSpace memspace(rank,dataDims);
+      dataSet[j]->read(var[i][j],PredType::NATIVE_DOUBLE,memspace,dataSet[j]->getSpace());
+
+      dataSet[j]->close();
+      
+    }
+    track->close();
+  }
+  root->close();
+
+  return NOBJ;
+  
+}
 
 //_______________________________________________________________________
 TH2F* PData::GetH2(const char *filename,const char *dataname, const char *options) {
@@ -2817,10 +3089,13 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
 
 
 //_______________________________________________________________________
-TH3F* PData::GetH3(const char *filename,const char *dataname) {
+TH3F* PData::GetH3(const char *filename,const char *dataname, const char *options) {
 
   // Save memory and time with an specific range selection.
 
+  // Options
+  TString opt = options;
+  
   // Open input HDF5 file
   H5File h5 = H5File(filename,H5F_ACC_RDONLY);
   
@@ -2871,6 +3146,24 @@ TH3F* PData::GetH3(const char *filename,const char *dataname) {
   dataSet->close();
 
   root->close();
+  
+  // Histogram centering
+  Double_t shiftx1 = Shift(opt);  
+  Double_t shiftx2(0), shiftx3(0);
+  if(opt.Contains("center")) 
+    if(!opt.Contains("cyl")) {
+      shiftx2 += (x2Min + x2Max)/2.;
+      shiftx3 += (x3Min + x3Max)/2.;
+    }
+  
+  x1Min -= shiftx1;
+  x1Max -= shiftx1;
+  
+  x2Min -= shiftx2;
+  x2Max -= shiftx2;
+
+  x3Min -= shiftx2;
+  x3Max -= shiftx2;
   
   string sdata = dataname;
  
