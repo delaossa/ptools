@@ -87,6 +87,9 @@ struct pparam {
   Double_t E1Max;
   Double_t EtMin;
   Double_t EtMax;
+  Double_t aMin;
+  Double_t aMax;
+  
 };
 
 
@@ -263,6 +266,13 @@ public:
   }
   Double_t  GetEtMax()  {
     return pParam.EtMax;
+  }
+
+  Double_t  GetaMin()  {
+    return pParam.aMin;
+  }
+  Double_t  GetaMax()  {
+    return pParam.aMax;
   }
 
   Double_t  GetDenLoc(Int_t i = 0)  {
@@ -562,10 +572,13 @@ void PData::ResetParameters() {
 
   // Density ranges
   pParam.denMin = pParam.denMax = pParam.denLoc = pParam.denMin1 = pParam.denMax1 = pParam.denMin2 = pParam.denMax2 = pParam.denMin3 = pParam.denMax3 = -999.;
-
+  
   // Field ranges
   pParam.E1Min = pParam.EtMin = 999.;
   pParam.E1Max = pParam.EtMax = -999.;
+
+  pParam.aMin = 999.;
+  pParam.aMax = -999.;
 }
 
 
