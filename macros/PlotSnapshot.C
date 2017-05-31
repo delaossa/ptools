@@ -928,8 +928,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	
 	Float_t der = 0.;
 	if(j>2 && j<NBinsX-2) {
-	  der =  4.0 / 3.0 * (hField2D->GetBinContent(i,j+1) - hField2D->GetBinContent(i,j-1)) / (2.0 * dx)
-	    - 1.0 / 3.0 * (hField2D->GetBinContent(i,j+2) - hField2D->GetBinContent(i,j-2)) / (4.0 * dx) ;	  
+	  der =  (4.0 / 3.0) * (hField2D->GetBinContent(i,j+1) - hField2D->GetBinContent(i,j-1)) / (2.0 * dx)
+	    - (1.0 / 3.0) * (hField2D->GetBinContent(i,j+2) - hField2D->GetBinContent(i,j-2)) / (4.0 * dx) ;	  
 	}
 
 	// cout << Form(" Bin (%i,%i) = %f",i,j,der) << endl;
@@ -3603,7 +3603,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     kmin = - kmax;
         
     hdW2D->GetZaxis()->SetRangeUser(kmin,kmax); 
-    hdW2D->GetZaxis()->SetTitle("K_{x} [E_{0} k_{p}]");
+    hdW2D->GetZaxis()->SetTitle("K_{x} [m#omega_{p}^{2}]");
         
     hFrame[ip]->Draw("axis");
     

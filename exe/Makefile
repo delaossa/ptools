@@ -3,7 +3,7 @@ include $(PTOOLS)/config/Makefile.common
 EXES = pcheck pcopy pdelete hdf2root looper plotBunch doEvolutions doSnapshot plotBeamsEnergy rawConvert plotBunchL ele2osi
 
 HDF5CFLAGS    = -I$(HDF5CPP)/include
-HDF5LIBS      = -L$(HDF5CPP)/lib -L$(SZIP)/lib -lhdf5_cpp -lhdf5 -lz
+HDF5LIBS      = -L$(HDF5CPP)/lib -lhdf5_cpp -lhdf5 -lz
 
 CXXFLAGS      += $(HDF5CFLAGS) -I$(INCDIR) -I.
 LIBS          := $(ROOTLIBS) -lGpad -lGraf $(HDF5LIBS) -L$(LIBDIR) -lptools

@@ -5,7 +5,7 @@ MODULES  = PGlobals PUnits PConst PFunctions PData PDataHiP PPalette
 LIB      = ptools
 
 HDF5CFLAGS    = -I$(HDF5CPP)/include
-HDF5LIBS      = -L$(HDF5CPP)/lib -L$(SZIP)/lib -lhdf5_cpp -lhdf5 -lz
+HDF5LIBS      = -L$(HDF5CPP)/lib -lhdf5_cpp -lhdf5 -lz
 
 # c++-compiler
 CXXFLAGS      += $(HDF5CFLAGS) -I$(INCDIR)
