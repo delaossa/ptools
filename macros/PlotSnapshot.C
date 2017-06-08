@@ -606,7 +606,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     }
   }
-
+  if(!h2D) {
+    cout <<  Form("\n Error: base histogram could not be retrieved! -> exit!\n") << endl;
+    return;
+  }
+    
+  
   Float_t yRange   = (h2D->GetYaxis()->GetXmax() - h2D->GetYaxis()->GetXmin());
   Float_t midPoint = (h2D->GetYaxis()->GetXmax() + h2D->GetYaxis()->GetXmin())/2.;
   Float_t yMin = midPoint-yRange/2;
@@ -1296,19 +1301,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     sprintf(name,"hFrame_%i",i);
     hFrame[i] = (TH2F*) gROOT->FindObject(name);
-    if(hFrame[i]) delete hFrame[i];
-
-    if(hDen2D[0]) 
-      hFrame[i] = (TH2F*) hDen2D[0]->Clone(name);
-    else if (Nspecies>1){
-      if(hDen2D[1])
-	hFrame[i] = (TH2F*) hDen2D[1]->Clone(name);
+    if(hFrame[i]) {
+      delete hFrame[i];
+      hFrame[i] = NULL;
     }
-    else if(hA2D)
-      hFrame[i] = (TH2F*) hA2D->Clone(name);
-    
-    // hFrame[i] = (TH2F*) h2D->Clone(name);
+
+    hFrame[i] = (TH2F*) h2D->Clone(name);
     hFrame[i]->Reset();
+    
 
     Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
     Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
