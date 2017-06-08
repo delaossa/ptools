@@ -2238,6 +2238,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
    
     // Fit the 1D line in the 2D pad:
+    TH1F *hE1Dcl2 = (TH1F*) hE1D[0]->Clone("hE1Dcl2");
+    
     TLine *lineE = NULL;
     TLine *lineEmaxLuLinear = NULL;
     TLine *lineEmaxUSE = NULL;
@@ -2249,8 +2251,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Float_t rightmax = Emax[0];
       Float_t slope = (yMax-yMin)/(rightmax-rightmin);
     
-      for(Int_t j=0;j<hE1D[0]->GetNbinsX();j++) {
-	hE1D[0]->SetBinContent(j+1,slope*(hE1D[0]->GetBinContent(j+1)-rightmin)+yMin);
+      for(Int_t j=0;j<hE1Dcl2->GetNbinsX();j++) {
+	hE1Dcl2->SetBinContent(j+1,slope*(hE1Dcl2->GetBinContent(j+1)-rightmin)+yMin);
       }
     
       Double_t sl = EzMaxLo/radius;
@@ -2279,8 +2281,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(opt.Contains("mark")) {
 	Float_t e0 = slope*(0-rightmin)+yMin;
 
-	Float_t zF = hE1D[0]->GetBinCenter(binFcross);
-	Float_t EF = hE1D[0]->GetBinContent(binFcross);
+	Float_t zF = hE1Dcl2->GetBinCenter(binFcross);
+	Float_t EF = hE1Dcl2->GetBinContent(binFcross);
 
 	TLine *lineEF = new TLine(zF,0,zF,EF);
 	lineEF->SetLineColor(kRed);
@@ -2312,8 +2314,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	markE0->SetMarkerSize(1.4);
 	markE0->Draw();
 
-	Float_t zI = hE1D[0]->GetBinCenter(binPotValueIni);
-	Float_t EI = hE1D[0]->GetBinContent(binPotValueIni);
+	Float_t zI = hE1Dcl2->GetBinCenter(binPotValueIni);
+	Float_t EI = hE1Dcl2->GetBinContent(binPotValueIni);
 	TLine *lineEI = new TLine(zI,e0,zI,EI);
 	lineEI->SetLineColor(kRed);
 	lineEI->SetLineStyle(2);
@@ -2385,12 +2387,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     }
 
-    hE1D[0]->SetLineStyle(1);
-    hE1D[0]->SetLineWidth(2);
-    hE1D[0]->SetLineColor(lineColor);
+    hE1Dcl2->SetLineStyle(1);
+    hE1Dcl2->SetLineWidth(2);
+    hE1Dcl2->SetLineColor(lineColor);
 
     if(!opt.Contains("no1d"))
-      hE1D[0]->Draw("sameL");    
+      hE1Dcl2->Draw("sameL");    
     
     pad[ip]->Update();
   
@@ -3153,6 +3155,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
     
     // Fit the V1D in the V2D pad:
+    TH1F *hV1Dcl = (TH1F*) hV1D->Clone("hV1Dcl");
+
     TLine *lineT = NULL;
     {
       Float_t rightmin = Vmin;
@@ -3160,8 +3164,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Float_t slope = (yMax-yMin)/(rightmax-rightmin);
       Float_t psi0 = slope*(0.0-rightmin)+yMin;
 
-      for(Int_t j=0;j<hV1D->GetNbinsX();j++) {
-	hV1D->SetBinContent(j+1,slope*(hV1D->GetBinContent(j+1)-rightmin)+yMin);
+      for(Int_t j=0;j<hV1Dcl->GetNbinsX();j++) {
+	hV1Dcl->SetBinContent(j+1,slope*(hV1Dcl->GetBinContent(j+1)-rightmin)+yMin);
       }
 
       if(opt.Contains("zero")) {
@@ -3176,10 +3180,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
 
       if(opt.Contains("mark")) {
-	Float_t zI = hV1D->GetBinCenter(binPotValueIni);
-	Float_t psiI = hV1D->GetBinContent(binPotValueIni);
-	Float_t zF = hV1D->GetBinCenter(binFcross);
-	Float_t psiF = hV1D->GetBinContent(binFcross);
+	Float_t zI = hV1Dcl->GetBinCenter(binPotValueIni);
+	Float_t psiI = hV1Dcl->GetBinContent(binPotValueIni);
+	Float_t zF = hV1Dcl->GetBinCenter(binFcross);
+	Float_t psiF = hV1Dcl->GetBinContent(binFcross);
 	
 	TLine *linePsiI = new TLine(zI,psiF,zI,psiI);
 	linePsiI->SetLineColor(kRed);
@@ -3205,13 +3209,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     }
 
-    hV1D->SetLineStyle(1);
-    hV1D->SetLineWidth(2);
-    //  hV1D->SetLineColor(PGlobals::elecLine);
-    hV1D->SetLineColor(lineColor);
+    hV1Dcl->SetLineStyle(1);
+    hV1Dcl->SetLineWidth(2);
+    //  hV1Dcl->SetLineColor(PGlobals::elecLine);
+    hV1Dcl->SetLineColor(lineColor);
 
     if(!opt.Contains("no1d"))
-      hV1D->Draw("sameL");
+      hV1Dcl->Draw("sameL");
     
     // ADK MAIN contour  
     // for(Int_t i=0;i<graphsI2D_main->GetEntriesFast();i++) {

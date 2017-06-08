@@ -249,7 +249,7 @@ void PlotDDR2D( const TString &options="" ){
   axisb->SetLineWidth(frameWidth);
   axisb->SetLineColor(betaphvsz->GetLineColor());
   axisb->SetLabelColor(betaphvsz->GetLineColor());
-  axisb->SetTitle("#beta_{#chi}");
+  axisb->SetTitle("#beta_{ph}");
   axisb->CenterTitle();
   axisb->SetTitleColor(betaphvsz->GetLineColor());
   axisb->SetLabelFont(font);
@@ -601,7 +601,7 @@ void PlotDDR2D( const TString &options="" ){
   gPad->SetLeftMargin(0.18);
  
   Float_t sigmin = 0.0;
-  Float_t sigmax = 10.0;
+  Float_t sigmax = 12.0;
   Float_t denmin = 1.0;
   Float_t denmax = 10.0;
 
@@ -648,12 +648,12 @@ void PlotDDR2D( const TString &options="" ){
   hBetamin2D->GetXaxis()->CenterTitle();
   hBetamin2D->GetYaxis()->SetTitle("n_{top}/n_{0}");
   hBetamin2D->GetYaxis()->CenterTitle();
-  hBetamin2D->GetZaxis()->SetTitle("#beta_{#chi,min}");
+  hBetamin2D->GetZaxis()->SetTitle("#beta_{ph,min}");
   hBetamin2D->GetZaxis()->CenterTitle();
 
   TH2F *hClone = (TH2F*) hBetamin2D->Clone("clone");
   
-  const Int_t Ncontours = 11;
+  const Int_t Ncontours = 21;
   Double_t contours[Ncontours];
   for(Int_t i=0; i<Ncontours; i++) {
     contours[i] = i * (1.0/(Ncontours-1));
@@ -728,7 +728,7 @@ void PlotDDR2D( const TString &options="" ){
     }
   }
 
-  const Int_t Nconts = 11;
+  const Int_t Nconts = 21;
   Double_t Conts[Nconts];
   for(Int_t i=0; i<Nconts; i++) {
     Conts[i] = i * (1.0/(Nconts-1));
