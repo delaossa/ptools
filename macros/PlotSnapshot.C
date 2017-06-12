@@ -952,6 +952,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Int_t lastBin = NBinsX/2 + 1;
     hdW1D = (TH1F*) hdW2D->ProjectionX(hName,firstBin,lastBin);
     hdW1D->Scale(1.0/(lastBin-firstBin+1));
+    hdW1D->Sumw2(0);
   }
 
   // CROSSINGS
@@ -1247,6 +1248,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   C->SetFillStyle(4000);
 
   UInt_t lineColor = kOrange+10;
+  // lineColor = kRed+3;  
   //  UInt_t lineColor2 =  TColor::GetColor(196,30,78);
   //  UInt_t lineColor2 = kGray+2;
   UInt_t lineColor2 = lineColor;
@@ -3659,12 +3661,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	lineEndNeutral->Draw();
     }
 
-    if(hdW1D) {
-      hdW1D->SetLineStyle(1);
-      hdW1D->SetLineWidth(2);
-      hdW1D->SetLineColor(lineColor);
-      hdW1D->Draw("same L");
-    }
+    if(!opt.Contains("no1d"))
+      if(hdW1D) {
+	hdW1D->SetLineStyle(1);
+	hdW1D->SetLineWidth(2);
+	hdW1D->SetLineColor(lineColor);
+	hdW1D->Draw("sameL");
+      }
     
     pad[ip]->Update();
   
