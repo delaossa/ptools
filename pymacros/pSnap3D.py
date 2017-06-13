@@ -71,7 +71,7 @@ volumeprop = vtk.vtkVolumeProperty()
 volumeprop.IndependentComponentsOn()
 volumeprop.SetInterpolationTypeToLinear()
 
-# This blocks read the colormaps file (if any)
+# This block reads the colormaps file (if any)
 
 fcolname = './%s/%s.col' % (pData.GetPath(),args.sim)
 opafile = []
@@ -460,8 +460,8 @@ if args.cbar :
     for i in range(0,len(npdata)):
         # Adding the scalar bar color palette
         scalarBar.append(vtkScalarBarActor())
-        if stype[i] == 'laser' :
-            scalarBar[i].SetTitle("a")
+        if 'e2' in hfl[i].filename :
+            scalarBar[i].SetTitle("Ex")
         else :
             if args.log :
                 scalarBar[i].SetTitle("log(n/np)")
