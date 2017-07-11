@@ -2,7 +2,7 @@
 from __future__ import print_function
 import h5py
 from vtk import *
-from ROOT import PData, PGlobals
+from ROOT import PData, PDataHiP, PGlobals
 import sys, argparse
 import numpy as np
 
@@ -24,6 +24,7 @@ parser.add_argument('--surf', action='store_true', default=0,help='draw surfaces
 parser.add_argument('--log', action='store_true', default=0,help='log scale')
 parser.add_argument('--axes', action='store_true', default=0,help='show axes')
 parser.add_argument('--cbar', action='store_true', default=0,help='show color maps')
+parser.add_argument('--transx', action='store_true', default=0,help='transpose transverse dimensions')
 parser.add_argument('--lden', action='store_true', default=0,help='use local density')
 parser.add_argument('--laser', action='store_true', default=0,help='show laser fields')
 parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
@@ -49,10 +50,15 @@ if args.test :
     hfl.append(h5py.File('data/charge-He-electrons-000026.h5','r'))
 else :
     pData = PData(args.sim)
+    if pData.isHiPACE() :
+        del(pData)
+        pData = PDataHiP(args.sim)
+    
     pData.LoadFileNames(args.t)
     for i in range(0,pData.NSpecies()) :
         hfl.append(h5py.File(pData.GetChargeFileName(i).c_str(),'r'))
-
+        print('File %i = %s' % (i,pData.GetChargeFileName(i).c_str()))
+        
     if args.laser :
         hfl.append(h5py.File(pData.GetEfieldFileName(1).c_str(),'r'))
 
@@ -137,15 +143,24 @@ baseden = 1
 localden = 1
 for i, hf in enumerate(hfl):
 
-    if (args.laser) & (i == nfiles-1) :  
-        data.append(hf.get('e2'))
-    else :
-        data.append(hf.get('charge'))
-        data[i] = np.absolute(data[i])    
-       
-    axisz = hf.get('AXIS/AXIS1')
-    axisx = hf.get('AXIS/AXIS2')
-    axisy = hf.get('AXIS/AXIS3')
+    name = hf.attrs['NAME']
+    data.append(hf.get(name[0]))
+    data[i] = np.absolute(data[i])    
+
+    if pData.isHiPACE() :
+        xmin = hf.attrs['XMIN']
+        xmax = hf.attrs['XMAX']
+
+        axisz = [xmin[0],xmax[0]]
+        axisx = [xmin[1],xmax[1]]
+        axisy = [xmin[2],xmax[2]]
+
+        data[i] = np.transpose(data[i],(2, 1, 0))
+
+    else:
+        axisz = hf.get('AXIS/AXIS1')
+        axisx = hf.get('AXIS/AXIS2')
+        axisy = hf.get('AXIS/AXIS3')
 
     dz = (axisz[1]-axisz[0])/data[i].shape[2]
     dx = (axisx[1]-axisx[0])/data[i].shape[0]
@@ -183,7 +198,8 @@ for i, hf in enumerate(hfl):
     npdata.append(np.array(data[i]))
     j = len(npdata) - 1
 
-    npdata[i] = np.transpose(npdata[i],(1, 0, 2))
+    if args.transx :
+        npdata[i] = np.transpose(npdata[i],(1, 0, 2))
  
     Max.append(np.amax(npdata[j]))
     Min.append(0.01*Max[j])
@@ -543,10 +559,13 @@ PGlobals.mkdir(foutname)
 
 # Write an EPS file.
 # exp = vtk.vtkGL2PSExporter()  # Not working with openGL2 yet
-# exp.SetRenderWindow(window)
-# exp.SetFilePrefix("screenshot")
-# exp.DrawBackgroundOn()
-# exp.Write()
+#exp.SetRenderWindow(window)
+#exp.SetFileFormatToPDF()
+#exp.CompressOn()
+#exp.SetSortToBSP()
+#exp.SetFilePrefix("screenshot")
+#exp.DrawBackgroundOn()
+#exp.Write()
 
 # Write to PNG file
 w2if = vtk.vtkWindowToImageFilter()
