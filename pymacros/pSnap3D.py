@@ -27,6 +27,7 @@ parser.add_argument('--cbar', action='store_true', default=0,help='show color ma
 parser.add_argument('--transx', action='store_true', default=0,help='transpose transverse dimensions')
 parser.add_argument('--lden', action='store_true', default=0,help='use local density')
 parser.add_argument('--laser', action='store_true', default=0,help='show laser fields')
+parser.add_argument('--txbck', action='store_true', default=0,help='textured background')
 parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
 
@@ -407,16 +408,21 @@ light.SetIntensity(1)
 renderer = vtk.vtkRenderer()
 # Set background
 if args.white :
-    renderer.SetBackground(1.0,1.0,1.0) # white
+    renderer.SetBackground(0.9,0.9,0.9) # almost white
 else :
     renderer.SetBackground(0,0,0) # black
 # renderer.SetBackground(0.09,0.10,0.12) 
 # renderer.SetBackground(.1,.2,.3) # Background dark blue
 # renderer.SetBackground(0.1,0.1,0.1)
-# renderer.TexturedBackgroundOn()
+
 # Other colors 
-# nc = vtk.vtkNamedColors()
-# renderer.SetBackground(nc.GetColor3d('MidnightBlue'))
+nc = vtk.vtkNamedColors()
+#renderer.SetBackground(nc.GetColor3d('MidnightBlue'))
+#renderer.SetBackground(nc.GetColor3d('DeepSkyBlue'))
+#renderer.SetBackground(0.09,0.10,0.12)
+
+if args.txbck :
+    renderer.TexturedBackgroundOn()
 
 # Add the volume to the renderer ...
 renderer.AddVolume(volume)
@@ -534,7 +540,7 @@ if args.nowin == 0 :
 renderer.ResetCamera()
 camera = renderer.GetActiveCamera()
 #camera.SetPosition((axisz[1]-axisz[0])/2.0,74.0,0.0);
-#camera.SetFocalPoint((axisz[1]-axisz[0])/2.0,0.0,0.0);
+camera.SetFocalPoint((axisz[1]-axisz[0])/2.0,0.0,0.0);
 camera.Zoom(args.zoom)
 #camera.Roll(45)
 camera.Elevation(args.elevation)
