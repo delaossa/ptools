@@ -96,6 +96,7 @@ void PlotDDR2D( const TString &options="" ){
     
   gStyle->SetLabelOffset(labeloffset,"xyz");
   gStyle->SetTitleOffset(titleoffset,"yz");
+  gStyle->SetTitleOffset(titleoffset+0.4,"z");
   gStyle->SetTitleOffset(titleoffset,"x");
   
   gStyle->SetTickLength(ticksize,"yz");
@@ -115,24 +116,23 @@ void PlotDDR2D( const TString &options="" ){
   //  Int_t colorDen = myNaranja;
   //  Int_t colorBeta = kBlack;
   Int_t colorDen = kBlack;
-  Int_t colorDenLin = kGray+2;
+  Int_t colorDenLin = kBlack;
   Int_t colorBeta = kOrange+10;
   //  Int_t colorBetaLin = TColor::GetColor("#FCBFC1");
   Int_t colorBetaLin = kOrange+10;
   Int_t lineWidth = 6;
   Int_t lineWidthLin = 2;
-  Int_t lineStyleLin = 8;
+  Int_t lineStyleLin = 3;
 
-  // 
-  Int_t ylabelsize = 16;
-  Int_t ytitlesize = 20;
+  Int_t ylabelsize = 32;
+  Int_t ytitlesize = 36;
   Float_t ylabeloffset = 0.016;
   Float_t ytitleoffset = 1.0;
   Float_t yticksize = 0.02;
   
   // DDR 1D plot
-  Int_t sizex = 300;
-  Int_t sizey = 400;
+  Int_t sizex = 600;
+  Int_t sizey = 800;
     
   // Canvas setup
   TCanvas *CDDR = new TCanvas("CDDR","DDR vs phase velocity",sizex,sizey);
@@ -155,7 +155,7 @@ void PlotDDR2D( const TString &options="" ){
   Double_t *betapharray2 = new Double_t[Np];
   Double_t *betapharraylin = new Double_t[Np];
   Double_t ntop   = 10;
-  Double_t sigmal = 2.0;
+  Double_t sigmal = 2.5;
   Double_t phase = -TMath::TwoPi();
 
   Float_t dMin = -0.5;
@@ -192,17 +192,17 @@ void PlotDDR2D( const TString &options="" ){
   // PGlobals::SetH1LabelSize(hFrameD);
 
   hFrameD->GetXaxis()->SetNdivisions(ndivx);
-  hFrameD->GetXaxis()->SetLabelSize(ylabelsize);
-  hFrameD->GetXaxis()->SetTitleSize(ytitlesize);
+  // hFrameD->GetXaxis()->SetLabelSize(ylabelsize);
+  // hFrameD->GetXaxis()->SetTitleSize(ytitlesize);
   hFrameD->GetXaxis()->CenterTitle();
   hFrameD->GetYaxis()->SetNdivisions(ndivy);
   hFrameD->GetYaxis()->SetAxisColor(colorDen);
   hFrameD->GetYaxis()->SetLabelColor(colorDen);
   hFrameD->GetYaxis()->SetTitleColor(colorDen);
-  hFrameD->GetYaxis()->SetLabelSize(ylabelsize);
-  hFrameD->GetYaxis()->SetLabelOffset(ylabeloffset);
-  hFrameD->GetYaxis()->SetTitleSize(ytitlesize);
-  hFrameD->GetYaxis()->SetTitleOffset(ytitleoffset);
+  // hFrameD->GetYaxis()->SetLabelSize(ylabelsize);
+  // hFrameD->GetYaxis()->SetLabelOffset(ylabeloffset);
+  // hFrameD->GetYaxis()->SetTitleSize(ytitlesize);
+  // hFrameD->GetYaxis()->SetTitleOffset(ytitleoffset);
   hFrameD->GetYaxis()->SetTickLength(yticksize);
   hFrameD->GetYaxis()->CenterTitle();
     
@@ -238,9 +238,8 @@ void PlotDDR2D( const TString &options="" ){
   betaphvszlin->SetLineWidth(lineWidthLin);
   betaphvszlin->SetLineStyle(lineStyleLin);
 
-
-  betaphvszlin->Draw("L");
-  denlinvsz->Draw("L");
+  //betaphvszlin->Draw("L");
+  //denlinvsz->Draw("L");
   denvsz->Draw("C");
     
   //draw an axis on the right side
@@ -250,7 +249,7 @@ void PlotDDR2D( const TString &options="" ){
   axisb->SetLineWidth(frameWidth);
   axisb->SetLineColor(betaphvsz->GetLineColor());
   axisb->SetLabelColor(betaphvsz->GetLineColor());
-  axisb->SetTitle("#beta");
+  axisb->SetTitle("#beta_{ph}");
   axisb->CenterTitle();
   axisb->SetTitleColor(betaphvsz->GetLineColor());
   axisb->SetLabelFont(font);
@@ -405,7 +404,7 @@ void PlotDDR2D( const TString &options="" ){
 
   for(Int_t i=0;i<Nsim;i++) {
 
-    gsmooth[i] = new TGraphSmooth("normal");
+    gsmooth[i] = new TGraphSmooth(Form("gsmooth_%i",i));
      
     betamax[i] = -9999.0;
 
@@ -515,7 +514,8 @@ void PlotDDR2D( const TString &options="" ){
     Double_t *psival = gVextr[i][1]->GetY();
     Double_t *zval = gVextr[i][1]->GetX();
     Double_t *nval = new Double_t[Npp];
-
+    Double_t *bval = gBeta[i]->GetY();
+    
     // Get density array from array of z (assuming a function n(z))
     for(Int_t j=0; j<Npp; j++) {
       Float_t density =  1 + (ntop0-1) * TMath::Exp(-(zval[j]*zval[j])/(2*sigmal0*sigmal0));
@@ -530,7 +530,10 @@ void PlotDDR2D( const TString &options="" ){
 	  // interpolate
 	  Double_t psi_int = (psival[j]-psival[j-1])/(nval[j]-nval[j-1]) * (den0array[ip] - nval[j-1]) + psival[j-1];
 
-	  betaarray[ip] = betapsi(psi_int);
+	  Double_t beta_int = (bval[j]-bval[j-1])/(nval[j]-nval[j-1]) * (den0array[ip] - nval[j-1]) + bval[j-1];
+
+	  //  betaarray[ip] = betapsi(psi_int);
+	  betaarray[ip] = beta_int;
 	  betaarraycorr[ip] = (betaarray[ip]-rightmin) * slope +  gPad->GetUymin();
 	 
 	  if(betaarray[ip]>betamax[i]) betamax[i] = betaarray[ip];
@@ -552,16 +555,19 @@ void PlotDDR2D( const TString &options="" ){
     gBetasimvszcorr[i]->SetLineColor(color[i]);
     gBetasimvszcorr[i]->SetLineWidth(lineWidth);
     gBetasimvszcorr[i]->SetLineStyle(1);
-    //    gBetasimvszcorr[i]->Draw("C");
+    // gBetasimvszcorr[i]->Draw("C");
 
-    gBetasimvszsmooth[i] = gsmooth[i]->SmoothSuper(gBetasimvszcorr[i],"",0.0);
+    gBetasimvszsmooth[i] = gsmooth[i]->SmoothSuper(gBetasimvszcorr[i],"",9.0);
     gBetasimvszsmooth[i]->SetLineColor(color[i]);
     gBetasimvszsmooth[i]->SetLineWidth(lineWidth);
     gBetasimvszsmooth[i]->SetLineStyle(1);
     gBetasimvszsmooth[i]->Draw("C");
   }
 
+  denvsz->Draw("C");
 
+  gPad->RedrawAxis();
+  gPad->RedrawAxis("G");
 
   // draw last    
   //  betaphvsz->Draw("C");
@@ -574,7 +580,7 @@ void PlotDDR2D( const TString &options="" ){
   
   // Print to a file
   // Output file
-  PGlobals::imgconv(CDDR,Form("./DDR/DDR-DenVsVel"),"pdf");
+  PGlobals::imgconv(CDDR,Form("./DDR2D/DDR-DenVsVel"),"pdf");
   // ---------------------------------------------------------
 
 
@@ -583,12 +589,19 @@ void PlotDDR2D( const TString &options="" ){
 
   
   // Canvas setup
-  sizex = 1024;
-  sizey = 640;
+  sizex = 660;
+  sizey = 800;
   TCanvas *C = new TCanvas("C","Minimum phase velocity",sizex,sizey);
+
+  C->cd(0);
   
+  gPad->SetTickx(1);
+  gPad->SetTicky(1);
+  gPad->SetRightMargin(0.24);
+  gPad->SetLeftMargin(0.18);
+ 
   Float_t sigmin = 0.0;
-  Float_t sigmax = 10.0;
+  Float_t sigmax = 12.0;
   Float_t denmin = 1.0;
   Float_t denmax = 10.0;
 
@@ -635,15 +648,15 @@ void PlotDDR2D( const TString &options="" ){
   hBetamin2D->GetXaxis()->CenterTitle();
   hBetamin2D->GetYaxis()->SetTitle("n_{top}/n_{0}");
   hBetamin2D->GetYaxis()->CenterTitle();
-  hBetamin2D->GetZaxis()->SetTitle("#beta_{#chi,min}");
+  hBetamin2D->GetZaxis()->SetTitle("#beta_{ph,min}");
   hBetamin2D->GetZaxis()->CenterTitle();
 
   TH2F *hClone = (TH2F*) hBetamin2D->Clone("clone");
   
-  const Int_t Ncontours = 10;
+  const Int_t Ncontours = 21;
   Double_t contours[Ncontours];
   for(Int_t i=0; i<Ncontours; i++) {
-    contours[i] = (i+1) * 0.1;
+    contours[i] = i * (1.0/(Ncontours-1));
   }
 
   hClone->SetContour(Ncontours,contours);
@@ -662,10 +675,16 @@ void PlotDDR2D( const TString &options="" ){
       gr = (TGraph*) clist->At(j);
       if(!gr) continue;
 
+      // gr->SetLineWidth(3);
+      // gr->SetLineStyle(7);
+      // gr->SetLineColor(kWhite);
+      // gr->SetLineColor(TColor::GetColor((Float_t) 0.95, (Float_t) 0.95, (Float_t) 0.95));
+
       gr->SetLineWidth(3);
-      gr->SetLineStyle(7);
-      gr->SetLineColor(kWhite);
-      //gr->SetLineColor(kGray);
+      gr->SetLineStyle(1);
+      Int_t index =  (i+1) * pal->GetNColors() / (ncont-1);
+      gr->SetLineColor(pal->GetColor(index));
+      
       // if(i==4) {
       // 	gr->SetLineColor(kRed);
       // 	gr->SetLineWidth(2);
@@ -708,9 +727,15 @@ void PlotDDR2D( const TString &options="" ){
       nGraphs++;
     }
   }
-  
 
+  const Int_t Nconts = 21;
+  Double_t Conts[Nconts];
+  for(Int_t i=0; i<Nconts; i++) {
+    Conts[i] = i * (1.0/(Nconts-1));
+  }
   
+  hBetamin2D->SetContour(Nconts,Conts);
+  hBetamin2D->GetZaxis()->SetRangeUser(0.0,1.0);
   hBetamin2D->Draw("colz");
   
   // Contours  
@@ -735,8 +760,8 @@ void PlotDDR2D( const TString &options="" ){
     Double_t y2 = 1 - gPad->GetTopMargin();
     Double_t x1 = 1 - gPad->GetRightMargin();
     
-    Double_t x1b = x1 + 0.01;
-    Double_t x2b = x1 + 0.035;
+    Double_t x1b = x1 + 0.02;
+    Double_t x2b = x1 + 0.05;
     Double_t y1b = y1 + 0.03;
     Double_t y2b = y2 - 0.03;
     palette->SetX1NDC(x1b);
@@ -758,17 +783,19 @@ void PlotDDR2D( const TString &options="" ){
 			   gPad->GetUxmax(), gPad->GetUymax());
   lFrame1->SetFillStyle(0);
   lFrame1->SetLineColor(kBlack);
-  lFrame1->SetLineWidth(frameWidth);
+  lFrame1->SetLineWidth(4);
   lFrame1->Draw();
   
   gPad->RedrawAxis(); 
 
-  PGlobals::imgconv(C,Form("./DDR/DDR2D-BetaMin"),"pdf");
+  PGlobals::imgconv(C,Form("./DDR2D/DDR2D-BetaMin"),"pdf");
 
   // ------------------------
   
   TCanvas *C2 = new TCanvas("C2","Minimum phase velocity position",sizex,sizey);
 
+  gPad->SetRightMargin(0.10);
+ 
   hBetaminpos2D->GetXaxis()->SetTitle("k_{p}^{0} #sigma_{l}");
   hBetaminpos2D->GetXaxis()->CenterTitle();
   hBetaminpos2D->GetYaxis()->SetTitle("n_{top}/n_{0}");
@@ -859,7 +886,7 @@ void PlotDDR2D( const TString &options="" ){
   
   gPad->RedrawAxis();
 
-  PGlobals::imgconv(C2,Form("./DDR/DDR2D-BetaMinPos"),"pdf");
+  PGlobals::imgconv(C2,Form("./DDR2D/DDR2D-BetaMinPos"),"pdf");
 
 
   // ------------------------
@@ -870,12 +897,13 @@ void PlotDDR2D( const TString &options="" ){
   C3->cd();
 
   gPad->SetTopMargin(0.05);
-  gPad->SetRightMargin(0.20);
+  gPad->SetRightMargin(0.05);
   gPad->SetBottomMargin(0.30);
   gPad->SetLeftMargin(0.15);
   
-  // gPad->SetTickx(1);
-  // gPad->SetTicky(1);
+  gPad->SetTickx(1);
+  gPad->SetTicky(1);
+  gPad->SetGrid(1);
   gPad->SetFillStyle(4000);
   gPad->SetFrameFillStyle(4000);
 
@@ -888,6 +916,7 @@ void PlotDDR2D( const TString &options="" ){
   hBetaminpos1D->GetYaxis()->SetTitle("z_{min}/#sigma_{l}");
   hBetaminpos1D->GetYaxis()->CenterTitle();
   hBetaminpos1D->GetYaxis()->SetTitleOffset(0.5);
+  hBetaminpos1D->GetYaxis()->SetRangeUser(1.01, 2.19);
 
   hBetaminpos1D->Draw("axis");
   
@@ -898,12 +927,15 @@ void PlotDDR2D( const TString &options="" ){
     xval[j] = hBetaminpos1D->GetBinCenter(j+1);
     yval[j] = hBetaminpos1D->GetBinContent(j+1);
   }
-  
+
+  gPad->RedrawAxis("g");
+  gPad->RedrawAxis();
+
   TGraph *gBetaminpos1D = new TGraph(Npp,xval,yval);
 
   TGraphSmooth *gsm = new TGraphSmooth("normal");
   TGraph *gBetaminpos1Dsmooth = gsm->SmoothSuper(gBetaminpos1D,"",0.0);
-  
+
   gBetaminpos1Dsmooth->SetLineWidth(lineWidth);
   gBetaminpos1Dsmooth->SetLineColor(kGray+3);
   gBetaminpos1Dsmooth->Draw("L");
@@ -917,9 +949,7 @@ void PlotDDR2D( const TString &options="" ){
   lFrame3->SetLineWidth(frameWidth);
   lFrame3->Draw();
   
-  gPad->RedrawAxis();
-
-  PGlobals::imgconv(C3,Form("./DDR/DDR1D-BetaMinPos"),"pdf");
+  PGlobals::imgconv(C3,Form("./DDR2D/DDR1D-BetaMinPos"),"pdf");
   
 
   // Psi potential vs time (2D)
@@ -1019,7 +1049,7 @@ void PlotDDR2D( const TString &options="" ){
 
   // Print to a file
   // Output file
-  PGlobals::imgconv(CV,"./DDR/DDR2D-PsiVsZ","pdf");
+  PGlobals::imgconv(CV,"./DDR2D/DDR2D-PsiVsZ","pdf");
   // ---------------------------------------------------------
 
   
@@ -1192,15 +1222,14 @@ void PlotDDR2D( const TString &options="" ){
     gChiminvsz->Draw("C");
     gChimaxvsz->Draw("C");
 
-    gVcross[isim][0]->Draw("C");
-    
-    gVcross[isim][1]->Draw("C");
+    // gVcross[isim][0]->Draw("C");    
+    // gVcross[isim][1]->Draw("C");
   
     gPad->RedrawAxis();
 
     // Print to a file
     // Output file
-    PGlobals::imgconv(CVR,"./DDR/DDR2D-PsiVsZ-withramp","pdf");
+    PGlobals::imgconv(CVR,"./DDR2D/DDR2D-PsiVsZ-withramp","pdf");
     // ---------------------------------------------------------
   }
   
@@ -1313,7 +1342,7 @@ void PlotDDR2D( const TString &options="" ){
 
   // Print to a file
   // Output file
-  PGlobals::imgconv(CV1D,"./DDR/DDR1D-PsiVsDen","pdf");
+  PGlobals::imgconv(CV1D,"./DDR2D/DDR1D-PsiVsDen","pdf");
   // ---------------------------------------------------------
 
 
@@ -1398,7 +1427,7 @@ void PlotDDR2D( const TString &options="" ){
 
   // Print to a file
   // Output file
-  PGlobals::imgconv(CB1D,"./DDR/DDR1D-BetaVsDen","pdf");
+  PGlobals::imgconv(CB1D,"./DDR2D/DDR1D-BetaVsDen","pdf");
   // ---------------------------------------------------------
 
   // Canvas setup
@@ -1476,7 +1505,7 @@ void PlotDDR2D( const TString &options="" ){
 
   // Print to a file
   // Output file
-  PGlobals::imgconv(CC1D,"./DDR/DDR1D-ChiVsDen","pdf");
+  PGlobals::imgconv(CC1D,"./DDR2D/DDR1D-ChiVsDen","pdf");
   // ---------------------------------------------------------
 
   // Canvas setup
@@ -1565,7 +1594,7 @@ void PlotDDR2D( const TString &options="" ){
   
   // Print to a file
   // Output file
-  PGlobals::imgconv(CE1D,"./DDR/DDR1D-EzVsDen","pdf");
+  PGlobals::imgconv(CE1D,"./DDR2D/DDR1D-EzVsDen","pdf");
   // ---------------------------------------------------------
 
 
@@ -1760,13 +1789,13 @@ void PlotDDR2D( const TString &options="" ){
   
   // Print to a file
   // Output file
-  PGlobals::imgconv(CA1D,"./DDR/DDR1D-All","pdf");
+  PGlobals::imgconv(CA1D,"./DDR2D/DDR1D-All","pdf");
   // ---------------------------------------------------------
 
 
 
   // Saving objects
-  // TString filename = Form("./DDR/DDR.root");
+  // TString filename = Form("./DDR2D/DDR.root");
   // TFile *ofile = new TFile(filename,"RECREATE");
   
   // for(Int_t i=0; i<Np; i++) {

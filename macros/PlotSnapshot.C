@@ -319,7 +319,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   cout << Form(" done. ") << endl;
   
   // Rescaling box limits:
-  if(opt.Contains("rscal") && hDen2D[0]) {
+  if(opt.Contains("rscal") && !opt.Contains("units") && hDen2D[0]) {
 
     Float_t xMin, xMax, yMin, yMax;
     Int_t NbinsX, NbinsY;
@@ -337,6 +337,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Float_t localden = hDen2D[0]->GetBinContent(binx,biny);
     Float_t kfactor = TMath::Sqrt(localden);
 
+    cout << Form(" - Local density = %.2f",localden) << endl;
+
     xMin *= kfactor;
     xMax *= kfactor;
     yMin *= kfactor;
@@ -347,44 +349,87 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     for(Int_t i=0;i<Nspecies;i++) {
       if(i==noIndex) continue;
       
-      if(hDen2D[i]) 
+      if(hDen2D[i] && hDen1D[i]) {
 	hDen2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
-
-      if(hDen1D[i]) 
 	hDen1D[i]->SetBins(NbinsX,xMin,xMax);
 
-      if(hCur1D[i]) 
-	hCur1D[i]->SetBins(NbinsX,xMin,xMax);
-      
-      if(hJz2D[i]) 
-	hJz2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
+	for(Int_t j=0;j<=hDen2D[i]->GetNbinsX();j++) {
+	  for(Int_t k=0;k<=hDen2D[i]->GetNbinsY();k++) {
+	    hDen2D[i]->SetBinContent(j,k, hDen2D[i]->GetBinContent(j,k) / localden );
+	  }
+	  hDen1D[i]->SetBinContent(j, hDen1D[i]->GetBinContent(j) / localden);
+	}
 
-      if(hJz1D[i]) 
+	if(i==0)
+	  hDen2D[i]->GetZaxis()->SetTitle("n/n_{0}");
+	else if(i==1)
+	  hDen2D[i]->GetZaxis()->SetTitle("n_{b}/n_{0}");
+
+      }
+
+      if(hCur1D[i]) {
+	hCur1D[i]->SetBins(NbinsX,xMin,xMax);
+
+	hCur1D[i]->Scale(PConst::I0/PUnits::kA);
+	hCur1D[i]->GetYaxis()->SetTitle("I_{b}[kA]");
+      }
+      
+      if(hJz2D[i] && hJz1D[i]) {
+	hJz2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
 	hJz1D[i]->SetBins(NbinsX,xMin,xMax);
 
+	for(Int_t j=0;j<=hJz2D[i]->GetNbinsX();j++) {
+	  for(Int_t k=0;k<=hJz2D[i]->GetNbinsY();k++) {
+	    hJz2D[i]->SetBinContent(j,k, hJz2D[i]->GetBinContent(j,k) / localden );
+	  }
+	  hJz1D[i]->SetBinContent(j, hJz1D[i]->GetBinContent(j) / localden);
+	}
+      }
+      
     }
 
     for(Int_t i=0;i<Nfields;i++) {
       
-      if(hE2D[i])
+      if(hE2D[i] && hE1D[i]) {
 	hE2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
-
-      if(hB2D[i])
-	hB2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
-
-      if(hE1D[i])
 	hE1D[i]->SetBins(NbinsX,xMin,xMax);
-      
-      if(hB1D[i])
-	hB1D[i]->SetBins(NbinsX,xMin,xMax);
+	
+      	for(Int_t j=0;j<=hE2D[i]->GetNbinsX();j++) {
+	  for(Int_t k=0;k<=hE2D[i]->GetNbinsY();k++) {
+	    hE2D[i]->SetBinContent(j,k, hE2D[i]->GetBinContent(j,k) / kfactor );
+	  }
+	  hE1D[i]->SetBinContent(j, hE1D[i]->GetBinContent(j) / kfactor);
+	}
+
+	hE2D[i]->GetZaxis()->SetTitle("E_{z}/E_{0}");
+      }
+	
+      if(hB2D[i] && hB1D[i]) {
+	hB2D[i]->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
+	
+      	for(Int_t j=0;j<=hB2D[i]->GetNbinsX();j++) {
+	  for(Int_t k=0;k<=hB2D[i]->GetNbinsY();k++) {
+	    hB2D[i]->SetBinContent(j,k, hB2D[i]->GetBinContent(j,k) / kfactor );
+	  }
+	  hB1D[i]->SetBinContent(j, hB1D[i]->GetBinContent(j) / kfactor);
+	}
+      }
+
       
     }
 
-    if(hFocus2D)
+    if(hFocus2D && hFocus1D) {
       hFocus2D->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
-    
-    if(hFocus1D)
       hFocus1D->SetBins(NbinsX,xMin,xMax);
+
+      for(Int_t j=0;j<=hFocus2D->GetNbinsX();j++) {
+	for(Int_t k=0;k<=hFocus2D->GetNbinsY();k++) {
+	  hFocus2D->SetBinContent(j,k, hFocus2D->GetBinContent(j,k) / kfactor );
+	}
+	hFocus1D->SetBinContent(j, hFocus1D->GetBinContent(j) / kfactor);
+      }
+      
+    }
     
     if(hV2D)
       hV2D->SetBins(NbinsX,xMin,xMax,NbinsY,yMin,yMax);
@@ -392,9 +437,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     if(hV1D)
       hV1D->SetBins(NbinsX,xMin,xMax);
   }
-  
-  
-
   
   // Ionization probability rates (ADK)
   // Calculates from the total E the ionization prob. rate for a given species.
@@ -564,7 +606,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     }
   }
-
+  if(!h2D) {
+    cout <<  Form("\n Error: base histogram could not be retrieved! -> exit!\n") << endl;
+    return;
+  }
+    
+  
   Float_t yRange   = (h2D->GetYaxis()->GetXmax() - h2D->GetYaxis()->GetXmin());
   Float_t midPoint = (h2D->GetYaxis()->GetXmax() + h2D->GetYaxis()->GetXmin())/2.;
   Float_t yMin = midPoint-yRange/2;
@@ -814,8 +861,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   for(Int_t i=0;i<Nfields;i++) {
     if(!hE2D[i]) continue;
     
-    Emax[i] = hE2D[i]->GetMaximum();
-    Emin[i] = hE2D[i]->GetMinimum();
+    Emax[i] = hE2D[i]->GetBinContent(hE2D[i]->GetMaximumBin());
+    Emin[i] = hE2D[i]->GetBinContent(hE2D[i]->GetMinimumBin());
     if(Emax[i] > TMath::Abs(Emin[i]))
       Emin[i] = -Emax[i];
     else
@@ -845,15 +892,15 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t ETmin = 0.0001;  
   Float_t ETmax = 1;
   if(hETotal2D) {
-    ETmax = hETotal2D->GetMaximum();
+    ETmax = hETotal2D->GetBinContent(hETotal2D->GetMaximumBin());
     hETotal2D->GetZaxis()->SetRangeUser(ETmin,ETmax);
   }
   
   Float_t Fmin, Fmax;
-
   if(hFocus2D) {
-    Fmin = hFocus2D->GetMinimum();
-    Fmax = hFocus2D->GetMaximum();
+    Fmax = hFocus2D->GetBinContent(hFocus2D->GetMaximumBin());
+    Fmin = hFocus2D->GetBinContent(hFocus2D->GetMinimumBin());
+  
     if(Fmax > TMath::Abs(Fmin))
       Fmin = -Fmax;
     else
@@ -874,22 +921,27 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     hdW2D = (TH2F*) hFocus2D->Clone("hdW2D");
     hdW2D->Reset();
+
+    TH2F *hField2D = hFocus2D;
+    //TH2F *hField2D = hE2D[1];
     
-    Int_t NBinsZ = hFocus2D->GetXaxis()->GetNbins();
-    Int_t NBinsX = hFocus2D->GetYaxis()->GetNbins();
-    Double_t dx = hFocus2D->GetYaxis()->GetBinWidth(1);
+    Int_t NBinsZ = hField2D->GetXaxis()->GetNbins();
+    Int_t NBinsX = hField2D->GetYaxis()->GetNbins();
+    Double_t dx = hField2D->GetYaxis()->GetBinWidth(1);
     for(Int_t i=1; i<=NBinsZ; i++) {
       for(Int_t j=1; j<=NBinsX; j++) {
 	
 	Float_t der = 0.;
 	if(j>2 && j<NBinsX-2) {
-	  der =  4.0 / 3.0 * (hFocus2D->GetBinContent(i,j+1) - hFocus2D->GetBinContent(i,j-1)) / (2.0 * dx)
-	    - 1.0 / 3.0 * (hFocus2D->GetBinContent(i,j+2) - hFocus2D->GetBinContent(i,j-2)) / (4.0 * dx) ;	  
+	  der =  (4.0 / 3.0) * (hField2D->GetBinContent(i,j+1) - hField2D->GetBinContent(i,j-1)) / (2.0 * dx)
+	    - (1.0 / 3.0) * (hField2D->GetBinContent(i,j+2) - hField2D->GetBinContent(i,j-2)) / (4.0 * dx) ;	  
 	}
 
 	// cout << Form(" Bin (%i,%i) = %f",i,j,der) << endl;
+	if(opt.Contains("units"))
+	  der *= (eUnit / spaUnit) / (E0 / skindepth );  
 	hdW2D->SetBinContent(i,j,der);
-
+	
 	if(der>kmax) kmax = der;
 	if(der<kmin) kmin = der;
       }
@@ -900,8 +952,9 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Int_t lastBin = NBinsX/2 + 1;
     hdW1D = (TH1F*) hdW2D->ProjectionX(hName,firstBin,lastBin);
     hdW1D->Scale(1.0/(lastBin-firstBin+1));
+    hdW1D->Sumw2(0);
   }
-  
+
   // CROSSINGS
   
   // Find the first point on-axis where Ez changes from positive to negative:
@@ -1195,6 +1248,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   C->SetFillStyle(4000);
 
   UInt_t lineColor = kOrange+10;
+  // lineColor = kRed+3;  
   //  UInt_t lineColor2 =  TColor::GetColor(196,30,78);
   //  UInt_t lineColor2 = kGray+2;
   UInt_t lineColor2 = lineColor;
@@ -1249,19 +1303,14 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     sprintf(name,"hFrame_%i",i);
     hFrame[i] = (TH2F*) gROOT->FindObject(name);
-    if(hFrame[i]) delete hFrame[i];
-
-    if(hDen2D[0]) 
-      hFrame[i] = (TH2F*) hDen2D[0]->Clone(name);
-    else if (Nspecies>1){
-      if(hDen2D[1])
-	hFrame[i] = (TH2F*) hDen2D[1]->Clone(name);
+    if(hFrame[i]) {
+      delete hFrame[i];
+      hFrame[i] = NULL;
     }
-    else if(hA2D)
-      hFrame[i] = (TH2F*) hA2D->Clone(name);
-    
-    // hFrame[i] = (TH2F*) h2D->Clone(name);
+
+    hFrame[i] = (TH2F*) h2D->Clone(name);
     hFrame[i]->Reset();
+    
 
     Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
     Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
@@ -1723,8 +1772,20 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     if(hA2D && opt.Contains("laser")) {
       exLaser->Draw();
+
       Float_t aMax = hA2D->GetMaximum();
-      hA2D->GetZaxis()->SetRangeUser(0.1*aMax,1.0*aMax);
+      Float_t aMin = 0.1*aMax;
+      if(pData->GetaMax()>-999) { 
+	aMax = pData->GetaMax();
+	aMin = 0.1*aMax;
+      }
+      
+      if(pData->GetaMin()<999) 
+	aMin = pData->GetaMin();
+      
+      cout << Form(" Laser  aMin = %5f  aMax = %5f",aMin,aMax) << endl;
+      
+      hA2D->GetZaxis()->SetRangeUser(aMin,aMax);
       hA2D->Draw(drawopt);
     }
     
@@ -2179,6 +2240,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
    
     // Fit the 1D line in the 2D pad:
+    TH1F *hE1Dcl2 = (TH1F*) hE1D[0]->Clone("hE1Dcl2");
+    
     TLine *lineE = NULL;
     TLine *lineEmaxLuLinear = NULL;
     TLine *lineEmaxUSE = NULL;
@@ -2190,8 +2253,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Float_t rightmax = Emax[0];
       Float_t slope = (yMax-yMin)/(rightmax-rightmin);
     
-      for(Int_t j=0;j<hE1D[0]->GetNbinsX();j++) {
-	hE1D[0]->SetBinContent(j+1,slope*(hE1D[0]->GetBinContent(j+1)-rightmin)+yMin);
+      for(Int_t j=0;j<hE1Dcl2->GetNbinsX();j++) {
+	hE1Dcl2->SetBinContent(j+1,slope*(hE1Dcl2->GetBinContent(j+1)-rightmin)+yMin);
       }
     
       Double_t sl = EzMaxLo/radius;
@@ -2220,8 +2283,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       if(opt.Contains("mark")) {
 	Float_t e0 = slope*(0-rightmin)+yMin;
 
-	Float_t zF = hE1D[0]->GetBinCenter(binFcross);
-	Float_t EF = hE1D[0]->GetBinContent(binFcross);
+	Float_t zF = hE1Dcl2->GetBinCenter(binFcross);
+	Float_t EF = hE1Dcl2->GetBinContent(binFcross);
 
 	TLine *lineEF = new TLine(zF,0,zF,EF);
 	lineEF->SetLineColor(kRed);
@@ -2253,8 +2316,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	markE0->SetMarkerSize(1.4);
 	markE0->Draw();
 
-	Float_t zI = hE1D[0]->GetBinCenter(binPotValueIni);
-	Float_t EI = hE1D[0]->GetBinContent(binPotValueIni);
+	Float_t zI = hE1Dcl2->GetBinCenter(binPotValueIni);
+	Float_t EI = hE1Dcl2->GetBinContent(binPotValueIni);
 	TLine *lineEI = new TLine(zI,e0,zI,EI);
 	lineEI->SetLineColor(kRed);
 	lineEI->SetLineStyle(2);
@@ -2326,12 +2389,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     }
 
-    hE1D[0]->SetLineStyle(1);
-    hE1D[0]->SetLineWidth(2);
-    hE1D[0]->SetLineColor(lineColor);
+    hE1Dcl2->SetLineStyle(1);
+    hE1Dcl2->SetLineWidth(2);
+    hE1Dcl2->SetLineColor(lineColor);
 
     if(!opt.Contains("no1d"))
-      hE1D[0]->Draw("sameL");    
+      hE1Dcl2->Draw("sameL");    
     
     pad[ip]->Update();
   
@@ -3094,6 +3157,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
     
     // Fit the V1D in the V2D pad:
+    TH1F *hV1Dcl = (TH1F*) hV1D->Clone("hV1Dcl");
+
     TLine *lineT = NULL;
     {
       Float_t rightmin = Vmin;
@@ -3101,8 +3166,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Float_t slope = (yMax-yMin)/(rightmax-rightmin);
       Float_t psi0 = slope*(0.0-rightmin)+yMin;
 
-      for(Int_t j=0;j<hV1D->GetNbinsX();j++) {
-	hV1D->SetBinContent(j+1,slope*(hV1D->GetBinContent(j+1)-rightmin)+yMin);
+      for(Int_t j=0;j<hV1Dcl->GetNbinsX();j++) {
+	hV1Dcl->SetBinContent(j+1,slope*(hV1Dcl->GetBinContent(j+1)-rightmin)+yMin);
       }
 
       if(opt.Contains("zero")) {
@@ -3117,10 +3182,10 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
 
       if(opt.Contains("mark")) {
-	Float_t zI = hV1D->GetBinCenter(binPotValueIni);
-	Float_t psiI = hV1D->GetBinContent(binPotValueIni);
-	Float_t zF = hV1D->GetBinCenter(binFcross);
-	Float_t psiF = hV1D->GetBinContent(binFcross);
+	Float_t zI = hV1Dcl->GetBinCenter(binPotValueIni);
+	Float_t psiI = hV1Dcl->GetBinContent(binPotValueIni);
+	Float_t zF = hV1Dcl->GetBinCenter(binFcross);
+	Float_t psiF = hV1Dcl->GetBinContent(binFcross);
 	
 	TLine *linePsiI = new TLine(zI,psiF,zI,psiI);
 	linePsiI->SetLineColor(kRed);
@@ -3146,13 +3211,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     }
 
-    hV1D->SetLineStyle(1);
-    hV1D->SetLineWidth(2);
-    //  hV1D->SetLineColor(PGlobals::elecLine);
-    hV1D->SetLineColor(lineColor);
+    hV1Dcl->SetLineStyle(1);
+    hV1Dcl->SetLineWidth(2);
+    //  hV1Dcl->SetLineColor(PGlobals::elecLine);
+    hV1Dcl->SetLineColor(lineColor);
 
     if(!opt.Contains("no1d"))
-      hV1D->Draw("sameL");
+      hV1Dcl->Draw("sameL");
     
     // ADK MAIN contour  
     // for(Int_t i=0;i<graphsI2D_main->GetEntriesFast();i++) {
@@ -3458,12 +3523,12 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
        }
     }
     
-    if(opt.Contains("off")) {
-      TLine *lineOff = new TLine(xMin,xoff,xMax,xoff);
-      lineOff->SetLineColor(lineColor);
-      lineOff->SetLineStyle(2);
-      lineOff->Draw();
-    }
+    // if(opt.Contains("off")) {
+    //   TLine *lineOff = new TLine(xMin,xoff,xMax,xoff);
+    //   lineOff->SetLineColor(lineColor);
+    //   lineOff->SetLineStyle(2);
+    //   lineOff->Draw();
+    // }
     
     if(opt.Contains("zero")) {
       TLine *lineZero = new TLine(xMin,0,xMax,0);
@@ -3544,7 +3609,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     kmin = - kmax;
         
     hdW2D->GetZaxis()->SetRangeUser(kmin,kmax); 
-    hdW2D->GetZaxis()->SetTitle("K_{x} [E_{0} k_{p}]");
+    hdW2D->GetZaxis()->SetTitle("K_{x} [m#omega_{p}^{2}]");
         
     hFrame[ip]->Draw("axis");
     
@@ -3596,12 +3661,13 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 	lineEndNeutral->Draw();
     }
 
-    if(hdW1D) {
-      hdW1D->SetLineStyle(1);
-      hdW1D->SetLineWidth(2);
-      hdW1D->SetLineColor(lineColor);
-      hdW1D->Draw("same L");
-    }
+    if(!opt.Contains("no1d"))
+      if(hdW1D) {
+	hdW1D->SetLineStyle(1);
+	hdW1D->SetLineWidth(2);
+	hdW1D->SetLineColor(lineColor);
+	hdW1D->Draw("sameL");
+      }
     
     pad[ip]->Update();
   

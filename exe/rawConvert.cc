@@ -21,6 +21,7 @@
 #include <TRandom3.h>
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PPalette.hh"
 #include "H5Cpp.h"
@@ -49,7 +50,7 @@ int main(int argc,char *argv[]) {
   Int_t     iStep = 1;
   TString     opt = "";
   Int_t     index = 1;
-  Bool_t    noout = kFALSE;
+  Bool_t    noout = kTRUE;
  
   // Interfacing command line:
   for(int l=1;l<argc;l++){
@@ -123,7 +124,7 @@ int main(int argc,char *argv[]) {
   PGlobals::Initialize();
 
   // Palettes!
-  gROOT->Macro("PPalettes.C");
+  // gROOT->Macro("PPalettes.C");
 
   if(opt.Contains("grid")) {
     gStyle->SetPadGridX(1);
@@ -133,7 +134,13 @@ int main(int argc,char *argv[]) {
 
   // Load PData
   PData *pData = PData::Get(sim.Data());
-
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sim.Data());
+    if(!opt.Contains("comov"))
+      opt += "comov";
+  }
+  
   if(iStart<0) iStart = time;
   if(iEnd<=iStart) iEnd = iStart;
   
@@ -307,7 +314,7 @@ int main(int argc,char *argv[]) {
    
     // Output file
     if(fileout.IsNull()) {
-      fileout = Form("./%s/Plots/RawConvert/RawConvert-%s_%s_%i",sim.Data(),sim.Data(),pData->GetSpeciesName(index).c_str(),time);
+      fileout = Form("./%s/Plots/RawConvert/RawConvert-%s_%s_%i",sim.Data(),sim.Data(),pData->GetRawSpeciesName(index).c_str(),time);
       if(opt.Contains("astra")) fileout += ".ast";
       else if(opt.Contains("elegant")) fileout += ".ele";
       else if(opt.Contains("hipace")) fileout += ".hip";
@@ -383,16 +390,34 @@ int main(int argc,char *argv[]) {
       
       // Dumping to ASCII file:
       if(opt.Contains("astra")) {
-	fData << Form("%12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f   %12.6f ",
-		      var[6][i] * skindepth / PUnits::um,
-		      var[5][i] * skindepth / PUnits::um,
-		      var[4][i] * skindepth / PUnits::um,
-		      var[2][i] * pData->GetBeamMass() / PUnits::MeV,
-		      var[1][i] * pData->GetBeamMass() / PUnits::MeV,
-		      var[0][i] * pData->GetBeamMass() / PUnits::MeV,
-		      -999.0,
-		      var[3][i] * Q0 * PConst::ElectronCharge/PUnits::femptocoulomb,
-		      0.0) << endl;
+
+	if(i>0) {
+	  var[4][i] -= var[4][0];
+	  var[0][i] -= var[0][0];
+	}
+	
+	fData << Form("%12.6e   %12.6e   %12.6e   %12.6e   %12.6e   %12.6e   %12.6e   %12.6e   %i   %i",
+		      // var[6][i] * skindepth / PUnits::um,
+		      // var[5][i] * skindepth / PUnits::um,
+		      // var[4][i] * skindepth / PUnits::um,
+		      // var[2][i] * pData->GetBeamMass() / PUnits::MeV,
+		      // var[1][i] * pData->GetBeamMass() / PUnits::MeV,
+		      // var[0][i] * pData->GetBeamMass() / PUnits::MeV,
+		      // -999.0,
+		      // var[3][i] * Q0 * PConst::ElectronCharge/PUnits::femptocoulomb,
+		      // 0.0) << endl;
+		      var[6][i] * skindepth / PUnits::m,
+		      var[5][i] * skindepth / PUnits::m,
+		      var[4][i] * skindepth / PUnits::m,
+		      var[2][i] * pData->GetBeamMass() / PUnits::eV,
+		      var[1][i] * pData->GetBeamMass() / PUnits::eV,
+		      var[0][i] * pData->GetBeamMass() / PUnits::eV,
+		      0.0,
+		      var[3][i] * Q0 * PConst::ElectronCharge/PUnits::nanocoulomb,
+		      1,
+		      5) << endl;
+	
+	
     
       } else if(opt.Contains("elegant")) {
 	// fData << Form("%e   %e   %e   %e   %e   %e   %e",
