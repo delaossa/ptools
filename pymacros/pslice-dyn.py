@@ -7,6 +7,7 @@ import os
 import types
 import collections
 from subprocess import call
+from ROOT import PData, PGlobals, PPalette, TH2F, TCanvas
 
 class Wake:
 	def __init__(self, rb, Delta_rho):
@@ -51,14 +52,14 @@ def dY(Y, t):
 def main():
 
         # Sample definition
-	N_t = 1000
-	N_part = 5000
+	N_t = 10
+	N_part = 20000
  	a_t = np.linspace(0, 100, N_t)
 
         # Distribution function f(x,px)
  	sigma_x = 1.0
  	sigma_p = 0.1
- 	mean = [0.2, 0]
+ 	mean = [0.5, 0]
  	cov = [[np.power(sigma_x, 2), 0.0], [0.0, np.power(sigma_p, 2)]]
  	X0, P0 = np.random.multivariate_normal(mean, cov, N_part).T
 
@@ -97,8 +98,7 @@ def main():
  	
  	if not os.path.exists('./figs'):
 		os.makedirs('./figs')
-
-
+                
         # Plot initital distribution
 	finit = plt.figure(1)
 	plt.scatter(Yall[0,0,:], Yall[0,1,:], color='#1E90FF', marker='.', alpha=0.8)
@@ -117,57 +117,43 @@ def main():
 	cov_all = np.empty((2,2,N_t))
 	mean_all = np.empty((2,N_t))
 
-	for i in range(0, N_t):	
+	C = TCanvas('C','Transverse phasespace',800,600)
+        C.SetFillStyle(4000);
+        PGlobals.SetPlasmaStyle()
+       # gStyle.SetNumberContours(255);
+        palette = PPalette('electron')
+        palette.SetPalette('electron0')
+
+        for i in range(0, N_t):	
 		mean_all[:,i] = [sum(Yall[i,0,:])/N_part, sum(Yall[i,1,:])/N_part]
 		cov_all[:,:,i] = np.cov(Yall[i,0,:],Yall[i,1,:])
-	
+                sx = np.sqrt(cov_all[0,0,i])
+                spx = np.sqrt(cov_all[1,1,i])
+                hname = 'hpxvsx-%i' % i 
+                hpxvsx = TH2F(hname,'',100,-4*sigma_x,4*sigma_x,
+                              100,-2*sigma_x,2*sigma_x)
+                #                                      mean_all[0,i]-3*sx,
+                #                                      mean_all[0,i]+3*sx,
+                #                                      100,
+                #                                      mean_all[1,i]-3*spx,
+                #                                      mean_all[1,i]+3*spx)
 
- 	fmeanx = plt.figure(4)	
- 	plt.plot(a_t, mean_all[0,:].T, color='#1E90FF')	
- 	fmeanx.savefig('figs/meanx.pdf', format='pdf')	
- 	plt.close(fmeanx)
+                for j in range(0,N_part):
+                        hpxvsx.Fill(Yall[i,0,j],Yall[i,1,j])                  
 
- 	fmeanpx = plt.figure(4)	
- 	plt.plot(a_t, mean_all[1,:].T, color='#1E90FF')	
- 	fmeanpx.savefig('figs/meanpx.pdf', format='pdf')	
- 	plt.close(fmeanpx)
+                hpxvsx.Draw('colz')
 
-        # Randomly pick a subset of particles to track their trajectories 
- 	lineplot_stride = int(N_part/10)
- 	
- 	figps = plt.figure(4)
-	for i in range(0, N_part, lineplot_stride):
-		plt.plot(Yall[:,0,i], Yall[:,1,i])
-	figps.savefig('figs/p_vs_x.pdf', format='pdf')	
-	plt.close(figps)
+                if i == 0 :
+                        C.Print('figs/hpxvsx.pdf(')
+                elif i == N_t-1 :
+                        C.Print('figs/hpxvsx.pdf)')
+                else :
+                        C.Print('figs/hpxvsx.pdf')
 
-	figx = plt.figure(5)
-	for i in range(0, N_part, lineplot_stride):
-		plt.plot(a_t, Yall[:,0,i])
-	figx.savefig('figs/x_vs_t.pdf', format='pdf')
-	plt.close(figx)
+                C.Print('figs/hpxvsx-%i.png' % i)
+                                      
 
-        # Phase-space vs time 
-	if not os.path.exists('./frames'):
-		os.makedirs('./frames')
-
-	frame_stride = 5
-	
- 	for i in range(0, N_t, frame_stride):	
- 		fi = plt.figure(3)
- 		print('Saving frame %0.3d of %0.3d' % (i/frame_stride+1, N_t/frame_stride))
-		plt.scatter(Yall[i,0,:], Yall[i,1,:], color='#1E90FF', marker='.', alpha=0.1)
-		plt.scatter(sum(Yall[i,0,:])/N_part, sum(Yall[i,1,:])/N_part, s=20, color='#000000', marker='+')
- 		axes = plt.gca()
- 		axes.set_xlim([-4*sigma_x,4*sigma_x])
-		axes.set_ylim([-2*sigma_x,2*sigma_x])
- 		framenostr = '%0.6d' % (i/frame_stride)
- 		fi.savefig('frames/f_' + framenostr + '.png', format='png')
- 		plt.close(fi)
- 		
-	
-	#call(["ffmpeg", "-framerate 20", "-i frames/f_%06d.png", "-c:v libx264", "-pix_fmt yuv420p", "beam-ps.mp4"])
-	
+        
 
 if __name__ == '__main__':
     main()
