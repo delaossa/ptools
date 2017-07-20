@@ -408,7 +408,8 @@ light.SetIntensity(1)
 renderer = vtk.vtkRenderer()
 # Set background
 if args.white :
-    renderer.SetBackground(0.9,0.9,0.9) # almost white
+#    renderer.SetBackground(0.9,0.9,0.9) # almost white
+    renderer.SetBackground(1.0,1.0,1.0) # white
 else :
     renderer.SetBackground(0,0,0) # black
 # renderer.SetBackground(0.09,0.10,0.12) 
@@ -445,12 +446,17 @@ if args.axes :
  
     # the actual text of the axis label can be changed:
     axes.SetXAxisLabelText("z");
-    axes.SetYAxisLabelText("y");
-    axes.SetZAxisLabelText("x");
 
+    if args.transx :
+        axes.SetYAxisLabelText("y");
+        axes.SetZAxisLabelText("x");
+    else :
+        axes.SetYAxisLabelText("x");
+        axes.SetZAxisLabelText("y");
+              
     axcolor = [0.9,0.9,0.9]
     if args.white :
-        axcolor = [0.1,0.1,0.1]
+        axcolor = [0.2,0.2,0.2]
 
     axes.GetXAxisShaftProperty().SetColor(axcolor);
     axes.GetXAxisTipProperty().SetColor(axcolor);
