@@ -15,10 +15,10 @@ def parse_args():
 
     parser.add_argument('name', nargs='?', default='betaout', help='Simulation name (output folder)')
     parser.add_argument('-NP', type=int, dest='NP', default=1000, help='Number of macroparticles')
-    parser.add_argument('--ps', action='store_true', default=0,help='Plot phasespace snapshots')
-    parser.add_argument('--png', action='store_true', default=0,help='Plot phasespace snapshots in png')
-    parser.add_argument('--si', action='store_true', default=0,help='SI units')
-    parser.add_argument('--man', action='store_true', default=0,help='print help')
+    parser.add_argument('--ps', action='store_true', default=1, help='Plot phasespace snapshots')
+    parser.add_argument('--png', action='store_true', default=0, help='Plot phasespace snapshots in png')
+    parser.add_argument('--si', action='store_true', default=0, help='SI units')
+    parser.add_argument('--man', action='store_true', default=0, help='Print help')
     
     args = parser.parse_args()
 
@@ -104,7 +104,7 @@ def main():
     # -------------------------------
     rb = 1.0
     Drho = 1.0
-    slope = 0.5
+    slope = 0.1
     wake = Wake(slope,rb,Drho)
 
     # -------------------------------
@@ -114,15 +114,15 @@ def main():
     # -------------------------------
 
     # Number of particles
-    # NP = args.NP
-    NP = 1000
+    NP = args.NP
     print('Bunch definition : N = %i particles' % NP)
 
     # Initial istribution function f(z,pz,x,px)
 
     # Initial statistical moments (means and rms')
-    meanY = [ -1.0, 100, 0.5, 0.0 ]   # mean(Y0) 
-    rmsY  = [  0.1,  1.0, 1.0, 1.0 ]   # rms(Y0)         
+    #       [    z,   pz,   x,  px ]
+    meanY = [ -1.0,  100, 0.0, 0.0 ]   # mean(Y0) 
+    rmsY  = [  0.1,  0.1, 1.0, 1.0 ]   # rms(Y0)         
 
     emit0 = 0.1
     rmsY[3]  = emit0 / rmsY[2]
@@ -147,7 +147,9 @@ def main():
         print(rmsY)
         
     # Blowout betatron frequency
-    omegaBO = np.sqrt(0.5/meanY[1])
+    K_BO = 0.5
+    omegaBO = np.sqrt(K_BO/meanY[1])
+    print('Betatron wavelength = %.2f' % (2*np.pi/omegaBO) )
 
     # Second moments, covariance matrix:
     sz  = rmsY[0]
@@ -168,14 +170,14 @@ def main():
     # Time grid
     # --------------------------------
     tmin = 0.0
-    dt   = 0.5 / omegaBO
+    dt   = 1.0 / omegaBO
     tmax = 150 * dt
     time = np.arange(tmin,tmax,dt)
     NT = len(time)
     # print(' tmax = %f ' % tmax ) 
     print('Time grid : t = (%.2f,%.2f) NT = %i  dt = %.2f' % (time[0],time[-1],NT,dt)) 
 
-
+    
     # Plasma profile definition
     plasma = Plasma(100 * dt,10 * dt)
         
