@@ -5,7 +5,7 @@ import scipy.constants as ct
 import numpy as np
 import os, sys, argparse
 import time as clock
-from ROOT import PData, PGlobals, PPalette, PUnits, TF1, TH2F, TH1F, TGraph, TCanvas, TColor, TStyle, gStyle, gPad, kMagenta, kBird
+from ROOT import PData, PGlobals, PPalette, PUnits, TF1, TH2F, TH1F, TGraph, TCanvas, TBox, TLine, TColor, TStyle, gStyle, gPad, kMagenta, kBird, kBlack
 
 
 def parse_args():
@@ -28,7 +28,21 @@ def parse_args():
         
     return args
 
+def DrawFrame() :
 
+    gPad.Update()
+    gPad.RedrawAxis('g')
+    gPad.RedrawAxis()
+
+    l = TLine()
+    l.SetLineColor(kBlack)
+    l.SetLineWidth(2)
+    l.DrawLine(gPad.GetUxmin(), gPad.GetUymax(), gPad.GetUxmax(), gPad.GetUymax())
+    l.DrawLine(gPad.GetUxmax(), gPad.GetUymin(), gPad.GetUxmax(), gPad.GetUymax())
+    l.DrawLine(gPad.GetUxmin(), gPad.GetUymin(), gPad.GetUxmin(), gPad.GetUymax())
+    l.DrawLine(gPad.GetUxmin(), gPad.GetUymin(), gPad.GetUxmax(), gPad.GetUymin())
+        
+    
 # Relativistic factor
 def Gamma(pz,px):
     return np.sqrt( 1 + (pz*pz + px*px) )
@@ -51,27 +65,28 @@ class Plasma:
         
 # Wakefields: Electromagnectic fields definition
 class Wake:
-    def __init__(self,slope=0.5,rb=10.0,Drho=1.0):
-        self.slope = slope
+    def __init__(self,K=0.5,S=0.5,rb=5.0,Drho=1.0):
+        self.K = K
+        self.S = S
         self.rb = rb
         self.Drho = Drho
 
     def Ez(self, zeta, x) :
         # return 0
         if abs(x) < self.rb :
-            return self.slope * zeta 
+            return self.S * zeta 
         else :
-            return self.slope * zeta * np.exp(-(abs(x)-self.rb)/self.Drho)
+            return self.S * zeta * np.exp(-(abs(x)-self.rb)/self.Drho)
       
     def Ex(self, x) :
         if abs(x) < self.rb :
-            return (1-self.slope) * ( x/2.0 )
+            return (1-self.S) * ( x/2.0 )
         else :
-            return (1-self.slope) * ( (np.sign(x) * self.rb)/2.0 ) * np.exp(-(np.abs(x)-self.rb)/self.Drho)
+            return (1-self.S) * ( (np.sign(x) * self.rb)/2.0 ) * np.exp(-(np.abs(x)-self.rb)/self.Drho)
         
     def Wx(self, x) :
          if abs(x) < self.rb :
-             return x/2.0
+             return self.K * x 
          else :
              return (np.sign(x) * self.rb)/2.0 * np.exp(-(np.abs(x)-self.rb)/self.Drho)
         
@@ -102,11 +117,11 @@ def main():
         
     # Wakefields definition
     # -------------------------------
-    rb = 1.0
+    K = 0.5
+    S = 0.1
+    rb = 10.0
     Drho = 1.0
-    slope = 0.1
-    wake = Wake(slope,rb,Drho)
-
+    wake = Wake(K,S,rb,Drho)
     # -------------------------------
 
     
@@ -122,34 +137,64 @@ def main():
     # Initial statistical moments (means and rms')
     #       [    z,   pz,   x,  px ]
     meanY = [ -1.0,  100, 0.0, 0.0 ]   # mean(Y0) 
-    rmsY  = [  0.1,  0.1, 1.0, 1.0 ]   # rms(Y0)         
+    rmsY  = [  1.0,  0.1, 0.1, 0.1 ]   # rms(Y0)         
 
-    emit0 = 0.1
+    # Blowout betatron frequency
+    omegaB = np.sqrt(K/meanY[1])
+    omegaB = np.sqrt(K/meanY[1])
+    lambdaB = 2*np.pi/omegaB
+    print('Betatron wavelength = %.2f' % lambdaB )
+
+    # Matched conditions at <xpx> = 0
+    betaM = np.sqrt(meanY[1]/K) # matched beta
+    emitM = meanY[1] * np.power(rmsY[2],2) / betaM  # matched emittance
+    emit0 = emitM
+    # emit0 = 0.1
     rmsY[3]  = emit0 / rmsY[2]
 
+    # Bunch definition in SI units    
     if args.si :
+
+        # Normalization constants
         n0 = 1.0E23 # m^-3
         kp = np.sqrt( n0 * ct.e * ct.e / (ct.epsilon_0 * ct.m_e) ) / ct.c
         mc2 = ct.m_e * ct.c * ct.c
+        MeV = ct.mega * ct.eV
+        um  = ct.micron
+        
+        print('Speed of light %f m/s' % ct.c)
+        print('Skindepth = %f um' % ((1/kp)/um))
+        print('Electron mass = %f MeV' % (mc2 / MeV))
+        
+        # Initial statistical moments (mean and rms)
+        #                   [        z,        pz,         x,           px ]
+        meanY_SI = np.array([ -20 * um, 1000 * MeV,  0.0 * um,    0.0 * MeV ])
+        rmsY_SI  = np.array([ 1.0 * um,  1.0 * MeV,  5.0 * um,  0.001 * MeV ])
 
-        # print('Speed of light %f' % ct.c)
-        # print('Skindepth = %f' % ((1/kp)/ct.micro))
-        # print('Electron mass = %f MeV' % (mc2 / (ct.eV * ct.mega)))
-
-        meanY_SI = np.array([-10 * ct.micro, 100 * ct.mega * ct.eV, 0.0, 0.0 ])
-        rmsY_SI  = np.array([2.0 * ct.micro, 1.0 * ct.mega * ct.eV, 20.0 * ct.micro, 1.0 * ct.kilo * ct.eV])
+        meangamma = meanY_SI[1]/mc2
+        print('gamma = %f' % meangamma)
         
-        normarray = np.array([kp,1/mc2,kp,1/mc2])
+        # Matched conditions at <xpx> = 0
+        betaM = np.sqrt(meangamma/K) / kp      # matched beta
+        print('Matched beta = %f um' % (betaM/um) )
+        emitM = meangamma * np.power(rmsY_SI[2],2) / betaM  # matched emittance
+        print('Matched emittance = %f um' % (emitM/um) )
         
-        meanY = meanY_SI * normarray
-        rmsY  = rmsY_SI * normarray      
-        print(meanY)
-        print(rmsY)
+        emit0 = emitM        
+        emit0 = 0.01 * um
+        print('Emittance = %f um' % (emit0/um) )
+        # beta0 = 
+        # print('Emittance = %f um' % (emit0/um) )
         
-    # Blowout betatron frequency
-    K_BO = 0.5
-    omegaBO = np.sqrt(K_BO/meanY[1])
-    print('Betatron wavelength = %.2f' % (2*np.pi/omegaBO) )
+        rmsY_SI[3]  = mc2 * emit0 / rmsY_SI[2]
+        
+        # Normalizes
+        norma = np.array([kp,1/mc2,kp,1/mc2])
+        # normarray = np.array([1,1,1,1])
+        
+        meanY = meanY_SI * norma
+        rmsY  = rmsY_SI * norma      
+        
 
     # Second moments, covariance matrix:
     sz  = rmsY[0]
@@ -164,22 +209,19 @@ def main():
 
     Z0, PZ0, X0, PX0 = np.random.multivariate_normal(meanY, covY, NP).T
 
-    # Matched emittance at <xpx> = 0
-    emitM = meanY[1] * sx * sx * omegaBO
+    # Plasma profile definition
+    # ----------------------------------------- 
+    plasma = Plasma(10 * lambdaB , 2 * lambdaB)
 
     # Time grid
     # --------------------------------
     tmin = 0.0
-    dt   = 1.0 / omegaBO
-    tmax = 150 * dt
+    dt   = 0.2 / omegaB
+    tmax = 16 * lambdaB
     time = np.arange(tmin,tmax,dt)
     NT = len(time)
     # print(' tmax = %f ' % tmax ) 
-    print('Time grid : t = (%.2f,%.2f) NT = %i  dt = %.2f' % (time[0],time[-1],NT,dt)) 
-
-    
-    # Plasma profile definition
-    plasma = Plasma(100 * dt,10 * dt)
+    print('Time grid : t = (%.2f,%.2f) NT = %i  dt = %.2f' % (time[0],time[-1],NT,dt))   
         
     # ODE solver
     # ----------
@@ -194,7 +236,7 @@ def main():
     # (z,pz,x,px) for each particle at each time. 
     Yall = np.empty((NT,4,NP))
 
-    for i in range(0, NP):
+    for i in range(NP):
         # Initial values
         Y0 = [Z0[i], PZ0[i], X0[i], PX0[i]]
         
@@ -217,21 +259,30 @@ def main():
     print('Extracting statistical moments...')
 
     # Statistical moments (Twiss parameters)
-    covz_all = np.empty((2,2,NT))
+    covz_all  = np.empty((2,2,NT))
     meanz_all = np.empty((2,NT))
-    covx_all = np.empty((2,2,NT))
+    covx_all  = np.empty((2,2,NT))
     meanx_all = np.empty((2,NT))
+    emitx_all = np.empty(NT)
+    betax_all = np.empty(NT)
+    alphax_all = np.empty(NT)
     
     for i in range(0, NT):	
 	meanz_all[:,i] = [sum(Yall[i,0,:])/NP, sum(Yall[i,1,:])/NP]
 	covz_all[:,:,i] = np.cov(Yall[i,0,:],Yall[i,1,:])
+        
 	meanx_all[:,i] = [sum(Yall[i,2,:])/NP, sum(Yall[i,3,:])/NP]
 	covx_all[:,:,i] = np.cov(Yall[i,2,:],Yall[i,3,:])
+        
+        emitx_all[i] = np.sqrt(covx_all[0,0,i]*covx_all[1,1,i] - covx_all[0,1,i]*covx_all[0,1,i])
+        betax_all[i] = meanz_all[1,i] * covx_all[0,0,i] / emitx_all[i]
+        alphax_all[i] = - meanz_all[1,i] * covx_all[0,1,i] / emitx_all[i]
     
 
     print('%.3f seconds ' % (clock.clock() - tclock))
     tclock = clock.clock()
-    
+
+    # --
     
     # Plotting with ROOT
     # ----------------------------------------------------------------- 
@@ -244,10 +295,12 @@ def main():
     pxmin = xmin * np.sqrt(1.0/(2.0 * meanY[1])) * meanY[1]
     pxmax = xmax * np.sqrt(1.0/(2.0 * meanY[1])) * meanY[1]
 
-    zetamin = meanY[0]-6*sz-2.0
-    zetamax = meanY[0]+6*sz
-    pzmin = 0.0
-    pzmax = 1000.
+    zetamin = meanY[0] - 10 * np.sqrt(np.max(covz_all[0,0]))
+    zetamax = meanY[0] + 4 * sz
+
+    maxDpz = np.sqrt(np.max(covz_all[1,1]))
+    pzmin = 1.0 * np.min(meanz_all[1]) - 4 * maxDpz 
+    pzmax = 1.0 * np.max(meanz_all[1]) + 4 * maxDpz
 
     # print(' xmin  = %f  xmax  = %f' % (xmin,xmax) ) 
     # print(' pxmin = %f  pxmax = %f' % (pxmin,pxmax) ) 
@@ -370,32 +423,55 @@ def main():
     frmspz.Draw("apl")
     C.Print(opath +'/rmspz.pdf')
 
-    emit = np.sqrt(covx_all[0,0,:]*covx_all[1,1,:] - covx_all[0,1,:]*covx_all[0,1,:]).flatten()
-    femit = TGraph(NT,time,emit)
-    femit.SetLineWidth(2)
-    femit.SetLineColor(lcolor)
-    femit.SetMarkerSize(0.4)
-    femit.SetMarkerStyle(20)
-    femit.SetMarkerColor(lcolor)
-    femit.GetYaxis().SetRangeUser(emit[0]*(0.8),emit[0]*(300.0))
-    femit.Draw("apl")
-    C.Print(opath +'/emit.pdf')
+    femitx = TGraph(NT,time,emitx_all[:].flatten())
+    femitx.SetLineWidth(2)
+    femitx.SetLineColor(lcolor)
+    femitx.SetMarkerSize(0.4)
+    femitx.SetMarkerStyle(20)
+    femitx.SetMarkerColor(lcolor)
+    femitx.GetYaxis().SetRangeUser(emitx_all[0]*(0.8),np.max(emitx_all)*(1.5))
+    femitx.Draw("apl")
+    C.Print(opath +'/emitx.pdf')
 
+    fbetax = TGraph(NT,time,betax_all[:].flatten())
+    fbetax.SetLineWidth(2)
+    fbetax.SetLineColor(lcolor)
+    fbetax.SetMarkerSize(0.4)
+    fbetax.SetMarkerStyle(20)
+    fbetax.SetMarkerColor(lcolor)
+    fbetax.GetYaxis().SetRangeUser(np.min(betax_all)*(0.8),np.max(betax_all)*(1.5))
+    fbetax.Draw("apl")
+    C.Print(opath +'/betax.pdf')
+
+    falphax = TGraph(NT,time,alphax_all[:].flatten())
+    falphax.SetLineWidth(2)
+    falphax.SetLineColor(lcolor)
+    falphax.SetMarkerSize(0.4)
+    falphax.SetMarkerStyle(20)
+    falphax.SetMarkerColor(lcolor)
+    # falphax.GetYaxis().SetRangeUser(np.min(alphax_all)*(0.8),np.max(alphax_all)*(1.5))
+    falphax.Draw("apl")
+    C.Print(opath +'/alphax.pdf')
+
+    
     print('%.3f seconds ' % (clock.clock() - tclock))
     tclock = clock.clock()
 
-
     # Draw trajectories of subset of particles
+
     Nsample = 100
     if Nsample > NP :
         Nsample = NP
         
     DeltaP = int(NP/Nsample)
 
-    if not os.path.exists(opath + '/tracks'):
-	os.makedirs(opath + '/tracks')
+    # List of selected particle indexes
+    plist = range(0, NP, DeltaP)
 
     print('Plotting particle trajectories (Sample = %i part.)' % Nsample)
+
+    if not os.path.exists(opath + '/tracks'):
+	os.makedirs(opath + '/tracks')
     
     # Color palette
     palette = PPalette('bird')
@@ -405,10 +481,12 @@ def main():
     
     frame = TH1F('frame','',10,time[0],time[-1])
     frame.GetYaxis().SetRangeUser(xmin,xmax)
-    frame.Draw()
+    frame.Draw("axis")
+
+    drawopt = 'l'
     
     gxvst = []
-    for i in range(0, NP, DeltaP):
+    for i in plist:
         gxvst.append(TGraph(NT,time,Yall[:,2,i].flatten()))
         gxvst[-1].SetLineWidth(2)
         cindex = int((abs(Yall[0,2,i])/(meanY[2]+2*sx)) * (palette.GetNColors()-1))
@@ -418,18 +496,17 @@ def main():
         gxvst[-1].SetMarkerSize(0.4)
         gxvst[-1].SetMarkerStyle(20)
         gxvst[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        gxvst[-1].Draw('pl')
+        gxvst[-1].Draw(drawopt)
 
-    gPad.RedrawAxis()
-    gPad.RedrawAxis('g')
+    DrawFrame()
     C.Print(opath +'/tracks/xvst.pdf')
 
     frame2 = TH1F('frame2','',10,xmin,xmax)
     frame2.GetYaxis().SetRangeUser(pxmin,pxmax)
-    frame2.Draw()
+    frame2.Draw("axis")
     
     gpxvsx = []
-    for i in range(0, NP, DeltaP):
+    for i in plist:
         gpxvsx.append(TGraph(NT,Yall[:,2,i].flatten(),Yall[:,3,i].flatten()))
         gpxvsx[-1].SetLineWidth(2)
         cindex = int((abs(Yall[0,2,i])/(2*sx+meanY[2])) * (palette.GetNColors()-1))
@@ -440,18 +517,17 @@ def main():
         gpxvsx[-1].SetMarkerSize(0.2)
         gpxvsx[-1].SetMarkerStyle(20)
         gpxvsx[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        gpxvsx[-1].Draw('pl')
+        gpxvsx[-1].Draw(drawopt)
                 
-    gPad.RedrawAxis()
-    gPad.RedrawAxis('g')
+    DrawFrame()
     C.Print(opath +'/tracks/pxvsx.pdf')
 
     frame3 = TH1F('frame3','',10,zetamin,zetamax)
     frame3.GetYaxis().SetRangeUser(xmin,xmax)
-    frame3.Draw()
+    frame3.Draw("axis")
 
     gxvszeta = []
-    for i in range(0, NP, DeltaP):
+    for i in plist:
         gxvszeta.append(TGraph(NT,Yall[:,0,i].flatten()-time[:],Yall[:,2,i].flatten()))
         gxvszeta[-1].SetLineWidth(2)
         cindex = int((abs(Yall[0,2,i])/(2*sx+meanY[2])) * (palette.GetNColors()-1))
@@ -462,18 +538,17 @@ def main():
         gxvszeta[-1].SetMarkerSize(0.2)
         gxvszeta[-1].SetMarkerStyle(20)
         gxvszeta[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        gxvszeta[-1].Draw('pl')
+        gxvszeta[-1].Draw(drawopt)
                 
-    gPad.RedrawAxis()
-    gPad.RedrawAxis('g')
+    DrawFrame()
     C.Print(opath +'/tracks/xvszeta.pdf')
 
     frame4 = TH1F('frame4','',10,time[0],time[-1])
     frame4.GetYaxis().SetRangeUser(0.99,1.0)
-    frame4.Draw()
+    frame4.Draw("axis")
 
     gvzvsz = []
-    for i in range(0, NP, DeltaP):
+    for i in plist:
         vgamma = Gamma(Yall[:,1,i].flatten(),Yall[:,3,i].flatten())
         gvzvsz.append(TGraph(NT,Yall[:,0,i].flatten(),Yall[:,1,i].flatten()/vgamma))
         gvzvsz[-1].SetLineWidth(2)
@@ -485,19 +560,18 @@ def main():
         gvzvsz[-1].SetMarkerSize(0.2)
         gvzvsz[-1].SetMarkerStyle(20)
         gvzvsz[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        gvzvsz[-1].Draw('pl')
+        gvzvsz[-1].Draw(drawopt)
                 
-    gPad.RedrawAxis()
-    gPad.RedrawAxis('g')
+    DrawFrame()
     C.Print(opath +'/tracks/vzvsz.pdf')
         
 
     frame5 = TH1F('frame5','',10,time[0],time[-1])
-    frame5.GetYaxis().SetRangeUser(1.0,pzmax)
-    frame5.Draw()
+    frame5.GetYaxis().SetRangeUser(pzmin,pzmax)
+    frame5.Draw("axis")
 
     ggammavst = []
-    for i in range(0, NP, DeltaP):
+    for i in plist:
         vgamma = Gamma(Yall[:,1,i].flatten(),Yall[:,3,i].flatten())
         ggammavst.append(TGraph(NT,time,vgamma))
         ggammavst[-1].SetLineWidth(2)
@@ -509,10 +583,9 @@ def main():
         ggammavst[-1].SetMarkerSize(0.2)
         ggammavst[-1].SetMarkerStyle(20)
         ggammavst[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        ggammavst[-1].Draw('pl')
+        ggammavst[-1].Draw(drawopt)
                 
-    gPad.RedrawAxis()
-    gPad.RedrawAxis('g')
+    DrawFrame()
     C.Print(opath +'/tracks/gammavst.pdf')
         
 
