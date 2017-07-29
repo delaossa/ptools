@@ -5,6 +5,8 @@ import scipy.constants as ct
 import numpy as np
 import os, sys, argparse
 import time as clock
+import multiprocessing
+from functools import partial
 from ROOT import PData, PGlobals, PPalette, PUnits, TF1, TH2F, TH1F, TGraph, TCanvas, TBox, TLine, TColor, TStyle, gStyle, gPad, kMagenta, kBird, kBlack
 
 
@@ -109,6 +111,10 @@ def dY(Y, t, wake, plasma):
              - kp * ( wake.Ex(kp*Y[2]) * (1 - Y[1]/Gamma(Y[1],Y[3]) ) + wake.Wx(kp*Y[2]) * Y[1]/Gamma(Y[1],Y[3])) ]
 
 
+def integra(wake,plasma,time,dY,Y) :
+    return integrate.odeint(dY, Y, time, args=(wake,plasma))
+
+
 
 def main():
 
@@ -207,7 +213,7 @@ def main():
              [  0.0, 0.0    , sx*sx,     0.0],
              [  0.0, 0.0    ,   0.0, spx*spx]]
 
-    Z0, PZ0, X0, PX0 = np.random.multivariate_normal(meanY, covY, NP).T
+    Y0 = np.random.multivariate_normal(meanY, covY, NP)
 
     # Plasma profile definition
     # ----------------------------------------- 
@@ -227,7 +233,7 @@ def main():
     # ----------
 
     tclock = clock.clock()
-    print('Solving equations of motions (ODEs) ...')
+    print('Solving equations of motion (ODEs) ...')
 
     # Phase space (Particles and coordinates) 
     # ---------------------------------------
@@ -236,16 +242,28 @@ def main():
     # (z,pz,x,px) for each particle at each time. 
     Yall = np.empty((NT,4,NP))
 
-    for i in range(NP):
-        # Initial values
-        Y0 = [Z0[i], PZ0[i], X0[i], PX0[i]]
-        
+    # Serial version:
+
+    # for i in range(NP):        
         # Integrate differential equation of motion
- 	Y = integrate.odeint(dY, Y0, time, args=(wake,plasma))
+ 	# Y = integrate.odeint(dY, Y0[i], time, args=(wake,plasma))
+    #    Yall[:,:,i] = integra(wake,plasma,time,dY,Y0[i])
 
-        # Array storting the particle trajectories in phase space (z,pz,x,px)
-        Yall[:,:,i] = Y
+    # Parallel version:
+    
+    pintegra = partial(integra,wake,plasma,time,dY)
+    pool = multiprocessing.Pool()
 
+    Ylist = np.empty((NP,NT,4))
+    Ylist = pool.map(pintegra,(Y0[i] for i in range(NP)) )
+    pool.close()
+    pool.join()
+
+    for i in range(NP):
+        Yall[:,:,i] = Ylist[i]
+
+    # ----------------------------------------------------
+        
     print('Done in %.3f s. ' % (clock.clock() - tclock))
     tclock = clock.clock()
 
