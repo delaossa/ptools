@@ -7,6 +7,7 @@ import os, sys, argparse
 import time as clock
 import multiprocessing
 from functools import partial
+import ROOT
 from ROOT import PData, PGlobals, PPalette, PUnits, TF1, TH2F, TH1F, TGraph, TCanvas, TBox, TLine, TColor, TStyle, gStyle, gPad, kMagenta, kBird, kBlack
 
 
@@ -20,6 +21,7 @@ def parse_args():
     parser.add_argument('--ps', action='store_true', default=1, help='Plot phasespace snapshots')
     parser.add_argument('--png', action='store_true', default=0, help='Plot phasespace snapshots in png')
     parser.add_argument('--si', action='store_true', default=0, help='SI units')
+    parser.add_argument('--mp', action='store_true', default=0, help='For multiprocessing in parallel')
     parser.add_argument('--man', action='store_true', default=0, help='Print help')
     
     args = parser.parse_args()
@@ -174,7 +176,7 @@ def main():
         
         # Initial statistical moments (mean and rms)
         #                   [        z,        pz,         x,           px ]
-        meanY_SI = np.array([ -20 * um, 1000 * MeV,  0.0 * um,    0.0 * MeV ])
+        meanY_SI = np.array([ -20 * um,  100 * MeV,  0.0 * um,    0.0 * MeV ])
         rmsY_SI  = np.array([ 1.0 * um,  1.0 * MeV,  5.0 * um,  0.001 * MeV ])
 
         meangamma = meanY_SI[1]/mc2
@@ -243,28 +245,30 @@ def main():
     Yall = np.empty((NT,4,NP))
 
     # Serial version:
+    if args.mp == 0 :
+        for i in range(NP):        
+            # Integrate differential equation of motion
+ 	    # Y = integrate.odeint(dY, Y0[i], time, args=(wake,plasma))
+            Yall[:,:,i] = integra(wake,plasma,time,dY,Y0[i])
 
-    # for i in range(NP):        
-        # Integrate differential equation of motion
- 	# Y = integrate.odeint(dY, Y0[i], time, args=(wake,plasma))
-    #    Yall[:,:,i] = integra(wake,plasma,time,dY,Y0[i])
-
+    else :
     # Parallel version:
+        pintegra = partial(integra,wake,plasma,time,dY)
+        pool = multiprocessing.Pool()
+        NCPU = multiprocessing.cpu_count()
+        print('Number of CPUs = %i' % NCPU)
     
-    pintegra = partial(integra,wake,plasma,time,dY)
-    pool = multiprocessing.Pool()
+        Ylist = np.empty((NP,NT,4))
+        Ylist = pool.map(pintegra,(Y0[i] for i in range(NP)) )
+        pool.close()
+        pool.join()
 
-    Ylist = np.empty((NP,NT,4))
-    Ylist = pool.map(pintegra,(Y0[i] for i in range(NP)) )
-    pool.close()
-    pool.join()
-
-    for i in range(NP):
-        Yall[:,:,i] = Ylist[i]
+        for i in range(NP):
+            Yall[:,:,i] = Ylist[i]
 
     # ----------------------------------------------------
         
-    print('Done in %.3f s. ' % (clock.clock() - tclock))
+    print('Done in %.3f s. ' % ((clock.clock() - tclock)))
     tclock = clock.clock()
 
     # ---------------------------------
@@ -304,12 +308,14 @@ def main():
     
     # Plotting with ROOT
     # ----------------------------------------------------------------- 
+    
+    ROOT.gROOT.SetBatch(1)
 
     print('Plotting beam moments...')
 
     # Ranges
-    xmin = -meanY[2]-6*sx
-    xmax = meanY[2]+6*sx
+    xmin  = -meanY[2]-6*sx
+    xmax  = meanY[2]+6*sx
     pxmin = xmin * np.sqrt(1.0/(2.0 * meanY[1])) * meanY[1]
     pxmax = xmax * np.sqrt(1.0/(2.0 * meanY[1])) * meanY[1]
 
