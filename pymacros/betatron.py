@@ -19,9 +19,9 @@ def parse_args():
     parser.add_argument('name', nargs='?', default='betaout', help='Simulation name (output folder)')
     parser.add_argument('-NP', type=int, dest='NP', default=1000, help='Number of macroparticles')
     parser.add_argument('--ps', action='store_true', default=1, help='Plot phasespace snapshots')
-    parser.add_argument('--png', action='store_true', default=0, help='Plot phasespace snapshots in png')
+    parser.add_argument('--png', action='store_true', default=0, help='Plot phasespace snapshots in png (slow!)')
     parser.add_argument('--si', action='store_true', default=0, help='SI units')
-    parser.add_argument('--mp', action='store_true', default=0, help='For multiprocessing in parallel')
+    parser.add_argument('--mp', action='store_true', default=0, help='For parallel processing')
     parser.add_argument('--man', action='store_true', default=0, help='Print help')
     
     args = parser.parse_args()
@@ -116,6 +116,16 @@ def dY(Y, t, wake, plasma):
 def integra(wake,plasma,time,dY,Y) :
     return integrate.odeint(dY, Y, time, args=(wake,plasma))
 
+def statistics(Y) :
+    NP = len(Y[0])
+
+    meanz = [sum(Y[0])/NP, sum(Y[1])/NP]
+    meanx = [sum(Y[2])/NP, sum(Y[3])/NP]
+    
+    covz = np.cov(Y[0],Y[1])
+    covx = np.cov(Y[2],Y[3])
+
+    return meanz,meanx,covz,covx
 
 
 def main():
@@ -188,7 +198,7 @@ def main():
         print('Matched emittance = %f um' % (emitM/um) )
         
         emit0 = emitM        
-        emit0 = 0.01 * um
+        emit0 = 1.00 * um
         print('Emittance = %f um' % (emit0/um) )
         # beta0 = 
         # print('Emittance = %f um' % (emit0/um) )
@@ -258,12 +268,11 @@ def main():
         NCPU = multiprocessing.cpu_count()
         print('Number of CPUs = %i' % NCPU)
     
-        Ylist = np.empty((NP,NT,4))
         Ylist = pool.map(pintegra,(Y0[i] for i in range(NP)) )
         pool.close()
         pool.join()
 
-        # This is needed for proper broadcasting 
+        # This is needed to avoid broadcasting problems 
         for i in range(NP):
             Yall[i] = Ylist[i]
 
@@ -292,21 +301,39 @@ def main():
     emitx_all = np.empty(NT)
     betax_all = np.empty(NT)
     alphax_all = np.empty(NT)
-    
-    for i in range(NT):
-        
-	meanz_all[i,:] = [sum(Yall[:,i,0])/NP, sum(Yall[:,i,1])/NP]
-	meanx_all[i,:] = [sum(Yall[:,i,2])/NP, sum(Yall[:,i,3])/NP]
-        
-        covz_all[i,:,:] = np.cov(Yall[:,i,0],Yall[:,i,1])
-        covx_all[i,:,:] = np.cov(Yall[:,i,2],Yall[:,i,3])
-                
-        emitx_all[i] = np.sqrt(covx_all[i,0,0]*covx_all[i,1,1]
-                               - covx_all[i,0,1]*covx_all[i,0,1])
-        betax_all[i] = meanz_all[i,1] * covx_all[i,0,0] / emitx_all[i]
-        alphax_all[i] = - meanz_all[i,1] * covx_all[i,0,1] / emitx_all[i]
+                 
+    # Serial version:
+    if args.mp == 0 :
+        for i in range(NT):
 
+            # This bit can be quite lengthy for big NP --> parallelize on t?
+	    # meanz_all[i,:] = [sum(Yall[:,i,0])/NP, sum(Yall[:,i,1])/NP]
+	    # meanx_all[i,:] = [sum(Yall[:,i,2])/NP, sum(Yall[:,i,3])/NP]
+        
+            # covz_all[i,:,:] = np.cov(Yall[:,i,0],Yall[:,i,1])
+            # covx_all[i,:,:] = np.cov(Yall[:,i,2],Yall[:,i,3])
+            # --
+        
+            meanz_all[i],meanx_all[i],covz_all[i],covx_all[i] = statistics(Yall[:,i].T)
+                 
+            emitx_all[i] = np.sqrt(covx_all[i,0,0]*covx_all[i,1,1] - covx_all[i,0,1]*covx_all[i,0,1])
+            betax_all[i] = meanz_all[i,1] * covx_all[i,0,0] / emitx_all[i]
+            alphax_all[i] = - meanz_all[i,1] * covx_all[i,0,1] / emitx_all[i]
 
+    else:
+    # Parallel version:
+        pool = multiprocessing.Pool()
+        result = pool.map(statistics,(Yall[:,i].T for i in range(NT)))
+        pool.close()
+        pool.join()
+        for i in range(NT):
+            meanz_all[i],meanx_all[i],covz_all[i],covx_all[i] = result[i]
+
+            emitx_all[i] = np.sqrt(covx_all[i,0,0]*covx_all[i,1,1] - covx_all[i,0,1]*covx_all[i,0,1])
+            betax_all[i] = meanz_all[i,1] * covx_all[i,0,0] / emitx_all[i]
+            alphax_all[i] = - meanz_all[i,1] * covx_all[i,0,1] / emitx_all[i]
+
+            
     print('%.3f seconds ' % (clock.clock() - tclock))
     tclock = clock.clock()
 
@@ -333,7 +360,6 @@ def main():
     maxDpz = np.sqrt(np.max(covz_all[:,1,1]))
     pzmin = 1.0 * np.min(meanz_all[:,1]) - 4 * maxDpz 
     pzmax = 1.0 * np.max(meanz_all[:,1]) + 4 * maxDpz
-
     
     # Style
     PGlobals.SetPlasmaStyle()
@@ -438,17 +464,16 @@ def main():
     print('%.3f seconds ' % (clock.clock() - tclock))
     tclock = clock.clock()
 
-    # Draw trajectories of subset of particles
+    # Draw trajectories of a subset of particles
     # -----------------------------------------------------
     
     Nsample = 100
     if Nsample > NP :
         Nsample = NP
         
-    DeltaP = int(NP/Nsample)
-
+    DP = int(NP/Nsample)
     # List of selected particle indexes
-    plist = range(0, NP, DeltaP)
+    plist = range(0, NP, DP)
 
     print('Plotting particle trajectories (Sample = %i part.)' % Nsample)
 
@@ -555,9 +580,9 @@ def main():
         Nsample = 50
         if Nsample > NT :
             Nsample = NT            
-        DeltaT = int(NT/Nsample)
+        DT = int(NT/Nsample)
 
-        tindex = range(0, NT, DeltaT)
+        tindex = range(0, NT, DT)
         for i in tindex:	
             hname = 'hpzvsz-%i' % i 
             hpzvsz = TH2F(hname,'',100,zetamin,zetamax,100,pzmin,pzmax)
