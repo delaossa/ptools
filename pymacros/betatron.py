@@ -121,7 +121,6 @@ def integra(wake,plasma,time,dY,Y) :
 def main():
 
     args = parse_args()
-
         
     # Wakefields definition
     # -------------------------------
@@ -176,7 +175,7 @@ def main():
         
         # Initial statistical moments (mean and rms)
         #                   [        z,        pz,         x,           px ]
-        meanY_SI = np.array([ -20 * um,  100 * MeV,  0.0 * um,    0.0 * MeV ])
+        meanY_SI = np.array([ -20 * um, 1000 * MeV,  0.0 * um,    0.0 * MeV ])
         rmsY_SI  = np.array([ 1.0 * um,  1.0 * MeV,  5.0 * um,  0.001 * MeV ])
 
         meangamma = meanY_SI[1]/mc2
@@ -217,6 +216,7 @@ def main():
 
     Y0 = np.random.multivariate_normal(meanY, covY, NP)
 
+
     # Plasma profile definition
     # ----------------------------------------- 
     plasma = Plasma(10 * lambdaB , 2 * lambdaB)
@@ -225,7 +225,7 @@ def main():
     # --------------------------------
     tmin = 0.0
     dt   = 0.2 / omegaB
-    tmax = 16 * lambdaB
+    tmax = 25 * lambdaB
     time = np.arange(tmin,tmax,dt)
     NT = len(time)
     # print(' tmax = %f ' % tmax ) 
@@ -242,14 +242,14 @@ def main():
     
     # Matrix storing particle trajectories :
     # (z,pz,x,px) for each particle at each time. 
-    Yall = np.empty((NT,4,NP))
+    Yall = np.empty((NP,NT,4))
 
     # Serial version:
     if args.mp == 0 :
         for i in range(NP):        
             # Integrate differential equation of motion
  	    # Y = integrate.odeint(dY, Y0[i], time, args=(wake,plasma))
-            Yall[:,:,i] = integra(wake,plasma,time,dY,Y0[i])
+            Yall[i] = integra(wake,plasma,time,dY,Y0[i])
 
     else :
     # Parallel version:
@@ -263,8 +263,10 @@ def main():
         pool.close()
         pool.join()
 
+        # This is needed for proper broadcasting 
         for i in range(NP):
-            Yall[:,:,i] = Ylist[i]
+            Yall[i] = Ylist[i]
+
 
     # ----------------------------------------------------
         
@@ -280,26 +282,30 @@ def main():
 
     print('Extracting statistical moments...')
 
-    # Statistical moments (Twiss parameters)
-    covz_all  = np.empty((2,2,NT))
-    meanz_all = np.empty((2,NT))
-    covx_all  = np.empty((2,2,NT))
-    meanx_all = np.empty((2,NT))
+    # Statistical moments 
+    meanz_all = np.empty((NT,2))
+    covz_all  = np.empty((NT,2,2))
+    meanx_all = np.empty((NT,2))
+    covx_all  = np.empty((NT,2,2))
+    
+    # Twiss parameters
     emitx_all = np.empty(NT)
     betax_all = np.empty(NT)
     alphax_all = np.empty(NT)
     
-    for i in range(0, NT):	
-	meanz_all[:,i] = [sum(Yall[i,0,:])/NP, sum(Yall[i,1,:])/NP]
-	covz_all[:,:,i] = np.cov(Yall[i,0,:],Yall[i,1,:])
+    for i in range(NT):
         
-	meanx_all[:,i] = [sum(Yall[i,2,:])/NP, sum(Yall[i,3,:])/NP]
-	covx_all[:,:,i] = np.cov(Yall[i,2,:],Yall[i,3,:])
+	meanz_all[i,:] = [sum(Yall[:,i,0])/NP, sum(Yall[:,i,1])/NP]
+	meanx_all[i,:] = [sum(Yall[:,i,2])/NP, sum(Yall[:,i,3])/NP]
         
-        emitx_all[i] = np.sqrt(covx_all[0,0,i]*covx_all[1,1,i] - covx_all[0,1,i]*covx_all[0,1,i])
-        betax_all[i] = meanz_all[1,i] * covx_all[0,0,i] / emitx_all[i]
-        alphax_all[i] = - meanz_all[1,i] * covx_all[0,1,i] / emitx_all[i]
-    
+        covz_all[i,:,:] = np.cov(Yall[:,i,0],Yall[:,i,1])
+        covx_all[i,:,:] = np.cov(Yall[:,i,2],Yall[:,i,3])
+                
+        emitx_all[i] = np.sqrt(covx_all[i,0,0]*covx_all[i,1,1]
+                               - covx_all[i,0,1]*covx_all[i,0,1])
+        betax_all[i] = meanz_all[i,1] * covx_all[i,0,0] / emitx_all[i]
+        alphax_all[i] = - meanz_all[i,1] * covx_all[i,0,1] / emitx_all[i]
+
 
     print('%.3f seconds ' % (clock.clock() - tclock))
     tclock = clock.clock()
@@ -318,16 +324,16 @@ def main():
     xmax  = meanY[2]+6*sx
     pxmin = xmin * np.sqrt(1.0/(2.0 * meanY[1])) * meanY[1]
     pxmax = xmax * np.sqrt(1.0/(2.0 * meanY[1])) * meanY[1]
-
-    zetamin = meanY[0] - 10 * np.sqrt(np.max(covz_all[0,0]))
-    zetamax = meanY[0] + 4 * sz
-
-    maxDpz = np.sqrt(np.max(covz_all[1,1]))
-    pzmin = 1.0 * np.min(meanz_all[1]) - 4 * maxDpz 
-    pzmax = 1.0 * np.max(meanz_all[1]) + 4 * maxDpz
-
     # print(' xmin  = %f  xmax  = %f' % (xmin,xmax) ) 
     # print(' pxmin = %f  pxmax = %f' % (pxmin,pxmax) ) 
+
+    zetamin = meanY[0] - 10 * np.sqrt(np.max(covz_all[:,0,0]))
+    zetamax = meanY[0] + 4 * sz
+
+    maxDpz = np.sqrt(np.max(covz_all[:,1,1]))
+    pzmin = 1.0 * np.min(meanz_all[:,1]) - 4 * maxDpz 
+    pzmax = 1.0 * np.max(meanz_all[:,1]) + 4 * maxDpz
+
     
     # Style
     PGlobals.SetPlasmaStyle()
@@ -373,108 +379,59 @@ def main():
     fProf.Draw()
     C.Print(opath +'/fields/DenProf.pdf')
 
+    # Plot bunch parameters
     lcolor = kMagenta + 2
+    def DrawGraph(graph) :
+        graph.SetLineWidth(2)
+        graph.SetLineColor(lcolor)
+        graph.SetMarkerSize(0.4)
+        graph.SetMarkerStyle(20)
+        graph.SetMarkerColor(lcolor)
+        graph.Draw("apl")
+        
     
-    fmeanx = TGraph(NT,time,meanx_all[0,:].flatten())
-    fmeanx.SetLineWidth(2)
-    fmeanx.SetLineColor(lcolor)
-    fmeanx.SetMarkerSize(0.4)
-    fmeanx.SetMarkerStyle(20)
-    fmeanx.SetMarkerColor(lcolor)
-    fmeanx.Draw("apl")
+    fmeanx = TGraph(NT,time,meanx_all[:,0].flatten())
+    DrawGraph(fmeanx)
     C.Print(opath +'/meanx.pdf')
     
-    fmeanpx = TGraph(NT,time,meanx_all[1,:].flatten())
-    fmeanpx.SetLineWidth(2)
-    fmeanpx.SetLineColor(lcolor)
-    fmeanpx.SetMarkerSize(0.4)
-    fmeanpx.SetMarkerStyle(20)
-    fmeanpx.SetMarkerColor(lcolor)
-    fmeanpx.Draw("apl")
+    fmeanpx = TGraph(NT,time,meanx_all[:,1].flatten())
+    DrawGraph(fmeanpx)
     C.Print(opath +'/meanpx.pdf')
 
-    frmsx = TGraph(NT,time,np.sqrt(covx_all[0,0,:]).flatten())
-    frmsx.SetLineWidth(2)
-    frmsx.SetLineColor(lcolor)
-    frmsx.SetMarkerSize(0.4)
-    frmsx.SetMarkerStyle(20)
-    frmsx.SetMarkerColor(lcolor)
-    frmsx.Draw("apl")
+    frmsx = TGraph(NT,time,np.sqrt(covx_all[:,0,0]).flatten())
+    DrawGraph(frmsx)
     C.Print(opath +'/rmsx.pdf')
     
-    frmspx = TGraph(NT,time,np.sqrt(covx_all[1,1,:]).flatten())
-    frmspx.SetLineWidth(2)
-    frmspx.SetLineColor(lcolor)
-    frmspx.SetMarkerSize(0.4)
-    frmspx.SetMarkerStyle(20)
-    frmspx.SetMarkerColor(lcolor)
-    frmspx.Draw("apl")
+    frmspx = TGraph(NT,time,np.sqrt(covx_all[:,1,1]).flatten())
+    DrawGraph(frmspx)
     C.Print(opath +'/rmspx.pdf')
 
-    fmeanz = TGraph(NT,time,meanz_all[0,:].flatten()-time)
-    fmeanz.SetLineWidth(2)
-    fmeanz.SetLineColor(lcolor)
-    fmeanz.SetMarkerSize(0.4)
-    fmeanz.SetMarkerStyle(20)
-    fmeanz.SetMarkerColor(lcolor)
-    fmeanz.Draw("apl")
+    fmeanz = TGraph(NT,time,meanz_all[:,0].flatten()-time)
+    DrawGraph(fmeanz)
     C.Print(opath +'/meanz.pdf')
     
-    fmeanpz = TGraph(NT,time,meanz_all[1,:].flatten())
-    fmeanpz.SetLineWidth(2)
-    fmeanpz.SetLineColor(lcolor)
-    fmeanpz.SetMarkerSize(0.4)
-    fmeanpz.SetMarkerStyle(20)
-    fmeanpz.SetMarkerColor(lcolor)
-    fmeanpz.Draw("apl")
+    fmeanpz = TGraph(NT,time,meanz_all[:,1].flatten())
+    DrawGraph(fmeanpz)
     C.Print(opath +'/meanpz.pdf')
 
-    frmsz = TGraph(NT,time,np.sqrt(covz_all[0,0,:]).flatten())
-    frmsz.SetLineWidth(2)
-    frmsz.SetLineColor(lcolor)
-    frmsz.SetMarkerSize(0.4)
-    frmsz.SetMarkerStyle(20)
-    frmsz.SetMarkerColor(lcolor)
-    frmsz.Draw("apl")
+    frmsz = TGraph(NT,time,np.sqrt(covz_all[:,0,0]).flatten())
+    DrawGraph(frmsz)
     C.Print(opath +'/rmsz.pdf')
     
-    frmspz = TGraph(NT,time,np.sqrt(covz_all[1,1,:]).flatten())
-    frmspz.SetLineWidth(2)
-    frmspz.SetLineColor(lcolor)
-    frmspz.SetMarkerSize(0.4)
-    frmspz.SetMarkerStyle(20)
-    frmspz.SetMarkerColor(lcolor)
-    frmspz.Draw("apl")
+    frmspz = TGraph(NT,time,np.sqrt(covz_all[:,1,1]).flatten())
+    DrawGraph(frmspz)
     C.Print(opath +'/rmspz.pdf')
 
     femitx = TGraph(NT,time,emitx_all[:].flatten())
-    femitx.SetLineWidth(2)
-    femitx.SetLineColor(lcolor)
-    femitx.SetMarkerSize(0.4)
-    femitx.SetMarkerStyle(20)
-    femitx.SetMarkerColor(lcolor)
-    femitx.GetYaxis().SetRangeUser(emitx_all[0]*(0.8),np.max(emitx_all)*(1.5))
-    femitx.Draw("apl")
+    DrawGraph(femitx)
     C.Print(opath +'/emitx.pdf')
 
     fbetax = TGraph(NT,time,betax_all[:].flatten())
-    fbetax.SetLineWidth(2)
-    fbetax.SetLineColor(lcolor)
-    fbetax.SetMarkerSize(0.4)
-    fbetax.SetMarkerStyle(20)
-    fbetax.SetMarkerColor(lcolor)
-    fbetax.GetYaxis().SetRangeUser(np.min(betax_all)*(0.8),np.max(betax_all)*(1.5))
-    fbetax.Draw("apl")
+    DrawGraph(fbetax)
     C.Print(opath +'/betax.pdf')
 
     falphax = TGraph(NT,time,alphax_all[:].flatten())
-    falphax.SetLineWidth(2)
-    falphax.SetLineColor(lcolor)
-    falphax.SetMarkerSize(0.4)
-    falphax.SetMarkerStyle(20)
-    falphax.SetMarkerColor(lcolor)
-    # falphax.GetYaxis().SetRangeUser(np.min(alphax_all)*(0.8),np.max(alphax_all)*(1.5))
-    falphax.Draw("apl")
+    DrawGraph(falphax)
     C.Print(opath +'/alphax.pdf')
 
     
@@ -482,7 +439,8 @@ def main():
     tclock = clock.clock()
 
     # Draw trajectories of subset of particles
-
+    # -----------------------------------------------------
+    
     Nsample = 100
     if Nsample > NP :
         Nsample = NP
@@ -500,114 +458,81 @@ def main():
     # Color palette
     palette = PPalette('bird')
     palette.SetPalette(kBird)
-    palette.cd()
     palette.SetAlpha(0.6)
-    
+
+    def DrawTrack(graph) :
+        graph.SetLineWidth(2)
+        cindex = int((abs(Yall[i,0,2])/(meanY[2]+2*sx)) * (palette.GetNColors()-1))
+        if cindex>palette.GetNColors()-1 :
+            cindex = palette.GetNColors()-1
+        graph.SetLineColor(palette.GetColorIndex(cindex))
+        graph.SetMarkerSize(0.4)
+        graph.SetMarkerStyle(20)
+        graph.SetMarkerColor(palette.GetColorIndex(cindex))
+        graph.Draw('l')
+        
+    # --
     frame = TH1F('frame','',10,time[0],time[-1])
     frame.GetYaxis().SetRangeUser(xmin,xmax)
     frame.Draw("axis")
-
-    drawopt = 'l'
     
     gxvst = []
     for i in plist:
-        gxvst.append(TGraph(NT,time,Yall[:,2,i].flatten()))
-        gxvst[-1].SetLineWidth(2)
-        cindex = int((abs(Yall[0,2,i])/(meanY[2]+2*sx)) * (palette.GetNColors()-1))
-        if cindex>palette.GetNColors()-1 :
-            cindex = palette.GetNColors()-1
-        gxvst[-1].SetLineColor(palette.GetColorIndex(cindex))
-        gxvst[-1].SetMarkerSize(0.4)
-        gxvst[-1].SetMarkerStyle(20)
-        gxvst[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        gxvst[-1].Draw(drawopt)
-
+        gxvst.append(TGraph(NT,time,Yall[i,:,2].flatten()))
+        DrawTrack(gxvst[-1])        
     DrawFrame()
     C.Print(opath +'/tracks/xvst.pdf')
 
+    # --
     frame2 = TH1F('frame2','',10,xmin,xmax)
     frame2.GetYaxis().SetRangeUser(pxmin,pxmax)
     frame2.Draw("axis")
     
     gpxvsx = []
     for i in plist:
-        gpxvsx.append(TGraph(NT,Yall[:,2,i].flatten(),Yall[:,3,i].flatten()))
-        gpxvsx[-1].SetLineWidth(2)
-        cindex = int((abs(Yall[0,2,i])/(2*sx+meanY[2])) * (palette.GetNColors()-1))
-        if cindex>palette.GetNColors()-1 :
-            cindex = palette.GetNColors()-1
-
-        gpxvsx[-1].SetLineColor(palette.GetColorIndex(cindex))
-        gpxvsx[-1].SetMarkerSize(0.2)
-        gpxvsx[-1].SetMarkerStyle(20)
-        gpxvsx[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        gpxvsx[-1].Draw(drawopt)
+        gpxvsx.append(TGraph(NT,Yall[i,:,2].flatten(),Yall[i,:,3].flatten()))
+        DrawTrack(gpxvsx[-1])        
                 
     DrawFrame()
     C.Print(opath +'/tracks/pxvsx.pdf')
 
+    # --
     frame3 = TH1F('frame3','',10,zetamin,zetamax)
     frame3.GetYaxis().SetRangeUser(xmin,xmax)
     frame3.Draw("axis")
 
     gxvszeta = []
     for i in plist:
-        gxvszeta.append(TGraph(NT,Yall[:,0,i].flatten()-time[:],Yall[:,2,i].flatten()))
-        gxvszeta[-1].SetLineWidth(2)
-        cindex = int((abs(Yall[0,2,i])/(2*sx+meanY[2])) * (palette.GetNColors()-1))
-        if cindex>palette.GetNColors()-1 :
-            cindex = palette.GetNColors()-1
-
-        gxvszeta[-1].SetLineColor(palette.GetColorIndex(cindex))
-        gxvszeta[-1].SetMarkerSize(0.2)
-        gxvszeta[-1].SetMarkerStyle(20)
-        gxvszeta[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        gxvszeta[-1].Draw(drawopt)
+        gxvszeta.append(TGraph(NT,Yall[i,:,0].flatten()-time[:],Yall[i,:,2].flatten()))
+        DrawTrack(gxvszeta[-1])        
                 
     DrawFrame()
     C.Print(opath +'/tracks/xvszeta.pdf')
 
+    # --
     frame4 = TH1F('frame4','',10,time[0],time[-1])
     frame4.GetYaxis().SetRangeUser(0.99,1.0)
     frame4.Draw("axis")
 
-    gvzvsz = []
+    gvzvst = []
     for i in plist:
-        vgamma = Gamma(Yall[:,1,i].flatten(),Yall[:,3,i].flatten())
-        gvzvsz.append(TGraph(NT,Yall[:,0,i].flatten(),Yall[:,1,i].flatten()/vgamma))
-        gvzvsz[-1].SetLineWidth(2)
-        cindex = int((abs(Yall[0,2,i])/(2*sx+meanY[2])) * (palette.GetNColors()-1))
-        if cindex>palette.GetNColors()-1 :
-            cindex = palette.GetNColors()-1
-
-        gvzvsz[-1].SetLineColor(palette.GetColorIndex(cindex))
-        gvzvsz[-1].SetMarkerSize(0.2)
-        gvzvsz[-1].SetMarkerStyle(20)
-        gvzvsz[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        gvzvsz[-1].Draw(drawopt)
-                
+        vz = Yall[i,:,1].flatten()/Gamma(Yall[i,:,1].flatten(),Yall[i,:,3].flatten())
+        gvzvst.append(TGraph(NT,time,vz))
+        DrawTrack(gvzvst[-1])        
+               
     DrawFrame()
-    C.Print(opath +'/tracks/vzvsz.pdf')
-        
+    C.Print(opath +'/tracks/vzvst.pdf')        
 
+    # --
     frame5 = TH1F('frame5','',10,time[0],time[-1])
     frame5.GetYaxis().SetRangeUser(pzmin,pzmax)
     frame5.Draw("axis")
 
     ggammavst = []
     for i in plist:
-        vgamma = Gamma(Yall[:,1,i].flatten(),Yall[:,3,i].flatten())
+        vgamma = Gamma(Yall[i,:,1].flatten(),Yall[i,:,3].flatten())
         ggammavst.append(TGraph(NT,time,vgamma))
-        ggammavst[-1].SetLineWidth(2)
-        cindex = int((abs(Yall[0,2,i])/(2*sx+meanY[2])) * (palette.GetNColors()-1))
-        if cindex>palette.GetNColors()-1 :
-            cindex = palette.GetNColors()-1
-
-        ggammavst[-1].SetLineColor(palette.GetColorIndex(cindex))
-        ggammavst[-1].SetMarkerSize(0.2)
-        ggammavst[-1].SetMarkerStyle(20)
-        ggammavst[-1].SetMarkerColor(palette.GetColorIndex(cindex))
-        ggammavst[-1].Draw(drawopt)
+        DrawTrack(ggammavst[-1])        
                 
     DrawFrame()
     C.Print(opath +'/tracks/gammavst.pdf')
@@ -634,11 +559,6 @@ def main():
 
         tindex = range(0, NT, DeltaT)
         for i in tindex:	
-	    # meanx_all[:,i] = [sum(Yall[i,0,:])/NP, sum(Yall[i,1,:])/NP]
-	    # covx_all[:,:,i] = np.cov(Yall[i,0,:],Yall[i,1,:])
-            # sx_t = np.sqrt(covx_all[0,0,i])
-            # spx_t = np.sqrt(covx_all[1,1,i])
-                
             hname = 'hpzvsz-%i' % i 
             hpzvsz = TH2F(hname,'',100,zetamin,zetamax,100,pzmin,pzmax)
             hname = 'hpxvsx-%i' % i 
@@ -646,10 +566,10 @@ def main():
             hname = 'hxvszeta-%i' % i 
             hxvszeta = TH2F(hname,'',100,zetamin,zetamax,100,xmin,xmax)
 
-            for j in range(0,NP):
-                hpzvsz.Fill(Yall[i,0,j]-time[i],Yall[i,1,j])                  
-                hpxvsx.Fill(Yall[i,2,j],Yall[i,3,j])                  
-                hxvszeta.Fill(Yall[i,0,j]-time[i],Yall[i,2,j])                  
+            for j in range(NP):
+                hpzvsz.Fill(Yall[j,i,0]-time[i],Yall[j,i,1])                  
+                hpxvsx.Fill(Yall[j,i,2],Yall[j,i,3])                  
+                hxvszeta.Fill(Yall[j,i,0]-time[i],Yall[j,i,2])                  
 
             if args.png :
                 hpxvsx.Draw('col')        
