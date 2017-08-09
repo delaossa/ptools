@@ -20,7 +20,6 @@ def parse_args():
     parser.add_argument('-NP', type=int, dest='NP', default=1000, help='Number of macroparticles')
     parser.add_argument('--ps', action='store_true', default=1, help='Plot phasespace snapshots')
     parser.add_argument('--png', action='store_true', default=0, help='Plot phasespace snapshots in png (slow!)')
-    parser.add_argument('--si', action='store_true', default=0, help='SI units')
     parser.add_argument('--mp', action='store_true', default=0, help='For parallel processing')
     parser.add_argument('--man', action='store_true', default=0, help='Print help')
     
@@ -106,13 +105,13 @@ def main():
     
     # Wakefields definition
     # -------------------------------
-    Ez0 = -0.1
+    Ez0 = 0.0
     K = 0.174
-    S = 0.02
+    S = 0.1
     Ks = 0.1
     rb = 10.0
     Drho = 1.0
-    wake = wk.WakeBlowout(Ez0,K,S,Ks,rb,Drho)
+    #wake = wk.WakeBlowout(Ez0,K,S,Ks,rb,Drho)
     # -------------------------------
 
     a0 = 0.8
@@ -122,9 +121,8 @@ def main():
     sbz = L/np.sqrt(2)
     w0 = 2.976
     sbx = w0/2
-
+    wake = wk.WakeLinearSimple(nb0,sbz,sbx)
     print('Setting linear wakefields with : nb0 = %.2f, sigma_z = %.3f, sigma_r = %.3f' % (nb0,sbz,sbx) ) 
-    # wake = wk.WakeLinearSimple(nb0,sbz,sbx)
     # -------------------------------------
 
     # Bunch definition
@@ -134,85 +132,81 @@ def main():
     NP = args.NP
     print('Bunch definition : N = %i particles' % NP)
 
-    # Initial istribution function f(z,pz,x,px)
-
-    # Initial statistical moments (means and rms')
-    #       [    z,   pz,   x,  px ]
-    meanY = [ -1.0,  100, 0.0, 0.0 ]   # mean(Y0) 
-    rmsY  = [  1.0,  0.1, 0.1, 0.1 ]   # rms(Y0)         
-
-    # Blowout betatron frequency
-    omegaB = np.sqrt(K/meanY[1])
-    lambdaB = 2*np.pi/omegaB
-    # print('Betatron wavelength = %.2f' % lambdaB )
-
-    # Matched conditions at <xpx> = 0
-    betaM = np.sqrt(meanY[1]/K) # matched beta
-    emitM = meanY[1] * np.power(rmsY[2],2) / betaM  # matched emittance
-    emit0 = emitM
-    # emit0 = 0.1
-    rmsY[3]  = emit0 / rmsY[2]
-
     # Bunch definition in SI units    
-    if args.si :
 
-        # Normalization constants
-        n0 = 1.0E23 # m^-3
-        kp = np.sqrt( n0 * ct.e * ct.e / (ct.epsilon_0 * ct.m_e) ) / ct.c
-        mc2 = ct.m_e * ct.c * ct.c
-        MeV = ct.mega * ct.eV
-        um  = ct.micron
+    # Normalization constants
+    n0 = 1.0E23 # m^-3
+    kp = np.sqrt( n0 * ct.e * ct.e / (ct.epsilon_0 * ct.m_e) ) / ct.c
+    mc2 = ct.m_e * ct.c * ct.c
+    MeV = ct.mega * ct.eV
+    GeV = 1000 * MeV
+    um  = ct.micron
+    mm  = 1000 * um
 
-        print('Speed of light %f m/s' % ct.c)
-        print('Skindepth = %f um' % ((1/kp)/um))
-        print('Electron mass = %f MeV' % (mc2 / MeV))
-        
-        # Initial statistical moments (mean and rms)   
-        #                   [        z,        pz,         x,           px  ]
-        meanY_SI = np.array([  0.0 * um,     5 * MeV,  0.0 * um,  0.0 * MeV ])
-        rmsY_SI  = np.array([  3.0 * um,0.0325 * MeV,  0.0 * um,  0.0 * MeV ])
+    # Normalization array
+    norma = np.array([1/kp,mc2,1/kp,mc2])
 
-        meangamma = meanY_SI[1]/mc2
-        print('Gamma = %f' % meangamma)
+    # print('Speed of light %f m/s' % ct.c)
+    # print('Electron mass  = %f MeV' % (mc2 / MeV))
+    print('Density   = %.1e cm^-3' % (1E-6 * n0))
+    print('Skindepth = %.2f um' % ((1/kp)/um))
+    
 
-        # Blowout betatron frequency
-        K = wake.Kx(kp*meanY_SI[0],0)
-        omegaB = np.sqrt(K/meangamma)
-        lambdaB = 2*np.pi/omegaB
-        print('Betatron wavelength = %.3f mm' % (lambdaB/(kp*1000*um)) )
+    # Beam: Initial beam moments (means and covariances)   
+    #                   [    z,            pz,       x,   px ]
+    meanY = np.array([  -36*um,      50*MeV,  0.0*um,  0.0 ])
+    rmsY  = np.array([  3.0*um, 0.0065*meanY[1], 0.0*um,  0.0 ]) 
 
-        # Matched beta 
-        betaM = (1/omegaB)/kp       
-        print('Matched beta = %.3f mm' % (betaM/(1000*um)) )
+    # Normalize
+    meanY = meanY / norma
+    rmsY  = rmsY  / norma      
 
-        # Set norm. emittance 
-        emit0 = 0.30 * um
-        print('Emittance = %.3f um' % (emit0/um) )
+    meanG0 = meanY[1]
+    
+    # Set norm. emittance 
+    emit0 = kp * 0.30 * um
+    
+    K = wake.Kx(kp*meanY[0],0)  # Focusing strength (normalized)
+    omegaB = np.sqrt(K/meanG0)  # Betatron frequency
+    lambdaB = 2*np.pi/omegaB    # Betatron wavelength 
+    
+    # Matched beta 
+    betaM = 1/omegaB    
+    
+    # Matched beam width
+    sxM = np.sqrt(betaM * emit0 / meanG0)
 
-        # Matched beam width
-        sxM = np.sqrt(betaM * emit0 / meangamma)
-        beta0 = 5.38 * betaM 
-        #beta0 = betaM 
-        sx0 = np.sqrt(beta0 * emit0 / meangamma)
-        
-        # Beam width
-        rmsY_SI[2] = sx0
-        print('Sigmax    = %.3f um' % (rmsY_SI[2]/um))
+    beta0 = 5.38 * betaM 
+    # beta0 = betaM 
 
-        # emitM = meangamma * np.power(rmsY_SI[2],2) / betaM  # matched emittance
-        # print('Matched emittance = %f um' % (emitM/um) )        
-        # emit0 = emitM                
-        beta0 =  meangamma * np.power(rmsY_SI[2],2) / emit0 
-        print('Beta      = %.3f mm' % (beta0/(1000*um)) )
-        rmsY_SI[3]  = mc2 * emit0 / rmsY_SI[2]
-        
-        # Normalizes
-        norma = np.array([kp,1/mc2,kp,1/mc2])
-        # norma = np.array([1,1,1,1])
-        
-        meanY = meanY_SI * norma
-        rmsY  = rmsY_SI * norma      
-        
+    sx0 = np.sqrt(beta0 * emit0 / meanG0)    
+    # Beam width
+    rmsY[2] = sx0
+    
+    # emitM = meanG0 * np.power(rmsY[2],2) / betaM  # matched emittance
+    # print('Matched emittance = %f um' % (emitM/um) )        
+    # emit0 = emitM                
+    beta0 =  meanG0 * np.power(rmsY[2],2) / emit0
+
+    # sigma_px
+    rmsY[3]  = emit0 / rmsY[2]
+            
+    print('Beam parameters: ')
+    print('Gamma     = %5.1f'  % meanY[1])
+    print('DeltaG    = %.3f %%' % (100*rmsY[1]/meanY[1]) )
+    print('Emittance = %.3f um (%.3f)' % (emit0/(kp*um),emit0) )
+    print('Betax     = %.3f mm (%.2f)' % (beta0/(kp*mm),beta0) )
+    print('Sigmax    = %.3f um (%.3f)' % (rmsY[2]/(kp*um),rmsY[2]) )
+    print('Sigmaz    = %.3f um (%.3f)' % (rmsY[0]/(kp*um),rmsY[0]) )
+
+    print('------')
+    print('lambdaB   = %.3f mm (%.2f)' % (lambdaB/(kp*mm),lambdaB) )
+    print('Beta M    = %.3f mm (%.2f)' % (betaM/(kp*mm),betaM) )
+
+    Ldeco = (2 * np.pi / (omegaB * rmsY[0])) * np.tan(meanY[0])
+    print('L decohe  = %.3f mm (%.2f)' % (Ldeco/(kp*mm),Ldeco))
+    print('Ez        = %.3f' % wake.Ez(meanY[0],0.0))
+    print('Kx        = %.3f' % wake.Kx(meanY[0],0.0))
 
     # Second moments, covariance matrix initialization.
     sz  = rmsY[0]
@@ -225,6 +219,7 @@ def main():
              [  0.0, 0.0    , sx*sx,     0.0],
              [  0.0, 0.0    ,   0.0, spx*spx]]
 
+    # Initial distribution function f(Y0) = f(z,pz,x,px)
     Y0 = np.random.multivariate_normal(meanY, covY, NP)
 
     # Plasma profile definition
@@ -256,6 +251,9 @@ def main():
     # (z,pz,x,px) for each particle at each time. 
     Yall = np.empty((NP,NT,4))
 
+    # Units array
+    units = np.array([um,mc2,um,mc2])
+    
     # Serial version:
     if args.mp == 0 :
         for i in range(NP):        
@@ -263,9 +261,8 @@ def main():
  	    # Y = integrate.odeint(dY, Y0[i], time, args=(wake,plasma))
             Yall[i] = integra(wake,plasma,time,dY,Y0[i])
 
-            if args.si :
-                units = np.array([(1/kp)/um,1,(1/kp)/um,1])
-                Yall[i,:] = Yall[i,:] * units    
+            # Back to SI units
+            Yall[i,:] = Yall[i,:] * (norma / units)
 
     else :
     # Parallel version:
@@ -282,9 +279,8 @@ def main():
         for i in range(NP):
             Yall[i] = Ylist[i]
 
-            if args.si :
-                units = np.array([(1/kp)/um,1,(1/kp)/um,1])
-                Yall[i,:] = Yall[i,:] * units    
+            # Back to SI units
+            Yall[i,:] = Yall[i,:] * (norma / units)   
                 
     # ----------------------------------------------------
         
@@ -366,25 +362,23 @@ def main():
     # print(' xmin  = %f  xmax  = %f' % (xmin,xmax) ) 
     # print(' pxmin = %f  pxmax = %f' % (pxmin,pxmax) ) 
 
-    if args.si :
-        units = np.array([(1/kp)/um,1,(1/kp)/um,1/mc2])
-        meanY = meanY * units
-        rmsY  = rmsY * units
-        sx = sx * (1/kp) / um
-        sz = sz * (1/kp) / um
-
-        xmin = xmin * (1/kp) / um
-        xmax = xmax * (1/kp) / um
-
-        time = time * (1/kp) / um
-
+    # Back to SI units
+    units = np.array([(1/kp)/um,1/mc2,(1/kp)/um,1/mc2])
+    meanY = meanY * units
+    rmsY  = rmsY * units
+    sz = sz * units[0]
+    sx = sx * units[2]
+    xmin = xmin * units[2]
+    xmax = xmax * units[2]
+    time = time * units[0]
+    # -----
+    
     zetamin = meanY[0] - 10 * np.sqrt(np.max(covz_all[:,0,0]))
     zetamax = meanY[0] + 4 * sz
 
     maxDpz = np.sqrt(np.max(covz_all[:,1,1]))
     pzmin = 1.0 * np.min(meanz_all[:,1]) - 4 * maxDpz 
     pzmax = 1.0 * np.max(meanz_all[:,1]) + 4 * maxDpz
-
         
     # Style
     PGlobals.SetPlasmaStyle()
@@ -407,25 +401,51 @@ def main():
         os.makedirs(opath)
 
     # Plot Fields
-    fWx = TF1('Wx',lambda x : wake.Wx(meanY[0],x[0]),xmin,xmax)
-    fWx.SetNpx(1000)
-    fWx.Draw()
-
-    fEx = TF1('Ex',lambda x : wake.Ex(meanY[0],x[0]),xmin,xmax)
-    fEx.SetNpx(1000)
-    fEx.SetLineStyle(2)
-    # fEx.Draw("same")
-
     if not os.path.exists(opath + '/fields'):
         os.makedirs(opath + '/fields')
 
+    fWx = TF1('Wx',lambda x : wake.Wx(meanY[0]/units[0],x[0]/units[2]),xmin,xmax)
+    fWx.SetNpx(1000)
+    maxWx = fWx.GetMaximum()
+    minWx = fWx.GetMinimum()
+
+    fEx = TF1('Ex',lambda x : wake.Ex(meanY[0]/units[0],x[0]/units[2]),xmin,xmax)
+    fEx.SetNpx(1000)
+    fEx.SetLineStyle(2)
+    maxEx = fEx.GetMaximum()
+    minEx = fEx.GetMinimum()
+    
+    hFrame = TH1F('hFrame','',10,xmin,xmax)
+    maxV = np.amax([maxWx,maxEx])
+    minV = np.amin([minWx,minEx])
+    hFrame.GetYaxis().SetRangeUser(minV - 0.2*(maxV-minV),maxV + 0.2*(maxV-minV))
+    hFrame.Draw("axis")
+    
+    fWx.Draw("same")
+    fEx.Draw("same")
     C.Print(opath +'/fields/Wx&Ex.pdf')
 
-    fEz = TF1('Ez',lambda x : wake.Ez(x[0],0.0),zetamin,zetamax)
-    fEz.Draw()
-    C.Print(opath +'/fields/Ez.pdf')
+    fEz = TF1('Ez',lambda x : wake.Ez(x[0]/units[0],0.0),zetamin,zetamax)
+    maxEz = fEz.GetMaximum()
+    minEz = fEz.GetMinimum()
 
-    fProf = TF1('Prof',lambda x : plasma.n(x[0]),time[0],time[-1])
+    fKx = TF1('Kx',lambda x : wake.Kx(x[0]/units[0],0.0),zetamin,zetamax)
+    fKx.SetLineStyle(2)
+    maxKx = fKx.GetMaximum()
+    minKx = fKx.GetMinimum()
+
+    hFrame = TH1F('hFrame','',10,zetamin,zetamax)
+    maxV = np.amax([maxEz,maxKx])
+    minV = np.amin([minEz,minKx])
+    hFrame.GetYaxis().SetRangeUser(minV - 0.2*(maxV-minV),maxV + 0.2*(maxV-minV))
+    hFrame.Draw("axis")
+    
+    fEz.Draw("same")
+    fKx.Draw("same")
+    
+    C.Print(opath +'/fields/Ez&Kx.pdf')
+
+    fProf = TF1('Prof',lambda x : plasma.n(x[0]/units[0]),time[0],time[-1])
     fProf.SetNpx(1000)
     fProf.Draw()
     C.Print(opath +'/fields/DenProf.pdf')
