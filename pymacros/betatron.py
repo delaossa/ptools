@@ -31,20 +31,6 @@ def parse_args():
         
     return args
 
-def DrawFrame() :
-
-    gPad.Update()
-    gPad.RedrawAxis('g')
-    gPad.RedrawAxis()
-
-    l = TLine()
-    l.SetLineColor(kBlack)
-    l.SetLineWidth(2)
-    l.DrawLine(gPad.GetUxmin(), gPad.GetUymax(), gPad.GetUxmax(), gPad.GetUymax())
-    l.DrawLine(gPad.GetUxmax(), gPad.GetUymin(), gPad.GetUxmax(), gPad.GetUymax())
-    l.DrawLine(gPad.GetUxmin(), gPad.GetUymin(), gPad.GetUxmin(), gPad.GetUymax())
-    l.DrawLine(gPad.GetUxmin(), gPad.GetUymin(), gPad.GetUxmax(), gPad.GetUymin())
-        
     
 # Relativistic factor
 def Gamma(pz,px):
@@ -102,7 +88,23 @@ def statistics(Y) :
 def main():
 
     args = parse_args()
-    
+
+    # Normalization constants
+    n0  = 1.0E23 # m^-3
+    kp  = np.sqrt( n0 * ct.e * ct.e / (ct.epsilon_0 * ct.m_e) ) / ct.c
+    mc2 = ct.m_e * ct.c * ct.c
+    MeV = ct.mega * ct.eV
+    GeV = 1000 * MeV
+    E0  = mc2 * kp
+    um  = ct.micron
+    mm  = 1000 * um
+
+    # print('Speed of light %f m/s' % ct.c)
+    # print('Electron mass  = %f MeV' % (mc2 / MeV))
+    print('Density   = %.1e cm^-3' % (1E-6 * n0))
+    print('Skindepth = %.2f um' % ((1/kp)/um))
+    print('E0        = %.2f GV/m' % (E0/(GeV)))
+
     # Wakefields definition
     # -------------------------------
     Ez0 = 0.0
@@ -134,93 +136,77 @@ def main():
 
     # Bunch definition in SI units    
 
-    # Normalization constants
-    n0 = 1.0E23 # m^-3
-    kp = np.sqrt( n0 * ct.e * ct.e / (ct.epsilon_0 * ct.m_e) ) / ct.c
-    mc2 = ct.m_e * ct.c * ct.c
-    MeV = ct.mega * ct.eV
-    GeV = 1000 * MeV
-    um  = ct.micron
-    mm  = 1000 * um
-
     # Normalization array
     norma = np.array([1/kp,mc2,1/kp,mc2])
 
-    # print('Speed of light %f m/s' % ct.c)
-    # print('Electron mass  = %f MeV' % (mc2 / MeV))
-    print('Density   = %.1e cm^-3' % (1E-6 * n0))
-    print('Skindepth = %.2f um' % ((1/kp)/um))
-    
-
     # Beam: Initial beam moments (means and covariances)   
-    #                   [    z,            pz,       x,   px ]
-    meanY = np.array([  -36*um,      50*MeV,  0.0*um,  0.0 ])
-    rmsY  = np.array([  3.0*um, 0.0065*meanY[1], 0.0*um,  0.0 ]) 
+    #                [       z,            pz,       x,   px ]
+    meanY0 = np.array([  -36*um,      50*MeV,  0.0*um,  0.0 ])
+    rmsY0  = np.array([  3.0*um, 0.0065*meanY0[1], 0.0*um,  0.0 ]) 
 
     # Normalize
-    meanY = meanY / norma
-    rmsY  = rmsY  / norma      
+    meanY0 = meanY0 / norma
+    rmsY0  = rmsY0  / norma      
 
-    meanG0 = meanY[1]
+    # Gamma
+    meanG0 = meanY0[1]
     
-    # Set norm. emittance 
+    # Emittance (normalized) 
     emit0 = kp * 0.30 * um
     
-    K = wake.Kx(kp*meanY[0],0)  # Focusing strength (normalized)
+    K = wake.Kx(kp*meanY0[0],0) # Focusing strength (normalized)
     omegaB = np.sqrt(K/meanG0)  # Betatron frequency
     lambdaB = 2*np.pi/omegaB    # Betatron wavelength 
     
     # Matched beta 
     betaM = 1/omegaB    
-    
-    # Matched beam width
-    sxM = np.sqrt(betaM * emit0 / meanG0)
 
+    # Beta
     beta0 = 5.38 * betaM 
     # beta0 = betaM 
 
-    sx0 = np.sqrt(beta0 * emit0 / meanG0)    
-    # Beam width
-    rmsY[2] = sx0
+    # sigma_x (beam width)
+    rmsY0[2] = np.sqrt(beta0 * emit0 / meanG0)    
     
-    # emitM = meanG0 * np.power(rmsY[2],2) / betaM  # matched emittance
+    # sigma_px
+    rmsY0[3]  = emit0 / rmsY0[2]
+
+    # emitM = meanG0 * np.power(rmsY0[2],2) / betaM  # matched emittance
     # print('Matched emittance = %f um' % (emitM/um) )        
     # emit0 = emitM                
-    beta0 =  meanG0 * np.power(rmsY[2],2) / emit0
-
-    # sigma_px
-    rmsY[3]  = emit0 / rmsY[2]
+    # beta0 =  meanG0 * np.power(rmsY0[2],2) / emit0
             
+    # Second moments, covariance matrix initialization.
+    sz0  = rmsY0[0]
+    spz0 = rmsY0[1] 
+    sx0  = rmsY0[2]
+    spx0 = rmsY0[3] 
+        
+    covY0  = [[sz0**2, 0.0   ,   0.0,     0.0],
+             [  0.0, spz0**2,   0.0,     0.0],
+             [  0.0, 0.0    ,sx0**2,     0.0],
+             [  0.0, 0.0    ,   0.0, spx0**2]]
+
+    # Initial distribution function f(Y0) = f(z,pz,x,px)
+    Y0 = np.random.multivariate_normal(meanY0, covY0, NP)
+
     print('Beam parameters: ')
-    print('Gamma     = %5.1f'  % meanY[1])
-    print('DeltaG    = %.3f %%' % (100*rmsY[1]/meanY[1]) )
+    print('Gamma     = %5.1f'  % meanY0[1])
+    print('DeltaG    = %.3f %%' % (100*rmsY0[1]/meanY0[1]) )
     print('Emittance = %.3f um (%.3f)' % (emit0/(kp*um),emit0) )
     print('Betax     = %.3f mm (%.2f)' % (beta0/(kp*mm),beta0) )
-    print('Sigmax    = %.3f um (%.3f)' % (rmsY[2]/(kp*um),rmsY[2]) )
-    print('Sigmaz    = %.3f um (%.3f)' % (rmsY[0]/(kp*um),rmsY[0]) )
+    print('Sigmax    = %.3f um (%.3f)' % (rmsY0[2]/(kp*um),rmsY0[2]) )
+    print('Sigmaz    = %.3f um (%.3f)' % (rmsY0[0]/(kp*um),rmsY0[0]) )
 
     print('------')
     print('lambdaB   = %.3f mm (%.2f)' % (lambdaB/(kp*mm),lambdaB) )
     print('Beta M    = %.3f mm (%.2f)' % (betaM/(kp*mm),betaM) )
 
-    Ldeco = (2 * np.pi / (omegaB * rmsY[0])) * np.tan(meanY[0])
+    Ldeco = (2 * np.pi / (omegaB * rmsY0[0])) * np.tan(meanY0[0])
     print('L decohe  = %.3f mm (%.2f)' % (Ldeco/(kp*mm),Ldeco))
-    print('Ez        = %.3f' % wake.Ez(meanY[0],0.0))
-    print('Kx        = %.3f' % wake.Kx(meanY[0],0.0))
+    print('Ez        = %.3f' % wake.Ez(meanY0[0],0.0))
+    print('Kx        = %.3f' % wake.Kx(meanY0[0],0.0))
 
-    # Second moments, covariance matrix initialization.
-    sz  = rmsY[0]
-    spz = rmsY[1] 
-    sx  = rmsY[2]
-    spx = rmsY[3] 
-        
-    covY  = [[sz*sz, 0.0    ,   0.0,     0.0],
-             [  0.0, spz*spz,   0.0,     0.0],
-             [  0.0, 0.0    , sx*sx,     0.0],
-             [  0.0, 0.0    ,   0.0, spx*spx]]
-
-    # Initial distribution function f(Y0) = f(z,pz,x,px)
-    Y0 = np.random.multivariate_normal(meanY, covY, NP)
 
     # Plasma profile definition
     # ----------------------------------------- 
@@ -251,9 +237,6 @@ def main():
     # (z,pz,x,px) for each particle at each time. 
     Yall = np.empty((NP,NT,4))
 
-    # Units array
-    units = np.array([um,mc2,um,mc2])
-    
     # Serial version:
     if args.mp == 0 :
         for i in range(NP):        
@@ -261,8 +244,6 @@ def main():
  	    # Y = integrate.odeint(dY, Y0[i], time, args=(wake,plasma))
             Yall[i] = integra(wake,plasma,time,dY,Y0[i])
 
-            # Back to SI units
-            Yall[i,:] = Yall[i,:] * (norma / units)
 
     else :
     # Parallel version:
@@ -275,12 +256,9 @@ def main():
         pool.close()
         pool.join()
 
-        # This is needed to avoid broadcasting problems 
         for i in range(NP):
             Yall[i] = Ylist[i]
 
-            # Back to SI units
-            Yall[i,:] = Yall[i,:] * (norma / units)   
                 
     # ----------------------------------------------------
         
@@ -290,7 +268,21 @@ def main():
     # ---------------------------------
 	                
     print('Now analysing...')
+
+    # Units vector
+    units = np.array([um,mc2,um,mc2])
     
+    # Normalization vector
+    norma = np.array([1/kp,mc2,1/kp,mc2])
+
+    # to SI units
+    for i in range(NP):
+        Yall[i,:] = Yall[i,:] * (norma / units)   
+
+    meanY0 = meanY0 * (norma/units)
+    rmsY0  = rmsY0 * (norma/units)    
+    time = time * (norma[0]/units[0])
+
     # Statistics vs time
     # ---------------------------------
 
@@ -312,12 +304,6 @@ def main():
         for i in range(NT):
 
             # This bit can be quite lengthy for big NP --> parallelize on t?
-	    # meanz_all[i,:] = [sum(Yall[:,i,0])/NP, sum(Yall[:,i,1])/NP]
-	    # meanx_all[i,:] = [sum(Yall[:,i,2])/NP, sum(Yall[:,i,3])/NP]
-        
-            # covz_all[i,:,:] = np.cov(Yall[:,i,0],Yall[:,i,1])
-            # covx_all[i,:,:] = np.cov(Yall[:,i,2],Yall[:,i,3])
-            # --        
             meanz_all[i], meanx_all[i], covz_all[i], covx_all[i] = statistics(Yall[:,i].T)
                  
             emitx_all[i] = np.sqrt(covx_all[i,0,0]*covx_all[i,1,1] - covx_all[i,0,1]*covx_all[i,0,1])
@@ -353,32 +339,28 @@ def main():
     ROOT.gROOT.SetBatch(1)
 
     print('Plotting beam moments...')
-        
+
     # Ranges
-    xmin  = -meanY[2]-6*sx
-    xmax  = meanY[2]+6*sx
-    pxmin = xmin * np.sqrt(K/meanY[1]) * meanY[1]
-    pxmax = xmax * np.sqrt(K/meanY[1]) * meanY[1]
+    xmin  = -meanY0[2]-6*rmsY0[2]
+    xmax  = meanY0[2]+6*rmsY0[2]
+    #pxmin = xmin * np.sqrt(K/meanY0[1]) * meanY0[1]
+    #pxmax = xmax * np.sqrt(K/meanY0[1]) * meanY0[1]
+    maxspx = np.sqrt(np.max(covx_all[:,1,1]))
+    pxmin = 1.0 * np.min(meanx_all[:,1]) - 4 * maxspx 
+    pxmax = 1.0 * np.max(meanx_all[:,1]) + 4 * maxspx
+
+    zetamin = meanY0[0] - 10 * np.sqrt(np.max(covz_all[:,0,0]))
+    zetamax = meanY0[0] + 4 * rmsY0[0]
+
+    maxspz = np.sqrt(np.max(covz_all[:,1,1]))
+    pzmin = 1.0 * np.min(meanz_all[:,1]) - 4 * maxspz 
+    pzmax = 1.0 * np.max(meanz_all[:,1]) + 4 * maxspz
+
     # print(' xmin  = %f  xmax  = %f' % (xmin,xmax) ) 
     # print(' pxmin = %f  pxmax = %f' % (pxmin,pxmax) ) 
 
-    # Back to SI units
-    units = np.array([(1/kp)/um,1/mc2,(1/kp)/um,1/mc2])
-    meanY = meanY * units
-    rmsY  = rmsY * units
-    sz = sz * units[0]
-    sx = sx * units[2]
-    xmin = xmin * units[2]
-    xmax = xmax * units[2]
-    time = time * units[0]
     # -----
     
-    zetamin = meanY[0] - 10 * np.sqrt(np.max(covz_all[:,0,0]))
-    zetamax = meanY[0] + 4 * sz
-
-    maxDpz = np.sqrt(np.max(covz_all[:,1,1]))
-    pzmin = 1.0 * np.min(meanz_all[:,1]) - 4 * maxDpz 
-    pzmax = 1.0 * np.max(meanz_all[:,1]) + 4 * maxDpz
         
     # Style
     PGlobals.SetPlasmaStyle()
@@ -404,12 +386,12 @@ def main():
     if not os.path.exists(opath + '/fields'):
         os.makedirs(opath + '/fields')
 
-    fWx = TF1('Wx',lambda x : wake.Wx(meanY[0]/units[0],x[0]/units[2]),xmin,xmax)
+    fWx = TF1('Wx',lambda x : wake.Wx(kp*meanY0[0]*units[0],kp*x[0]*units[2]),xmin,xmax)
     fWx.SetNpx(1000)
     maxWx = fWx.GetMaximum()
     minWx = fWx.GetMinimum()
 
-    fEx = TF1('Ex',lambda x : wake.Ex(meanY[0]/units[0],x[0]/units[2]),xmin,xmax)
+    fEx = TF1('Ex',lambda x : wake.Ex(kp*meanY0[0]*units[0],kp*x[0]*units[2]),xmin,xmax)
     fEx.SetNpx(1000)
     fEx.SetLineStyle(2)
     maxEx = fEx.GetMaximum()
@@ -425,11 +407,11 @@ def main():
     fEx.Draw("same")
     C.Print(opath +'/fields/Wx&Ex.pdf')
 
-    fEz = TF1('Ez',lambda x : wake.Ez(x[0]/units[0],0.0),zetamin,zetamax)
+    fEz = TF1('Ez',lambda x : wake.Ez(kp*x[0]*units[0],0.0),zetamin,zetamax)
     maxEz = fEz.GetMaximum()
     minEz = fEz.GetMinimum()
 
-    fKx = TF1('Kx',lambda x : wake.Kx(x[0]/units[0],0.0),zetamin,zetamax)
+    fKx = TF1('Kx',lambda x : wake.Kx(kp*x[0]*units[0],0.0),zetamin,zetamax)
     fKx.SetLineStyle(2)
     maxKx = fKx.GetMaximum()
     minKx = fKx.GetMinimum()
@@ -445,7 +427,7 @@ def main():
     
     C.Print(opath +'/fields/Ez&Kx.pdf')
 
-    fProf = TF1('Prof',lambda x : plasma.n(x[0]/units[0]),time[0],time[-1])
+    fProf = TF1('Prof',lambda x : plasma.n(kp*x[0]*units[0]),time[0],time[-1])
     fProf.SetNpx(1000)
     fProf.Draw()
     C.Print(opath +'/fields/DenProf.pdf')
@@ -537,7 +519,7 @@ def main():
 
     def DrawTrack(graph) :
         graph.SetLineWidth(2)
-        cindex = int((abs(Yall[i,0,2])/(meanY[2]+2*sx)) * (palette.GetNColors()-1))
+        cindex = int((abs(Yall[i,0,2])/(meanY0[2]+2*rmsY0[2])) * (palette.GetNColors()-1))
         if cindex>palette.GetNColors()-1 :
             cindex = palette.GetNColors()-1
         graph.SetLineColor(palette.GetColorIndex(cindex))
@@ -545,6 +527,21 @@ def main():
         graph.SetMarkerStyle(20)
         graph.SetMarkerColor(palette.GetColorIndex(cindex))
         graph.Draw('l')
+
+    def DrawFrame() :
+        gPad.Update()
+        gPad.RedrawAxis('g')
+        gPad.RedrawAxis()
+
+        l = TLine()
+        l.SetLineColor(kBlack)
+        l.SetLineWidth(2)
+        l.DrawLine(gPad.GetUxmin(), gPad.GetUymax(), gPad.GetUxmax(), gPad.GetUymax())
+        l.DrawLine(gPad.GetUxmax(), gPad.GetUymin(), gPad.GetUxmax(), gPad.GetUymax())
+        l.DrawLine(gPad.GetUxmin(), gPad.GetUymin(), gPad.GetUxmin(), gPad.GetUymax())
+        l.DrawLine(gPad.GetUxmin(), gPad.GetUymin(), gPad.GetUxmax(), gPad.GetUymin())
+        
+
         
     # --
     frame = TH1F('frame','',10,time[0],time[-1])
