@@ -48,13 +48,15 @@ void PGlobals::SetPlasmaStyle() {
   // set the paper & margin sizes
   PlasmaStyle->SetPaperSize(TStyle::kA4);
   PlasmaStyle->SetPadTopMargin(0.05);
-  PlasmaStyle->SetPadRightMargin(0.20);
+  // PlasmaStyle->SetPadRightMargin(0.20);
+  PlasmaStyle->SetPadRightMargin(0.10);
   PlasmaStyle->SetPadBottomMargin(0.17);
   PlasmaStyle->SetPadLeftMargin(0.15);
 
   // Line and markers
-  PlasmaStyle->SetMarkerStyle(21);
-  PlasmaStyle->SetMarkerSize(0.8);
+  PlasmaStyle->SetMarkerStyle(20);
+  PlasmaStyle->SetMarkerSize(0.4);
+  PlasmaStyle->SetMarkerColor(kAzure+2);
   PlasmaStyle->SetHistLineWidth(1);
   PlasmaStyle->SetHistLineColor(elecLine);
   PlasmaStyle->SetFuncColor(kMagenta+2);

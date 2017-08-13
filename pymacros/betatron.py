@@ -8,7 +8,7 @@ import time as clock
 import multiprocessing
 from functools import partial
 import ROOT
-from ROOT import PData, PGlobals, PPalette, PUnits, TF1, TH2F, TH1F, TGraph, TCanvas, TBox, TLine, TColor, TStyle, gStyle, gPad, kMagenta, kBird, kBlack
+from ROOT import PData, PGlobals, PPalette, PUnits, TF1, TH2F, TH1F, TGraph, TCanvas, TLine, TColor, TStyle, gStyle, gPad
 import wakefields as wk
 
 def parse_args():
@@ -107,24 +107,27 @@ def main():
 
     # Wakefields definition
     # -------------------------------
-    Ez0 = 0.0
-    K = 0.174
-    S = 0.1
-    Ks = 0.1
+    Ez0 = -0.263
+    #Ez0 = 0.0
+    K = 0.185
+    S = 0.409
+    #S = 0.0
+    Sk = 0.119
+    #Sk = 0.0
     rb = 10.0
     Drho = 1.0
-    #wake = wk.WakeBlowout(Ez0,K,S,Ks,rb,Drho)
+    wake = wk.WakeBlowout(Ez0,K,S,Sk,rb,Drho)
     # -------------------------------
 
     a0 = 0.8
-    nb0 = a0**2/2
-    L  = np.sqrt(2)
-    #L  = 1.49
-    sbz = L/np.sqrt(2)
+    L = np.sqrt(2)
     w0 = 2.976
+    nb0 = a0**2/2
+    sbz = L/np.sqrt(2)
     sbx = w0/2
-    wake = wk.WakeLinearSimple(nb0,sbz,sbx)
-    print('Setting linear wakefields with : nb0 = %.2f, sigma_z = %.3f, sigma_r = %.3f' % (nb0,sbz,sbx) ) 
+    #wake = wk.WakeLinearSimple(nb0,sbz,sbx)
+    #wake = wk.WakeLinearTimon(a0,w0)
+
     # -------------------------------------
 
     # Bunch definition
@@ -138,10 +141,11 @@ def main():
 
     # Normalization array
     norma = np.array([1/kp,mc2,1/kp,mc2])
-
+    
     # Beam: Initial beam moments (means and covariances)   
     #                [       z,            pz,       x,   px ]
-    meanY0 = np.array([  -36*um,      50*MeV,  0.0*um,  0.0 ])
+    meanY0 = np.array([  -(np.pi/2)/kp,    1*GeV,  1.0*um,  0.0 ])
+    #meanY0 = np.array([  -36*um,    1000*MeV,  0.0*um,  0.0 ])
     rmsY0  = np.array([  3.0*um, 0.0065*meanY0[1], 0.0*um,  0.0 ]) 
 
     # Normalize
@@ -149,14 +153,15 @@ def main():
     rmsY0  = rmsY0  / norma      
 
     # Gamma
-    meanG0 = meanY0[1]
+    G0 = meanY0[1]
     
     # Emittance (normalized) 
     emit0 = kp * 0.30 * um
-    
-    K = wake.Kx(kp*meanY0[0],0) # Focusing strength (normalized)
-    omegaB = np.sqrt(K/meanG0)  # Betatron frequency
-    lambdaB = 2*np.pi/omegaB    # Betatron wavelength 
+
+    K = wake.Kx(meanY0[0],0) # Focusing strength (normalized)
+    # print(' K = %f' % K)
+    omegaB = np.sqrt(K/G0)   # Betatron frequency
+    lambdaB = 2*np.pi/omegaB # Betatron wavelength 
     
     # Matched beta 
     betaM = 1/omegaB    
@@ -166,15 +171,15 @@ def main():
     # beta0 = betaM 
 
     # sigma_x (beam width)
-    rmsY0[2] = np.sqrt(beta0 * emit0 / meanG0)    
+    rmsY0[2] = np.sqrt(beta0 * emit0 / G0)    
     
     # sigma_px
     rmsY0[3]  = emit0 / rmsY0[2]
 
-    # emitM = meanG0 * np.power(rmsY0[2],2) / betaM  # matched emittance
+    # emitM = G0 * np.power(rmsY0[2],2) / betaM  # matched emittance
     # print('Matched emittance = %f um' % (emitM/um) )        
     # emit0 = emitM                
-    # beta0 =  meanG0 * np.power(rmsY0[2],2) / emit0
+    # beta0 =  G0 * np.power(rmsY0[2],2) / emit0
             
     # Second moments, covariance matrix initialization.
     sz0  = rmsY0[0]
@@ -202,10 +207,16 @@ def main():
     print('lambdaB   = %.3f mm (%.2f)' % (lambdaB/(kp*mm),lambdaB) )
     print('Beta M    = %.3f mm (%.2f)' % (betaM/(kp*mm),betaM) )
 
-    Ldeco = (2 * np.pi / (omegaB * rmsY0[0])) * np.tan(meanY0[0])
-    print('L decohe  = %.3f mm (%.2f)' % (Ldeco/(kp*mm),Ldeco))
-    print('Ez        = %.3f' % wake.Ez(meanY0[0],0.0))
-    print('Kx        = %.3f' % wake.Kx(meanY0[0],0.0))
+    S = wake.dEz(meanY0[0],0)
+    Sk = wake.dKx(meanY0[0],0)
+    Ldeco = lambdaB * K / (rmsY0[0]*Sk)
+    #Ldeco = (np.pi/(omegaB*rmsY0[0])) * (K/Sk)
+    print('L,dc      = %.3f mm (%.2f)' % (Ldeco/(kp*mm),Ldeco))
+
+    print('Ez = %.3f  GV/m      (%.3f)' % ((E0/GeV) * wake.Ez(meanY0[0],0.0),wake.Ez(meanY0[0],0.0)))
+    print('S  = %.3f (GV/m)/um  (%.3f)' % ((E0/GeV)*(kp*um)*S,S)) 
+    print('K  = %.3f (GV/m)/um  (%.3f)' % ((E0/GeV)*(kp*um)*wake.Kx(meanY0[0],0.0),wake.Kx(meanY0[0],0.0)))
+    print('Sk = %.3f (GV/m)/um2 (%.3f)' % ((E0/GeV)*(kp*um)*(kp*um)*Sk,Sk)) 
 
 
     # Plasma profile definition
@@ -217,7 +228,7 @@ def main():
     # --------------------------------
     tmin = 0.0
     dt   = 0.2 / omegaB
-    tmax = 5.7 * lambdaB
+    tmax = 5.0 * lambdaB
     # tmax = 2400
     time = np.arange(tmin,tmax,dt)
     NT = len(time)
@@ -433,7 +444,7 @@ def main():
     C.Print(opath +'/fields/DenProf.pdf')
 
     # Plot bunch parameters
-    lcolor = kMagenta + 2
+    lcolor = ROOT.kMagenta + 2
     def DrawGraph(graph) :
         graph.SetLineWidth(2)
         graph.SetLineColor(lcolor)
@@ -514,7 +525,7 @@ def main():
     
     # Color palette
     palette = PPalette('bird')
-    palette.SetPalette(kBird)
+    palette.SetPalette(ROOT.kBird)
     palette.SetAlpha(0.6)
 
     def DrawTrack(graph) :
@@ -534,7 +545,7 @@ def main():
         gPad.RedrawAxis()
 
         l = TLine()
-        l.SetLineColor(kBlack)
+        l.SetLineColor(ROOT.kBlack)
         l.SetLineWidth(2)
         l.DrawLine(gPad.GetUxmin(), gPad.GetUymax(), gPad.GetUxmax(), gPad.GetUymax())
         l.DrawLine(gPad.GetUxmax(), gPad.GetUymin(), gPad.GetUxmax(), gPad.GetUymax())

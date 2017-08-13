@@ -7,11 +7,11 @@ from scipy.misc import derivative as der
 
 # Blowout wakefields
 class WakeBlowout:
-    def __init__(self,Ez0=0,K=0.5,S=0.5,Ks=0.1,rb=5.0,Drho=1.0):
+    def __init__(self,Ez0=0,K=0.5,S=0.5,Sk=0.1,rb=5.0,Drho=1.0):
         self.Ez0 = Ez0
         self.K = K
         self.S = S
-        self.Ks = Ks
+        self.Sk = Sk
         self.rb = rb
         self.Drho = Drho
 
@@ -22,15 +22,20 @@ class WakeBlowout:
             return self.S * (z-z0) + self.Ez0
         else :
             return (self.S * (z-z0) + self.Ez0) * np.exp(-(abs(x)-self.rb)/self.Drho)
-      
+
+    def dEz(self, z, x) :
+        return self.S
+        
     def Ex(self, z, x) :
         if abs(x) < self.rb :
             return (1-self.S) * ( x/2.0 )
         else :
             return (1-self.S) * ( (np.sign(x) * self.rb)/2.0 ) * np.exp(-(np.abs(x)-self.rb)/self.Drho)
 
+        
     def Kx(self, z, x) :
-        return self.K + self.Ks * z
+        z0 = -np.pi/2
+        return self.K + self.Sk * (z-z0)
         
     def Wx(self, z, x) :
          if abs(x) < self.rb :
@@ -38,7 +43,11 @@ class WakeBlowout:
          else :
              return self.Kx(z,x) * np.sign(x) * self.rb * np.exp(-(np.abs(x)-self.rb)/self.Drho)
         
+    def dKx(self, z, x) :
+        return self.Sk
 
+
+         
 
 # Linear wakefields (analytic version)
 class WakeLinearSimple:
@@ -60,7 +69,10 @@ class WakeLinearSimple:
 
     def n1(self,z,x) :
         return self.nb0 * np.sqrt(2*np.pi) * self.sz * np.exp(-self.sz**2/2) * self.f(np.abs(x)) * np.sin(z) 
-    
+
+    def dEz(self,z,x) :
+        return -self.nb0 * np.sqrt(2*np.pi) * self.sz * np.exp(-self.sz**2/2) * self.f(np.abs(x)) * np.sin(z) 
+
     def Ez(self,z,x) :
         return self.nb0 * np.sqrt(2*np.pi) * self.sz * np.exp(-self.sz**2/2) * self.f(np.abs(x)) * np.cos(z) 
 
@@ -74,9 +86,35 @@ class WakeLinearSimple:
     def Kx(self,z,x) :
         return -self.nb0 * np.sqrt(2*np.pi) * self.sz * np.exp(-self.sz**2/2) * ( (1 - (x**2/self.sx**2)) * self.f(np.abs(x)) / self.sx**2) * np.sin(z) 
 
+    def dKx(self,z,x) :
+        return -self.nb0 * np.sqrt(2*np.pi) * self.sz * np.exp(-self.sz**2/2) * ( (1 - (x**2/self.sx**2)) * self.f(np.abs(x)) / self.sx**2) * np.cos(z) 
+
     def Psi(self,z,x) :
         return -self.nb0 * np.sqrt(2*np.pi) * self.sz * np.exp(-self.sz**2/2) * self.f(np.abs(x)) * np.sin(z) 
+
+
+class WakeLinearTimon:
+    def __init__(self,a0=0.1,w0=1.0):
+
+        # Driver paramerers
+        self.a0 = a0
+        self.w0 = w0
+      
+    def Ez(self,z,x) :
+        return self.a0**2 * np.sqrt(np.pi/(2*np.e)) * np.cos(z) 
+
+    def Kx(self,z,x) :
+        K = np.sqrt(8*np.pi/np.e)*self.a0**2/self.w0**2
+        return - K * np.sin(z)
     
+    def Wx(self,z,x) :
+        return self.Kx(z,x) * x 
+
+    def Ex(self,z,x) :
+        return 0
+
+
+
 # Linear wakefields
 class WakeLinear:
     def __init__(self,nb0=0.1,sz=1.0,sx=1.0):
