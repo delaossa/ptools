@@ -64,7 +64,7 @@ void DeleteOverflows(TH2 *h) {
 
 int main(int argc,char *argv[]) {
   if(argc<=2) {
-    printf("\n Usage: %s <input file> <--astra>\n",argv[0]);
+    printf("\n Usage: %s <input file> <--astra> <--hzdr>\n",argv[0]);
     printf("      <--png> <--pdf> <--eps> <--center>\n");
     printf("      <--file> \n");
     return 0;
@@ -104,8 +104,6 @@ int main(int argc,char *argv[]) {
       opt += "grid"; 
     } else if(arg.Contains("--logz")){
       opt += "logz"; 
-    } else if(arg.Contains("--autop")){
-      opt += "autop"; 
     } else if(arg.Contains("--auto")){
       opt += "auto"; 
     } else if(arg.Contains("--loop")){
@@ -122,6 +120,8 @@ int main(int argc,char *argv[]) {
       opt += "elli"; 
     } else if(arg.Contains("--astra")){
       opt += "astra"; 
+    } else if(arg.Contains("--hzdr")){
+      opt += "hzdr"; 
     } else if(arg.Contains("-spoil")) {
       char ss[6];
       sscanf(arg,"%6s%f",ss,&X);
@@ -199,7 +199,7 @@ int main(int argc,char *argv[]) {
     cout << Form("\n  -> Spoiling emittance with %.1f um of Berylium foil ...\n",X);
 
   // --------------------------------------------------
-  // READ FROM TEXT ELEGANT OR ASTRA FILE
+  // READ FROM TEXT ELEGANT, ASTRA or HZDR FILE
   ifstream file(ifile.Data());
   
   Double_t Q = 0.0;
@@ -219,7 +219,7 @@ int main(int argc,char *argv[]) {
     varMax[i] = -1E20;
   }
 
-  if(!opt.Contains("astra")) {
+  if(!opt.Contains("astra") && !opt.Contains("hzdr")) {
     string str; 
     Int_t irow = 0;
     while (std::getline(file, str)) {
@@ -295,7 +295,7 @@ int main(int argc,char *argv[]) {
       
       irow++;
     }
-  } else {
+  } else if(opt.Contains("astra") && !opt.Contains("hzdr")) {
 
     cout << "   ASTRA file: " << ifile.Data() << endl;
     
@@ -369,7 +369,57 @@ int main(int argc,char *argv[]) {
     }
 
     Q *= 1E3; // pC
+
+  } else if(!opt.Contains("astra") && opt.Contains("hzdr")) {
+    
+    cout << "   HZDR file: " << ifile.Data() << endl;
+    
+    string str; 
+    Int_t irow = 0;
+    Double_t w;
+
+    // Count the lines
+    while (std::getline(file, str)) ++Np;
+    for(Int_t i=0;i<Nvar;i++)
+      var[i] = new Double_t[Np];
+
+    charge = new Double_t[Np];
+    
+    // Rewind
+    file.clear();
+    file.seekg(0);
+    while (std::getline(file, str)) {
+      istringstream stream(str);
+      
+      for(Int_t i=0;i<Nvar;i++) {
+	stream >> var[i][irow];	
+      }
+      stream >> charge[irow];
+
+      var[0][irow] *= 1E6;  // um;
+      var[1][irow] *= 1E6;  // um;
+      var[2][irow] *= 1E6;  // um;
+
+      var[3][irow] *= PConst::ElectronMassE / (PUnits::GeV);
+      // var[4][irow] *= 1;
+      // var[5][irow] *= 1;      
+
+      charge[irow] *= -PConst::ElectronCharge / PUnits::picocoulomb;
+      Q += charge[irow];
+
+      for(Int_t i=0;i<Nvar;i++) {
+	varMean[i] += var[i][irow];
+	varRms[i]  += var[i][irow]*var[i][irow];	
+	
+	if(var[i][irow]<varMin[i]) varMin[i] = var[i][irow];
+	if(var[i][irow]>varMax[i]) varMax[i] = var[i][irow];
+      }
+      
+      
+      irow++;
+    }    
   }
+
 
 
   file.close();
@@ -499,6 +549,21 @@ int main(int argc,char *argv[]) {
     FindLimits(hScanX1,min,max,0.1);
     x1BinMin = min;
     x1BinMax = max;
+
+    // equalize transverse ranges
+    if(x2Max>x3Max) x3Max = x2Max;
+    else x2Max = x3Max;
+
+    if(x2Min<x3Min) x3Min = x2Min;
+    else x2Min = x3Min;
+
+    if(p2Max>p3Max) p3Max = p2Max;
+    else p2Max = p3Max;
+
+    if(p2Min<p3Min) p3Min = p2Min;
+    else p2Min = p3Min;
+
+    
     
   }
   
@@ -1047,7 +1112,7 @@ int main(int argc,char *argv[]) {
       
       
     sEmean[k]  = hP1sl[k]->GetMean();
-    sErms[k]   = 1000*hP1sl[k]->GetRMS()/hP1sl[k]->GetMean();
+    sErms[k]   = 100*hP1sl[k]->GetRMS()/hP1sl[k]->GetMean();
     
     sCharge[k] = hP1sl[k]->Integral();
     if(sCharge[k]>sChargeMax) sChargeMax = sCharge[k];
@@ -1102,10 +1167,10 @@ int main(int argc,char *argv[]) {
   hX1->Scale(1000*lightspeed/binSize);
 
 
-  Double_t curUnit;
-  string curSUnit;
-  PUnits::BestUnit bcurSUnit(hX1->GetMaximum(),"Current");
-  bcurSUnit.GetBestUnits(curUnit,curSUnit);
+  Double_t curUnit = PUnits::kA;
+  string  curSUnit = "kA";
+  // PUnits::BestUnit bcurSUnit(hX1->GetMaximum(),"Current");
+  // bcurSUnit.GetBestUnits(curUnit,curSUnit);
   hX1->Scale(1/curUnit);
   hX1->GetYaxis()->SetTitle(Form("I[%s]",curSUnit.c_str()));
   
@@ -1327,8 +1392,8 @@ int main(int argc,char *argv[]) {
     gP1left->SetFillStyle(1001);
     gP1left->SetFillColor(PGlobals::elecFill);
 
-    delete yarray;
-    delete xarray;
+    delete[] yarray;
+    delete[] xarray;
     //      }
 
     Bool_t autoscale = kFALSE;
@@ -1437,9 +1502,9 @@ int main(int argc,char *argv[]) {
     textInfo->AddText(ctext);
     sprintf(ctext,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
     textInfo->AddText(ctext);
-    sprintf(ctext,"#beta_{x} = %5.0f mm",1E-3*betax);
+    sprintf(ctext,"#beta_{x} = %5.0f #mum",betax);
     textInfo->AddText(ctext);
-    sprintf(ctext,"#beta_{y} = %5.0f mm",1E-3*betay);
+    sprintf(ctext,"#beta_{y} = %5.0f #mum",betay);
     textInfo->AddText(ctext);
 
     // Setup Pad layout: 
@@ -1648,8 +1713,10 @@ int main(int argc,char *argv[]) {
       Leg->AddEntry(hX1  ,"Current [0.1 kA]","L");
     else
       Leg->AddEntry(hX1  ,Form("Current [%s]",curSUnit.c_str()),"L");
+    
     // Leg->AddEntry(gErms,"Energy spread (GeV)","PL");
-    Leg->AddEntry(gErms,"Energy spread [0.1%]","PL");
+    // Leg->AddEntry(gErms,"Energy spread [0.1%]","PL");
+    Leg->AddEntry(gErms,"Energy spread [%]","PL");
     Leg->AddEntry(gemitX,Form("Emittance_{n,x} [%s]",emitSUnit.c_str()),"PL");
     Leg->AddEntry(gemitY,Form("Emittance_{n,y} [%s]",emitSUnit.c_str()),"PL");
     //Leg->AddEntry(gYrms,"Bunch width [#mum]","PL");
@@ -1922,7 +1989,7 @@ int main(int argc,char *argv[]) {
     textInfoX2X1->AddText(text);
     sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
     textInfoX2X1->AddText(text);
-    sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
+    sprintf(text,"#beta_{x} = %5.2f #mum",betax);
     textInfoX2X1->AddText(text);
     textInfoX2X1->Draw();
 
@@ -2020,12 +2087,12 @@ int main(int argc,char *argv[]) {
     textInfoX3X1->AddText(text);
     sprintf(text,"#varepsilon_{y} = %5.2f %s",emity,emitSUnit.c_str());
     textInfoX3X1->AddText(text);
-    sprintf(text,"#beta_{y} = %5.2f mm",betay/1000);
+    sprintf(text,"#beta_{y} = %5.2f #mum",betay);
     textInfoX3X1->AddText(text);
     
     // sprintf(text,"#varepsilon_{x} = %5.2f #mum",emitx);
     // textInfoX3X1->AddText(text);
-    // sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
+    // sprintf(text,"#beta_{x} = %5.2f #mum",betax);
     // textInfoX3X1->AddText(text);
     textInfoX3X1->Draw();
 
@@ -2192,9 +2259,9 @@ int main(int argc,char *argv[]) {
     textStatX3X2->AddText(text);
     sprintf(text,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
     textStatX3X2->AddText(text);
-    sprintf(text,"#beta_{x} = %5.2f mm",betax/1000);
+    sprintf(text,"#beta_{x} = %5.2f #mum",betax);
     textStatX3X2->AddText(text);
-    sprintf(text,"#beta_{y} = %5.2f mm",betay/1000);
+    sprintf(text,"#beta_{y} = %5.2f #mum",betay);
     textStatX3X2->AddText(text);
 
     textStatX3X2->Draw();
@@ -2332,7 +2399,7 @@ int main(int argc,char *argv[]) {
     textStatInt->AddText(text);
     sprintf(text,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
     textStatInt->AddText(text);
-    sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
+    sprintf(text,"#beta_{x} = %5.2f #mum",betax);
     textStatInt->AddText(text);
     textStatInt->Draw();
 
@@ -2461,7 +2528,7 @@ int main(int argc,char *argv[]) {
     textStatInt->AddText(text);
     sprintf(text,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
     textStatInt->AddText(text);
-    sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
+    sprintf(text,"#beta_{y} = %5.2f #mum",betay);
     textStatInt->AddText(text);
     textStatInt->Draw();
     
@@ -2592,7 +2659,7 @@ int main(int argc,char *argv[]) {
     textStatInt->AddText(text);
     sprintf(text,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
     textStatInt->AddText(text);
-    sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
+    sprintf(text,"#beta_{x} = %5.2f #mum",betax);
     textStatInt->AddText(text);
     textStatInt->Draw();
 
@@ -2723,7 +2790,7 @@ int main(int argc,char *argv[]) {
     textStatInt->AddText(text);
     sprintf(text,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
     textStatInt->AddText(text);
-    sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
+    sprintf(text,"#beta_{y} = %5.2f #mum",betay);
     textStatInt->AddText(text);
     textStatInt->Draw();
 
@@ -2864,7 +2931,7 @@ int main(int argc,char *argv[]) {
       textStatInt->AddText(text);
       sprintf(text,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
       textStatInt->AddText(text);
-      sprintf(text,"#beta_{x} = %5.2f mm",1E-3*betax);
+      sprintf(text,"#beta_{x} = %5.2f #mum",betax);
       textStatInt->AddText(text);
       textStatInt->Draw();
 
@@ -2986,7 +3053,7 @@ int main(int argc,char *argv[]) {
 	textStat[k]->AddText(text);
 	sprintf(text,"#varepsilon_{n,x} = %5.2f %s",semitx[k],emitSUnit.c_str());	
 	textStat[k]->AddText(text);
-	sprintf(text,"#beta_{x} = %5.2f mm",1E-3*sbetax[k]);
+	sprintf(text,"#beta_{x} = %5.2f #mum",sbetax[k]);
 	textStat[k]->AddText(text);
 	textStat[k]->Draw();
 
@@ -3131,7 +3198,7 @@ int main(int argc,char *argv[]) {
       textStatInt->AddText(text);
       sprintf(text,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
       textStatInt->AddText(text);
-      sprintf(text,"#beta_{y} = %5.2f mm",1E-3*betay);
+      sprintf(text,"#beta_{y} = %5.2f #mum",betay);
       textStatInt->AddText(text);
       textStatInt->Draw();
 
@@ -3254,7 +3321,7 @@ int main(int argc,char *argv[]) {
 	textStat[k]->AddText(text);
 	sprintf(text,"#varepsilon_{n,y} = %5.2f %s",semity[k],emitSUnit.c_str());
 	textStat[k]->AddText(text);
-	sprintf(text,"#beta_{y} = %5.2f mm",1E-3*sbetay[k]);
+	sprintf(text,"#beta_{y} = %5.2f #mum",sbetay[k]);
 	textStat[k]->AddText(text);
 	textStat[k]->Draw();
 
@@ -3334,26 +3401,29 @@ int main(int argc,char *argv[]) {
 
     ofile->Close();
   }
-    
-  // Delete[] newly created vectors
-  delete sBinLim;
 
-  delete sxmean;
-  delete symean;
-  delete sx2mean;
-  delete sy2mean;
-  delete sxymean;
-  delete sNtotal;
-  delete sxrms2;  
-  delete syrms2; 
-  delete sxrms;  
-  delete syrms;  
-  delete sxyrms2;
-  delete xbin;
-  delete semit;
-  delete sNEtotal; 
-  delete sEmean;
-  delete sErms;
+  cout << " Done! " << endl;
+  cout << " Ciao! " << endl;
+  
+  // Delete[] newly created vectors
+  delete[] sBinLim;
+
+  delete[] sxmean;
+  delete[] symean;
+  delete[] sx2mean;
+  delete[] sy2mean;
+  delete[] sxymean;
+  delete[] sNtotal;
+  delete[] sxrms2;  
+  delete[] syrms2; 
+  delete[] sxrms;  
+  delete[] syrms;  
+  delete[] sxyrms2;
+  delete[] xbin;
+  delete[] semit;
+  delete[] sNEtotal; 
+  delete[] sEmean;
+  delete[] sErms;
 
   // delete gemitX;
   // delete gYrms;
