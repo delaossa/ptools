@@ -306,12 +306,12 @@ int main(int argc,char *argv[]) {
   tspaSUnit = "#mum";
   
   // Emittance units
-  // emitUnit = PUnits::um;
-  // emitSUnit = "#mum";
+  emitUnit = PUnits::um;
+  emitSUnit = "#mum";
   // emitUnit = 10 * PUnits::um;
   // emitSUnit = "10 #mum";
-  emitUnit = 100 * PUnits::nm;
-  emitSUnit = "10^{2} nm";
+  // emitUnit = 100 * PUnits::nm;
+  // emitSUnit = "10^{2} nm";
   // emitUnit = 10 * PUnits::nm;
   // emitSUnit = "10 nm";
 

@@ -3,6 +3,7 @@
 import scipy.integrate as integrate
 import scipy.constants as ct
 import numpy as np
+import h5py
 import os, sys, argparse
 import time as clock
 import multiprocessing
@@ -133,16 +134,29 @@ def main():
     # Bunch definition in SI units    
     
     filename = args.filename
-    data = np.load(filename)
 
-    # Number of particles
-    Z0  = data.f.y
-    X0  = data.f.x
-    Y0  = data.f.z
-    PZ0 = data.f.py
-    PX0 = data.f.px
-    PY0 = data.f.pz
-    W0  = data.f.w
+    if filename.find('.npz') : 
+        data = np.load(filename)
+
+        Z0  = data.f.y
+        X0  = data.f.x
+        Y0  = data.f.z
+        PZ0 = data.f.py
+        PX0 = data.f.px
+        PY0 = data.f.pz
+        W0  = data.f.w
+
+    elif filename.find('.h5') :
+        file = h5py.File(filename)
+
+        Z0 = file.get('x1')
+        X0 = file.get('x2')
+        Y0 = file.get('x3')
+        PZ0 = file.get('p1')
+        PX0 = file.get('p2')
+        PY0 = file.get('p3')
+        W0 = file.get('q')
+        
     
     NP0   = len(X0)
     meanz0 = sum(Z0)/NP0
@@ -167,17 +181,21 @@ def main():
     
     i = 0
     for index in plist :
-
-        # longitudinal component 
-        YP0[i,0] = (Z0[index]-meanz0)*kp + zeta0
-        YP0[i,1] = PZ0[index]
-
+        
         x = X0[index]-meanx0
         y = Y0[index]-meany0
 
-        r   = np.sqrt(x**2+y**2)*kp
+        if filename.find('.npz') :
+            YP0[i,0] = (Z0[index]-meanz0)*kp + zeta0
+            r   = np.sqrt(x**2+y**2)*kp
+        elif filename.find('.h5') :
+            YP0[i,0] = Z0[index]-meanz0 + zeta0
+            r = np.sqrt(x**2+y**2)
+            
         phi = np.arctan2(y,x)
-        
+
+        YP0[i,1] = PZ0[index]
+   
         # radius
         YP0[i,2] = r
         YPPh0[i] = phi
