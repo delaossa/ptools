@@ -15,15 +15,18 @@ def parse_args():
 
     # Command argument line parser 
     parser = argparse.ArgumentParser(description='Betatron.py: A particle-in-wakefield trajectory solver.')
-
-    parser.add_argument('name', nargs='?', default='betaout', help='Simulation name (output folder)')
+    parser.add_argument('filename', nargs='?', default='none', help='file name')
+    parser.add_argument('opath', nargs='?', default='betaout', help='Output folder')
     parser.add_argument('-NP', type=int, dest='NP', default=1000, help='Number of macroparticles')
     parser.add_argument('--ps', action='store_true', default=1, help='Plot phasespace snapshots')
     parser.add_argument('--png', action='store_true', default=0, help='Plot phasespace snapshots in png (slow!)')
-    parser.add_argument('--mp', action='store_true', default=0, help='For parallel processing')
     parser.add_argument('--man', action='store_true', default=0, help='Print help')
     
     args = parser.parse_args()
+
+    if ('none' in args.filename) :
+        parser.print_help()
+        sys.exit(0)
 
     if args.man :
         parser.print_help()
@@ -129,7 +132,7 @@ def main():
 
     # Bunch definition in SI units    
     
-    filename = 'LWFA_068_bunch_55000.npz'
+    filename = args.filename
     data = np.load(filename)
 
     # Number of particles
@@ -357,10 +360,7 @@ def main():
     C = TCanvas('C',' -- O -- ',800,600)
     C.SetFillStyle(4000);
 
-    opath = 'betaout'
-    if args.name :
-        opath = args.name
-    
+    opath = args.opath    
     if not os.path.exists(opath):
         os.makedirs(opath)
 

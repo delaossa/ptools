@@ -546,7 +546,7 @@ if args.nowin == 0 :
 renderer.ResetCamera()
 camera = renderer.GetActiveCamera()
 #camera.SetPosition((axisz[1]-axisz[0])/2.0,74.0,0.0);
-camera.SetFocalPoint((axisz[1]-axisz[0])/2.0,0.0,0.0);
+camera.SetFocalPoint(axisz[0] + (axisz[1]-axisz[0])/2.0,0.0,0.0);
 camera.Zoom(args.zoom)
 #camera.Roll(45)
 camera.Elevation(args.elevation)

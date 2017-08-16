@@ -157,6 +157,8 @@ void PlotDDR2D( const TString &options="" ){
   Double_t ntop   = 10;
   Double_t sigmal = 2.5;
   Double_t phase = -TMath::TwoPi();
+  // Double_t phase = -3*TMath::Pi()/2;
+  // Double_t phase = -5.0;
 
   Float_t dMin = -0.5;
   Float_t dMax = ntop+0.5;
@@ -903,7 +905,8 @@ void PlotDDR2D( const TString &options="" ){
   
   gPad->SetTickx(1);
   gPad->SetTicky(1);
-  gPad->SetGrid(1);
+  gPad->SetGridx(0);
+  gPad->SetGridy(0);
   gPad->SetFillStyle(4000);
   gPad->SetFrameFillStyle(4000);
 
@@ -1494,11 +1497,17 @@ void PlotDDR2D( const TString &options="" ){
   xaxis2.DrawLine(gPad->GetUxmin(),0,
 		  gPad->GetUxmax(),0);
 
-  xaxis2.DrawLine(gPad->GetUxmin(),-TMath::Pi(),
-		  gPad->GetUxmax(),-TMath::Pi());
+  //  xaxis2.DrawLine(gPad->GetUxmin(),-TMath::Pi()/2,
+  //		  gPad->GetUxmax(),-TMath::Pi()/2);
 
-  xaxis2.DrawLine(gPad->GetUxmin(),-TMath::TwoPi(),
-		  gPad->GetUxmax(),-TMath::TwoPi());
+  //  xaxis2.DrawLine(gPad->GetUxmin(),-TMath::Pi(),
+  //		  gPad->GetUxmax(),-TMath::Pi());
+
+  //xaxis2.DrawLine(gPad->GetUxmin(),-3*TMath::Pi()/2,
+  //		  gPad->GetUxmax(),-3*TMath::Pi()/2);
+
+  xaxis2.DrawLine(gPad->GetUxmin(),-2*TMath::Pi(),
+  		  gPad->GetUxmax(),-2*TMath::Pi());
 
   lFrame->DrawBox(gPad->GetUxmin(), gPad->GetUymin(),
 		  gPad->GetUxmax(), gPad->GetUymax());

@@ -212,7 +212,8 @@ void PlotEnergyComp(const TString &options="") {
   Int_t frameWidth = 3;
   gStyle->SetLineWidth(frameWidth);
 
-  gStyle->SetPadGridY(1);
+  gStyle->SetPadGridX(0);
+  gStyle->SetPadGridY(0);
   if(opt.Contains("gridx")) {
     gStyle->SetPadGridX(1);
   }
