@@ -34,14 +34,11 @@ def main():
     PX0 = data.f.px
     PY0 = data.f.pz
     W0  = data.f.w
-    
-    ccenter = 1.403424e-4 # meters
-    
+       
     NP    = len(X0)
-    meanz = sum(Z0)/NP
-    meanx = sum(X0)/NP
-    meany = sum(Y0)/NP
-    
+
+    ccenter = 1.403424e-4 # meters
+ 
     # Select a sub-sample
     NPS = args.NP
     if NPS == -1 :

@@ -38,8 +38,8 @@ def parse_args():
 
     
 # Relativistic factor
-def Gamma(pz,px):
-    return np.sqrt( 1 + (pz*pz + px*px) )
+def Gamma(pz,px,py):
+    return np.sqrt( 1 + (pz*pz + px*px + py*py) )
 
 
 # Plasma density profile
@@ -61,18 +61,26 @@ class Plasma:
 # Equations of motion:
 def dY(Y, t, wake, plasma):
     
-    # Y is the vector of particle coordinates : Y = (z, pz, x, px)
+    # Y is the vector of particle coordinates : Y = (z, pz, x, px, y, py)
     # dY returns the time diferential of that vector.
 
     kp = np.sqrt(plasma.n(Y[0]))
-    
-    return [ Y[1]/Gamma(Y[1],Y[3]),
+
+    zeta = kp*(Y[0]-t)
+    r   = kp*np.sqrt(Y[2]**2 + Y[4]**2)
+    phi = np.arctan2(Y[4],Y[2])
+
+    return [ Y[1]/Gamma(Y[1],Y[3],Y[5]),
              
-             - kp * ( wake.Ez(kp*(Y[0]-t),kp*Y[2]) + ( wake.Ex(kp*(Y[0]-t),kp*Y[2]) - wake.Wx(kp*(Y[0]-t),kp*Y[2]) ) * Y[3] / Gamma(Y[1],Y[3]) ),
+             - kp * ( wake.Ez(zeta,r) + ( wake.Ex(zeta,r) - wake.Wx(zeta,r) ) * ( Y[3]*np.cos(phi) + Y[5]*np.sin(phi) ) / Gamma(Y[1],Y[3],Y[5])  ), 
              
-             Y[3]/Gamma(Y[1],Y[3]),
+             Y[3]/Gamma(Y[1],Y[3],Y[5]),
              
-             - kp * ( wake.Wx(kp*(Y[0]-t),kp*Y[2]) * Y[1]/Gamma(Y[1],Y[3]) + wake.Ex(kp*(Y[0]-t),kp*Y[2]) * (1 - Y[1]/Gamma(Y[1],Y[3]) ) )  ]
+             - kp * ( wake.Wx(zeta,r) * Y[1]/Gamma(Y[1],Y[3],Y[5]) + wake.Ex(zeta,r) * (1 - Y[1]/Gamma(Y[1],Y[3],Y[5]) ) ) * np.cos(phi),
+
+             Y[5]/Gamma(Y[1],Y[3],Y[5]),
+             
+             - kp * ( wake.Wx(zeta,r) * Y[1]/Gamma(Y[1],Y[3],Y[5]) + wake.Ex(zeta,r) * (1 - Y[1]/Gamma(Y[1],Y[3],Y[5]) ) ) * np.sin(phi) ]
 
 
 def integra(wake,plasma,time,dY,Y) :
@@ -183,42 +191,25 @@ def main():
     NP = len(plist)
 
     # Select a sub-sample and change to polar coodinates (quasi-3D)
-    YP0   = np.empty((NP,4))
+    YP0   = np.empty((NP,6))
     YPW0  = np.empty((NP))
-    YPPh0 = np.empty((NP,2))
     print('Bunch definition : N = %i particles selected from %i' % (NP,NP0))
     
     i = 0
     for index in plist :
         
-        x = X0[index]-ccenter
-        y = Y0[index]-ccenter
-
         if filename.find('.npz')>-1 :
-            YP0[i,0] = Z0[index]*kp
-            r   = np.sqrt(x**2+y**2)*kp
+            YP0[i,0] = kp * Z0[index]
+            YP0[i,2] = kp * (X0[index] - ccenter)
+            YP0[i,4] = kp * (Y0[index] - ccenter)
         elif filename.find('.h5')>-1 :
             YP0[i,0] = Z0[index]
-            r = np.sqrt(x**2+y**2)
+            YP0[i,2] = (X0[index] - ccenter)
+            YP0[i,4] = (Y0[index] - ccenter)
             
-        phi = np.arctan2(y,x)
-
         YP0[i,1] = PZ0[index]
-   
-        # radius
-        YP0[i,2] = r
-        YPPh0[i,0] = phi
-        
-        # radial momentum
-        YP0[i,3] = np.cos(phi) * PX0[index] + np.sin(phi) * PY0[index] 
-
-        # Azimuthal momentum
-        YPPh0[i,1] = -np.sin(phi) * PX0[index] + np.cos(phi) * PY0[index] 
-
-        # pmod = np.sqrt(PX0[index]**2+PY0[index]**2)
-        # print('Radial momentum = %.3f  %.3f  %.3f' % (PX0[index],pmod,np.sqrt(YP0[i,3]**2+YPPh0[i,1]**2)))
-        
-        # We neglect azimuthal component (if any)
+        YP0[i,3] = PX0[index]
+        YP0[i,5] = PY0[index]
         
         # particle weight
         YPW0[i]  = W0[index] * float(NP0/NP)
@@ -226,12 +217,13 @@ def main():
 
     meanz0 = sum(YP0[:,0])/NP
     YP0[:,0] = YP0[:,0] - meanz0 + zeta0
-        
-    G0 = meanpz0 # Gamma
-    K = wake.Kx(zeta0,0) # Focusing strength (normalized)
+    
+    G0 = meanpz0             # Gamma
+    K = wake.Kx(zeta0,0)     # Focusing strength (normalized)
     omegaB = np.sqrt(K/G0)   # Betatron frequency
     lambdaB = 2*np.pi/omegaB # Betatron wavelength 
 
+    
     # Plasma profile definition
     # ----------------------------------------- 
     #plasma = Plasma(5 * lambdaB , 0.05 * lambdaB)
@@ -248,7 +240,7 @@ def main():
     NT = len(time)
     # print(' tmax = %f ' % tmax ) 
     print('Time grid : t = (%.2f,%.2f) NT = %i  dt = %.2f' % (time[0],time[-1],NT,dt))   
-        
+    
     # ODE solver
     # ----------
 
@@ -273,13 +265,8 @@ def main():
     pool.join()
 
     for i in range(NP):
-        Yall[i,:,0] = Ylist[i][:,0]
-        Yall[i,:,1] = Ylist[i][:,1]
-        Yall[i,:,2] = Ylist[i][:,2] * np.cos(YPPh0[i,0])
-        Yall[i,:,3] = Ylist[i][:,3] * np.cos(YPPh0[i,0]) - YPPh0[i,1] * np.sin(YPPh0[i,0])
-        Yall[i,:,4] = Ylist[i][:,2] * np.sin(YPPh0[i,0])
-        Yall[i,:,5] = Ylist[i][:,3] * np.sin(YPPh0[i,0]) + YPPh0[i,1] * np.cos(YPPh0[i,0])
-                
+        Yall[i] = Ylist[i]
+        
     # ----------------------------------------------------
         
     print('Done in %.3f s. ' % ((clock.time() - tclock)))
@@ -611,7 +598,7 @@ def main():
 
     gvzvst = []
     for i in plist:
-        vz = Yall[i,:,1].flatten()/Gamma(Yall[i,:,1].flatten(),Yall[i,:,3].flatten())
+        vz = Yall[i,:,1].flatten()/Gamma(Yall[i,:,1].flatten(),Yall[i,:,3].flatten(),Yall[i,:,5].flatten())
         gvzvst.append(TGraph(NT,time,vz))
         DrawTrack(gvzvst[-1])        
                
@@ -625,7 +612,7 @@ def main():
 
     ggammavst = []
     for i in plist:
-        vgamma = Gamma(Yall[i,:,1].flatten(),Yall[i,:,3].flatten())
+        vgamma = Gamma(Yall[i,:,1].flatten(),Yall[i,:,3].flatten(),Yall[i,:,5].flatten())
         ggammavst.append(TGraph(NT,time,vgamma))
         DrawTrack(ggammavst[-1])        
                 
@@ -698,7 +685,7 @@ def main():
     fout = open(fileout, 'w')
     for i in range(NP):
         fout.write('%14e  %14e  %14e  %14e  %14e  %14e  %14e\n' %
-                   (Yall[i,NT-1,0]*units[0],Yall[i,NT-1,2]*units[2],Yall[i,NT-1,4]*units[4],Yall[i,NT-1,1],Yall[i,NT-1,3],Yall[i,NT-1,5],YPW0[i]))
+                   ((Yall[i,NT-1,0]-meanz_all[NT-1])*units[0],Yall[i,NT-1,2]*units[2],Yall[i,NT-1,4]*units[4],Yall[i,NT-1,1],Yall[i,NT-1,3],Yall[i,NT-1,5],YPW0[i]))
 
     fout.close()
 
