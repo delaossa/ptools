@@ -404,7 +404,8 @@ int main(int argc,char *argv[]) {
       // var[4][irow] *= 1;
       // var[5][irow] *= 1;      
 
-      charge[irow] *= -PConst::ElectronCharge / PUnits::picocoulomb;
+      // charge[irow] *= -PConst::ElectronCharge / PUnits::picocoulomb;
+      charge[irow] *= -1;
       Q += charge[irow];
 
       for(Int_t i=0;i<Nvar;i++) {

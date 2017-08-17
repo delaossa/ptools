@@ -685,7 +685,7 @@ def main():
     fout = open(fileout, 'w')
     for i in range(NP):
         fout.write('%14e  %14e  %14e  %14e  %14e  %14e  %14e\n' %
-                   ((Yall[i,NT-1,0]-meanz_all[NT-1,0])*units[0],Yall[i,NT-1,2]*units[2],Yall[i,NT-1,4]*units[4],Yall[i,NT-1,1],Yall[i,NT-1,3],Yall[i,NT-1,5],YPW0[i]))
+                   ((Yall[i,NT-1,0]-meanz_all[NT-1,0])*units[0],Yall[i,NT-1,2]*units[2],Yall[i,NT-1,4]*units[4],Yall[i,NT-1,1],Yall[i,NT-1,3],Yall[i,NT-1,5],-(ct.e/ct.pico)*YPW0[i]))
 
     fout.close()
 
