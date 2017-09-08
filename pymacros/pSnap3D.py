@@ -408,7 +408,7 @@ light.SetIntensity(1)
 renderer = vtk.vtkRenderer()
 # Set background
 if args.white :
-#    renderer.SetBackground(0.9,0.9,0.9) # almost white
+    # renderer.SetBackground(0.9,0.9,0.9) # almost white
     renderer.SetBackground(1.0,1.0,1.0) # white
 else :
     renderer.SetBackground(0,0,0) # black
@@ -428,14 +428,14 @@ if args.txbck :
 # Add the volume to the renderer ...
 renderer.AddVolume(volume)
 
-
 if args.axes :
     axes = vtk.vtkAxesActor()
     #    axes.SetTotalLength(0.2*(axisz[1]-axisz[0]),0.2*(axisy[1]-axisy[0]),0.2*(axisx[1]-axisx[0]))
     axes.SetTotalLength(6.28/3.0,6.28/3.0,6.28/3.0)
-    axes.SetShaftTypeToLine()
+    # axes.SetShaftTypeToLine()
     axes.SetNormalizedShaftLength(1, 1, 1)
     axes.SetNormalizedTipLength(0.1, 0.1, 0.1)
+    
     propA = vtkTextProperty()
     propA.SetFontFamilyToArial()
     propA.ItalicOff()
@@ -546,7 +546,7 @@ if args.nowin == 0 :
 renderer.ResetCamera()
 camera = renderer.GetActiveCamera()
 #camera.SetPosition((axisz[1]-axisz[0])/2.0,74.0,0.0);
-camera.SetFocalPoint(axisz[0] + (axisz[1]-axisz[0])/2.0,0.0,0.0);
+camera.SetFocalPoint((axisz[1]-axisz[0])/2.0,0.0,0.0);
 camera.Zoom(args.zoom)
 #camera.Roll(45)
 camera.Elevation(args.elevation)

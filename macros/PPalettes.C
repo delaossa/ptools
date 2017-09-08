@@ -26,7 +26,8 @@
   PPalette *beam3Palette = (PPalette*) gROOT->FindObject("beam3");
   if(!beam3Palette) {
     beam3Palette = new PPalette("beam3");
-    beam3Palette->SetPalette("hot");
+    //beam3Palette->SetPalette("hot");
+    beam3Palette->SetPalette("orange");
     //beam3Palette->SetPalette("red");
     //beam3Palette->SetPalette("elec");
   }

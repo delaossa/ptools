@@ -98,7 +98,7 @@ def statistics(Y) :
     covy = np.cov(Y[4],Y[5])
 
     return meanz,meanx,meany,covz,covx,covy
-
+        
 
 def main():
 
@@ -127,7 +127,8 @@ def main():
     #Ez0 = 0.0
     K = 0.4
     #K = 0.0
-    S = 0.28
+    #S = 0.28
+    S = 0.2
     #S = 0.0
     Sk = 0.0
     rb = 10.0
@@ -159,6 +160,7 @@ def main():
 
         ccenter = 1.403424e-4 # meters
 
+        Q0 = -ct.e/ct.pico
 
     elif filename.find('.h5')>-1 :
         fileh5 = h5py.File(filename)
@@ -173,6 +175,17 @@ def main():
 
         ccenter = 0.0
 
+        # attributes
+        xmax = fileh5.attrs['XMAX'][:]
+        xmin = fileh5.attrs['XMIN'][:]
+        nx = fileh5.attrs['NX'][:]
+
+        dx = (xmax-xmin)/nx
+        dV = dx[0]*dx[1]*dx[2]
+        Q0 = (dV/(kp**3)) * n0 * ct.e / ct.pico
+        
+        # print(' Volume element = %f ' % dV)
+        
         
     NP0   = len(X0)
     print('Total number of particles =  %i' % NP0)
@@ -190,7 +203,7 @@ def main():
     plist = range(0,NP0,DP)
     NP = len(plist)
 
-    # Select a sub-sample and change to polar coodinates (quasi-3D)
+    # Select a sub-sample 
     YP0   = np.empty((NP,6))
     YPW0  = np.empty((NP))
     print('Bunch definition : N = %i particles selected from %i' % (NP,NP0))
@@ -216,6 +229,8 @@ def main():
         i = i+1
 
     meanz0 = sum(YP0[:,0])/NP
+
+    # center the beam 
     YP0[:,0] = YP0[:,0] - meanz0 + zeta0
     
     G0 = meanpz0             # Gamma
@@ -228,14 +243,15 @@ def main():
     # ----------------------------------------- 
     #plasma = Plasma(5 * lambdaB , 0.05 * lambdaB)
     # plasma = Plasma(2400 , 2 * lambdaB)
-    plasma = Plasma(0.1*mm*kp, 0.220*mm*kp)
+    # plasma = Plasma(0.001*mm*kp, 0.200*mm*kp)
+    plasma = Plasma(1.0*mm*kp, 0.50*mm*kp)
     
     # Time grid
     # --------------------------------
     tmin = 0.0
     dt   = 0.2 / omegaB
     #tmax = 5 * lambdaB
-    tmax = 1*mm*kp
+    tmax = 3*mm*kp
     time = np.arange(tmin,tmax,dt)
     NT = len(time)
     # print(' tmax = %f ' % tmax ) 
@@ -255,10 +271,11 @@ def main():
     Yall = np.empty((NP,NT,6))
 
     # Parallel version:
-    pintegra = partial(integra,wake,plasma,time,dY)
-    pool = multiprocessing.Pool()
     NCPU = multiprocessing.cpu_count()
     print('Number of CPUs = %i' % NCPU)
+
+    pintegra = partial(integra,wake,plasma,time,dY)
+    pool = multiprocessing.Pool()
     
     Ylist = pool.map(pintegra,(YP0[i] for i in range(NP)) )
     pool.close()
@@ -375,8 +392,8 @@ def main():
     gStyle.SetFrameLineWidth(2)
 
     # Canvas
-    C = TCanvas('C',' -- O -- ',800,600)
-    C.SetFillStyle(4000);
+    C = TCanvas('C',' -- O -- ',1024,380)
+    # C.SetFillStyle(4000);
 
     opath = args.opath    
     if not os.path.exists(opath):
@@ -440,67 +457,93 @@ def main():
         graph.SetMarkerSize(0.4)
         graph.SetMarkerStyle(20)
         graph.SetMarkerColor(lcolor)
+        graph.GetXaxis().SetRangeUser(time[0],time[-1])
         graph.Draw("apl")
-        
+
+    if not os.path.exists(opath + '/stats'):
+        os.makedirs(opath + '/stats')
     
     fmeanx = TGraph(NT,time,meanx_all[:,0].flatten())
     DrawGraph(fmeanx)
-    C.Print(opath +'/meanx.pdf')
-    
+    C.Print(opath +'/stats/meanx.pdf')
+
+    fmeany = TGraph(NT,time,meany_all[:,0].flatten())
+    DrawGraph(fmeany)
+    C.Print(opath +'/stats/meany.pdf')
+
     fmeanpx = TGraph(NT,time,meanx_all[:,1].flatten())
     DrawGraph(fmeanpx)
-    C.Print(opath +'/meanpx.pdf')
+    C.Print(opath +'/stats/meanpx.pdf')
+
+    fmeanpy = TGraph(NT,time,meany_all[:,1].flatten())
+    DrawGraph(fmeanpy)
+    C.Print(opath +'/stats/meanpy.pdf')
 
     frmsx = TGraph(NT,time,np.sqrt(covx_all[:,0,0]).flatten())
     DrawGraph(frmsx)
-    C.Print(opath +'/rmsx.pdf')
+    C.Print(opath +'/stats/rmsx.pdf')
+    
+    frmsy = TGraph(NT,time,np.sqrt(covy_all[:,0,0]).flatten())
+    DrawGraph(frmsy)
+    C.Print(opath +'/stats/rmsy.pdf')
     
     frmspx = TGraph(NT,time,np.sqrt(covx_all[:,1,1]).flatten())
     DrawGraph(frmspx)
-    C.Print(opath +'/rmspx.pdf')
+    C.Print(opath +'/stats/rmspx.pdf')
+
+    frmspy = TGraph(NT,time,np.sqrt(covy_all[:,1,1]).flatten())
+    DrawGraph(frmspy)
+    C.Print(opath +'/stats/rmspy.pdf')
 
     fmeanz = TGraph(NT,time,meanz_all[:,0].flatten()-time)
     DrawGraph(fmeanz)
-    C.Print(opath +'/meanz.pdf')
+    C.Print(opath +'/stats/meanz.pdf')
     
     fmeanpz = TGraph(NT,time,meanz_all[:,1].flatten())
     DrawGraph(fmeanpz)
-    C.Print(opath +'/meanpz.pdf')
+    C.Print(opath +'/stats/meanpz.pdf')
 
     frmsz = TGraph(NT,time,np.sqrt(covz_all[:,0,0]).flatten())
     DrawGraph(frmsz)
-    C.Print(opath +'/rmsz.pdf')
+    C.Print(opath +'/stats/rmsz.pdf')
     
     frmspz = TGraph(NT,time,np.sqrt(covz_all[:,1,1]).flatten())
     DrawGraph(frmspz)
-    C.Print(opath +'/rmspz.pdf')
+    C.Print(opath +'/stats/rmspz.pdf')
 
     frmspzrel = TGraph(NT,time,(100*np.sqrt(covz_all[:,1,1])/meanz_all[:,1]).flatten())
     DrawGraph(frmspzrel)
-    C.Print(opath +'/rmspzrel.pdf')
+    C.Print(opath +'/stats/rmspzrel.pdf')
 
-    
+
+    # Twiss parameters
+    if not os.path.exists(opath + '/twiss'):
+        os.makedirs(opath + '/twiss')
+
     femitx = TGraph(NT,time,emitx_all[:].flatten())
     DrawGraph(femitx)
-    C.Print(opath +'/emitx.pdf')
+    C.Print(opath +'/twiss/emitx.pdf')
 
     fbetax = TGraph(NT,time,betax_all[:].flatten())
     DrawGraph(fbetax)
-    C.Print(opath +'/betax.pdf')
+    C.Print(opath +'/twiss/betax.pdf')
 
     falphax = TGraph(NT,time,alphax_all[:].flatten())
     DrawGraph(falphax)
-    C.Print(opath +'/alphax.pdf')
+    C.Print(opath +'/twiss/alphax.pdf')
 
+    falphay = TGraph(NT,time,alphay_all[:].flatten())
+    DrawGraph(falphay)
+    C.Print(opath +'/twiss/alphay.pdf')
 
     # y direction
     femity = TGraph(NT,time,emity_all[:].flatten())
     DrawGraph(femity)
-    C.Print(opath +'/emity.pdf')
+    C.Print(opath +'/twiss/emity.pdf')
 
     fbetay = TGraph(NT,time,betay_all[:].flatten())
     DrawGraph(fbetay)
-    C.Print(opath +'/betay.pdf')
+    C.Print(opath +'/twiss/betay.pdf')
 
     
     print('%.3f seconds ' % (clock.time() - tclock))
@@ -647,45 +690,64 @@ def main():
             hpxvsx = TH2F(hname,'',100,xmin,xmax,100,pxmin,pxmax)
             hname = 'hxvszeta-%i' % i 
             hxvszeta = TH2F(hname,'',100,zetamin,zetamax,100,xmin,xmax)
+            hname = 'hpyvsy-%i' % i 
+            hpyvsy = TH2F(hname,'',100,xmin,xmax,100,pxmin,pxmax)
+            hname = 'hyvszeta-%i' % i 
+            hyvszeta = TH2F(hname,'',100,zetamin,zetamax,100,xmin,xmax)
 
             for j in range(NP):
                 hpzvsz.Fill(Yall[j,i,0]-time[i],Yall[j,i,1])                  
                 hpxvsx.Fill(Yall[j,i,2],Yall[j,i,3])                  
                 hxvszeta.Fill(Yall[j,i,0]-time[i],Yall[j,i,2])                  
+                hpyvsy.Fill(Yall[j,i,4],Yall[j,i,5])                  
+                hyvszeta.Fill(Yall[j,i,0]-time[i],Yall[j,i,4])                  
 
             if args.png :
-                hpxvsx.Draw('col')        
-                C.Print(opath +'/phasespace/hpxvsx-%i.png' % i)
                 hpzvsz.Draw('col')        
                 C.Print(opath +'/phasespace/hpzvsz-%i.png' % i)
+                hpxvsx.Draw('col')        
+                C.Print(opath +'/phasespace/hpxvsx-%i.png' % i)
                 hxvszeta.Draw('col')        
                 C.Print(opath +'/phasespace/hxvszeta-%i.png' % i)
+                hpyvsy.Draw('col')        
+                C.Print(opath +'/phasespace/hpyvsy-%i.png' % i)
+                hyvszeta.Draw('col')        
+                C.Print(opath +'/phasespace/hyvszeta-%i.png' % i)
             else :
                 subs = ''
                 if i == 0 : subs = '('
                 elif i == tindex[-1] : subs = ')'
                    
-                hpxvsx.Draw('col')
-                C.Print(opath +'/phasespace/hpxvsx.pdf'+subs)
                 hpzvsz.Draw('col')        
                 C.Print(opath +'/phasespace/hpzvsz.pdf'+subs)
+                hpxvsx.Draw('col')
+                C.Print(opath +'/phasespace/hpxvsx.pdf'+subs)
                 hxvszeta.Draw('col')        
                 C.Print(opath +'/phasespace/hxvszeta.pdf'+subs)
+                hpyvsy.Draw('col')
+                C.Print(opath +'/phasespace/hpyvsy.pdf'+subs)
+                hyvszeta.Draw('col')        
+                C.Print(opath +'/phasespace/hyvszeta.pdf'+subs)
 
 
         print('%.3f seconds ' % (clock.time() - tclock))
         tclock = clock.time()
 
 
-    if filename.find('.npz')>-1 :
-        fileout = filename.replace('.npz','.raw')
-    elif filename.find('.h5')>-1 :
-        fileout = filename.replace('.h5','.raw')
+    # Dump particles at last time step
+    if not os.path.exists(opath + '/raw'):
+        os.makedirs(opath + '/raw')
 
+    if filename.find('.npz')>-1 :
+        fileout = filename.replace('.npz','.%i.raw' % NP)
+    elif filename.find('.h5')>-1 :
+        fileout = filename.replace('.h5','.%i.raw' % NP)
+
+    fileout = opath + '/raw/' + fileout
     fout = open(fileout, 'w')
     for i in range(NP):
         fout.write('%14e  %14e  %14e  %14e  %14e  %14e  %14e\n' %
-                   ((Yall[i,NT-1,0]-meanz_all[NT-1,0])*units[0],Yall[i,NT-1,2]*units[2],Yall[i,NT-1,4]*units[4],Yall[i,NT-1,1],Yall[i,NT-1,3],Yall[i,NT-1,5],-(ct.e/ct.pico)*YPW0[i]))
+                   ((Yall[i,NT-1,0]-meanz_all[NT-1,0])*units[0],Yall[i,NT-1,2]*units[2],Yall[i,NT-1,4]*units[4],Yall[i,NT-1,1],Yall[i,NT-1,3],Yall[i,NT-1,5],Q0*YPW0[i]))
 
     fout.close()
 

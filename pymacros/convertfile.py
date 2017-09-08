@@ -34,7 +34,8 @@ def main():
     PX0 = data.f.px
     PY0 = data.f.pz
     W0  = data.f.w
-       
+    Q0  = -ct.e/ct.pico
+
     NP    = len(X0)
 
     ccenter = 1.403424e-4 # meters
@@ -56,7 +57,7 @@ def main():
     fileout = filename.replace('.npz','.txt')
     fout = open(fileout, 'w')
     for index in plist :
-        fout.write('%14e  %14e  %14e  %14e  %14e  %14e  %14e\n' % ((Z0[index],X0[index]-ccenter,Y0[index]-ccenter,PZ0[index],PX0[index],PY0[index],W0[index]*(float(NP/NPS))) ))
+        fout.write('%14e  %14e  %14e  %14e  %14e  %14e  %14e\n' % ((Z0[index],X0[index]-ccenter,Y0[index]-ccenter,PZ0[index],PX0[index],PY0[index],W0[index]*Q0*(float(NP/NPS))) ))
     
     fout.close()
 

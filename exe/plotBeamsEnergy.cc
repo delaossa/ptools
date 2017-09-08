@@ -35,7 +35,7 @@ int main(int argc,char *argv[]) {
   if(argc<=2) {
     printf("\n Usage: %s <simulation name> <-t(time)>\n",argv[0]);
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
-    printf("      <-cmax(value)>\n");
+    printf("      <-cmax(value)> <-imax(value)> <-gmax(value)> <-dmax(value)> \n");
     printf("      <--center> <--comov> <--units> <--logz>\n");
     printf("      <--png> <--pdf> <--eps> \n");
     printf("      <--file> <--loop>\n");
@@ -55,6 +55,9 @@ int main(int argc,char *argv[]) {
   Float_t Pmax = -99999.;
 
   Float_t cMax = 0.0;
+  Float_t iMax = -99999.;
+  Float_t gMax = -99999.;
+  Float_t dMax = -99999.;
 
   // Interfacing command line:
   for(int l=1;l<argc;l++){
@@ -80,6 +83,8 @@ int main(int argc,char *argv[]) {
       opt += "logz"; 
     } else if(arg.Contains("--split")){
       opt += "split"; 
+    } else if(arg.Contains("--spec")){
+      opt += "spec"; 
     } else if(arg.Contains("--loop")){
       opt += "loop"; 
     } else if(arg.Contains("--file")){
@@ -109,6 +114,15 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-cmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&cMax);
+    } else if(arg.Contains("-curmax")) {
+      char ss[7];
+      sscanf(arg,"%7s%f",ss,&iMax);
+    } else if(arg.Contains("-gmax")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&gMax);
+    } else if(arg.Contains("-dmax")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&dMax);
     } else {
       sim = arg;
     }
@@ -171,9 +185,15 @@ int main(int argc,char *argv[]) {
     Float_t **ene = new Float_t*[Nspecies];
     Float_t **x1 = new Float_t*[Nspecies];
     Float_t **q = new Float_t*[Nspecies];
+    Float_t **p1 = new Float_t*[Nspecies];
+    Float_t **p2 = new Float_t*[Nspecies];
+    Float_t **p3 = new Float_t*[Nspecies];
     UInt_t *NP = new UInt_t[Nspecies];
     Float_t eneMin = 99999;
     Float_t eneMax = -99999;
+    Float_t divMin = 99999;
+    Float_t divMax = -99999;
+    
     for(Int_t i=0;i<Nspecies;i++) {
       ene[i] = NULL;
       x1[i] = NULL;
@@ -187,13 +207,24 @@ int main(int argc,char *argv[]) {
       NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&x1[i],"x1");
       NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&ene[i],"ene");
       NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&q[i],"q");
-    
+
+      if(opt.Contains("spec")) {
+	pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&p1[i],"p1");
+	pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&p2[i],"p2");
+	pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&p3[i],"p3");
+      }
       // for(UInt_t j=0;j<1000;j++)
       // 	cout << Form(" %6f  %6f  %6f",x1[i][j],ene[i][j],q[i][j]) << endl;
     
       for(UInt_t j=0;j<NP[i];j++) {
       	if(ene[i][j]<eneMin) eneMin = ene[i][j];
       	if(ene[i][j]>eneMax) eneMax = ene[i][j];
+
+	//	Float_t div = TMath::Sqrt(p2[i][j]*p2[i][j]+p3[i][j]*p3[i][j])/p1[i][j];
+	Float_t div = p2[i][j]/p1[i][j];
+	if(div<divMin) divMin = div;
+      	if(div>divMax) divMax = div;
+
       }
     }    
 
@@ -212,11 +243,17 @@ int main(int argc,char *argv[]) {
     Nx1Bin  = ceil ((x1Max - x1Min)/(dx1));
     
     Float_t eMin = eneMin - (eneMax-eneMin) * 0.1;
-    if(eMin<0) eMin = 0.0;
+    // if(eMin<0) eMin = 0.0;
+    eMin = 0.0;
+     
     Float_t eMax = eneMax + (eneMax-eneMin) * 0.1;
+    if(gMax >= 0.0) eMax = gMax;
+    
     Int_t NeBin  = Nx1Bin;
     Double_t dene = (eMax-eMin)/NeBin;
-    
+
+    Int_t NdivBin = 100;
+
     Float_t x1Minu(x1Min), x1Maxu(x1Max), eMinu(eMin), eMaxu(eMax);
     Double_t denUnit, propUnit, spaUnit, eneUnit, charUnit, curUnit;
     string denSUnit, propSUnit, spaSUnit, eneSUnit, charSUnit, curSUnit;
@@ -254,6 +291,8 @@ int main(int argc,char *argv[]) {
     char hName[24];
     TH2F **hEneVsZ  = new TH2F*[Nspecies];
     TH2F *hEneVsZjoint = NULL;
+    TH2F **hEneVsDiv  = new TH2F*[Nspecies];
+    TH2F *hEneVsDivjoint = NULL;
     TH1D **hCurr = new TH1D*[Nspecies];
     TH1D **hClone = new TH1D*[Nspecies];
     TH1D **hSpec = new TH1D*[Nspecies];
@@ -263,6 +302,7 @@ int main(int argc,char *argv[]) {
     for(Int_t i=0;i<Nspecies;i++) {
     
       hEneVsZ[i] = NULL;
+      hEneVsDiv[i] = NULL;
       hSpec[i] = NULL;
       hCurr[i] = NULL;
       hClone[i] = NULL;
@@ -278,8 +318,19 @@ int main(int argc,char *argv[]) {
       if(hEneVsZ[i]) delete hEneVsZ[i];
       hEneVsZ[i] = new TH2F(hName,"",Nx1Bin,x1Min,x1Max,NeBin,eMin,eMax);
       
+      // 2D histogram: #gamma vs \zeta
+      divMax = 20E-3;
+      divMin = -divMax;
+      sprintf(hName,"EneVsDiv_%i",i);
+      hEneVsDiv[i] = (TH2F*) gROOT->FindObject(hName);
+      if(hEneVsDiv[i]) delete hEneVsDiv[i];
+      hEneVsDiv[i] = new TH2F(hName,"",NeBin,eMin,eMax,NdivBin,divMin,divMax);
+      
       for(UInt_t j=0;j<NP[i];j++) {
 	hEneVsZ[i]->Fill(x1[i][j]-shiftz,ene[i][j],-q[i][j]);
+	// Float_t div = TMath::Sqrt(p2[i][j]*p2[i][j]+p3[i][j]*p3[i][j])/p1[i][j];
+	Float_t div = p2[i][j]/p1[i][j];
+	hEneVsDiv[i]->Fill(ene[i][j],div,-q[i][j]);
       }
 
       // SI units
@@ -319,7 +370,13 @@ int main(int argc,char *argv[]) {
       } else {
 	hEneVsZjoint->Add(hEneVsZ[i]);
       }
-      
+
+      if(!hEneVsDivjoint) {
+	hEneVsDivjoint = (TH2F*) hEneVsDiv[i]->Clone("hEneVsDivjoint");
+      } else {
+	hEneVsDivjoint->Add(hEneVsDiv[i]);
+      }
+
     }
 
     if(cMax>0.0) {
@@ -412,7 +469,10 @@ int main(int argc,char *argv[]) {
     Float_t xmax = x1Max;
     Float_t ymin = eMin - 0.3*(eMax - eMin);
     Float_t ymax = eMax;
-    
+
+    Float_t curmin = 0.0;
+    Float_t curmax = maxCur;
+
     TH2F *hFrame = (TH2F*) gROOT->FindObject("hFrame");
     if(hFrame) delete hFrame;
     hFrame = new TH2F("hFrame","",10,xmin,xmax,10,ymin,ymax);
@@ -481,8 +541,7 @@ int main(int argc,char *argv[]) {
       // Float_t yaxismax  =  gPad->GetUymin() + 0.3*(gPad->GetUymax() - gPad->GetUymin());
       Float_t yaxismax  =  eMin;
       
-      Float_t curmin = 0.0;
-      Float_t curmax = maxCur;
+      if(iMax >= 0.0) curmax = iMax;
       
       Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
       hClone[i] = (TH1D*) hCurr[i]->Clone(Form("hClone_%1i",i));
@@ -530,7 +589,7 @@ int main(int argc,char *argv[]) {
     Float_t x1pos = xmin + (xmax-xmin) * 0.2;
     TGaxis *axis = new TGaxis(x1pos,ymin,
 			      x1pos,eMin,
-			      0.0,maxCur,503,"S");
+			      0.0,curmax,503,"S");
     axis->SetLineWidth(1);
     axis->SetLineColor(kGray+3);//PGlobals::elecLine);
     axis->SetLabelColor(kGray+3);//PGlobals::elecLine);
@@ -684,16 +743,57 @@ int main(int argc,char *argv[]) {
     PGlobals::imgconv(C,fOutName,opt);
     // ---------------------------------------------------------
 
+
+    // Canvas setup
+    sizex = 1024;
+    sizey = 320;
+    TCanvas *C2 = new TCanvas("C","Spectrum",sizex,sizey);
+    // C->SetFillStyle(4000);
+    gPad->SetTickx(1);
+    gPad->SetTicky(1);
+    if(opt.Contains("logz"))
+      gPad->SetLogz(1);
+
+    gPad->SetLogx(1);
+    
+    PPalette * specPalette = (PPalette*) gROOT->FindObject("spec");
+    if(!specPalette) {
+      specPalette = new PPalette("spec");
+    }
+    specPalette->SetPalette(60);
+    hEneVsDivjoint->SetMinimum(-0.00001);
+
+    cout << Form("dmax = %f",hEneVsDivjoint->GetMaximum()) << endl;
+    if(dMax >= 0.0)
+      hEneVsDivjoint->SetMaximum(dMax);
+
+    if(gMax >= 0.0)
+      hEneVsDivjoint->GetXaxis()->SetRangeUser(40,gMax);
+    
+    hEneVsDivjoint->Draw("col2");
+
+    // Print to a file
+    // Output file
+    fOutName = Form("./%s/Plots/BeamsEnergy/Spectrum-%s_%i",pData->GetPath().c_str(),pData->GetName(),time);
+  
+    PGlobals::imgconv(C2,fOutName,opt);
+    // ---------------------------------------------------------
+    
     // delete objects:
     if(hEneVsZjoint)
       delete hEneVsZjoint;
+    if(hEneVsDivjoint)
+      delete hEneVsDivjoint;
     for(Int_t i=0;i<Nspecies;i++) {
       if(hEneVsZ[i]) delete hEneVsZ[i];
+      if(hEneVsDiv[i]) delete hEneVsDiv[i];
       if(hCurr[i]) delete hCurr[i];
       if(hClone[i]) delete hClone[i];
       if(hSpec[i]) delete hSpec[i];
+      if(gSpec[i]) delete gSpec[i];
        
     }
+    
     
     
     PGlobals::DestroyCanvases();

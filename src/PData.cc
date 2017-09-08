@@ -3287,14 +3287,20 @@ Double_t PData::Shift(TString option) {
     else
       shiftx1 += GetPlasmaStart()*kp;
   }
-  
+
+  Double_t realtime =  GetRealTime();
   if(opt.Contains("comov")) {
     Double_t v = GetBeamVelocity();    
     if(v==0) v = 1.0; // If equals to 0 (default), then set to c.
-    shiftx1 += v * GetRealTime();
+    shiftx1 += v * realtime;
   }   
 
-  return shiftx1;
+  Double_t x1max0 = pParam.x1Max;
+  Double_t shiftcorr = 0.0;
+  if(x1max0>-999.) 
+    shiftcorr = (GetXMax(0) - x1max0) - realtime;
+    
+  return shiftx1 + shiftcorr;
 }
 
 //______________________________________________________________________________________

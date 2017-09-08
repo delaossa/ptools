@@ -166,16 +166,21 @@ void PlotDDR2D( const TString &options="" ){
   //  Float_t zmin = - 0.49 * sigmal;
   Float_t zmin = - 0.0;
   Float_t zmax =  5 * sigmal;
+
+  Float_t betaphmin = 1;
   
   for(Int_t i=0; i<Np; i++) {
     zarray[i] = (i + 0.5) * (zmax-zmin)/Np + zmin;
     denarray[i] = DenGauss(zarray[i],sigmal,ntop);
     denarraylin[i] = DenLin(zarray[i],sigmal,ntop);
     betapharray[i] = betaph(zarray[i],phase,sigmal,ntop);
+    if(betapharray[i]<betaphmin) betaphmin = betapharray[i];
     betapharray2[i] = betaph(zarray[i],2.0*phase,sigmal,ntop);
     betapharraylin[i] = betaphlin(zarray[i],phase,sigmal,ntop);
   }
-    
+
+  cout << Form("betaph_min = %.4f",betaphmin) << endl;
+  
   TGraph *denvsz = new TGraph(Np,zarray,denarray);
   denvsz->SetLineColor(colorDen);
   denvsz->SetLineWidth(lineWidth);

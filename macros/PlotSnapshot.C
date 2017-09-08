@@ -722,63 +722,61 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Min[i] = 1.01E-3 * Base;
     }
 
-    if(pData->GetDenMax(i)>0)
-      Max[i] = pData->GetDenMax(i);
-    else if(pData->GetDenMax(i)==0) {
-      // here there was a problem when using <= instead of ==
-      // the reason is that denMax parameters are negative (-999.) by default
+    if(hDen2D[i]) {
+      if( (pData->GetDenMax(i)==0) || (hDen2D[i]->GetMaximum() < pData->GetDenMin(i)) ) {
+	// here there was a problem when using <= instead of ==
+	// the reason is that denMax parameters are negative (-999.) by default
+	if(hDen2D[i]) {
+	  delete hDen2D[i];
+	  hDen2D[i] = NULL;
+	}
+	
+	if(hDen1D[i]) {
+	  delete hDen1D[i];
+	  hDen1D[i] = NULL;
+	}
+	
+	if(hCur1D[i]) {
+	  delete hCur1D[i];
+	  hCur1D[i] = NULL;
+	}
+	
+      } else if(pData->GetDenMax(i)>0)
+	Max[i] = pData->GetDenMax(i);
+      
+      
+      if(pData->GetDenMin(i)>0) {
+	Min[i] = pData->GetDenMin(i);
+	if(pData->GetDenMax(i)==0) {
+	  if(opt.Contains("logz") && (Max[i]<10*Min[i])) Max[i] = 1.01E1 * Min[i];
+	}
+      }
+      
       if(hDen2D[i]) {
-	delete hDen2D[i];
-	hDen2D[i] = NULL;
-      }
-
-      if(hDen1D[i]) {
-	delete hDen1D[i];
-	hDen1D[i] = NULL;
-      }
-
-      if(hCur1D[i]) {
-	delete hCur1D[i];
-	hCur1D[i] = NULL;
-      }
-
-    }
-
-    if(hDen2D[i]->GetMaximum() < pData->GetDenMin(i)) {
-      if(hDen2D[i]) {
-	delete hDen2D[i];
-	hDen2D[i] = NULL;
-      }
-
-      if(hDen1D[i]) {
-	delete hDen1D[i];
-	hDen1D[i] = NULL;
-      }
-
-      if(hCur1D[i]) {
-	delete hCur1D[i];
-	hCur1D[i] = NULL;
+	cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,Min[i],Max[i]) << endl;
+	hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
       }
     }
+  }
 
-    if(pData->GetDenMin(i)>0) {
-      Min[i] = pData->GetDenMin(i);
-      if(pData->GetDenMax(i)==0) {
-	if(opt.Contains("logz") && (Max[i]<10*Min[i])) Max[i] = 1.01E1 * Min[i];
+  h2D = NULL;
+  for(Int_t i=0;i<Nspecies;i++) {
+    if(hDen2D[i]) {
+      h2D = hDen2D[i];
+      break;
+    }
+  }
+  if(!h2D) {
+    for(Int_t i=0;i<Nfields;i++) {
+      if(hE2D[i]) {
+	h2D = hE2D[i];
+	break;
       }
     }
-    
-    if(pData->GetDenLoc(i)>0) {
-      localden = pData->GetDenLoc(i);
-      baseden = localden;
-      cout << Form(" Species %2i  denMin = %5f  denMax = %5f  denLoc = %5f",i,Min[i],Max[i],localden) << endl;
-    } else {
-      cout << Form(" Species %2i  denMin = %5f  denMax = %5f",i,Min[i],Max[i]) << endl;
-    }
-    
-    if(hDen2D[i])
-      hDen2D[i]->GetZaxis()->SetRangeUser(Min[i],Max[i]);  
-
+  }
+  if(!h2D) {
+    cout <<  Form("\n Error: base histogram could not be retrieved! -> exit!\n") << endl;
+    return;
   }
 
   // Dynamic plasma palette
@@ -816,7 +814,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
     plasmaPalette->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, 1.0);
   }
-  
 	       
   // Redefines the ground color of the electron palette to match background plasma.
   PPalette * beamPalette = (PPalette*) gROOT->FindObject("beam");
@@ -1083,6 +1080,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     
   }
 
+
   // Extract contours from 2D histos
   TCanvas* c = new TCanvas("contours","Contour List",0,0,600,600);
   c->cd();
@@ -1160,7 +1158,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       }
     }
   }
-  
+
+
   // Get ionization probablity rates contours
   TObjArray *graphsI2D = NULL;
   TObjArray *graphsI2D_main = NULL;
@@ -1311,7 +1310,6 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hFrame[i] = (TH2F*) h2D->Clone(name);
     hFrame[i]->Reset();
     
-
     Float_t xFactor = pad[NPad-1]->GetAbsWNDC()/pad[i]->GetAbsWNDC();
     Float_t yFactor = pad[NPad-1]->GetAbsHNDC()/pad[i]->GetAbsHNDC();
 
@@ -1349,6 +1347,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     // Labels for the frames
 
   }
+
 
   // Text objects
   TPaveText **textLabel = new TPaveText*[NPad];
@@ -1530,6 +1529,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   
   cout << endl;
 
+  
   // Access to color Palettes
   PPalette * laserPalette = (PPalette*) gROOT->FindObject("laser");
   if(!laserPalette) {
@@ -1573,11 +1573,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     // cBeam1 = TColor::GetColor("#84B1C4");
     // beam2Palette->SetPalette("greengray");
     // cBeam1 = TColor::GetColor("#5C7B2F"); // Green
-    beam2Palette->SetPalette("elec0");
+    // beam2Palette->SetPalette("elec0");
     cBeam1 = TColor::GetColor(83,109,161); // Bluish
     //cBeam1 = TColor::GetColor(192,114,49); // dark orange
     //cBeam2 = TColor::GetColor(137,158,107); // dark green
-    beam3Palette->SetPalette("hot");
+    //beam3Palette->SetPalette("hot");
   }
 
 
@@ -2007,7 +2007,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       for(Int_t i=0;i<Nspecies;i++) {
 	if(i==noIndex) continue;
 	if(!hCur1D[i] || !hDen2D[i] || i==0 ) continue;
-
+	
 	hCur1D[i]->ResetStats();
 
 	if(hCur1D[i]->GetMaximum()>maxCur) {
@@ -2021,6 +2021,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
       Float_t curmax = maxCur;
       // Round for better axis
       curmax = 0.1*TMath::Ceil(10*curmax);
+      //      curmax = 3;
       
       Float_t slope = (yaxismax - yaxismin)/(curmax - curmin);
       Float_t zPos = xMax - (xMax-xMin) * 0.14;
