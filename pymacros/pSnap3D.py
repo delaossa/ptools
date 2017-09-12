@@ -19,6 +19,7 @@ parser.add_argument('-z', type=float, dest='zoom', default=1,help='zoom')
 parser.add_argument('-ar', type=float, dest='aratio', default=1,help='Aspect ratio trans/long')
 parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth')
 parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
+parser.add_argument('-shift', type=float, dest='shiftz', default=0,help='shift of the focal point in z axis')
 parser.add_argument('--white', action='store_true', default=0,help='white background')
 parser.add_argument('--surf', action='store_true', default=0,help='draw surfaces')
 parser.add_argument('--log', action='store_true', default=0,help='log scale')
@@ -30,6 +31,7 @@ parser.add_argument('--laser', action='store_true', default=0,help='show laser f
 parser.add_argument('--txbck', action='store_true', default=0,help='textured background')
 parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
+parser.add_argument('--rot', action='store_true', default=0, help='makes a rotating sequence')
 
 try:
     args = parser.parse_args()
@@ -192,7 +194,7 @@ for i, hf in enumerate(hfl):
     print('Axis y range: [%.2f,%.2f]  Nbins = %i  dy = %.4f' % (axisy[0],axisy[1],data[i].shape[1],dy) )
 
     maxvalue = np.amax(data[i])
-    if maxvalue < 1E-5 : continue
+    # if maxvalue < 1E-5 : continue
  
     stype.append('default')
     
@@ -231,7 +233,7 @@ for i, hf in enumerate(hfl):
         Min[j] = -Max[j]
     else :
         if Max[j] > maxvalue :
-            Max[j] = maxvalue
+            # Max[j] = maxvalue
             print('New max = %.3e' % Max[j])
    
     def lscale(x) :
@@ -546,7 +548,7 @@ if args.nowin == 0 :
 renderer.ResetCamera()
 camera = renderer.GetActiveCamera()
 #camera.SetPosition((axisz[1]-axisz[0])/2.0,74.0,0.0);
-camera.SetFocalPoint((axisz[1]-axisz[0])/2.0,0.0,0.0);
+camera.SetFocalPoint((axisz[1]-axisz[0])/2.0 + args.shiftz,0.0,0.0);
 camera.Zoom(args.zoom)
 #camera.Roll(45)
 camera.Elevation(args.elevation)
@@ -582,13 +584,27 @@ PGlobals.mkdir(foutname)
 # Write to PNG file
 w2if = vtk.vtkWindowToImageFilter()
 w2if.SetInput(window)
-w2if.Update();
- 
+w2if.Update()
+
 writer = vtk.vtkPNGWriter()
 writer.SetFileName(foutname)
 writer.SetInputConnection(w2if.GetOutputPort())
 writer.Write()
-
 print('\n%s has been created.' % (foutname) )
+
+if args.rot :
+    for i in range(36,360,36) :
+        foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.%i.png' % (pData.GetPath(),args.sim,args.t,i)
+        camera.Azimuth(i)
+        window.Render()
+        w2if.SetInput(window)
+        w2if.Update()
+        writer.SetFileName(foutname)
+        writer.SetInputConnection(w2if.GetOutputPort())
+        writer.Write()
+        
+    
+    
+
 
 # END
