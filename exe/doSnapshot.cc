@@ -987,6 +987,28 @@ int main(int argc,char *argv[]) {
       
       delete [] data;
       delete hE2D_1_ifft;
+    } else if(hE2D[1]) {
+      
+      hA2D = (TH2F*) hE2D[1]->Clone("hA2D");
+      hA2D->GetZaxis()->SetTitle("|a|");
+
+      Float_t lOmega = pData->GetLaserOmega() / pData->GetPlasmaFrequency();
+
+      Int_t NBinsZ = hA2D->GetXaxis()->GetNbins();
+      Int_t NBinsX = hA2D->GetYaxis()->GetNbins();
+
+      for(Int_t i=0; i<NBinsZ; i++) {
+	for(Int_t j=0; j<NBinsX; j++) {
+	  Float_t content = hA2D->GetBinContent(i+1,j+1)/lOmega;
+	  hA2D->SetBinContent(i+1,j+1,fabs(content));     
+	}
+      }
+      
+      hA1D = (TH1F*) hA2D->ProjectionX("hA1D",hA2D->GetNbinsY()/2,hA2D->GetNbinsY()/2);
+      hA1D->GetXaxis()->SetTitle(hA2D->GetXaxis()->GetTitle());
+      hA1D->GetYaxis()->SetTitle(hA2D->GetZaxis()->GetTitle());
+      
+
     }
     
     // Chaning to user units: 

@@ -136,7 +136,9 @@ int main(int argc,char *argv[]) {
   }
 
   gStyle->SetJoinLinePS(2);
-  
+  gStyle->SetPadRightMargin(0.20);
+  //  gStyle->SetFrameLineWidth(3);
+
   // Load PData
   PData *pData = PData::Get(sim.Data());
 
@@ -319,7 +321,7 @@ int main(int argc,char *argv[]) {
       hEneVsZ[i] = new TH2F(hName,"",Nx1Bin,x1Min,x1Max,NeBin,eMin,eMax);
       
       // 2D histogram: #gamma vs \zeta
-      divMax = 20E-3;
+      divMax = 19.99E-3;
       divMin = -divMax;
       sprintf(hName,"EneVsDiv_%i",i);
       hEneVsDiv[i] = (TH2F*) gROOT->FindObject(hName);
@@ -330,7 +332,7 @@ int main(int argc,char *argv[]) {
 	hEneVsZ[i]->Fill(x1[i][j]-shiftz,ene[i][j],-q[i][j]);
 	// Float_t div = TMath::Sqrt(p2[i][j]*p2[i][j]+p3[i][j]*p3[i][j])/p1[i][j];
 	Float_t div = p2[i][j]/p1[i][j];
-	hEneVsDiv[i]->Fill(ene[i][j],div,-q[i][j]);
+	hEneVsDiv[i]->Fill(ene[i][j]*0.511,div,-q[i][j]);
       }
 
       // SI units
@@ -382,7 +384,6 @@ int main(int argc,char *argv[]) {
     if(cMax>0.0) {
       hEneVsZjoint->GetZaxis()->SetRangeUser(0.0,cMax);
     }
-
 
     // Round for better axis
     maxCur = 0.1*TMath::Ceil(10*maxCur);
@@ -491,7 +492,7 @@ int main(int argc,char *argv[]) {
     Float_t y1 = gPad->GetBottomMargin();
     Float_t y2 = 1 - gPad->GetTopMargin();
     Float_t x2 = 1 - gPad->GetRightMargin();
-    
+
     Int_t j = 0;
     for(Int_t i=0;i<Nspecies;i++) {
       if(!hEneVsZ[i])
@@ -556,7 +557,6 @@ int main(int argc,char *argv[]) {
 
       hClone[i]->Draw("same LF2 HIST");
 
-
       // Plot 1D spectrum
       Float_t xaxismin  =  gPad->GetUxmin();
       // Float_t xaxismax  =  gPad->GetUxmin() + 0.2*(gPad->GetUxmax() - gPad->GetUxmin());
@@ -583,7 +583,6 @@ int main(int argc,char *argv[]) {
       gSpec[i]->Draw("L");
       
     }
-
 
     // Current axis
     Float_t x1pos = xmin + (xmax-xmin) * 0.2;
@@ -749,29 +748,44 @@ int main(int argc,char *argv[]) {
     sizey = 320;
     TCanvas *C2 = new TCanvas("C","Spectrum",sizex,sizey);
     // C->SetFillStyle(4000);
+    gPad->SetRightMargin(0.05);
+    gPad->SetBottomMargin(0.20);
     gPad->SetTickx(1);
     gPad->SetTicky(1);
     if(opt.Contains("logz"))
       gPad->SetLogz(1);
-
-    gPad->SetLogx(1);
+      
+    //  gPad->SetLogx(1);
+    // gPad->SetFrameLineWidth(3);
+    // hEneVsDivjoint->GetXaxis()->SetMoreLogLabels(1);
+    // hEneVsDivjoint->GetXaxis()->SetNdivisions(510);
+    hEneVsDivjoint->GetXaxis()->SetAxisColor(0);
+    hEneVsDivjoint->GetYaxis()->SetAxisColor(0);
+    hEneVsDivjoint->GetXaxis()->SetTickLength(0.03);
     
     PPalette * specPalette = (PPalette*) gROOT->FindObject("spec");
     if(!specPalette) {
       specPalette = new PPalette("spec");
     }
-    specPalette->SetPalette(60);
+    //    specPalette->SetPalette(60);
+    specPalette->SetPalette("spectrum");
     hEneVsDivjoint->SetMinimum(-0.00001);
 
-    cout << Form("dmax = %f",hEneVsDivjoint->GetMaximum()) << endl;
+    // cout << Form("dmax = %f",hEneVsDivjoint->GetMaximum()) << endl;
     if(dMax >= 0.0)
       hEneVsDivjoint->SetMaximum(dMax);
 
     if(gMax >= 0.0)
-      hEneVsDivjoint->GetXaxis()->SetRangeUser(40,gMax);
+      // hEneVsDivjoint->GetXaxis()->SetRangeUser(39.999,gMax);
+      hEneVsDivjoint->GetXaxis()->SetRangeUser(0.0,gMax);
     
     hEneVsDivjoint->Draw("col2");
-
+    gPad->SetFrameLineWidth(5);
+    // gPad->SetFrameLineColor(0);
+    gPad->Update();
+    gPad->RedrawAxis();
+      
+    
     // Print to a file
     // Output file
     fOutName = Form("./%s/Plots/BeamsEnergy/Spectrum-%s_%i",pData->GetPath().c_str(),pData->GetName(),time);

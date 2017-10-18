@@ -1,6 +1,6 @@
 include $(PTOOLS)/config/Makefile.common
 
-EXES = pcheck pcopy pdelete hdf2root looper plotBunch doEvolutions doSnapshot plotBeamsEnergy rawConvert plotBunchL ele2osi
+EXES = pcheck pcopy pdelete hdf2root looper plotBunch doEvolutions doSnapshot plotBeamsEnergy rawConvert plotBunchL ele2osi ele2tree
 
 HDF5CFLAGS    = -I$(HDF5CPP)/include
 HDF5LIBS      = -L$(HDF5CPP)/lib -lhdf5_cpp -lhdf5 -lz

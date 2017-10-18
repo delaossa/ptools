@@ -8,6 +8,8 @@
 #include <iomanip>
 
 #include <TRandom3.h>
+#include <PUnits.hh>
+#include <PFunctions.hh>
 
 #include "H5Cpp.h"
 
@@ -26,13 +28,13 @@ int main(int argc,char *argv[]) {
   // General options
   string opt = "";
 
-  const float c_light = 299792458; // speed of light [m/s]
-  const float e_mass = 0.510998910; // MeV
+  const double c_light = 299792458; // speed of light [m/s]
+  const double e_mass = 0.510998910; // MeV
   
   // Option for emittance spoiler
-  // const Float_t X0 = 35.28E4; // um (Beryllium)
-  const Float_t X0 = 8.897E4; // um (Aluminum)
-  Float_t X = 1000.; // um default value
+  // const double X0 = 35.28E4; // um (Beryllium)
+  const float X0 = 8.897E4; // um (Aluminum)
+  float X = 1000.; // um default value
   TRandom3 *rndEngine = new TRandom3();
   
   // Interfacing command line:
@@ -54,27 +56,29 @@ int main(int argc,char *argv[]) {
     }
   }
 
+    
+  double Q = 0.0;
+  unsigned int Np = 0;  
+  const int Nvar = 6;
+  double *var[Nvar]; 
+  double varMean[Nvar]; 
+  double varRms[Nvar]; 
+  double varMin[Nvar]; 
+  double varMax[Nvar]; 
+  char varname[Nvar][8] = {{"x1"},{"x2"},{"x3"},{"p1"},{"p2"},{"p3"}};
+  for(int i=0;i<Nvar;i++) {
+    varMean[i] = 0.0;
+    varRms[i] = 0.0;
+    varMin[i] = 1E20;
+    varMax[i] = -1E20;
+  }
+
+
+  // --------------------------------------------------
+  // READ FROM TEXT ELEGANT OR ASTRA FILE (ASCII mode)
   if(filename.find(".h5")==string::npos) {
-    
-    // --------------------------------------------------
-    // READ FROM TEXT ELEGANT OR ASTRA FILE
+
     ifstream file(filename.c_str());
-    
-    double Q = 0.0;
-    unsigned int Np = 0;  
-    const int Nvar = 6;
-    double *var[Nvar]; 
-    double varMean[Nvar]; 
-    double varRms[Nvar]; 
-    double varMin[Nvar]; 
-    double varMax[Nvar]; 
-    //  char varname[Nvar][8] = {{"x1"},{"x2"},{"x3"},{"p1"},{"p2"},{"p3"}};
-    for(int i=0;i<Nvar;i++) {
-      varMean[i] = 0.0;
-      varRms[i] = 0.0;
-      varMin[i] = 1E20;
-      varMax[i] = -1E20;
-    }
 
     if(opt.find("astra")==string::npos) {
       printf("\n 1. Reading ELEGANT file (ascii mode) .. \n");
@@ -113,19 +117,19 @@ int main(int argc,char *argv[]) {
 	    // \Theta_0 from the multiple scattering model:
 	    // http://pdg.lbl.gov/2014/reviews/rpp2014-rev-passage-particles-matter.pdf
 	  
-	    Float_t E0 = var[3][irow-2] * e_mass;
-	    Float_t Theta0 = (13.6/E0) * sqrt(X/X0) * (1.0 - 0.038 * log(X/X0)); // rad
-	    Float_t xr1, xr2;
+	    double E0 = var[3][irow-2] * e_mass;
+	    double Theta0 = (13.6/E0) * sqrt(X/X0) * (1.0 - 0.038 * log(X/X0)); // rad
+	    double xr1, xr2;
 	    rndEngine->Rannor(xr1,xr2);
-	    Float_t xplane  = ((xr1 * X * Theta0 / sqrt(12.)) + (xr2 * X * Theta0 / 2)) * 1E-6; // m
-	    Float_t txplane = xr2 * Theta0; // rad
+	    double xplane  = ((xr1 * X * Theta0 / sqrt(12.)) + (xr2 * X * Theta0 / 2)) * 1E-6; // m
+	    double txplane = xr2 * Theta0; // rad
 	    var[1][irow-2] += xplane;
 	    var[4][irow-2] += txplane;
 	  
-	    Float_t yr1, yr2;
+	    double yr1, yr2;
 	    rndEngine->Rannor(yr1,yr2);
-	    Float_t yplane  = (yr1 * X * Theta0 / sqrt(12.) + yr2 * X * Theta0 / 2) * 1E-6; // m
-	    Float_t typlane = yr2 * Theta0; // rad
+	    double yplane  = (yr1 * X * Theta0 / sqrt(12.) + yr2 * X * Theta0 / 2) * 1E-6; // m
+	    double typlane = yr2 * Theta0; // rad
 	    var[2][irow-2] += yplane;
 	    var[5][irow-2] += typlane;
 	  }
@@ -149,13 +153,13 @@ int main(int argc,char *argv[]) {
           
       string str; 
       Int_t irow = 0;
-      Double_t t,q;
+      double t,q;
       Int_t pi,ps;
 
       // Count the lines
       while (std::getline(file, str)) ++Np;
       for(Int_t i=0;i<Nvar;i++)
-	var[i] = new Double_t[Np];
+	var[i] = new double[Np];
 
       // Rewind
       file.clear();
@@ -181,8 +185,8 @@ int main(int argc,char *argv[]) {
 	if(var[2][irow]<-1) continue;
 	
 	// transform spatial coordinates
-	Double_t aux0 = var[0][irow];
-	Double_t aux1 = var[1][irow];
+	double aux0 = var[0][irow];
+	double aux1 = var[1][irow];
 	var[0][irow] = var[2][irow];  // m;
 	var[1][irow] = aux0;  // m;
 	var[2][irow] = aux1;  // m;
@@ -215,44 +219,10 @@ int main(int argc,char *argv[]) {
       Q *= 1E3; // pC
       Np = irow;
     }
+  } else {  // Reading HDF5 file (ELEGANT ONLY)
     
-    for(int i=0;i<Nvar;i++) {
-      varMean[i] /= Np;
-      varRms[i]  /= Np;
-      varRms[i] = sqrt( varRms[i] -  varMean[i]*varMean[i] );
-    }
-    
-    printf("\n  %i  particles read!    Charge = %.1f pC" , Np, Q);
-    printf("\n  x1 = %e +/- %e \n  x2 = %e +/- %e \n  x3 = %e +/- %e \n  p1 = %e +/- %e \n  p2 = %e +/- %e \n  p3 = %e +/- %e",
-	   varMean[0], varRms[0], varMean[1], varRms[1], varMean[2], varRms[2], varMean[3], varRms[3], varMean[4], varRms[4], varMean[5], varRms[5]);      
-    
-    
-    printf("\n\n 2. Writing OSIRIS file (ascii mode) .. \n");
-    
-    // Normalized charge per particle
-    Q /= -Q;
-    
-    char iext[5] = ".txt";
-    char oext[5] = ".osi";
-    string ofilename = filename;
-    ofilename.replace(ofilename.find(iext),5,oext);
-    
-    ofstream outfile(ofilename.c_str(),ios::out | ios::trunc);
-    char ocstr[256];
-    for(unsigned int i=0;i<Np;i++) {
-      
-      sprintf(ocstr,"%15.8e %15.8e %15.8e %10.5f %15.8e %15.8e %2i",var[0][i] - varMean[0],var[1][i] - varMean[1],var[2][i] - varMean[2],var[3][i],var[4][i],var[5][i],(int)Q);
-      
-      outfile << ocstr << endl;
-      
-    }
-    
-    outfile.close();
-
-  } else {
-
     printf("\n 1. Reading ELEGANT file (hdf5 mode) .. \n");
-
+    
     // --------------------------------------------------
     // READ FROM H5 ELEGANT FILE
     H5File h5file = H5File(filename,H5F_ACC_RDONLY);
@@ -283,10 +253,7 @@ int main(int argc,char *argv[]) {
     // Open "columns" group 
     Group *dataGroup = new Group(h5file.openGroup("/page1/columns"));
 
-    unsigned int Np;  
-    const int Nvar = 6;
     DataSet *varDataSet[Nvar];
-    double *var[Nvar];
     varDataSet[0] = new DataSet(dataGroup->openDataSet("t"));
     varDataSet[1] = new DataSet(dataGroup->openDataSet("x"));
     varDataSet[2] = new DataSet(dataGroup->openDataSet("y"));
@@ -312,18 +279,6 @@ int main(int argc,char *argv[]) {
 
       delete [] dims; 
     }
-
-    // Process data and dump into file:
-    double varMean[Nvar]; 
-    double varRms[Nvar]; 
-    double varMin[Nvar]; 
-    double varMax[Nvar]; 
-    for(int i=0;i<Nvar;i++) {
-      varMean[i] = 0.0;
-      varRms[i] = 0.0;
-      varMin[i] = 1E20;
-      varMax[i] = -1E20;
-    }
     
     for(unsigned int ip=0;ip<Np;ip++) {
       // transform variables
@@ -345,25 +300,84 @@ int main(int argc,char *argv[]) {
       
     }
 
-    for(int i=0;i<Nvar;i++) {
-      varMean[i] /= Np;
-      varRms[i]  /= Np;
-      varRms[i] = sqrt( varRms[i] -  varMean[i]*varMean[i] );
+  }
+    
+  for(int i=0;i<Nvar;i++) {
+    varMean[i] /= Np;
+    varRms[i]  /= Np;
+    varRms[i] = sqrt( varRms[i] -  varMean[i]*varMean[i] );
+  }
+    
+  printf("\n  %i  particles read!    Charge = %.1f pC" , Np, Q);
+  printf("\n  x1 = %e +/- %e \n  x2 = %e +/- %e \n  x3 = %e +/- %e \n  p1 = %e +/- %e \n  p2 = %e +/- %e \n  p3 = %e +/- %e",
+	 varMean[0], varRms[0], varMean[1], varRms[1], varMean[2], varRms[2], varMean[3], varRms[3], varMean[4], varRms[4], varMean[5], varRms[5]);      
+  
+  
+  if(opt.find("hdf")!=string::npos) {
+    printf("\n\n 2. Writing OSIRIS RAW particle file (HDF5) .. \n");
+    
+    double n0  = 1E22;
+    double kp  = PFunc::PlasmaWavenumber(n0);
+    cout << Form(" Plasma density = %.4e cm^-3  --> skindepth = %f um",n0*PUnits::cm3,
+    		 (1/kp)/PUnits::um) << endl;
+
+    // Normalized charge 
+    double Q0 = PUnits::echarge * n0 / (kp*kp*kp);
+
+    // Charge per particle
+    double q = (Q*PUnits::picocoulomb/Np)/Q0;
+    
+    double *charge = new double[Np];
+    varMean[0] *= kp; 
+    varMean[1] *= kp; 
+    varMean[2] *= kp;
+    for(unsigned int j=0;j<Np;j++) {
+      var[0][j] *= kp;
+      var[1][j] *= kp;
+      var[2][j] *= kp;
+
+      var[0][j] -= varMean[0];
+      var[1][j] -= varMean[1];
+      var[2][j] -= varMean[2];
+
+      charge[j] = -q;
     }
     
-    printf("\n  %i  particles read!    Charge = %.1f pC" , Np, Q*1E12);
-    printf("\n  x1 = %e +/- %e \n  x2 = %e +/- %e \n  x3 = %e +/- %e \n  p1 = %e +/- %e \n  p2 = %e +/- %e \n  p3 = %e +/- %e",
-	   varMean[0], varRms[0], varMean[1], varRms[1], varMean[2], varRms[2], varMean[3], varRms[3], varMean[4], varRms[4], varMean[5], varRms[5]);      
+    char iext[16] = ".txt";  
+    char oext[16] = ".osi.h5";
 
-    printf("\n\n 2. Writing OSIRIS file (ascii mode) .. \n");
+    string ofilename = filename;
+    ofilename.replace(ofilename.find(iext),string::npos,oext);
+
+    H5File file( ofilename, H5F_ACC_TRUNC);
+
+    hsize_t dimsf[1]; // dataset dimensions
+    dimsf[0] = Np;
+    DataSpace dataspace( 1, dimsf );
+    
+    FloatType datatype( PredType::NATIVE_DOUBLE );
+
+    DataSet varDataSet[Nvar];
+    for(int i=0;i<Nvar;i++) {
+      varDataSet[i] = file.createDataSet(varname[i], datatype, dataspace);      
+      varDataSet[i].write(var[i], PredType::NATIVE_DOUBLE);   
+    }
+    DataSet cDataSet = file.createDataSet("q", datatype, dataspace);
+    cDataSet.write(charge,PredType::NATIVE_DOUBLE);
+    
+    file.close();
+    
+  } else {
+    printf("\n\n 2. Writing OSIRIS RAW particle file (text mode) .. \n");
     
     // Normalized charge per particle
     Q /= -Q;
     
-    char iext[5] = ".h5";
-    char oext[5] = ".osi";
+    char iext[16] = ".txt";  
+    char oext[16] = ".osi";
+ 
     string ofilename = filename;
-    ofilename.replace(ofilename.find(iext),5,oext);
+    ofilename.replace(ofilename.find(iext),string::npos,oext);
     
     ofstream outfile(ofilename.c_str(),ios::out | ios::trunc);
     char ocstr[256];
@@ -376,10 +390,11 @@ int main(int argc,char *argv[]) {
     }
     
     outfile.close();
-        
   }
+
+
   
-    return 0;
+  return 0;
   
   // ----------------------------------------------------------------------------------------------
     

@@ -560,16 +560,28 @@ camera.Azimuth(args.azimuth)
 
 window.Render()
 
+# Write to PNG file
+w2if = vtk.vtkWindowToImageFilter()
+w2if.SetInput(window)
+w2if.Update()
+
+writer = vtk.vtkPNGWriter()
+writer.SetInputConnection(w2if.GetOutputPort())
+
+if args.rot :
+    for i in range(36,360,36) :
+        foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.%i.png' % (pData.GetPath(),args.sim,args.t,i)
+        camera.Azimuth(i)
+        window.Render()
+        # w2if.SetInput(window)
+        w2if.Update()
+        writer.SetFileName(foutname)
+        # writer.SetInputConnection(w2if.GetOutputPort())
+        writer.Write()
+
 if args.nowin == 0 :
     interactor.Initialize()
     interactor.Start()
-
-# Output file
-if args.test :
-    foutname = './snapshot3d.png' 
-else :
-    foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
-PGlobals.mkdir(foutname)
 
 # Write an EPS file.
 # exp = vtk.vtkGL2PSExporter()  # Not working with openGL2 yet
@@ -581,27 +593,17 @@ PGlobals.mkdir(foutname)
 #exp.DrawBackgroundOn()
 #exp.Write()
 
-# Write to PNG file
-w2if = vtk.vtkWindowToImageFilter()
-w2if.SetInput(window)
-w2if.Update()
+# Output file
+if args.test :
+    foutname = './snapshot3d.png' 
+else :
+    foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
+PGlobals.mkdir(foutname)
 
-writer = vtk.vtkPNGWriter()
 writer.SetFileName(foutname)
-writer.SetInputConnection(w2if.GetOutputPort())
+
 writer.Write()
 print('\n%s has been created.' % (foutname) )
-
-if args.rot :
-    for i in range(36,360,36) :
-        foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.%i.png' % (pData.GetPath(),args.sim,args.t,i)
-        camera.Azimuth(i)
-        window.Render()
-        w2if.SetInput(window)
-        w2if.Update()
-        writer.SetFileName(foutname)
-        writer.SetInputConnection(w2if.GetOutputPort())
-        writer.Write()
         
     
     

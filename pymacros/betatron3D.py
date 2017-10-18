@@ -393,7 +393,7 @@ def main():
 
     # Canvas
     C = TCanvas('C',' -- O -- ',1024,380)
-    # C.SetFillStyle(4000);
+    # C.SetFillStyle(4000)
 
     opath = args.opath    
     if not os.path.exists(opath):
