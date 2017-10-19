@@ -20,6 +20,7 @@ parser.add_argument('-ar', type=float, dest='aratio', default=1,help='Aspect rat
 parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth')
 parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
 parser.add_argument('-shift', type=float, dest='shiftz', default=0,help='shift of the focal point in z axis')
+parser.add_argument('-omega', type=float, dest='omega', default=0,help='laser to plasma frequency')
 parser.add_argument('--white', action='store_true', default=0,help='white background')
 parser.add_argument('--surf', action='store_true', default=0,help='draw surfaces')
 parser.add_argument('--log', action='store_true', default=0,help='log scale')
@@ -137,19 +138,18 @@ else:
 # end of reading color maps
     
 # Loop over the files
+stype = []
 opacity = []
 color = []
 Min = []
 Max = []
-stype = []
 baseden = 1
 localden = 1
 for i, hf in enumerate(hfl):
 
     name = hf.attrs['NAME']
     data.append(hf.get(name[0]))
-    data[i] = np.absolute(data[i])    
-
+    
     if pData.isHiPACE() :
         xmin = hf.attrs['XMIN']
         xmax = hf.attrs['XMAX']
@@ -196,26 +196,37 @@ for i, hf in enumerate(hfl):
     maxvalue = np.amax(data[i])
     # if maxvalue < 1E-5 : continue
  
-    stype.append('default')
-    
     npdata.append(np.array(data[i]))
     j = len(npdata) - 1
 
-    if args.transx :
-        npdata[i] = np.transpose(npdata[i],(1, 0, 2))
- 
     Max.append(np.amax(npdata[j]))
     Min.append(0.01*Max[j])
-    
-    if args.test == 0 :
+
+    if args.transx :
+        npdata[i] = np.transpose(npdata[i],(1, 0, 2))
+
+    if 'charge' in hf.filename:
+        npdata[i] = np.absolute(npdata[i])    
+        
         if pData.GetDenMax(j) > 0 : Max[j] = pData.GetDenMax(j)
         if pData.GetDenMin(j) > 0 : Min[j] = pData.GetDenMin(j) 
         else : Min[j] = 0.01 * Max[j]
+
+    elif 'e2' in hf.filename :
+
+        if (args.omega != 0) :
+            npdata[i] = npdata[i]/args.omega
+
+        if pData.GetaMax() > 0 : Max[j] = pData.GetaMax()
+        Min[j] = -Max[j]
         
+        
+    # Get min and max from file
     if len(opafile) == nfiles :
         Min[j] = minfile[j]
         Max[j] = maxfile[j]
 
+    # Filter
     if Min[j] > Max[j] :
         Min[j] = 0.1 * Max[j]
 
@@ -242,7 +253,7 @@ for i, hf in enumerate(hfl):
         x = np.log10(x)
         return x
 
-    if args.log & ('e2' not in hf.filename) :
+    if args.log & ('charge' in hf.filename) :
         npdata[j] = lscale(npdata[j])
         Min[j] = lscale(Min[j])
         Max[j] = lscale(Max[j])
@@ -262,8 +273,12 @@ for i, hf in enumerate(hfl):
     # Opacity and color scales
     opacity.append(vtk.vtkPiecewiseFunction())
     color.append(vtk.vtkColorTransferFunction())
+    stype.append('default')
 
+    # Set colors and opacities from file (if exists) 
     if len(opafile) == nfiles :
+        stype[j] = stypefile[j]
+        
         for k, opa in enumerate(opafile[j]) :
             opacity[j].AddPoint(stop(opa[0]),opa[1])
         for k, col in enumerate(colfile[j]) :
@@ -273,6 +288,7 @@ for i, hf in enumerate(hfl):
             opacity[j].AddPoint( 0.98 * localden ,0.0)
             opacity[j].AddPoint( 1.02 * localden ,0.0)
                             
+    # Set default colors and opacities 
     else : 
 
         opalist = []
@@ -382,7 +398,7 @@ dataImport.SetDataOrigin(0.0,uaxxmin,uaxymin)
 dataImport.Update()
 
 mapper = vtk.vtkGPUVolumeRayCastMapper()
-mapper.SetAutoAdjustSampleDistances(1)
+#mapper.SetAutoAdjustSampleDistances(1)
 #mapper.SetSampleDistance(0.1)
 #mapper.SetBlendModeToMaximumIntensity();
 
@@ -401,12 +417,6 @@ planeClip.SetOrigin((axisz[0]+axisz[1])/2.0-axisz[0],0.0,0.0)
 planeClip.SetNormal(0.0, 0.0, -1.0)
 #mapper.AddClippingPlane(planeClip)
 
-light = vtk.vtkLight()
-light.SetColor(1.0, 0.0, 0.0)
-light.SwitchOn()
-light.SetIntensity(1)
-# renderer.AddLight(light)
-
 renderer = vtk.vtkRenderer()
 # Set background
 if args.white :
@@ -423,6 +433,13 @@ nc = vtk.vtkNamedColors()
 #renderer.SetBackground(nc.GetColor3d('MidnightBlue'))
 #renderer.SetBackground(nc.GetColor3d('DeepSkyBlue'))
 #renderer.SetBackground(0.09,0.10,0.12)
+
+light = vtk.vtkLight()
+light.SetColor(1.0, 0.0, 0.0)
+light.SwitchOn()
+light.SetIntensity(1)
+#renderer.AddLight(light)
+
 
 if args.txbck :
     renderer.TexturedBackgroundOn()
@@ -491,7 +508,7 @@ if args.cbar :
         # Adding the scalar bar color palette
         scalarBar.append(vtkScalarBarActor())
         if 'e2' in hfl[i].filename :
-            scalarBar[i].SetTitle("Ex")
+            scalarBar[i].SetTitle("a")
         else :
             if args.log :
                 scalarBar[i].SetTitle("log(n/np)")
@@ -560,28 +577,16 @@ camera.Azimuth(args.azimuth)
 
 window.Render()
 
-# Write to PNG file
-w2if = vtk.vtkWindowToImageFilter()
-w2if.SetInput(window)
-w2if.Update()
-
-writer = vtk.vtkPNGWriter()
-writer.SetInputConnection(w2if.GetOutputPort())
-
-if args.rot :
-    for i in range(36,360,36) :
-        foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.%i.png' % (pData.GetPath(),args.sim,args.t,i)
-        camera.Azimuth(i)
-        window.Render()
-        # w2if.SetInput(window)
-        w2if.Update()
-        writer.SetFileName(foutname)
-        # writer.SetInputConnection(w2if.GetOutputPort())
-        writer.Write()
-
 if args.nowin == 0 :
     interactor.Initialize()
     interactor.Start()
+
+# Output file
+if args.test :
+    foutname = './snapshot3d.png' 
+else :
+    foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
+PGlobals.mkdir(foutname)
 
 # Write an EPS file.
 # exp = vtk.vtkGL2PSExporter()  # Not working with openGL2 yet
@@ -593,20 +598,17 @@ if args.nowin == 0 :
 #exp.DrawBackgroundOn()
 #exp.Write()
 
-# Output file
-if args.test :
-    foutname = './snapshot3d.png' 
-else :
-    foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
-PGlobals.mkdir(foutname)
-
+# Write to PNG file
+w2if = vtk.vtkWindowToImageFilter()
+w2if.SetInput(window)
+w2if.Update();
+ 
+writer = vtk.vtkPNGWriter()
 writer.SetFileName(foutname)
-
+writer.SetInputConnection(w2if.GetOutputPort())
 writer.Write()
-print('\n%s has been created.' % (foutname) )
-        
-    
-    
 
+print('\n%s has been created.' % (foutname) )
 
 # END
+
