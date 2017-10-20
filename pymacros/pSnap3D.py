@@ -29,6 +29,7 @@ parser.add_argument('--cbar', action='store_true', default=0,help='show color ma
 parser.add_argument('--transx', action='store_true', default=0,help='transpose transverse dimensions')
 parser.add_argument('--lden', action='store_true', default=0,help='use local density')
 parser.add_argument('--laser', action='store_true', default=0,help='show laser fields')
+parser.add_argument('--amod', action='store_true', default=0,help='show module of a')
 parser.add_argument('--txbck', action='store_true', default=0,help='textured background')
 parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
@@ -192,14 +193,13 @@ for i, hf in enumerate(hfl):
     print('Axis z range: [%.2f,%.2f]  Nbins = %i  dz = %.4f' % (axisz[0],axisz[1],data[i].shape[2],dz) )
     print('Axis x range: [%.2f,%.2f]  Nbins = %i  dx = %.4f' % (axisx[0],axisx[1],data[i].shape[0],dx) )
     print('Axis y range: [%.2f,%.2f]  Nbins = %i  dy = %.4f' % (axisy[0],axisy[1],data[i].shape[1],dy) )
-
-    maxvalue = np.amax(data[i])
-    # if maxvalue < 1E-5 : continue
  
     npdata.append(np.array(data[i]))
     j = len(npdata) - 1
 
-    Max.append(np.amax(npdata[j]))
+    maxvalue = np.amax(npdata[j])
+
+    Max.append(maxvalue)
     Min.append(0.01*Max[j])
 
     if args.transx :
@@ -218,8 +218,12 @@ for i, hf in enumerate(hfl):
             npdata[i] = npdata[i]/args.omega
 
         if pData.GetaMax() > 0 : Max[j] = pData.GetaMax()
+        
         Min[j] = -Max[j]
         
+        if (args.amod) :
+            npdata[i] = np.absolute(npdata[i])
+            Min[j] = 0.1 * Max[j]
         
     # Get min and max from file
     if len(opafile) == nfiles :
@@ -229,6 +233,8 @@ for i, hf in enumerate(hfl):
     # Filter
     if Min[j] > Max[j] :
         Min[j] = 0.1 * Max[j]
+
+    # if maxvalue < 1E-5 : continue
 
     print('Maximum = %.2f' % maxvalue)
     print('Min = %.3e  Max = %.3e ' % (Min[j],Max[j]))
@@ -240,8 +246,6 @@ for i, hf in enumerate(hfl):
             print('Local density = %f' % (localden))
             Min[j] *= localden/baseden
             Max[j] *= localden/baseden
-    elif 'e2' in hf.filename:
-        Min[j] = -Max[j]
     else :
         if Max[j] > maxvalue :
             # Max[j] = maxvalue
