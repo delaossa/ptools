@@ -376,7 +376,7 @@ int main(int argc,char *argv[]) {
       if(!hEneVsDivjoint) {
 	hEneVsDivjoint = (TH2F*) hEneVsDiv[i]->Clone("hEneVsDivjoint");
       } else {
-	hEneVsDivjoint->Add(hEneVsDiv[i]);
+	hEneVsDivjoint->Add(hEneVsDiv[i]);	
       }
 
     }
@@ -535,7 +535,38 @@ int main(int argc,char *argv[]) {
 	  
 	  j++;
 	}
-      } 
+      } else {
+	exPal[1]->Draw();
+
+	hEneVsZjoint->GetZaxis()->SetLabelFont(43);
+	hEneVsZjoint->GetZaxis()->SetLabelSize(32);
+	// hEneVsZjoint->GetZaxis()->SetLabelOffset(0.8);
+	hEneVsZjoint->GetZaxis()->SetTitleFont(43);
+	hEneVsZjoint->GetZaxis()->SetTitleSize(36);
+	hEneVsZjoint->GetZaxis()->SetTitleOffset(0.9);
+	hEneVsZjoint->GetZaxis()->SetTickLength(0.01);
+	hEneVsZjoint->GetZaxis()->CenterTitle();
+	hEneVsZjoint->Draw("colz same");
+      
+	gPad->Update();      
+	palette = (TPaletteAxis*)hEneVsZjoint->GetListOfFunctions()->FindObject("palette");
+	if(palette) {
+	  palette->SetY2NDC(y2 - 0.0);
+	  palette->SetY1NDC(y1 + 0.0);
+	  palette->SetX1NDC(x2 + 0.01);
+	  palette->SetX2NDC(x2 + 0.03);
+	  palette->SetBorderSize(2);
+	  palette->SetLineColor(1);
+	
+	  TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
+	  pFrame->SetFillStyle(0);
+	  pFrame->SetLineColor(kBlack);
+	  pFrame->SetLineWidth(1);
+	  pFrame->SetShadowColor(0);
+	  pFrame->Draw();
+	}
+      }
+
 
       // Plot 1D current
       Float_t yaxismin  =  gPad->GetUymin();
@@ -583,30 +614,6 @@ int main(int argc,char *argv[]) {
       gSpec[i]->Draw("L");
       
     }
-
-    // Current axis
-    Float_t x1pos = xmin + (xmax-xmin) * 0.2;
-    TGaxis *axis = new TGaxis(x1pos,ymin,
-			      x1pos,eMin,
-			      0.0,curmax,503,"S");
-    axis->SetLineWidth(1);
-    axis->SetLineColor(kGray+3);//PGlobals::elecLine);
-    axis->SetLabelColor(kGray+3);//PGlobals::elecLine);
-    axis->SetLabelFont(PGlobals::fontType);
-    axis->SetLabelSize(PGlobals::labelSize-10);
-    axis->SetLabelOffset(0.005);
-    axis->SetTitleColor(kGray+3);//PGlobals::elecLine);
-    axis->SetTitleFont(PGlobals::fontType);
-    axis->SetTitleSize(PGlobals::titleSize-10);
-    axis->SetTitleOffset(0.8);
-    axis->SetTickSize(0.03);
-    axis->ChangeLabel(1,-1,0.);
-    if(opt.Contains("units"))
-      axis->SetTitle(Form("I [%s]",curSUnit.c_str()));
-    axis->CenterTitle();
-    //axis->ChangeLabel(1,-1,-1,-1,-1,-1,"");
-    // axis->SetMaxDigits(2);
-    axis->Draw();
     
     Float_t xaxismin  =  gPad->GetUxmin();
     Double_t *yarray   = new Double_t[NeBin];
@@ -654,37 +661,29 @@ int main(int argc,char *argv[]) {
       // }
     }
     
-    if(!opt.Contains("split")) {
-      exPal[1]->Draw();
-
-      hEneVsZjoint->GetZaxis()->SetLabelFont(43);
-      hEneVsZjoint->GetZaxis()->SetLabelSize(32);
-      // hEneVsZjoint->GetZaxis()->SetLabelOffset(0.8);
-      hEneVsZjoint->GetZaxis()->SetTitleFont(43);
-      hEneVsZjoint->GetZaxis()->SetTitleSize(36);
-      hEneVsZjoint->GetZaxis()->SetTitleOffset(0.9);
-      hEneVsZjoint->GetZaxis()->SetTickLength(0.01);
-      hEneVsZjoint->GetZaxis()->CenterTitle();
-      hEneVsZjoint->Draw("colz same");
-
-      gPad->Update();      
-      palette = (TPaletteAxis*)hEneVsZjoint->GetListOfFunctions()->FindObject("palette");
-      if(palette) {
-	palette->SetY2NDC(y2 - 0.0);
-	palette->SetY1NDC(y1 + 0.0);
-	palette->SetX1NDC(x2 + 0.01);
-	palette->SetX2NDC(x2 + 0.03);
-	palette->SetBorderSize(2);
-	palette->SetLineColor(1);
-	
-	TPave *pFrame = new TPave((x2 + 0.01),y1 + 0.0,(x2 + 0.03),y2 - 0.0,2,"NDC");
-	pFrame->SetFillStyle(0);
-	pFrame->SetLineColor(kBlack);
-	pFrame->SetLineWidth(1);
-	pFrame->SetShadowColor(0);
-	pFrame->Draw();
-      }
-    }
+    // Current axis
+    Float_t x1pos = xmax - (xmax-xmin) * 0.1;
+    TGaxis *axis = new TGaxis(x1pos,ymin,
+			      x1pos,eMin,
+			      0.0,curmax,503,"S");
+    axis->SetLineWidth(1);
+    axis->SetLineColor(kGray+3);//PGlobals::elecLine);
+    axis->SetLabelColor(kGray+3);//PGlobals::elecLine);
+    axis->SetLabelFont(PGlobals::fontType);
+    axis->SetLabelSize(PGlobals::labelSize-10);
+    axis->SetLabelOffset(0.005);
+    axis->SetTitleColor(kGray+3);//PGlobals::elecLine);
+    axis->SetTitleFont(PGlobals::fontType);
+    axis->SetTitleSize(PGlobals::titleSize-10);
+    axis->SetTitleOffset(0.8);
+    axis->SetTickSize(0.03);
+    axis->ChangeLabel(1,-1,0.);
+    if(opt.Contains("units"))
+      axis->SetTitle(Form("I [%s]",curSUnit.c_str()));
+    axis->CenterTitle();
+    //axis->ChangeLabel(1,-1,-1,-1,-1,-1,"");
+    // axis->SetMaxDigits(2);
+    axis->Draw();
 
     char ctext[128];
     if(opt.Contains("units") && n0) 
@@ -749,6 +748,7 @@ int main(int argc,char *argv[]) {
     TCanvas *C2 = new TCanvas("C","Spectrum",sizex,sizey);
     // C->SetFillStyle(4000);
     gPad->SetRightMargin(0.05);
+    //   gPad->SetRightMargin(0.20);
     gPad->SetBottomMargin(0.20);
     gPad->SetTickx(1);
     gPad->SetTicky(1);
@@ -769,17 +769,19 @@ int main(int argc,char *argv[]) {
     }
     //    specPalette->SetPalette(60);
     specPalette->SetPalette("spectrum");
-    hEneVsDivjoint->SetMinimum(-0.00001);
 
-    // cout << Form("dmax = %f",hEneVsDivjoint->GetMaximum()) << endl;
-    if(dMax >= 0.0)
-      hEneVsDivjoint->SetMaximum(dMax);
-
-    if(gMax >= 0.0)
-      // hEneVsDivjoint->GetXaxis()->SetRangeUser(39.999,gMax);
-      hEneVsDivjoint->GetXaxis()->SetRangeUser(0.0,gMax);
+    gPad->SetFrameFillColor(specPalette->GetColor(0));
+    //    hEneVsDivjoint->SetMinimum(-1.0000);
     
-    hEneVsDivjoint->Draw("col2");
+    // cout << Form("dmax = %f",hEneVsDivjoint->GetMaximum()) << endl;
+    if(dMax >= 0.0) {
+      hEneVsDivjoint->SetMaximum(dMax);
+      hEneVsDivjoint->GetZaxis()->SetRangeUser(30,dMax);
+    }
+    
+    hEneVsDivjoint->GetXaxis()->SetRangeUser(10.0,eMax);
+    
+    hEneVsDivjoint->Draw("col 0");
     gPad->SetFrameLineWidth(5);
     // gPad->SetFrameLineColor(0);
     gPad->Update();

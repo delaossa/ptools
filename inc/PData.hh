@@ -89,6 +89,8 @@ struct pparam {
   Double_t EtMax;
   Double_t aMin;
   Double_t aMax;
+  Double_t kMin;
+  Double_t kMax;
   
 };
 
@@ -273,6 +275,13 @@ public:
   }
   Double_t  GetaMax()  {
     return pParam.aMax;
+  }
+
+  Double_t  GetkMin()  {
+    return pParam.kMin;
+  }
+  Double_t  GetkMax()  {
+    return pParam.kMax;
   }
 
   Double_t  GetDenLoc(Int_t i = 0)  {
@@ -579,6 +588,9 @@ void PData::ResetParameters() {
 
   pParam.aMin = 999.;
   pParam.aMax = -999.;
+
+  pParam.kMin = 999.;
+  pParam.kMax = -999.;
 }
 
 

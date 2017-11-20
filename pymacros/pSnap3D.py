@@ -457,7 +457,8 @@ if args.axes :
     axes.SetTotalLength(6.28/3.0,6.28/3.0,6.28/3.0)
     # axes.SetShaftTypeToLine()
     axes.SetNormalizedShaftLength(1, 1, 1)
-    axes.SetNormalizedTipLength(0.1, 0.1, 0.1)
+    axes.SetNormalizedTipLength(0.08, 0.08, 0.08)
+    axes.SetNormalizedLabelPosition(0.8, 0.8, 0.8)
     
     propA = vtkTextProperty()
     propA.SetFontFamilyToArial()
@@ -572,12 +573,9 @@ camera = renderer.GetActiveCamera()
 camera.SetFocalPoint((axisz[1]-axisz[0])/2.0 + args.shiftz,0.0,0.0);
 camera.Zoom(args.zoom)
 #camera.Roll(45)
-camera.Elevation(args.elevation)
 camera.Azimuth(args.azimuth)
+camera.Elevation(args.elevation)
 #camera.ParallelProjectionOn()
-
-#print('\nCamera position:    ', camera.GetPosition())
-#print('\nCamera focal point: ', camera.GetFocalPoint())
 
 window.Render()
 
@@ -585,6 +583,11 @@ if args.nowin == 0 :
     interactor.Initialize()
     interactor.Start()
 
+window.Render()
+
+# print('\nCamera position:    ', camera.GetPosition())
+# print('\nCamera focal point: ', camera.GetFocalPoint())
+    
 # Output file
 if args.test :
     foutname = './snapshot3d.png' 

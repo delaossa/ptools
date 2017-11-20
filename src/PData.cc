@@ -269,6 +269,12 @@ void PData::ReadParameters(const char * pfile)
 	} else if(word.find("aMin") != string::npos) {
 	  iss >> pParam.aMin;
 	  cout << Form(" - aMin             = %8.4f", pParam.aMin) << endl;
+	} else if(word.find("kMax") != string::npos) {
+	  iss >> pParam.kMax;
+	  cout << Form(" - kMax             = %8.4f", pParam.kMax) << endl;
+	} else if(word.find("kMin") != string::npos) {
+	  iss >> pParam.kMin;
+	  cout << Form(" - kMin             = %8.4f", pParam.kMin) << endl;
 	}
 	word.clear();
       }
