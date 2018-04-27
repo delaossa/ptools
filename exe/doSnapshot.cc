@@ -201,7 +201,7 @@ int main(int argc,char *argv[]) {
     
     // Off-axis definition    
     Double_t rms0 = pData->GetBeamRmsX() * kp;
-    if(pData->IsCyl()) rms0 = pData->GetBeamRmsR() * kp;
+    // if(pData->IsCyl()) rms0 = pData->GetBeamRmsR() * kp;
 
     // transverse axis index
     Int_t it = 1;
@@ -222,7 +222,7 @@ int main(int argc,char *argv[]) {
   
     // Off-axis bin
     if(NofBin==0) {  // If NofBin==0 a RMS width is taken.
-      if(pData->IsCyl()) rms0 = pData->GetBeamRmsR() * kp;
+      // if(pData->IsCyl()) rms0 = pData->GetBeamRmsR() * kp;
       
       if(rms0>0.0)
 	NofBin =  TMath::Nint(rms0 / pData->GetDX(it));
@@ -237,7 +237,7 @@ int main(int argc,char *argv[]) {
     Double_t xoff = NofBin *  pData->GetDX(it); // offaxis distance in norm. units
 
     // Range for current calculation
-    Int_t NonBinT = pData->GetNX(it)/4;
+    Int_t NonBinT = pData->GetNX(it);
     if(rms0>0) {    // This adapts the size of the data chunk to the initial rms size of the beam
       NonBinT = TMath::Nint(3.5 * rms0 / pData->GetDX(it));
       // cout << Form(" Getting current within an on-axis range of NonBinT = %i",NonBinT) << endl;
@@ -316,7 +316,7 @@ int main(int argc,char *argv[]) {
       sprintf(hName,"hDen2D_%i",i);
       hDen2D[i] = (TH2F*) gROOT->FindObject(hName);
       if(hDen2D[i]) delete hDen2D[i];
-      
+
       if(pData->Is3D()) {
 	if(opt.Contains("zyslc"))
 	  hDen2D[i] = pData->GetCharge2DSliceZY(i,-1,NonBin,opt+"avg");
@@ -326,6 +326,7 @@ int main(int argc,char *argv[]) {
       } else {
 	hDen2D[i] = pData->GetCharge(i,opt);
       }
+
 
       hDen2D[i]->SetName(hName);
       hDen2D[i]->GetXaxis()->CenterTitle();
@@ -394,7 +395,7 @@ int main(int argc,char *argv[]) {
 	if(pData->Is3D()) {
 	  hCur1D[i] = pData->GetH1SliceZ3D(pData->GetChargeFileName(i)->c_str(),"charge",-1,NonBinT,-1,NonBinT,opt+"int");
 	} else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
-	  hCur1D[i] = pData->GetH1SliceZ(pData->GetChargeFileName(i)->c_str(),"charge",1,NonBinT,opt+"int");
+	  hCur1D[i] = pData->GetH1SliceZ(pData->GetChargeFileName(i)->c_str(),"charge",1,NonBinT,opt+"intcyl");
 	} else { // 2D cartesian
 	  hCur1D[i] = pData->GetH1SliceZ(pData->GetChargeFileName(i)->c_str(),"charge",-1,NonBinT,opt+"int");
 	}
@@ -402,13 +403,15 @@ int main(int argc,char *argv[]) {
       
 	// Normalized current:
 	Double_t dV = skindepth * skindepth * skindepth;
-	if(!pData->Is3D()) {
+	if(pData->Is3D()) {
+	  hCur1D[i]->Scale(TMath::Abs(n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
+	} else if(pData->IsCyl()) {
+	  //hCur1D[i]->Scale(TMath::TwoPi()*TMath::Abs(n0 * skindepth * skindepth * PConst::ElectronCharge * PConst::c_light) / PConst::I0);
+	} else {
 	  Float_t factor = 1.0;
 	  if(pData->GetBeamRmsX())
 	    factor *=  (pData->GetBeamRmsX()/skindepth) * TMath::Sqrt(2.0*TMath::Pi());
 	  hCur1D[i]->Scale(TMath::Abs(factor * n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
-	} else {
-	  hCur1D[i]->Scale(TMath::Abs(n0 * dV * PConst::ElectronCharge * kp * PConst::c_light) / PConst::I0);
 	}
 
 	if(hCur1D[i]->GetMaximum()>maxCur) {
@@ -603,8 +606,11 @@ int main(int argc,char *argv[]) {
 	
       } else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
       
-	hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,1,NonBin,opt+"avg");
-      
+	if(i==0) 
+	  hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,1,NonBin,opt+"avg");
+	else
+	  hE1D[i] = pData->GetH1SliceZ(pData->GetEfieldFileName(i)->c_str(),nam,1+NofBin-NonBin/2,1+NofBin+NonBin/2,opt+"avg");
+
       } else { // 2D cartesian
       
 	if(i==0) 
@@ -734,7 +740,10 @@ int main(int argc,char *argv[]) {
 
       } else if(pData->IsCyl()) { // Cylindrical: The first bin with r>0 is actually the number 1 (not the 0).
       
-	hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),nam,1,NonBin,opt+"avg");
+	if(i==0) 
+	  hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),nam,1,NonBin,opt+"avg");
+	else
+	  hB1D[i] = pData->GetH1SliceZ(pData->GetBfieldFileName(i)->c_str(),nam,1+NofBin-NonBin/2,1+NofBin+NonBin/2,opt+"avg");
       
       } else { // 2D cartesian
       

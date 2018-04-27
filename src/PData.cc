@@ -37,7 +37,7 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   Navg = 1;
 
   TString NAME = name;
-  if(NAME.Contains("cyl")) Cyl = kTRUE;
+  if(NAME.Contains("cyl") || NAME.Contains("q3D")) Cyl = kTRUE;
 
   gData = this;
 }
@@ -69,7 +69,7 @@ PData::PData(const char * name) : TNamed(name,name) {
   Navg = 1;
 
   TString NAME = name;
-  if(NAME.Contains("cyl")) Cyl = kTRUE;
+  if(NAME.Contains("cyl") || NAME.Contains("q3D")) Cyl = kTRUE;
  
   gData = this;
 }
@@ -103,7 +103,7 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   Navg = 1;
 
   TString NAME = name;
-  if(NAME.Contains("cyl")) Cyl = kTRUE;
+  if(NAME.Contains("cyl") || NAME.Contains("q3D")) Cyl = kTRUE;
  
   LoadFileNames(time);
 }
@@ -1045,10 +1045,10 @@ TH1F* PData::GetH1SliceZ(const char *filename,const char *dataname,Int_t Firstx2
    
   for(UInt_t i=0;i<x1Dim;i++) {
     for(UInt_t j=0;j<x2DimSl;j++) {
-     
+
       if(opt.Contains("cyl") && (opt.Contains("sum") || opt.Contains("int") ) ) {
       	// For cylindrical coordinates, this is the radius in Osiris units:
-	x2 = x2binsize * (j-0.5) + x2Min;
+	x2 = fabs(x2binsize * (j+0.5) + x2Min);
       }
       
       if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos) {
@@ -1833,6 +1833,7 @@ TH2F* PData::GetH2(const char *filename,const char *dataname, const char *option
   
   UInt_t x2AvgFactor = GetNX(1)/dataDims[0];
   UInt_t x2Dim = GetX2N()/x2AvgFactor;
+  if (x2Dim>dataDims[0]) x2Dim = dataDims[0];
   Double_t x2Min = GetX2Min();
   Double_t x2Max = GetX2Max();
 

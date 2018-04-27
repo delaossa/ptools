@@ -391,6 +391,19 @@ Int_t PPalette::SetPalette(const char * name)
       this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
     return 1;
       
+  } else if(strcmp(name,"tbeam")==0) {
+    const Int_t NRGBs = 3;
+    const Int_t NCont = 255;
+    Double_t Stops[NRGBs] = { 0.0, 0.50, 1.00 };
+    Double_t Red[NRGBs] =   { 1.000, 0.820, 0.70};
+    Double_t Green[NRGBs] = { 1.000, 0.510, 0.20};
+    Double_t Blue[NRGBs] =  { 0.200, 0.260, 0.30};
+    if(!fColors)
+      this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
+    else
+      this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
+    return 1;
+      
   } else if(strcmp(name,"skyblue")==0) {
     const Int_t NRGBs = 3;
     const Int_t NCont = 255;
@@ -524,6 +537,20 @@ Int_t PPalette::SetPalette(const char * name)
     Double_t Red[NRGBs]   = { 0.9, 0.3, 0.7, 1.0, 1.0};
     Double_t Green[NRGBs] = { 0.9, 0.0, 0.0, 0.5, 1.0};
     Double_t Blue[NRGBs]  = { 0.9, 0.8, 0.5, 0.0, 0.5};
+    if(!fColors)
+      this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
+    else
+      this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
+    return 1;
+      
+  } else if(strcmp(name,"lila")==0) {
+    const Int_t NRGBs = 2;
+    const Int_t NCont = 255;
+
+    Double_t Stops[NRGBs] = { 0.0, 1.0};
+    Double_t Red[NRGBs]   = { 0.06, 0.79};
+    Double_t Green[NRGBs] = { 0.41, 0.06};
+    Double_t Blue[NRGBs]  = { 0.79, 0.40};
     if(!fColors)
       this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
     else

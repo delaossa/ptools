@@ -443,8 +443,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   const UInt_t NAtoms = 7;
   char atNames[NAtoms][8] = {"H","He","He2","Ne","Ne2","Ne5","HIT"};
   char atAxNames[NAtoms][8] = {"H","He","He^{+}","Ne","Ne^{+}","Ne^{4+}","HIT"};
-  Double_t Eion0[NAtoms] = {13.6 * PUnits::eV, 24.59 * PUnits::eV, 54.4 * PUnits::eV, 21.56 * PUnits::eV, 40.96 * PUnits::eV, 126.247 * PUnits::eV, 85.00 *  PUnits::eV};
-  Float_t Z[NAtoms]     = { 1.0,  1.0,  2.0,  1.0, 2.0, 5.0, 2.0};
+  Double_t Eion0[NAtoms] = {30.0 * PUnits::eV, 24.59 * PUnits::eV, 54.4 * PUnits::eV, 21.56 * PUnits::eV, 40.96 * PUnits::eV, 126.247 * PUnits::eV, 85.00 *  PUnits::eV};
+  Float_t Z[NAtoms]     = { 2.0,  1.0,  2.0,  1.0, 2.0, 5.0, 2.0};
   // Float_t z10[NAtoms]   = {999.0, 999.0, 999.0};
   // Float_t z100[NAtoms]  = {999.0, 999.0, 999.0};
 
@@ -1259,7 +1259,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t tMargin = 0.04 * (950/ysize);
   Float_t lMargin = 0.14;
   Float_t rMargin = 0.18;
-  Float_t mMargin = 0.02 * (950/ysize);
+  Float_t mMargin = 0.027 * (950/ysize);
   Float_t pfactor = 1.6;
   if(opt.Contains("nomar"))
     bMargin = tMargin = lMargin = rMargin = mMargin = 0.0;
@@ -1276,7 +1276,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Int_t txsize = tfontsize+6;
   Int_t lxsize = fontsize+2;
   Int_t tysize = tfontsize;
-  Int_t lysize = fontsize;
+  Int_t lysize = fontsize-2;
   Int_t tzsize = tfontsize-4;
   Int_t lzsize = fontsize-6;
   Float_t txoffset = (250/ypadsize) * 2.4 / (950/ysize);
@@ -2334,7 +2334,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
     
     if(opt.Contains("zero")) {
-      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      TLine *lineZero = new TLine(xMin,(yMin+yMax)/2.0,xMax,(yMin+yMax)/2.0);
       lineZero->SetLineColor(lineColor);
       lineZero->SetLineStyle(2);
       lineZero->Draw();
@@ -2552,7 +2552,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
 
     if(opt.Contains("zero")) {
-      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      TLine *lineZero = new TLine(xMin,(yMin+yMax)/2.0,xMax,(yMin+yMax)/2.0);
       //lineZero->SetLineColor(lineColor);
       lineZero->SetLineColor(kGray);
       lineZero->SetLineStyle(2);
@@ -2679,7 +2679,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
 
     if(opt.Contains("zero")) {
-      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      TLine *lineZero = new TLine(xMin,(yMin+yMax)/2.0,xMax,(yMin+yMax)/2.0);
       //lineZero->SetLineColor(lineColor);
       lineZero->SetLineColor(kGray);
       lineZero->SetLineStyle(2);
@@ -2812,7 +2812,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
   
     if(opt.Contains("zero")) {
-      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      TLine *lineZero = new TLine(xMin,(yMin+yMax)/2.0,xMax,(yMin+yMax)/2.0);
       //lineZero->SetLineColor(lineColor);
       lineZero->SetLineColor(kGray);
       lineZero->SetLineStyle(2);
@@ -2959,7 +2959,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
 
     // if(opt.Contains("zero")) {
-    //   TLine *lineZero = new TLine(xMin,0,xMax,0);
+    //   TLine *lineZero = new TLine(xMin,(yMin+yMax)/2.0,xMax,(yMin+yMax)/2.0);
     //   lineZero->SetLineColor(lineColor);
     //   lineZero->SetLineStyle(2);
     //   lineZero->Draw();
@@ -3254,7 +3254,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     }
 
     if(opt.Contains("zero")) {
-      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      TLine *lineZero = new TLine(xMin,(yMin+yMax)/2.0,xMax,(yMin+yMax)/2.0);
       lineZero->SetLineColor(lineColor);
       lineZero->SetLineStyle(2);
       lineZero->Draw();
@@ -3532,7 +3532,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     // }
     
     if(opt.Contains("zero")) {
-      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      TLine *lineZero = new TLine(xMin,(yMin+yMax)/2.0,xMax,(yMin+yMax)/2.0);
       lineZero->SetLineColor(lineColor);
       lineZero->SetLineStyle(2);
       lineZero->Draw();
@@ -3647,7 +3647,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     // }
     
     if(opt.Contains("zero")) {
-      TLine *lineZero = new TLine(xMin,0,xMax,0);
+      TLine *lineZero = new TLine(xMin,(yMin+yMax)/2.0,xMax,(yMin+yMax)/2.0);
       lineZero->SetLineColor(lineColor);
       lineZero->SetLineStyle(2);
       lineZero->Draw();

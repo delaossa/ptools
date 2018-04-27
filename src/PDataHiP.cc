@@ -238,6 +238,8 @@ void PDataHiP::LoadFileNames(Int_t t) {
       }
     }
   }
+
+  rtime += GetXMax(0)-GetXMin(0);
   
   // Defines the sub-range for the analysis.
   // Here at initialization, it is set to the whole simulation range.

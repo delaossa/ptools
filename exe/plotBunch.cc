@@ -705,6 +705,11 @@ int main(int argc,char *argv[]) {
     if(pData->Is3D()) {
       if(x3Min<X3MIN) x3Min = X3MIN;
       if(x3Max>X3MAX) x3Max = X3MAX;
+
+      if(fabs(x3Max)<fabs(x2Max)) {
+	x3Min = x2Min;
+	x3Max = x2Max;	
+      }
     }
 
     // Overrides auto z ranging if specified in command line
@@ -1606,25 +1611,40 @@ int main(int argc,char *argv[]) {
     }
     // End of the users units module    
 
-    // Average emittance
+    // Sliced average quantities 
+    Double_t xmeanavg = 0;
+    Double_t xrmsavg = 0;
     Double_t emitxavg = 0;
+    Double_t sErmsavg = 0;
     
     // Extract from selected slices:
     Double_t norm = 0;
     for(Int_t i=0;i<SNbin;i++) {
       emitxavg += hP2X2sl[i]->GetEntries() * semitx[i];
+      xmeanavg += hP2X2sl[i]->GetEntries() * sx_mean[i];
+      xrmsavg  += hP2X2sl[i]->GetEntries() * sx_rms[i];
+      sErmsavg += hP2X2sl[i]->GetEntries() * sErms[i];
       norm += hP2X2sl[i]->GetEntries();
     }
     emitxavg /= norm;
+    xmeanavg /= norm;
+    xrmsavg /= norm;
+    sErmsavg /= norm;
     
+    Double_t ymeanavg = 0;
+    Double_t yrmsavg = 0;
     Double_t emityavg = 0;
     if(pData->Is3D()) {
       norm = 0;
       for(Int_t i=0;i<SNbin;i++) {
 	emityavg += hP3X3sl[i]->GetEntries() * semity[i];
+	ymeanavg += hP3X3sl[i]->GetEntries() * sy_mean[i];
+	yrmsavg  += hP3X3sl[i]->GetEntries() * sy_rms[i];
 	norm += hP3X3sl[i]->GetEntries();
       }
       emityavg /= norm;
+      ymeanavg /= norm;
+      yrmsavg /= norm;
     }
     
     if(opt.Contains("units")) {
@@ -1750,7 +1770,29 @@ int main(int argc,char *argv[]) {
       gPzcorrrelvsTime->SetPoint(nPoints,Time,zpzcorrrel);
       gPzcorrrelvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gErmsavgvsTime");     
+      TGraph *gErmsavgvsTime = NULL;
+      gErmsavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gErmsavgvsTime==NULL) {
+	gErmsavgvsTime = new TGraph();
+	gErmsavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gErmsavgvsTime->SetLineWidth(3);
+	gErmsavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gErmsavgvsTime->SetMarkerStyle(20);
+	gErmsavgvsTime->SetMarkerSize(0.4);
+	gErmsavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gErmsavgvsTime->GetN(); 
+      }  
 
+      gErmsavgvsTime->Set(nPoints+1);
+      gErmsavgvsTime->SetPoint(nPoints,Time,sErmsavg);
+      gErmsavgvsTime->Write(gName,TObject::kOverwrite);
+
+
+      
       sprintf(gName,"gZmeanvsTime");     
       TGraph *gZmeanvsTime = NULL;
       gZmeanvsTime = (TGraph*) ifile->Get(gName);
@@ -1858,6 +1900,28 @@ int main(int argc,char *argv[]) {
       gXmeanvsTime->SetPoint(nPoints,Time,x_mean);
       gXmeanvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gXmeanavgvsTime");     
+      TGraph *gXmeanavgvsTime = NULL;
+      gXmeanavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gXmeanavgvsTime==NULL) {
+	gXmeanavgvsTime = new TGraph();
+	gXmeanavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gXmeanavgvsTime->SetLineWidth(3);
+	gXmeanavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gXmeanavgvsTime->SetMarkerStyle(20);
+	gXmeanavgvsTime->SetMarkerSize(0.4);
+	gXmeanavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gXmeanavgvsTime->GetN(); 
+      }  
+
+      gXmeanavgvsTime->Set(nPoints+1);
+      gXmeanavgvsTime->SetPoint(nPoints,Time,xmeanavg);
+      gXmeanavgvsTime->Write(gName,TObject::kOverwrite);
+
+      
       sprintf(gName,"gXrmsvsTime");     
       TGraph *gXrmsvsTime = NULL;
       gXrmsvsTime = (TGraph*) ifile->Get(gName);
@@ -1878,6 +1942,28 @@ int main(int argc,char *argv[]) {
       gXrmsvsTime->Set(nPoints+1);
       gXrmsvsTime->SetPoint(nPoints,Time,x_rms);
       gXrmsvsTime->Write(gName,TObject::kOverwrite);
+
+      sprintf(gName,"gXrmsavgvsTime");     
+      TGraph *gXrmsavgvsTime = NULL;
+      gXrmsavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gXrmsavgvsTime==NULL) {
+	gXrmsavgvsTime = new TGraph();
+	gXrmsavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gXrmsavgvsTime->SetLineWidth(3);
+	gXrmsavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gXrmsavgvsTime->SetMarkerStyle(20);
+	gXrmsavgvsTime->SetMarkerSize(0.4);
+	gXrmsavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gXrmsavgvsTime->GetN(); 
+      }  
+
+      gXrmsavgvsTime->Set(nPoints+1);
+      gXrmsavgvsTime->SetPoint(nPoints,Time,xrmsavg);
+      gXrmsavgvsTime->Write(gName,TObject::kOverwrite);
+
 
       sprintf(gName,"gEmitxvsTime");     
       TGraph *gEmitxvsTime = NULL;
@@ -2008,6 +2094,28 @@ int main(int argc,char *argv[]) {
       gYmeanvsTime->SetPoint(nPoints,Time,y_mean);
       gYmeanvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gYmeanavgvsTime");     
+      TGraph *gYmeanavgvsTime = NULL;
+      gYmeanavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gYmeanavgvsTime==NULL) {
+	gYmeanavgvsTime = new TGraph();
+	gYmeanavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gYmeanavgvsTime->SetLineWidth(3);
+	gYmeanavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gYmeanavgvsTime->SetMarkerStyle(20);
+	gYmeanavgvsTime->SetMarkerSize(0.4);
+	gYmeanavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gYmeanavgvsTime->GetN(); 
+      }  
+
+      gYmeanavgvsTime->Set(nPoints+1);
+      gYmeanavgvsTime->SetPoint(nPoints,Time,ymeanavg);
+      gYmeanavgvsTime->Write(gName,TObject::kOverwrite);
+
+
       sprintf(gName,"gYrmsvsTime");     
       TGraph *gYrmsvsTime = NULL;
       gYrmsvsTime = (TGraph*) ifile->Get(gName);
@@ -2029,6 +2137,29 @@ int main(int argc,char *argv[]) {
       gYrmsvsTime->SetPoint(nPoints,Time,y_rms);
       gYrmsvsTime->Write(gName,TObject::kOverwrite);
 
+
+      sprintf(gName,"gYrmsavgvsTime");     
+      TGraph *gYrmsavgvsTime = NULL;
+      gYrmsavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gYrmsavgvsTime==NULL) {
+	gYrmsavgvsTime = new TGraph();
+	gYrmsavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gYrmsavgvsTime->SetLineWidth(3);
+	gYrmsavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gYrmsavgvsTime->SetMarkerStyle(20);
+	gYrmsavgvsTime->SetMarkerSize(0.4);
+	gYrmsavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gYrmsavgvsTime->GetN(); 
+      }  
+
+      gYrmsavgvsTime->Set(nPoints+1);
+      gYrmsavgvsTime->SetPoint(nPoints,Time,yrmsavg);
+      gYrmsavgvsTime->Write(gName,TObject::kOverwrite);
+
+      
       sprintf(gName,"gEmityvsTime");     
       TGraph *gEmityvsTime = NULL;
       gEmityvsTime = (TGraph*) ifile->Get(gName);

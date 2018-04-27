@@ -4,9 +4,7 @@
 #include <TLegend.h>
 #include <TMarker.h>
 
-#ifndef __CINT__
 #include "PFunctions.hh"
-#endif
 
 #include "PData.hh"
 #include "PGlobals.hh"
@@ -42,20 +40,9 @@ void PlotADKFunctions( const TString &opt="")
 #endif
 
   PGlobals::Initialize();
-
-  // Palettes!
-  gROOT->Macro("PPalettes.C");
   
   gStyle->SetPadGridY(0);
   gStyle->SetPadGridX(0);
-
-  gStyle->SetTextFont(42);
-  gStyle->SetTitleFont(42,"xyz");
-  gStyle->SetLabelFont(42,"xyz");
-
-  gStyle->SetLabelOffset(0.014, "y");
-
-  gStyle->SetTextFont(42);
 
   gStyle->SetPadRightMargin(0.10);
 
@@ -198,7 +185,7 @@ void PlotADKFunctions( const TString &opt="")
   for(Int_t i=0; i<Nat; i++) {
     Leg->AddEntry(fADKvsE[i],Form("%s ( %.1f )",atNames[i],IonTh[i]),"L");
   }
-  Leg->SetTextFont(42);
+  // Leg->SetTextFont(42);
   Leg->SetTextColor(kGray+3);
   Leg->Draw();
 
