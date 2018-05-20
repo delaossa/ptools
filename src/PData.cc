@@ -329,8 +329,10 @@ void PData::LoadFileNames(Int_t t) {
   // The analisys macros always assume that the plasma specie is the first one of the list.
   // The electron bunch, for instance, uses to be the second.
   // We swap here the order (if necessary) to put the "plasma" species at first.
+  string pname = "plasma";
   for(UInt_t i=0;i<sptemp.size();i++) {
-    if(sptemp[i].find("plasma") != string::npos)
+    // if(sptemp[i].find("plasma") != string::npos)
+    if(sptemp[i] == pname)
       if(i!=0 && sptemp.size()>0) {
 	string temp = sptemp[0];
 	sptemp[0] = sptemp[i];

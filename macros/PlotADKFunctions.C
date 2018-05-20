@@ -80,15 +80,15 @@ void PlotADKFunctions( const TString &opt="")
   // // Electric field range
   // Double_t Emin[Nat] = {20,20,20,20,20,20,20,20,20,20,20}; //PUnits::GV/PUnits::m;
   // Double_t Emax[Nat] = {74,218.,450.,100.,150.,200.,90.,150.,180,390,390}; //PUnits::GV/PUnits::m;
-  const Int_t Nat = 13;
-  char atNames[Nat][8] = { "H",  "He","He^{+}",      "N",   "N^{+}", "N^{2+}", "N^{3+}", "N^{4+}",  "Ne", "Ne^{+}","Ne^{2+}","Ne^{3+}","Ne^{4+}"};
-  Double_t atEion[Nat] = {13.6, 24.59,    54.4, 14.53413,  29.60125,  47.4453,  77.4735,  97.8901, 21.56,    40.96,    63.45,    97.19, 126.247};
-  Double_t atZ[Nat]    = { 1.0,   1.0,     2.0,      1.0,       2.0,      3.0,      4.0,      5.0,   1.0,      2.0,      3.0,      4.0,     5.0};
-  Int_t atColor[Nat] = {kAzure+1,kOrange+8,kOrange+8,kGray+2,kGray+2,kGray+2,kGray+2,kGray+2,kSpring-1,kSpring-1,kSpring-1,kSpring-1,kSpring-1};
-  Int_t atStyle[Nat] = {1,1,2,1,2,3,4,5,1,2,3,4,5};
+  const Int_t Nat = 14;
+  char atNames[Nat][16] = { "H", "H_{2}^{+}",  "He","He^{+}",      "N",   "N^{+}", "N^{2+}", "N^{3+}", "N^{4+}",  "Ne", "Ne^{+}","Ne^{2+}","Ne^{3+}","Ne^{4+}"};
+  Double_t atEion[Nat] = {13.6, 30.0,  24.59,    54.4, 14.53413,  29.60125,  47.4453,  77.4735,  97.8901, 21.56,    40.96,    63.45,    97.19, 126.247};
+  Double_t atZ[Nat]    = { 1.0,  2.0,    1.0,     2.0,      1.0,       2.0,      3.0,      4.0,      5.0,   1.0,      2.0,      3.0,      4.0,     5.0};
+  Int_t atColor[Nat] = {kAzure+1,kAzure+2,kOrange+8,kOrange+8,kGray+2,kGray+2,kGray+2,kGray+2,kGray+2,kSpring-1,kSpring-1,kSpring-1,kSpring-1,kSpring-1};
+  Int_t atStyle[Nat] = {1,2,1,2,1,2,3,4,5,1,2,3,4,5};
   // Electric field range
-  Double_t Emin[Nat] = {20,50,150,20,60,100,200,220,50,100,150,300,400}; //PUnits::GV/PUnits::m;
-  Double_t Emax[Nat] = {74,218.,450.,100,150,250,450,550,180,390,390,700,1000}; //PUnits::GV/PUnits::m;
+  Double_t Emin[Nat] = {20,50,50,150,20,60,100,200,220,50,100,150,300,400}; //PUnits::GV/PUnits::m;
+  Double_t Emax[Nat] = {74,218.,218.,450.,100,150,250,450,550,180,390,390,700,1000}; //PUnits::GV/PUnits::m;
 
   TF1 **fADKvsE = new TF1*[Nat]; 
   TLine *lineTh[Nat];
@@ -155,7 +155,7 @@ void PlotADKFunctions( const TString &opt="")
 
   for(Int_t i=0; i<Nat; i++) {
     fADKvsE[i]->GetYaxis()->SetRangeUser(0.,10);
-    fADKvsE[i]->SetLineWidth(2);
+    fADKvsE[i]->SetLineWidth(3);
     fADKvsE[i]->SetLineColor(atColor[i]);
     fADKvsE[i]->SetLineStyle(atStyle[i]);
     fADKvsE[i]->Draw("C same");    
