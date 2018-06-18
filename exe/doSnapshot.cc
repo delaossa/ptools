@@ -865,6 +865,11 @@ int main(int argc,char *argv[]) {
     
       hA1D->GetYaxis()->SetTitle("|a|");
             
+    } else if(pData->GetE_1REfieldFileName(1)) {
+
+      hA2D = pData->GetH2(pData->GetE_1REfieldFileName(1)->c_str(),"e2_cyl_m",opt);
+
+      
     }
     
     // (substract the electro-estatic fields from the total)

@@ -19,7 +19,7 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   species.clear(); 
   pspaces.clear();
 
-  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sEF_1RE = sBF_1RE = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -51,7 +51,7 @@ PData::PData(const char * name) : TNamed(name,name) {
   species.clear(); 
   pspaces.clear();
 
-  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sEF_1RE = sBF_1RE = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -83,7 +83,7 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   species.clear(); 
   pspaces.clear();
   
-  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sEF_1RE = sBF_1RE = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -404,6 +404,8 @@ void PData::LoadFileNames(Int_t t) {
   sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
   sEF  = new vector<string*>(3,NULL);
   sBF  = new vector<string*>(3,NULL);
+  sEF_1RE  = new vector<string*>(3,NULL);
+  sBF_1RE  = new vector<string*>(3,NULL);
   sA   = new vector<string*>(1,NULL);
   sRAW = new vector<string*>(NRawSpecies(),NULL);
   sTrack = new vector<string*>(NRawSpecies(),NULL);
@@ -495,6 +497,22 @@ void PData::LoadFileNames(Int_t t) {
 	
 	continue;
       }
+
+      sprintf(eName,"e%1i_cyl_m",j+1);   
+      if( (files[i].find(eName) != string::npos) && (files[i].find("1-re") != string::npos) ){
+	sEF_1RE->at(j) = new string(files[i]);
+	
+	continue;
+      }
+
+      sprintf(eName,"b%1i_cyl_m",j+1);
+      if( (files[i].find(eName) != string::npos) &&  (files[i].find("1-re") != string::npos) ){
+	sBF_1RE->at(j) = new string(files[i]);
+	
+	continue;
+      }
+      
+      
     }
 
     // Get laser envelope
@@ -666,6 +684,17 @@ void PData::PrintData(Option_t *option) {
     if(sBF)
       if(sBF->at(ief))
 	cout << " - " << sBF->at(ief)->c_str() << endl;
+  }
+  cout << endl;
+
+  cout << "Data for Electromagnetic fields (mode 1 RE): " << endl;
+  for(UInt_t ief=0;ief<3;ief++) {
+    if(sEF_1RE) 
+      if(sEF_1RE->at(ief))
+	cout << " - " << sEF_1RE->at(ief)->c_str() << endl;
+    if(sBF_1RE)
+      if(sBF_1RE->at(ief))
+	cout << " - " << sBF_1RE->at(ief)->c_str() << endl;
   }
   cout << endl;
 
@@ -852,6 +881,18 @@ void PData::Clear(Option_t *option)
     FreeClear(*sBF);
     delete sBF;
     sBF = NULL;
+  }
+
+  if(sEF_1RE) {
+    FreeClear(*sEF_1RE);
+    delete sEF_1RE;
+    sEF_1RE = NULL;
+  }
+  
+  if(sBF_1RE) {
+    FreeClear(*sBF_1RE);
+    delete sBF_1RE;
+    sBF_1RE = NULL;
   }
 
   if(sA) {
