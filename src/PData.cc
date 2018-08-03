@@ -3347,8 +3347,8 @@ Double_t PData::Shift(TString option) {
 
   Double_t x1max0 = pParam.x1Max;
   Double_t shiftcorr = 0.0;
-  if(x1max0>-999.) 
-    shiftcorr = (GetXMax(0) - x1max0) - realtime;
+  // if(x1max0>-999.) 
+  //   shiftcorr = (GetXMax(0) - x1max0) - realtime;
     
   return shiftx1 + shiftcorr;
 }

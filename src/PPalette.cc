@@ -252,9 +252,9 @@ Int_t PPalette::SetPalette(const char * name)
     const Int_t NRGBs = 6;
     const Int_t NCont = 255;
     Double_t Stops[NRGBs] = { 0.00, 0.25, 0.49, 0.51, 0.75, 1.00 };
-    Double_t Red[NRGBs] =   { 0.12, 0.40, 0.90, 0.90, 0.56, 0.37 };
-    Double_t Green[NRGBs] = { 0.24, 0.55, 0.90, 0.90, 0.38, 0.11 };
-    Double_t Blue[NRGBs] =  { 0.45, 0.61, 0.90, 0.90, 0.34, 0.17 };
+    Double_t Red[NRGBs] =   { 0.12, 0.40, 0.99, 0.99, 0.56, 0.37 };
+    Double_t Green[NRGBs] = { 0.24, 0.55, 0.99, 0.99, 0.38, 0.11 };
+    Double_t Blue[NRGBs] =  { 0.45, 0.61, 0.99, 0.99, 0.34, 0.17 };
     if(!fColors)
       this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
     else
