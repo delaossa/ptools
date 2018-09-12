@@ -770,13 +770,12 @@ int main(int argc,char *argv[]) {
       
     }
 
-
     // Get vector potential of the radiation
     TH2F *hA2D = NULL;
     TH1F *hA1D = NULL;
 
     if(pData->GetAmodFileName(0)) {
-
+      
       cout << Form(" -> Getting laser envelope ") << i+1 << endl;
     
       char hName[24];
@@ -866,12 +865,10 @@ int main(int argc,char *argv[]) {
       hA1D->GetYaxis()->SetTitle("|a|");
             
     } else if(pData->GetE_1REfieldFileName(1)) {
-
       hA2D = pData->GetH2(pData->GetE_1REfieldFileName(1)->c_str(),"e2_cyl_m",opt);
-
-      
     }
-    
+
+
     // (substract the electro-estatic fields from the total)
     if(hDen2D[0] && opt.Contains("rad")) {
 

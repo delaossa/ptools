@@ -5,6 +5,7 @@ import vtk
 from ROOT import PData, PDataHiP, PGlobals
 import sys, argparse
 import numpy as np
+import time as clock
 
 
 # Command argument line parser 
@@ -51,6 +52,8 @@ if ('none' in args.sim) :
     sys.exit(0)
     
 # End of command line setup
+
+start_time = clock.time() 
 
 # Get data files
 hfl = []
@@ -138,7 +141,11 @@ else:
     fcolmap.close()
 
 # end of reading color maps
-    
+
+
+print('\nReading data files... ')
+tclock = clock.time()
+
 # Loop over the files
 stype = []
 opacity = []
@@ -379,11 +386,15 @@ for i, hf in enumerate(hfl):
 
 fcolmap.close()
 
+print('Done in %.3f s. ' % ((clock.time() - tclock)))
+tclock = clock.time()
+
+print('\nImporting PIC data to VTK')
 # Add data components as a 4th dimension 
 # npdatamulti = np.stack((npdata[:]),axis=3)
 # Alternative way compatible with earlier versions of numpy 
 npdatamulti = np.concatenate([aux[...,np.newaxis] for aux in npdata], axis=3)
-print('\nShape of the multi-component array: ', npdatamulti.shape,' Type: ',npdatamulti.dtype)
+print('Shape of the multi-component array: ', npdatamulti.shape,' Type: ',npdatamulti.dtype)
 
 # For VTK to be able to use the data, it must be stored as a VTKimage.
 # vtkImageImport imports raw data and stores it in the image.
@@ -401,6 +412,9 @@ dataImport.SetWholeExtent(0, npdatamulti.shape[2]-1, 0, npdatamulti.shape[0]-1, 
 dataImport.SetDataSpacing(udz,udx,udy)
 dataImport.SetDataOrigin(0.0,uaxxmin,uaxymin)
 dataImport.Update()
+
+print('Done in %.3f s. ' % ((clock.time() - tclock)))
+tclock = clock.time()
 
 mapper = vtk.vtkGPUVolumeRayCastMapper()
 mapper.SetAutoAdjustSampleDistances(1)
@@ -588,9 +602,16 @@ camera.Elevation(args.elevation)
 
 if args.nowin == 0 :
     interactor.Initialize()
+    
+tclock = clock.time()
+print('\nRendering... ')
+window.Render()
+print('Done in %.3f s. ' % ((clock.time() - tclock)))
+
+if args.nowin == 0 :
     interactor.Start()
 
-window.Render()
+print('\nTotal time in %.3f s. ' % ((clock.time() - start_time)))
 
 if args.rot :
 
@@ -658,7 +679,7 @@ if args.pdf :
     exp.DrawBackgroundOn()
     exp.Write()
 
-    
+
 
 # END
 

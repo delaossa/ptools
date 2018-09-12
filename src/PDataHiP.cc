@@ -121,6 +121,9 @@ void PDataHiP::LoadFileNames(Int_t t) {
   sBF  = new vector<string*>(3,NULL);
   sWF  = new vector<string*>(2,NULL);
   sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
+  sEF_1RE  = new vector<string*>(3,NULL);
+  sBF_1RE  = new vector<string*>(3,NULL);
+  sA   = new vector<string*>(1,NULL);
 
   for(UInt_t i=0;i<3;i++) {
     sJ[i] = new vector<string*>(NSpecies(),NULL);    

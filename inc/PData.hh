@@ -136,8 +136,8 @@ public:
   string *GetCurrentFileName(UInt_t i, UInt_t j=0) { return sJ[j]->at(i); }
   string *GetEfieldFileName(UInt_t i) { return sEF->at(i); }
   string *GetBfieldFileName(UInt_t i) { return sBF->at(i); }
-  string *GetE_1REfieldFileName(UInt_t i) { return sEF_1RE->at(i); }
-  string *GetB_1REfieldFileName(UInt_t i) { return sBF_1RE->at(i); }
+  string *GetE_1REfieldFileName(UInt_t i) { if(sEF_1RE) return sEF_1RE->at(i); else return NULL;}
+  string *GetB_1REfieldFileName(UInt_t i) { if(sBF_1RE) return sBF_1RE->at(i); else return NULL;}
   string *GetAmodFileName(UInt_t i) { if(sA) return sA->at(i); else return NULL; }
   virtual string  *GetWfieldFileName(UInt_t i) { return 0; }
   virtual UInt_t  NRawSpecies() { return species.size(); }  

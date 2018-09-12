@@ -472,7 +472,7 @@ Int_t PPalette::SetPalette(const char * name)
   } else if(strcmp(name,"blue")==0) {
     const Int_t NRGBs = 3;
     const Int_t NCont = 255;
-    Double_t Stops[NRGBs] = { 0.0, 0.10, 1.00 };
+    Double_t Stops[NRGBs] = { 0.0, 0.33, 1.00 };
     Double_t Red[NRGBs] =   { 0.90, 0.498, 0.106};
     Double_t Green[NRGBs] = { 0.90, 0.718, 0.078};
     Double_t Blue[NRGBs] =  { 0.90, 0.780, 0.518};
