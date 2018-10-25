@@ -464,6 +464,8 @@ int main(int argc,char *argv[]) {
     if(opt.Contains("logz"))
       gPad->SetLogz(1);
 
+    gPad->SetFrameFillColor(beamPalette->GetColor(0));
+
     // Plot frame
     // Float_t xmin = x1Min - 0.4*(x1Max - x1Min);
     Float_t xmin = x1Min;
@@ -665,7 +667,7 @@ int main(int argc,char *argv[]) {
     Float_t x1pos = xmax - (xmax-xmin) * 0.1;
     TGaxis *axis = new TGaxis(x1pos,ymin,
 			      x1pos,eMin,
-			      0.0,curmax,503,"S");
+			      0.0,curmax,503,"S+L");
     axis->SetLineWidth(1);
     axis->SetLineColor(kGray+3);//PGlobals::elecLine);
     axis->SetLabelColor(kGray+3);//PGlobals::elecLine);
@@ -675,7 +677,7 @@ int main(int argc,char *argv[]) {
     axis->SetTitleColor(kGray+3);//PGlobals::elecLine);
     axis->SetTitleFont(PGlobals::fontType);
     axis->SetTitleSize(PGlobals::titleSize-10);
-    axis->SetTitleOffset(0.8);
+    axis->SetTitleOffset(0.6);
     axis->SetTickSize(0.03);
     axis->ChangeLabel(1,-1,0.);
     if(opt.Contains("units"))
@@ -745,7 +747,7 @@ int main(int argc,char *argv[]) {
     // Canvas setup
     sizex = 1024;
     sizey = 320;
-    TCanvas *C2 = new TCanvas("C","Spectrum",sizex,sizey);
+    TCanvas *C2 = new TCanvas("C2","Spectrum",sizex,sizey);
     // C->SetFillStyle(4000);
     gPad->SetRightMargin(0.05);
     //   gPad->SetRightMargin(0.20);
@@ -776,7 +778,8 @@ int main(int argc,char *argv[]) {
     // cout << Form("dmax = %f",hEneVsDivjoint->GetMaximum()) << endl;
     if(dMax >= 0.0) {
       hEneVsDivjoint->SetMaximum(dMax);
-      hEneVsDivjoint->GetZaxis()->SetRangeUser(30,dMax);
+      // hEneVsDivjoint->GetZaxis()->SetRangeUser(30,dMax);
+      hEneVsDivjoint->GetZaxis()->SetRangeUser(10,dMax);
     }
     
     hEneVsDivjoint->GetXaxis()->SetRangeUser(10.0,eMax);
