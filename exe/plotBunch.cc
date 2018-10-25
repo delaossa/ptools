@@ -114,8 +114,7 @@ int main(int argc,char *argv[]) {
     if(l==1) {
       sim = arg;
       continue;
-    }
-    
+    }    
     if(arg.Contains("--pdf")) {
       opt += "pdf";
     } else if(arg.Contains("--eps")) {
@@ -152,6 +151,8 @@ int main(int argc,char *argv[]) {
       opt += "notext"; 
     } else if(arg.Contains("--noinfo")){
       opt += "noinfo"; 
+    } else if(arg.Contains("--noline")){
+      opt += "noline"; 
     } else if(arg.Contains("--avge")){
       opt += "avge"; 
     } else if(arg.Contains("--ecorr")){
@@ -226,6 +227,8 @@ int main(int argc,char *argv[]) {
     }
   }
 
+  TString simo = sim;
+  
   if(opt.Contains("eztrack") && !opt.Contains("loop")) {
     cout << Form(" WARNING: 'eztrack' option only works in loop mode: add --loop flag to the program") << endl;
   }
@@ -264,8 +267,8 @@ int main(int argc,char *argv[]) {
   //  opt += "comovcenter";
 
   // Units
-  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit,  betaUnit, ezUnit;
-  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit,  betaSUnit, ezSUnit;
+  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit, ermssUnit,  betaUnit, ezUnit;
+  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit, ermssSUnit, betaSUnit, ezSUnit;
 
   if(opt.Contains("units") && n0) {
 
@@ -306,6 +309,8 @@ int main(int argc,char *argv[]) {
   tspaSUnit = "#mum";
   
   // Emittance units
+  // emitUnit = 0.1 * PUnits::um;
+  // emitSUnit = "#times 100 nm";
   emitUnit = PUnits::um;
   emitSUnit = "#mum";
   // emitUnit = 10 * PUnits::um;
@@ -320,11 +325,18 @@ int main(int argc,char *argv[]) {
   betaSUnit = "#mum";
   
   // Relative energy spread units
+  // ermsUnit = 0.1 * PUnits::perCent; 
+  // ermsSUnit = "0.1%";
   ermsUnit = PUnits::perCent; 
   ermsSUnit = "%";
   // ermsUnit = PUnits::perThousand; 
   // ermsSUnit = "0.1 %";
 
+  // Slice elative energy spread units  
+  ermssUnit = 0.1 * PUnits::perCent; 
+  ermssSUnit = "0.1%";
+
+  
   // Ez unit
   ezUnit = PUnits::GV/PUnits::meter;
   ezSUnit = "GV/m";
@@ -798,7 +810,7 @@ int main(int argc,char *argv[]) {
 
     hX1->SetFillStyle(1001);
     hX1->SetFillColor(PGlobals::elecFill);
-    hX1->SetLineWidth(2);
+    hX1->SetLineWidth(3);
     
     sprintf(hName,"hP1");
     TH1F *hP1 = (TH1F*) gROOT->FindObject(hName);
@@ -1053,7 +1065,7 @@ int main(int argc,char *argv[]) {
     Double_t pzmin = -999;
     for(Int_t i=1;i<=hP1->GetNbinsX();i++) {
       Double_t binValue = hP1->GetBinContent(i);
-      if(binValue>maxValue/2) {
+      if(binValue>maxValue/4.0) {
 	lBin = i;
 	pzmin = hP1->GetBinCenter(i);
 	break;
@@ -1064,7 +1076,7 @@ int main(int argc,char *argv[]) {
     Double_t pzmax = -999;
     for(Int_t i=hP1->GetNbinsX();i>0;i--) {
       Double_t binValue = hP1->GetBinContent(i);
-      if(binValue>maxValue/2) {
+      if(binValue>maxValue/4.0) {
 	rBin = i;
 	pzmax = hP1->GetBinCenter(i);
 	break;
@@ -1079,7 +1091,8 @@ int main(int argc,char *argv[]) {
     Double_t pzmeanFWHM = hP1cut->GetMean();
     Double_t pzrmsFWHM = hP1cut->GetRMS();
 
-
+    cout << Form(" Rel. energy spread (fwhm) = %f",pzrmsFWHM/pzmeanFWHM) << endl;
+    
     // Basically the same, but in longitudinal range
     hP1X1range->GetStats(stats);
 
@@ -1606,7 +1619,7 @@ int main(int argc,char *argv[]) {
       erelMax = PUnits::perCent/ermsUnit;
       
       for(Int_t k=0;k<SNbin;k++)
-       	sErms[k]  *= PUnits::perCent/ermsUnit;
+       	sErms[k]  *= PUnits::perCent/ermssUnit;
       
     }
     // End of the users units module    
@@ -1652,7 +1665,7 @@ int main(int argc,char *argv[]) {
       cout << Form("  Integrated charge (RAW) of specie %3i = %8f %s",index,Charge,chargeSUnit.c_str()) << endl;
       cout << Form("  Peak current = %6.3f %s",hX1->GetMaximum(),curSUnit.c_str()) << endl;
       cout << Form("  Total energy = %6.3f %s, rms = %3.1f %s",pzmean,eneSUnit.c_str(),(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str()) << endl;
-      cout << Form("  Corr. energy spread = %.3f \%/%s",zpzcorrrel,spaSUnit.c_str()) << endl;
+      cout << Form("  Corr. energy spread = %.3f %%/%s",zpzcorrrel,spaSUnit.c_str()) << endl;
       cout << Form("  Minimum energy = %.3f %s",MinP1 *  PConst::ElectronMassE / eneUnit,eneSUnit.c_str()) << endl;
       cout << Form("  Length = %6.3f %s (rms)",zrms,spaSUnit.c_str()) << endl;
       cout << Form("  Width x = %6.3f %s (rms)",x_rms,tspaSUnit.c_str()) << endl;
@@ -1667,7 +1680,7 @@ int main(int argc,char *argv[]) {
       cout << Form("\n 5. Saving results to file .. ") << endl;
   
       // OUTPUT ROOT FILE WITH THE PLOTS:
-      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s.root",sim.Data(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
+      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s.root",simo.Data(),pData->GetRawSpeciesName(index).c_str(),simo.Data());
       TFile * ifile = (TFile*) gROOT->GetListOfFiles()->FindObject(filename);
       // if doesn't exist the directory should be created
       if (!ifile) {
@@ -2383,9 +2396,13 @@ int main(int argc,char *argv[]) {
     // -----------------------------------------------------------------------------------
 
     //    if(!opt.Contains("loop")) { 
-
     cout << Form("\n 6. Preparing the graphs and plotting .. ") << endl;
 
+    // Output file
+    TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s",
+			    simo.Data(),pData->GetRawSpeciesName(index).c_str(),
+			    pData->GetRawSpeciesName(index).c_str(),simo.Data());
+    
     // Centering in the x1 mean
     if(opt.Contains("zmean")) {
       hX1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean);
@@ -2535,7 +2552,7 @@ int main(int argc,char *argv[]) {
       }
 
       // Text objects
-      TPaveText *textTime =  new TPaveText(0.55,0.76,0.80,0.86,"NDC");
+      TPaveText *textTime =  new TPaveText(0.55,0.76,0.84,0.9,"NDC");
       PGlobals::SetPaveTextStyle(textTime,32);
       textTime->SetTextFont(43);
       textTime->SetTextSize(22);
@@ -2567,14 +2584,14 @@ int main(int argc,char *argv[]) {
 	sprintf(ctext,"Q = %5.2f n0#timeskp^{-3}", Charge);    
       textCharge->AddText(ctext);
 
-      TPaveText *textMom = new TPaveText(0.55,0.07,0.80,0.17,"NDC");
+      TPaveText *textMom = new TPaveText(0.55,0.07,0.84,0.17,"NDC");
       PGlobals::SetPaveTextStyle(textMom,32); 
       textMom->SetTextColor(kGray+3);
       textMom->SetTextFont(63);
       textMom->SetTextSize(22);
       if(opt.Contains("fwhm")) {
 	if(opt.Contains("units") && pData->GetPlasmaDensity())
-	  sprintf(ctext,"#LTp_{z}#GT = %5.3f %s/c", pzmeanFWHM, eneSUnit.c_str());
+	  sprintf(ctext,"#LTp_{z}#GT = %5.2f %s/c", pzmeanFWHM, eneSUnit.c_str());
 	else
 	  sprintf(ctext,"#LTp_{z}#GT = %5.2f mc", pzmeanFWHM);    
       } else {
@@ -2586,10 +2603,11 @@ int main(int argc,char *argv[]) {
       textMom->AddText(ctext);
 
 
-      TPaveText *textInfo = new TPaveText(0.55,0.35,0.80,0.75,"NDC");
+      TPaveText *textInfo = new TPaveText(0.55,0.25,0.84,0.75,"NDC");
       PGlobals::SetPaveTextStyle(textInfo,32); 
       textInfo->SetTextColor(kGray+2);
-      textInfo->SetTextFont(42);
+      textInfo->SetTextFont(43);
+      textInfo->SetTextSize(22);
       if(opt.Contains("units")) 
 	sprintf(ctext,"Q = %5.2f %s",Charge,chargeSUnit.c_str());
       else
@@ -2597,19 +2615,19 @@ int main(int argc,char *argv[]) {
       
       textInfo->AddText(ctext);
       if(opt.Contains("units")) 
-	sprintf(ctext,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
+	sprintf(ctext,"#sigma_{#zeta} = %5.2f %s",zrms,spaSUnit.c_str());
       else
 	sprintf(ctext,"k_{p} #Delta#zeta = %5.2f",zrms);
       
       textInfo->AddText(ctext);
 
       if(opt.Contains("ecorr")) {
-	sprintf(ctext,"#deltap_{z,corr} = %4.2f %/%s",zpzcorrrel,spaSUnit.c_str());
+	sprintf(ctext,"#deltap_{z,corr} = %4.2f %%/%s",zpzcorrrel,spaSUnit.c_str());
       } else {
 	if(opt.Contains("fwhm"))
-	  sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
+	  sprintf(ctext,"#sigma_{#gamma}/#LT#gamma#GT = %4.2f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
 	else
-	  sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
+	  sprintf(ctext,"#sigma_{#gamma}/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
       }
       textInfo->AddText(ctext);
       
@@ -2652,8 +2670,8 @@ int main(int argc,char *argv[]) {
       TString sLabels[] = {"(b)","(a)"};
       TPaveText **textLabel = new TPaveText*[NPad];
 
-      Double_t lMargin = 0.15;
-      Double_t rMargin = 0.18;
+      Double_t lMargin = 0.12;
+      Double_t rMargin = 0.15;
       Double_t bMargin = 0.15;
       Double_t tMargin = 0.04;
       Double_t factor = 1.0;
@@ -2662,14 +2680,14 @@ int main(int argc,char *argv[]) {
 
       // Define the frames for plotting
       Int_t fonttype = 43;
-      Int_t fontsize = 24;
-      Int_t tfontsize = 28;
+      Int_t fontsize = 28;
+      Int_t tfontsize = 30;
       Double_t txoffset = 2.0;
       Double_t lxoffset = 0.02;
-      Double_t tyoffset = 1.3;
+      Double_t tyoffset = 1.0;
       Double_t lyoffset = 0.01;
       Double_t tylength = 0.015;
-      Double_t txlength = 0.025;
+      Double_t txlength = 0.03;
       for(Int_t i=0;i<NPad;i++) {
 	char name[16];
 	sprintf(name,"pad_%i",i);
@@ -2711,7 +2729,7 @@ int main(int argc,char *argv[]) {
 	hFrame[i]->GetXaxis()->CenterTitle();
 	hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
       }
-
+      
       C->cd(0);
       pad[1]->Draw();
       pad[1]->cd(); // <---------------------------------------------- Top Plot ---------
@@ -2751,20 +2769,18 @@ int main(int argc,char *argv[]) {
 	gP1->Draw("L");
       }
       
-      TLine lZmean(zmean,hP1X1->GetYaxis()->GetXmin(),zmean,hP1X1->GetYaxis()->GetXmax());
-      lZmean.SetLineColor(kGray+2);
-      lZmean.SetLineStyle(2);
-      lZmean.Draw();
-
       Float_t emean = pzmean;
       if(opt.Contains("fwhm"))
 	emean = pzmeanFWHM;
-      
+
+      TLine lZmean(zmean,hP1X1->GetYaxis()->GetXmin(),zmean,hP1X1->GetYaxis()->GetXmax());
+      lZmean.SetLineColor(kGray+2);
+      lZmean.SetLineStyle(2);
+     
       TLine lPmean(hP1X1->GetXaxis()->GetXmin(),emean,hP1X1->GetXaxis()->GetXmax(),emean);
       lPmean.SetLineColor(kGray+2);
       lPmean.SetLineStyle(2);
-      lPmean.Draw();
-
+     	
       // lines indicating the energy interval
       // TLine pzminline(hP1X1->GetXaxis()->GetXmin(),pzmin, ((xMax-xMin)/EneMax)*(EneMax/2) + xMin,pzmin);
       TLine pzminline(hP1X1->GetXaxis()->GetXmin(),pzmin,hP1X1->GetXaxis()->GetXmax(),pzmin);
@@ -2774,11 +2790,16 @@ int main(int argc,char *argv[]) {
       TLine pzmaxline(hP1X1->GetXaxis()->GetXmin(),pzmax,hP1X1->GetXaxis()->GetXmax(),pzmax);
       pzmaxline.SetLineColor(kGray+1);
       pzmaxline.SetLineStyle(3);
-      if(opt.Contains("fwhm")) {
-	pzmaxline.Draw();
-	pzminline.Draw();
-      }
-
+      
+      if(!opt.Contains("noline")) {
+	lZmean.Draw();
+	lPmean.Draw();
+	
+	if(opt.Contains("fwhm")) {
+	  pzmaxline.Draw();
+	  pzminline.Draw();
+	}
+      }    
       // hP1X1prof->SetMarkerStyle(1);
       // hP1X1prof->SetLineWidth(2);
       // hP1X1prof->Draw("zsame");
@@ -2843,7 +2864,6 @@ int main(int argc,char *argv[]) {
       
       gPad->RedrawAxis(); 
 
-
       // Bottom plot -----------------------------------------
       C->cd(0);
       pad[0]->Draw();
@@ -2855,13 +2875,13 @@ int main(int argc,char *argv[]) {
       // }
 
       TLegend *Leg;
-      Leg=new TLegend(0.58,0.72,1 - 0.5*gPad->GetRightMargin() + 0.01,0.95);
+      Leg=new TLegend(0.62,0.6,1 - gPad->GetRightMargin() - 0.02 - 0.03 ,0.95);
 
       PGlobals::SetPaveStyle(Leg);
       Leg->SetTextAlign(12);
       Leg->SetTextColor(kGray+3);
       Leg->SetTextFont(43);
-      Leg->SetTextSize(16);
+      Leg->SetTextSize(20);
       Leg->SetLineColor(1);
       Leg->SetBorderSize(0);
       Leg->SetFillColor(0);
@@ -2873,7 +2893,7 @@ int main(int argc,char *argv[]) {
 	sprintf(sleg,"Current [%s]",curSUnit.c_str());
 	Leg->AddEntry(hX1  ,sleg,"L");	
 	//sprintf(sleg,"Energy spread [%s]",ermsUnit.c_str());
-	sprintf(sleg,"E. spread [%s]",ermsSUnit.c_str());
+	sprintf(sleg,"E. spread [%s]",ermssSUnit.c_str());
 	Leg->AddEntry(gErms,sleg,"PL");
 	//      sprintf(sleg,"Emittance [%s]",emitUnit.c_str());
 	sprintf(sleg,"Emitt. x [%s]",emitSUnit.c_str());
@@ -2896,20 +2916,22 @@ int main(int argc,char *argv[]) {
 	}
 	
       }
-      
+
       hFrame[0]->GetYaxis()->SetTitle("");
       cout << Form(" - Imax = %.2f",Imax) << endl;
-      hFrame[0]->GetYaxis()->SetRangeUser(0.0,yMax);
+      hFrame[0]->GetYaxis()->SetRangeUser(0.001,yMax);
       hFrame[0]->Draw("axis");
 
       if(opt.Contains("smooth"))
 	hX1->Smooth(3);
-      hX1->Draw("hist LF2 same");
+      hX1->Draw("hist LF same");
 
       TLine lZmean2(zmean,0.0,zmean,yMax);
       lZmean2.SetLineColor(kGray+2);
       lZmean2.SetLineStyle(2);
-      lZmean2.Draw();
+      if(!opt.Contains("noline")) {
+	lZmean2.Draw();
+      }
 
       Size_t markerSize = 1.0; 
       Width_t lineWidth  = 2.0;   
@@ -2977,15 +2999,10 @@ int main(int argc,char *argv[]) {
 
       gPad->RedrawAxis(); 
 
-
-
       // Print to file --------------------------------------
 
       C->cd();
       
-      // Output file
-      TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
-
       TString fOutNamep1x1 = fOutName + Form("-%s_%i","p1x1",time);
       PGlobals::imgconv(C,fOutNamep1x1,opt);
 
@@ -4049,7 +4066,7 @@ int main(int argc,char *argv[]) {
 	Int_t ndiv = 4;
 	CA4->Divide(1,ndiv);
 	
-	TString fOutName2 = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s-slp2x2_%i",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
+	TString fOutName2 = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s-slp2x2_%i",simo.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),simo.Data(),time);
 	
 	CA4->Print(fOutName2 + ".ps[","Portrait");
 
@@ -4259,10 +4276,10 @@ int main(int argc,char *argv[]) {
     }
     
     if(opt.Contains("file")) {
-      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s_%i.root",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
+      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s_%i.root",simo.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),simo.Data(),time);
       TFile *ofile = new TFile(filename,"RECREATE");
 
-      hX1->SetLineWidth(1);
+      hX1->SetLineWidth(2);
       hX1->SetLineColor(1);
       hX1->SetFillStyle(0);
 
