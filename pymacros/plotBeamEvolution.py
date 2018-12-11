@@ -59,22 +59,34 @@ def main():
     elif args.index == 1 :
         species = 'He-2'
     
-        xMin = -2.1
-        xMax =  2.1
+        xMin = -2.0
+        xMax = 2.0
+
+        xrmsMin = 0.01
+        xrmsMax = 1.00
 
         exMin = 0.001
-        exMax = 4.00
+        exMax = 5.00
         # exMax = 0.8
 
-        gMin = 0.01
-        gMax = 3.0
+        gMin = 0.001
+        gMax = 1.599
       
         grrMin = 0.001
-        grrMax = 10.0
+        grrMax = 5.0
 
         cMin = 0.001
-        cMax = 14.99
+        cMax = 299.99
 
+        betaMin = 0.001
+        betaMax = 1.0
+        
+        alphaMin = -0.5
+        alphaMax = 0.5
+        
+        gammatMin = 0.001
+        gammatMax = 20.0
+        
         
     simlist = []
     colorlist = []
@@ -82,20 +94,30 @@ def main():
     gXabslist = []        
     gXabsuplist = []        
     gXrmslist = []
+    gxPxrmslist = []
     gXuplist = []
     gXdolist = []
     gEmitxlist = []
     gEmitxavglist = []        
+    gPxlist = []        
+    gPxrmslist = []        
     gBetaxlist = []
+    gAlphaxlist = []
+    gGammaxlist = []
     gYlist = []        
     gYabslist = []        
     gYabsuplist = []        
     gYrmslist = []
+    gyPyrmslist = []
     gYuplist = []
     gYdolist = []
     gEmitylist = []        
     gEmityavglist = []        
+    gPylist = []        
+    gPyrmslist = []        
     gBetaylist = []
+    gAlphaylist = []
+    gGammaylist = []
     gGammalist = []        
     gGrmslist = []        
     gGrmsrellist = []        
@@ -138,9 +160,10 @@ def main():
     C.SetFillStyle(4000)        
 
     # Main plot frame
-    hFrame = TH1F('hFrame','',10,0,6.0)
+    hFrame = TH1F('hFrame','',10,0,6)
 
     hFrame.GetXaxis().SetTitle('z [mm]')
+    hFrame.GetXaxis().SetNdivisions(510)
     hFrame.GetXaxis().CenterTitle()
     hFrame.GetYaxis().CenterTitle()
 
@@ -148,7 +171,7 @@ def main():
     pal.SetPalette(ROOT.kBird)
 
     # Select simulations 
-    sim = 'rake-v10kA.n8E18.He6.2ndlevel.3D'
+    sim = 'rake-v10kA.n8E18.He6.2nd.mrplow.2.3D'
     simlist.append(sim)
             
     Ncurves = len(simlist)
@@ -162,14 +185,20 @@ def main():
         rfile = TFile(filename,"READ")
 
         # Load histos and graphs
-        gXlist.append(rfile.Get("gXmeanavgvsTime")) 
-        gXrmslist.append(rfile.Get("gXrmsavgvsTime")) 
+        gXlist.append(rfile.Get("gXmeanvsTime")) 
+        gXrmslist.append(rfile.Get("gXrmsvsTime")) 
+        gPxlist.append(rfile.Get("gPxmeanvsTime")) 
+        gPxrmslist.append(rfile.Get("gPxrmsvsTime")) 
         gEmitxlist.append(rfile.Get("gEmitxvsTime")) 
-        gEmitxavglist.append(rfile.Get("gEmitxavgvsTime")) 
-        gYlist.append(rfile.Get("gYmeanavgvsTime")) 
-        gYrmslist.append(rfile.Get("gYrmsavgvsTime")) 
+        gEmitxavglist.append(rfile.Get("gEmitxavgvsTime"))
+        gxPxrmslist.append(rfile.Get("gxPxrmsvsTime"))
+        gYlist.append(rfile.Get("gYmeanvsTime")) 
+        gYrmslist.append(rfile.Get("gYrmsvsTime")) 
+        gPylist.append(rfile.Get("gPymeanvsTime")) 
+        gPyrmslist.append(rfile.Get("gPyrmsvsTime")) 
         gEmitylist.append(rfile.Get("gEmityvsTime")) 
         gEmityavglist.append(rfile.Get("gEmityavgvsTime")) 
+        gyPyrmslist.append(rfile.Get("gyPyrmsvsTime"))
         gGammalist.append(rfile.Get("gPzmeanvsTime"))
         gGrmslist.append(rfile.Get("gPzrmsvsTime"))
         gGrmsavglist.append(rfile.Get("gErmsavgvsTime"))
@@ -183,9 +212,15 @@ def main():
         T  = gXlist[-1].GetX()
         X  = gXlist[-1].GetY()
         Xrms  = gXrmslist[-1].GetY()
+        xPxrms = gxPxrmslist[-1].GetY()
+        Px  = gPxlist[-1].GetY()
+        Pxrms  = gPxrmslist[-1].GetY()
         Emitx = gEmitxlist[-1].GetY()
-        Y  = gXlist[-1].GetY()
+        Y  = gYlist[-1].GetY()
         Yrms  = gYrmslist[-1].GetY()
+        Py  = gPylist[-1].GetY()
+        Pyrms  = gPyrmslist[-1].GetY()
+        yPyrms = gyPyrmslist[-1].GetY()
         Emity = gEmitylist[-1].GetY()
         Gamma = gGammalist[-1].GetY()
         Grms  = gGrmslist[-1].GetY()
@@ -194,14 +229,26 @@ def main():
         Grmsrel = np.empty(NP)
         Betax = np.empty(NP)
         Betay = np.empty(NP)
+        Alphax = np.empty(NP)
+        Alphay = np.empty(NP)
+        Gammax = np.empty(NP)
+        Gammay = np.empty(NP)
         for j in range(NP) :
             Grmsrel[j] = 100 * Grms[j]/Gamma[j]
-            Betax[j] = 1E-3 * (Gamma[j]/0.511E-3) * Xrms[j]**2 / Emitx[j]
-            Betay[j] = 1E-3 * (Gamma[j]/0.511E-3) * Yrms[j]**2 / Emity[j]
+            Betax[j]  = 0.001 * (Gamma[j]/0.511E-3) * Xrms[j]**2 / (Emitx[j]*0.1)
+            Betay[j]  = 0.001 * (Gamma[j]/0.511E-3) * Yrms[j]**2 / (Emity[j]*0.1)
+            Gammax[j] = 1000 * (0.511E-3/Gamma[j]) * (Pxrms[j]/0.511)**2 / (Emitx[j]*0.1)
+            Gammay[j] = 1000 * (0.511E-3/Gamma[j]) * (Pyrms[j]/0.511)**2 / (Emity[j]*0.1)
+            Alphax[j] = -(xPxrms[j]/0.511) / (Emitx[j]*0.1)
+            Alphay[j] = -(yPyrms[j]/0.511) / (Emity[j]*0.1)
             
         gGrmsrellist.append(TGraph(NP,T,Grmsrel))
         gBetaxlist.append(TGraph(NP,T,Betax))
         gBetaylist.append(TGraph(NP,T,Betay))
+        gAlphaxlist.append(TGraph(NP,T,Alphax))
+        gAlphaylist.append(TGraph(NP,T,Alphay))
+        gGammaxlist.append(TGraph(NP,T,Gammax))
+        gGammaylist.append(TGraph(NP,T,Gammay))
             
         Xabs = np.empty((NP))
         Xabsup = np.empty((NP))
@@ -277,6 +324,12 @@ def main():
         gBetaxlist[-1].SetLineWidth(3)
         gBetaxlist[-1].SetLineColor(colorlist[-1])
 
+        gAlphaxlist[-1].SetLineWidth(3)
+        gAlphaxlist[-1].SetLineColor(colorlist[-1])
+
+        gGammaxlist[-1].SetLineWidth(3)
+        gGammaxlist[-1].SetLineColor(colorlist[-1])
+
         gYuplist.append(TGraph(NP,T,Yup))
         gYdolist.append(TGraph(NP,T,Ydo))
 
@@ -313,6 +366,12 @@ def main():
         gBetaylist[-1].SetLineWidth(3)
         gBetaylist[-1].SetLineColor(colorlist[-1])
 
+        gAlphaylist[-1].SetLineWidth(3)
+        gAlphaylist[-1].SetLineColor(colorlist[-1])
+
+        gGammaylist[-1].SetLineWidth(3)
+        gGammaylist[-1].SetLineColor(colorlist[-1])
+
         gGammalist[-1].SetLineWidth(3)
         gGammalist[-1].SetLineColor(colorlist[-1])
 
@@ -329,35 +388,91 @@ def main():
         gChargelist[-1].SetLineColor(colorlist[-1])
 
 
-    hFrame.GetYaxis().SetTitle('k_{p} #LTX_{b}#GT [#mum]')
+    hFrame.GetYaxis().SetTitle('#LTX_{b}#GT [#mum]')
     hFrame.GetYaxis().SetRangeUser(xMin, xMax)
     hFrame.Draw("axis")
 
     for idx,graph in enumerate(gXlist) :
-        gXlist[idx].SetLineWidth(3)   
-        gXlist[idx].Draw('L')
+        graph.SetLineColor(ROOT.kGray+3)
+        graph.SetLineWidth(3)
+        graph.SetMarkerColor(ROOT.kGray+3)
+        graph.SetMarkerSize(1)
+        graph.Draw('LP')
+
+        gXuplist[idx].SetLineColor(ROOT.kGray+3)
         gXuplist[idx].Draw('L')
+        gXdolist[idx].SetLineColor(ROOT.kGray+3)
         gXdolist[idx].Draw('L')
+
+        gYlist[-1].SetLineColor(ROOT.kGray+2)
+        gYlist[-1].SetLineWidth(3)
+        gYlist[-1].SetLineStyle(1)
+        gYlist[-1].SetMarkerColor(ROOT.kGray+2)
+        gYlist[-1].SetMarkerSize(1)
+        gYlist[-1].Draw('LP')
+
+        gYuplist[idx].SetLineColor(ROOT.kGray+2)
+        gYuplist[idx].Draw('L')
+        gYdolist[idx].SetLineColor(ROOT.kGray+2)
+        gYdolist[idx].Draw('L')
+
+        
 
     DrawFrame()
         
     C.Print(opath + '/%s-Xmean.pdf' % (species))
 
-    hFrame.GetYaxis().SetTitle('k_{p} #LT#sigma_{x}#GT [#mum]')
-    hFrame.GetYaxis().SetRangeUser(0.0,5.0)
+    hFrame.GetYaxis().SetTitle('#LT#sigma_{x}#GT [#mum]')
+    hFrame.GetYaxis().SetRangeUser(xrmsMin,xrmsMax)
 
     hFrame.Draw("axis")
     for idx,graph in enumerate(gXrmslist) :
         # if list1[-1] == el1 :
+        graph.SetLineColor(ROOT.kGray+3)
         graph.SetLineWidth(3)
-        graph.Draw('L')
+        graph.SetMarkerColor(ROOT.kGray+3)
+        graph.SetMarkerSize(1)
+        graph.Draw('LP')
 
+        gYrmslist[-1].SetLineColor(ROOT.kGray+2)
+        gYrmslist[-1].SetLineWidth(3)
+        gYrmslist[-1].SetLineStyle(1)
+        gYrmslist[-1].SetMarkerColor(ROOT.kGray+2)
+        gYrmslist[-1].SetMarkerSize(1)
+        gYrmslist[-1].Draw('LP')
+
+        
     DrawFrame()
     C.Print(opath + '/%s-Xrms.pdf' % (species))
 
     # Emittance        
     # hFrame.GetYaxis().SetTitle('k_{p} #varepsilon_{n,x}')
     hFrame.GetYaxis().SetTitle('#varepsilon_{n} [100 nm]')
+    hFrame.GetYaxis().SetRangeUser(exMin,exMax)
+
+    hFrame.Draw("axis")        
+    for idx,graph in enumerate(gEmitxlist) :
+        # graph.Draw('C')
+        
+        graph.SetLineColor(ROOT.kGray+3)
+        graph.SetLineWidth(3)
+        graph.SetMarkerColor(ROOT.kGray+3)
+        graph.SetMarkerSize(1)
+        graph.Draw('LP')
+
+        gEmitylist[-1].SetLineColor(ROOT.kGray+2)
+        gEmitylist[-1].SetLineWidth(3)
+        gEmitylist[-1].SetLineStyle(1)
+        gEmitylist[-1].SetMarkerColor(ROOT.kGray+2)
+        gEmitylist[-1].SetMarkerSize(1)
+        gEmitylist[-1].Draw('LP')
+
+    DrawFrame()
+    C.Print(opath + '/%s-Emittance.pdf' % (species))
+
+    # Emittance average   
+    # hFrame.GetYaxis().SetTitle('k_{p} #varepsilon_{n,x}')
+    hFrame.GetYaxis().SetTitle('#LT#varepsilon_{n}#GT [100 nm]')
     hFrame.GetYaxis().SetRangeUser(exMin,exMax)
 
     hFrame.Draw("axis")        
@@ -378,52 +493,77 @@ def main():
         gEmityavglist[-1].Draw('LP')
 
     DrawFrame()
-    C.Print(opath + '/%s-Emittance.pdf' % (species))
+    C.Print(opath + '/%s-Emittanceavg.pdf' % (species))
 
     # Beta        
     # hFrame.GetYaxis().SetTitle('k_{p} #varepsilon_{n,x}')
     hFrame.GetYaxis().SetTitle('#beta_{x,y} [mm]')
-    hFrame.GetYaxis().SetRangeUser(0.01,0.1)
+    hFrame.GetYaxis().SetRangeUser(betaMin,betaMax)
 
     hFrame.Draw("axis")        
     for idx,graph in enumerate(gBetaxlist) :
-        # graph.Draw('C')
-        # graph.SetLineColor(ROOT.kGray+2)
+        graph.SetLineColor(ROOT.kGray+3)
         graph.SetLineWidth(3)
-        graph.Draw('C')
+        graph.SetMarkerColor(ROOT.kGray+3)
+        graph.SetMarkerSize(1)
+        graph.Draw('LP')
 
-        gBetaylist[-1].SetLineColor(ROOT.kGray+3)
+        gBetaylist[-1].SetLineColor(ROOT.kGray+2)
         gBetaylist[-1].SetLineWidth(3)
-        gBetaylist[-1].SetLineStyle(2)
-        gBetaylist[-1].Draw('C')
+        gBetaylist[-1].SetLineStyle(1)
+        gBetaylist[-1].SetMarkerColor(ROOT.kGray+2)
+        gBetaylist[-1].SetMarkerSize(1)
+        gBetaylist[-1].Draw('LP')
 
     DrawFrame()
     C.Print(opath + '/%s-Beta.pdf' % (species))
 
-    hFrame.GetYaxis().SetTitle('#LT#gamma#GTmc^{2} [GeV]')
-    hFrame.GetYaxis().SetRangeUser(gMin,gMax)
-    hFrame.Draw("axis")
-    
-    hFrame.GetYaxis().SetNdivisions(505)
-    hFrame.GetYaxis().SetLabelOffset(0.01)
-        
-    for idx,graph in enumerate(gGammalist) :
+    # Alpha        
+    # hFrame.GetYaxis().SetTitle('k_{p} #varepsilon_{n,x}')
+    hFrame.GetYaxis().SetTitle('#alpha_{x,y}')
+    hFrame.GetYaxis().SetRangeUser(alphaMin,alphaMax)
+
+    hFrame.Draw("axis")        
+    for idx,graph in enumerate(gAlphaxlist) :
+        graph.SetLineColor(ROOT.kGray+3)
         graph.SetLineWidth(3)
-        graph.Draw('L')
+        graph.SetMarkerColor(ROOT.kGray+3)
+        graph.SetMarkerSize(1)
+        graph.Draw('LP')
+
+        gAlphaylist[-1].SetLineColor(ROOT.kGray+2)
+        gAlphaylist[-1].SetLineWidth(3)
+        gAlphaylist[-1].SetLineStyle(1)
+        gAlphaylist[-1].SetMarkerColor(ROOT.kGray+2)
+        gAlphaylist[-1].SetMarkerSize(1)
+        gAlphaylist[-1].Draw('LP')
 
     DrawFrame()
-    C.Print(opath + '/%s-Gamma.pdf' % (species))
+    C.Print(opath + '/%s-Alpha.pdf' % (species))
 
-    hFrame.GetYaxis().SetTitle('100#times #sigma_{#gamma}/#LT#gamma#GT')
-    hFrame.GetYaxis().SetRangeUser(grrMin,grrMax)
-    hFrame.Draw("axis")
-    
-    for idx,graph in enumerate(gGrmsrellist) :
-        graph.SetLineWidth(3)        
-        graph.Draw('L')
+    # Gamma twiss       
+    # hFrame.GetYaxis().SetTitle('k_{p} #varepsilon_{n,x}')
+    hFrame.GetYaxis().SetTitle('#gamma_{x,y} [mm^{-1}]')
+    hFrame.GetYaxis().SetRangeUser(gammatMin,gammatMax)
+
+    hFrame.Draw("axis")        
+    for idx,graph in enumerate(gGammaxlist) :
+        graph.SetLineColor(ROOT.kGray+3)
+        graph.SetLineWidth(3)
+        graph.SetMarkerColor(ROOT.kGray+3)
+        graph.SetMarkerSize(1)
+        graph.Draw('LP')
+
+        gGammaylist[-1].SetLineColor(ROOT.kGray+2)
+        gGammaylist[-1].SetLineWidth(3)
+        gGammaylist[-1].SetLineStyle(1)
+        gGammaylist[-1].SetMarkerColor(ROOT.kGray+2)
+        gGammaylist[-1].SetMarkerSize(1)
+        gGammaylist[-1].Draw('LP')
 
     DrawFrame()
-    C.Print(opath + '/%s-Gammarmsrel.pdf' % (species))
+    C.Print(opath + '/%s-Gamma-twiss.pdf' % (species))
+
 
     # Combined energy plot
     # -----
