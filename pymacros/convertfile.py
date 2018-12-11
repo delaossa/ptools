@@ -10,7 +10,7 @@ def parse_args():
     # Command argument line parser 
     parser = argparse.ArgumentParser(description='convertfile.py: ---')
     parser.add_argument('filename', nargs='?', default='none', help='file name')
-    parser.add_argument('-NP', type=int, dest='NP', default=100000, help='Number of macroparticles')
+    parser.add_argument('-NP', type=int, dest='NP', default=-1, help='Number of macroparticles')
 
     args = parser.parse_args()
 

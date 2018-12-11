@@ -35,8 +35,8 @@ int main(int argc,char *argv[]) {
   if(argc<=2) {
     printf("\n Usage: %s <simulation name> <-t(time)>\n",argv[0]);
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
-    printf("      <-cmax(value)> <-imax(value)> <-gmax(value)> <-dmax(value)> \n");
-    printf("      <--center> <--comov> <--units> <--logz>\n");
+    printf("      <-cmax(value)> <-imax(value)> <-gmax(value)> <-dmin(value)> <-dmax(value)> \n");
+    printf("      <--center> <--comov> <--units> <--logz> <--outl>\n");
     printf("      <--png> <--pdf> <--eps> \n");
     printf("      <--file> <--loop>\n");
     return 0;
@@ -57,6 +57,7 @@ int main(int argc,char *argv[]) {
   Float_t cMax = 0.0;
   Float_t iMax = -99999.;
   Float_t gMax = -99999.;
+  Float_t dMin = -99999.;
   Float_t dMax = -99999.;
 
   // Interfacing command line:
@@ -85,6 +86,8 @@ int main(int argc,char *argv[]) {
       opt += "split"; 
     } else if(arg.Contains("--spec")){
       opt += "spec"; 
+    } else if(arg.Contains("--outl")){
+      opt += "outl"; 
     } else if(arg.Contains("--loop")){
       opt += "loop"; 
     } else if(arg.Contains("--file")){
@@ -120,6 +123,9 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-gmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&gMax);
+    } else if(arg.Contains("-dmin")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&dMin);
     } else if(arg.Contains("-dmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&dMax);
@@ -237,7 +243,7 @@ int main(int argc,char *argv[]) {
     Float_t x1Min = pData->GetX1Min() - shiftz;
     Float_t x1Max = pData->GetX1Max() - shiftz;
     Int_t Nx1Bin  = pData->GetX1N();
-    x1Min -= 0.1*(x1Max - x1Min);
+    x1Min -= 0.2*(x1Max - x1Min);
 
     // Adjust binning
     x1Min = floor((x1Min-X1MIN)/dx1) * dx1 + X1MIN;  
@@ -321,7 +327,7 @@ int main(int argc,char *argv[]) {
       hEneVsZ[i] = new TH2F(hName,"",Nx1Bin,x1Min,x1Max,NeBin,eMin,eMax);
       
       // 2D histogram: #gamma vs \zeta
-      divMax = 19.99E-3;
+      divMax = 19.99;
       divMin = -divMax;
       sprintf(hName,"EneVsDiv_%i",i);
       hEneVsDiv[i] = (TH2F*) gROOT->FindObject(hName);
@@ -332,7 +338,7 @@ int main(int argc,char *argv[]) {
 	hEneVsZ[i]->Fill(x1[i][j]-shiftz,ene[i][j],-q[i][j]);
 	// Float_t div = TMath::Sqrt(p2[i][j]*p2[i][j]+p3[i][j]*p3[i][j])/p1[i][j];
 	Float_t div = p2[i][j]/p1[i][j];
-	hEneVsDiv[i]->Fill(ene[i][j]*0.511,div,-q[i][j]);
+	hEneVsDiv[i]->Fill(ene[i][j]*0.511,1000*div,-q[i][j]);
       }
 
       // SI units
@@ -779,12 +785,34 @@ int main(int argc,char *argv[]) {
     if(dMax >= 0.0) {
       hEneVsDivjoint->SetMaximum(dMax);
       // hEneVsDivjoint->GetZaxis()->SetRangeUser(30,dMax);
-      hEneVsDivjoint->GetZaxis()->SetRangeUser(10,dMax);
+      // hEneVsDivjoint->GetZaxis()->SetRangeUser(10,dMax);
+    }
+    if(dMin >= 0.0) {
+      hEneVsDivjoint->SetMinimum(dMin);
     }
     
-    hEneVsDivjoint->GetXaxis()->SetRangeUser(10.0,eMax);
     
+    hEneVsDivjoint->GetXaxis()->SetRangeUser(10.0,eMax);
     hEneVsDivjoint->Draw("col 0");
+
+    TH1D *hProj = NULL;
+    if (opt.Contains("outl")) {
+      hProj = hEneVsDivjoint->ProjectionX("hEneProj");
+      hProj->SetLineWidth(3);
+      hProj->SetLineColor(kWhite);
+
+      Float_t slope = (divMin+(divMax-divMin)/4.0 -divMin)/hProj->GetMaximum();
+      for(Int_t j=1;j<=hProj->GetNbinsX();j++) {
+	Float_t value = hProj->GetBinContent(j);
+	hProj->SetBinContent(j,slope*value+divMin);
+      }
+      
+      hProj->Draw("hist L same");
+
+      cout << Form(" Maximum = %f",hProj->GetMaximum()) << endl;
+    }
+
+    
     gPad->SetFrameLineWidth(5);
     // gPad->SetFrameLineColor(0);
     gPad->Update();
