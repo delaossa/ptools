@@ -551,7 +551,7 @@ int main(int argc,char *argv[]) {
 	// hEneVsZjoint->GetZaxis()->SetLabelOffset(0.8);
 	hEneVsZjoint->GetZaxis()->SetTitleFont(43);
 	hEneVsZjoint->GetZaxis()->SetTitleSize(36);
-	hEneVsZjoint->GetZaxis()->SetTitleOffset(0.9);
+	hEneVsZjoint->GetZaxis()->SetTitleOffset(1.2);
 	hEneVsZjoint->GetZaxis()->SetTickLength(0.01);
 	hEneVsZjoint->GetZaxis()->CenterTitle();
 	hEneVsZjoint->Draw("colz same");

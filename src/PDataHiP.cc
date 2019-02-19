@@ -92,8 +92,8 @@ void PDataHiP::LoadFileNames(Int_t t) {
   
   time = t;
 
-  species.push_back("plasma");
-  species.push_back("beam");
+  // species.push_back("plasma");
+  // species.push_back("beam");
 
   // Time
   char stime[10];
@@ -114,6 +114,44 @@ void PDataHiP::LoadFileNames(Int_t t) {
     Init = kFALSE;
     return;
   }
+
+  // Detecting density species
+  for(UInt_t i=0;i<files.size();i++) {
+    
+    // density data: First extract number of density species
+    if((files[i].find("density") != string::npos) && (files[i].find(".h5") != string::npos)) {
+      
+      string s_beg = "density_";
+      string s_end = Form("_%s.",stime);
+      // string s_end = Form("_%s.h5",stime);
+      
+      string denname = between(files[i],s_beg,s_end);
+      species.push_back(denname);
+    }
+  }
+
+  // plasma species first
+  string pname = "plasma";
+  for(UInt_t i=0;i<species.size();i++) {
+    if(species[i] == pname)
+      if(i!=0 && species.size()>0) {
+	string temp = species[0];
+	species[0] = species[i];
+	species[i] = temp;
+	i--;
+	continue;
+      }
+    if(species[i].find("driver") != string::npos)
+      if(i!=1 && species.size()>1) {
+	string temp = species[1];
+	species[1] = species[i];
+	species[i] = temp;
+	i--;
+	continue;
+      }
+    
+  }
+  
   
   // Initialize the pointers to NULLS
   sCHG = new vector<string*>(NSpecies(),NULL);
@@ -155,11 +193,11 @@ void PDataHiP::LoadFileNames(Int_t t) {
     // RAW data: First extract number of RAW species
     if((files[i].find("raw") != string::npos) && (files[i].find(".h5") != string::npos)) {
       string s_beg = "raw_";
-      string s_end = Form("_%s.h5",stime);
+      string s_end = Form("_%s.",stime);
       
       string rawname = between(files[i],s_beg,s_end);
       rawspecies.push_back(rawname);
-      // cout << Form(" Raw species name = %s",rawname.c_str()) << endl;
+      cout << Form(" Raw species name = %s",rawname.c_str()) << endl;
     }
     
     
@@ -624,10 +662,23 @@ TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *datanameold, Int_t
     for(UInt_t j=0;j<x2Dim;j++) {
       for(UInt_t k=0;k<x3Dim;k++) {
 	UInt_t index = (long)i*(long)x2Dim*(long)x3Dim + (long)j*(long)x3Dim + (long)k;
-	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
+	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos) {
 	  x1x2Array[i][j] += -data[index];
-	else
-	  x1x2Array[i][j] +=  data[index]; 
+	  continue;
+	}
+
+	Bool_t found = kFALSE;
+	for(UInt_t l=0;l<species.size();l++) 
+	  if(sdata.find(species[l]) != string::npos) { 
+	    x1x2Array[i][j] += -data[index];
+	    found = kTRUE;
+	    break;
+	  }
+
+	if(!found) 
+	  x1x2Array[i][j] +=  data[index];
+	
+	
       }
     }
   }

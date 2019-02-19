@@ -267,8 +267,8 @@ int main(int argc,char *argv[]) {
   //  opt += "comovcenter";
 
   // Units
-  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit, ermssUnit,  betaUnit, ezUnit;
-  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit, ermssSUnit, betaSUnit, ezSUnit;
+  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit, ermssUnit,  betaUnit, gammaUnit, ezUnit;
+  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit, ermssSUnit, betaSUnit, gammaSUnit, ezSUnit;
 
   if(opt.Contains("units") && n0) {
 
@@ -321,8 +321,12 @@ int main(int argc,char *argv[]) {
   // emitSUnit = "10 nm";
 
   // beta units
-  betaUnit = PUnits::um;
-  betaSUnit = "#mum";
+  betaUnit = PUnits::mm;
+  betaSUnit = "mm";
+  
+  // gamma units
+  gammaUnit = 1/PUnits::m;
+  gammaSUnit = "m^{-1}";
   
   // Relative energy spread units
   // ermsUnit = 0.1 * PUnits::perCent; 
@@ -1138,6 +1142,7 @@ int main(int argc,char *argv[]) {
     Double_t x_rms = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
     Double_t px_mean = stats[4]/stats[0];
     Double_t px_rms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+    Double_t xpx_rms = xyrms;
 
     Double_t beta = xrms2 / emit;
     Double_t gamma = yrms2 / emit;
@@ -1146,6 +1151,8 @@ int main(int argc,char *argv[]) {
     //    Double_t grel = hP1->GetMean() * eneUnit/PConst::ElectronMassE;
     Double_t grel = hP1->GetMean();
     Double_t betax = beta * grel;
+    Double_t gammax = gamma / grel;
+    Double_t alphax = alpha;
 
     Double_t factor =  beta*beta + 2 * beta * gamma + gamma*gamma - 4 * emit;
     if(factor<0.0) factor *= -1;
@@ -1186,10 +1193,11 @@ int main(int argc,char *argv[]) {
 
     Double_t grel_r = hP1range->GetMean();
     Double_t betax_r = beta * grel_r;
-
+    Double_t gammax_r = gamma / grel_r;
+    Double_t alphax_r = alpha;
 
     // P3X3 SPACE -----------------------
-    Double_t emity = 0, y_mean = 0, y_rms = 0, py_mean = 0, py_rms = 0, betay = 0;
+    Double_t emity = 0, y_mean = 0, y_rms = 0, py_mean = 0, py_rms = 0, ypy_rms = 0, betay = 0;
     Double_t emity_r = 0, y_mean_r = 0, y_rms_r = 0, py_mean_r = 0, py_rms_r = 0, betay_r = 0;
 
     TEllipse *ellipP3X3 = NULL;
@@ -1207,6 +1215,7 @@ int main(int argc,char *argv[]) {
       y_rms = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
       py_mean = stats[4]/stats[0];
       py_rms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+      ypy_rms = xyrms;
       
       beta = xrms2 / emit;
       gamma = yrms2 / emit;
@@ -1475,6 +1484,7 @@ int main(int argc,char *argv[]) {
       x_rms  *= skindepth / tspaUnit;
       px_mean *= PConst::ElectronMassE / teneUnit;
       px_rms  *= PConst::ElectronMassE / teneUnit;
+      xpx_rms *= (PConst::ElectronMassE / teneUnit) * (skindepth / tspaUnit);
 
       x2Min *= skindepth/tspaUnit;
       x2Max *= skindepth/tspaUnit;
@@ -1506,6 +1516,7 @@ int main(int argc,char *argv[]) {
 	y_rms  *= skindepth / tspaUnit;
 	py_mean *= PConst::ElectronMassE / teneUnit;
 	py_rms  *= PConst::ElectronMassE / teneUnit;      
+	ypy_rms  *= (PConst::ElectronMassE / teneUnit) * (skindepth / tspaUnit);      
 	
 	x3Min *= skindepth/tspaUnit;
 	x3Max *= skindepth/tspaUnit;
@@ -1550,13 +1561,26 @@ int main(int argc,char *argv[]) {
       emitx_r *= skindepth/emitUnit;
 
       betax *= skindepth;
+      betax_r *= skindepth;
       if(opt.Contains("best")) {
 	PUnits::BestUnit bbetaSUnit(betax,"Length");
 	bbetaSUnit.GetBestUnits(betaUnit,betaSUnit);
 	cout << bbetaSUnit << endl;
       }
       betax /= betaUnit;
-      betax_r *= skindepth/emitUnit;
+      betax_r /= betaUnit;
+
+      gammax *= kp;
+      gammax_r *= kp;
+
+      gammax /= gammaUnit;
+      gammax_r /= gammaUnit;      
+      alphax *= 1.;
+      alphax_r *= 1.;
+
+      cout << Form(" Emit = %f.3 %s  Beta = %f.3 %s  gamma = %f.3 %s  alpha = %f.3",emitx,emitSUnit.c_str(),betax,betaSUnit.c_str(),gammax,gammaSUnit.c_str(),alphax) << endl;
+      
+      cout << Form(" Emit = %f.3 %s  Beta = %f.3 %s  gamma = %f.3 %s  alpha = %f.3",emitx_r,emitSUnit.c_str(),betax_r,betaSUnit.c_str(),gammax_r,gammaSUnit.c_str(),alphax_r) << endl;
 
       if(pData->Is3D()) {
 	emity *= skindepth / emitUnit;
@@ -1890,7 +1914,26 @@ int main(int argc,char *argv[]) {
       gPxrmsvsTime->SetPoint(nPoints,Time,px_rms);
       gPxrmsvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gxPxrmsvsTime");     
+      TGraph *gxPxrmsvsTime = NULL;
+      gxPxrmsvsTime = (TGraph*) ifile->Get(gName);
+      if(gxPxrmsvsTime==NULL) {
+	gxPxrmsvsTime = new TGraph();
+	gxPxrmsvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gxPxrmsvsTime->SetLineWidth(3);
+	gxPxrmsvsTime->SetLineColor(PGlobals::fieldLine);
+	gxPxrmsvsTime->SetMarkerStyle(20);
+	gxPxrmsvsTime->SetMarkerSize(0.4);
+	gxPxrmsvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gxPxrmsvsTime->GetN(); 
+      }  
 
+      gxPxrmsvsTime->Set(nPoints+1);
+      gxPxrmsvsTime->SetPoint(nPoints,Time,xpx_rms);
+      gxPxrmsvsTime->Write(gName,TObject::kOverwrite);
 
       sprintf(gName,"gXmeanvsTime");     
       TGraph *gXmeanvsTime = NULL;
@@ -2085,6 +2128,26 @@ int main(int argc,char *argv[]) {
       gPyrmsvsTime->SetPoint(nPoints,Time,py_rms);
       gPyrmsvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gyPyrmsvsTime");     
+      TGraph *gyPyrmsvsTime = NULL;
+      gyPyrmsvsTime = (TGraph*) ifile->Get(gName);
+      if(gyPyrmsvsTime==NULL) {
+	gyPyrmsvsTime = new TGraph();
+	gyPyrmsvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gyPyrmsvsTime->SetLineWidth(3);
+	gyPyrmsvsTime->SetLineColor(PGlobals::fieldLine);
+	gyPyrmsvsTime->SetMarkerStyle(20);
+	gyPyrmsvsTime->SetMarkerSize(0.4);
+	gyPyrmsvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gyPyrmsvsTime->GetN(); 
+      }  
+
+      gyPyrmsvsTime->Set(nPoints+1);
+      gyPyrmsvsTime->SetPoint(nPoints,Time,ypy_rms);
+      gyPyrmsvsTime->Write(gName,TObject::kOverwrite);
 
       sprintf(gName,"gYmeanvsTime");     
       TGraph *gYmeanvsTime = NULL;
@@ -2728,6 +2791,7 @@ int main(int argc,char *argv[]) {
 	hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
 	hFrame[i]->GetXaxis()->CenterTitle();
 	hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+	hFrame[i]->GetXaxis()->SetNdivisions(510);
       }
       
       C->cd(0);
@@ -2875,7 +2939,7 @@ int main(int argc,char *argv[]) {
       // }
 
       TLegend *Leg;
-      Leg=new TLegend(0.62,0.6,1 - gPad->GetRightMargin() - 0.02 - 0.03 ,0.95);
+      Leg=new TLegend(0.6,0.6,1 - gPad->GetRightMargin() - 0.04 - 0.03 ,0.95);
 
       PGlobals::SetPaveStyle(Leg);
       Leg->SetTextAlign(12);
@@ -2944,19 +3008,6 @@ int main(int argc,char *argv[]) {
       gXrms->SetLineWidth(lineWidth);
       //gXrms->Draw("PL");
 
-      gErms->SetMarkerStyle(20);
-      gErms->SetMarkerSize(markerSize);
-      gErms->SetMarkerColor(kOrange+10);
-      gErms->SetLineColor(kOrange+10);
-      gErms->SetLineWidth(lineWidth);
-      gErms->Draw("PL");
-
-      if(opt.Contains("bw")) {
-	gErms->SetMarkerStyle(21);
-	gErms->SetMarkerSize(markerSize-0.2);
-      }
-
-
       if(pData->Is3D()) {
 	gEmity->SetMarkerStyle(20);
 	gEmity->SetMarkerColor(kGray+2);
@@ -2972,7 +3023,19 @@ int main(int argc,char *argv[]) {
       gEmitx->SetLineWidth(lineWidth);
       gEmitx->SetLineColor(kGray+3);
       gEmitx->Draw("PL");
-   
+
+      gErms->SetMarkerStyle(20);
+      gErms->SetMarkerSize(markerSize);
+      gErms->SetMarkerColor(kOrange+10);
+      gErms->SetLineColor(kOrange+10);
+      gErms->SetLineWidth(lineWidth);
+      gErms->Draw("PL");
+
+      if(opt.Contains("bw")) {
+	gErms->SetMarkerStyle(21);
+	gErms->SetMarkerSize(markerSize-0.2);
+      }
+      
       Leg->Draw();
 
       gPad->Update();
@@ -3175,11 +3238,11 @@ int main(int argc,char *argv[]) {
 	  
 	}
 
-	TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.40*yrange,
-						x1+0.20*xrange,y2-0.05*yrange,"NDC");
+	TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.50*yrange,
+						x1+0.20*xrange,y2-0.01*yrange,"NDC");
 	PGlobals::SetPaveTextStyle(textInfoX2X1,12); 
 	textInfoX2X1->SetTextColor(kGray+3);
-	textInfoX2X1->SetTextFont(42);
+	textInfoX2X1->SetTextFont(43);
 
 	char text[64];
 	if(opt.Contains("units")) {
@@ -3828,7 +3891,7 @@ int main(int argc,char *argv[]) {
 	pFrame->Draw();
       }
 
-      TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.30,x1+0.20,y2-0.05,"NDC");
+      TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.38,x1+0.28,y2-0.01,"NDC");
       PGlobals::SetPaveTextStyle(textStatInt,12); 
       textStatInt->SetTextColor(kGray+3);
       textStatInt->SetTextFont(42);
@@ -3837,14 +3900,18 @@ int main(int argc,char *argv[]) {
       if(opt.Contains("units")) {
 	sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
 	textStatInt->AddText(text);
-	sprintf(text,"#Deltax = %5.2f %s",x_rms,tspaSUnit.c_str());
+	sprintf(text,"#sigma_{x} = %5.2f %s",x_rms,tspaSUnit.c_str());
 	textStatInt->AddText(text);
-	sprintf(text,"#Deltap_{x} = %5.2f %s",px_rms,teneSUnit.c_str());
+	sprintf(text,"#sigma_{p_{x}} = %5.2f %s/c",px_rms,teneSUnit.c_str());
 	textStatInt->AddText(text);
 	sprintf(text,"#varepsilon_{x} = %5.2f %s",emitx,emitSUnit.c_str());
 	textStatInt->AddText(text);
 	sprintf(text,"#beta_{x} = %5.2f %s",betax,betaSUnit.c_str());
 	textStatInt->AddText(text);
+	sprintf(text,"#gamma_{x} = %5.2f %s",gammax,gammaSUnit.c_str());
+	textStatInt->AddText(text);
+	sprintf(text,"#alpha_{x} = %5.2f",alphax);
+	textStatInt->AddText(text);	
       } else {
 	sprintf(text,"Q = %5.1f Q_{0}",Charge);
 	textStatInt->AddText(text);
