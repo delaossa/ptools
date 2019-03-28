@@ -123,7 +123,8 @@ void PDataHiP::LoadFileNames(Int_t t) {
       
       string s_beg = "density_";
       string s_end = Form("_%s.",stime);
-      // string s_end = Form("_%s.h5",stime);
+      if(files[i].find("charge") != string::npos) 
+	s_end = Form("_charge_%s.",stime);
       
       string denname = between(files[i],s_beg,s_end);
       species.push_back(denname);
@@ -256,7 +257,31 @@ void PDataHiP::LoadFileNames(Int_t t) {
     }
   }
 
-  ReadOutputSummary();
+  //  ReadOutputSummary();
+  if(species.size()) {
+    if(sCHG->at(0)) {
+      rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
+      GetBoxDimensionsFromFile(GetChargeFileName(0)->c_str());
+    } else if(sRAW->at(0)) {
+      rtime = GetRealTimeFromFile(GetRawFileName(0)->c_str());
+      GetBoxDimensionsFromFile(GetRawFileName(0)->c_str());
+    }
+  } else {
+    // cout << "PData:: No species folders in this simulation: " << GetPath() << "." << endl;
+    // cout << "Checking the fields..." << endl;
+    
+    for(UInt_t i=0;i<3;i++) { 
+      if(sEF->at(i)) {
+	rtime = GetRealTimeFromFile(GetEfieldFileName(i)->c_str());
+	GetBoxDimensionsFromFile(GetEfieldFileName(i)->c_str());
+	break;
+      } else
+	continue;
+    }
+    
+    
+  }
+
   ThreeD = kTRUE;
   HiP = kTRUE;
 
@@ -528,12 +553,21 @@ TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *datanameold,
     for(UInt_t j=0;j<x2Dim;j++) {
       for(UInt_t k=0;k<x3Dim;k++) {
 	UInt_t index = (long)i*(long)x2Dim*(long)x3Dim + (long)j*(long)x3Dim + (long)k;
-		
-	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
+	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos) {
 	  x1Array[i] += -data[index];
-	else
-	  x1Array[i] +=  data[index]; 
+	  continue;
+	}
 	
+	Bool_t found = kFALSE;
+	for(UInt_t l=0;l<species.size();l++) 
+	  if(sdata.find(species[l]) != string::npos) { 
+	    x1Array[i] += -data[index];
+	    found = kTRUE;
+	    break;
+	  }
+	
+	if(!found) 
+	  x1Array[i] +=  data[index];			
       }
     }
   }
