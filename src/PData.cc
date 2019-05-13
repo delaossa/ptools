@@ -12,8 +12,8 @@ PData * gData = NULL;
 
 //_______________________________________________________________________
 PData::PData(const char * name, const char * title) : TNamed(name,title) {
-  time = 0;
-  rtime = 0;
+  time = niter = 0;
+  rtime = dt = 0;
   simPath = name;
 
   species.clear(); 
@@ -44,8 +44,8 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
 
 //_______________________________________________________________________
 PData::PData(const char * name) : TNamed(name,name) {
-  time = 0;
-  rtime = 0;
+  time = niter = 0;
+  rtime = dt = 0;
   simPath = name;
 
   species.clear(); 
@@ -76,8 +76,8 @@ PData::PData(const char * name) : TNamed(name,name) {
 
 //_______________________________________________________________________
 PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
-  time = 0;
-  rtime = 0;
+  time = niter = 0;
+  rtime = dt = 0;
   simPath = name;
 
   species.clear(); 
@@ -225,6 +225,9 @@ void PData::ReadParameters(const char * pfile)
 	} else if(word.find("x1Max") != string::npos) {
 	  iss >> pParam.x1Max;
 	  cout << Form(" - x1Max            = %8.4f", pParam.x1Max) << endl;
+	} else if(word.find("x1Edge") != string::npos) {
+	  iss >> pParam.x1Edge;
+	  cout << Form(" - x1Edge           = %8.4f", pParam.x1Edge) << endl;
 	} else if(word.find("x2Min") != string::npos)
 	  iss >> pParam.x2Min;
 	else if(word.find("x2Max") != string::npos)
@@ -552,9 +555,11 @@ void PData::LoadFileNames(Int_t t) {
   if(species.size()) {
     if(sCHG->at(0)) {
       rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
+      dt = GetTimeStepFromFile(GetChargeFileName(0)->c_str());
       GetBoxDimensionsFromFile(GetChargeFileName(0)->c_str());
     } else if(sRAW->at(0)) {
       rtime = GetRealTimeFromFile(GetRawFileName(0)->c_str());
+      dt = GetTimeStepFromFile(GetRawFileName(0)->c_str());
       GetBoxDimensionsFromFile(GetRawFileName(0)->c_str());
     }
   } else {
@@ -564,6 +569,7 @@ void PData::LoadFileNames(Int_t t) {
     for(UInt_t i=0;i<3;i++) { 
       if(sEF->at(i)) {
 	rtime = GetRealTimeFromFile(GetEfieldFileName(i)->c_str());
+	dt = GetTimeStepFromFile(GetEfieldFileName(0)->c_str());
 	GetBoxDimensionsFromFile(GetEfieldFileName(i)->c_str());
 	break;
       } else
@@ -574,20 +580,30 @@ void PData::LoadFileNames(Int_t t) {
   }
 
   // Defines the sub-range for the analysis.
-  // Here at initialization, it is set to the whole simulation range.
-  Double_t shiftx1 = Shift("comov");  
+  Double_t shiftx1 = Shift("comov");
   
+  // Double_t dx1 = GetDX(0);  
+  // Double_t realx1Max = GetXMax(0);  
+  // if(pParam.x1Edge != -999.) {
+  //   Double_t diffx1 = (realx1Max-pParam.x1Edge)/dx1;
+  //   cout << Form("\n Diffx1 = %.6f",diffx1) << endl;
+  //   shiftx1 = diffx1 * dx1;
+  //   cout << Form("\n Shiftx1 = %.6f. dx1 = %.6f",shiftx1,dx1) << endl;    
+  // }
+   
   if(pParam.x1Min == -999.) {
     XMINR[0] = GetXMin(0);
-  } else {
+  } else {    
     XMINR[0] = pParam.x1Min + shiftx1;
     cout << Form(" x1Min = %f",XMINR[0]) << endl;
+    cout << Form(" x1Min (real) = %f",GetXMin(0)) << endl;
   }
   if(pParam.x1Max == -999.) {
     XMAXR[0] = GetXMax(0);
   } else {
     XMAXR[0] = pParam.x1Max + shiftx1;
     cout << Form(" x1Max = %f",XMAXR[0]) << endl;
+    cout << Form(" x1Max (real) = %f",GetXMax(0)) << endl;
   }
   if(pParam.x2Min == -999.) {
     XMINR[1] = GetXMin(1);
@@ -611,6 +627,11 @@ void PData::LoadFileNames(Int_t t) {
   }
   
   Init = kTRUE;
+
+  // cout << Form(" x1Min = %.4f, x1Max = %.4f : NBinsX  = %i",GetXMin(0),GetXMax(0),GetNX(0)) << endl;
+  // cout << Form(" x1Min = %.4f, x1Max = %.4f : NBinsX  = %i",GetX1Min(),GetX1Max(),GetX1N()) << endl;
+
+  
 }
 
 //_______________________________________________________________________
@@ -1016,6 +1037,42 @@ Double_t PData::GetRealTimeFromFile(const char *filename) {
   delete root;
 
   return rtime;
+}
+
+//_______________________________________________________________________
+Double_t PData::GetTimeStepFromFile(const char *filename) {
+  
+  // Open input HDF5 file
+  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  
+  // Open main group for data reading
+  Group *root = new Group(h5.openGroup("/"));
+  
+  // Get time info from its attributes
+  // ---------------------------------
+  Attribute *att = new Attribute(root->openAttribute("TIME"));
+  Double_t rt;
+  att->read(PredType::NATIVE_DOUBLE,&rt); 
+
+  Attribute *att2 = new Attribute(root->openAttribute("ITER"));
+  Int_t NT;
+  att2->read(PredType::NATIVE_INT,&NT); 
+
+  niter = NT;
+  dt = rt/NT;
+  
+  // Write time info to a string
+  // char stime[48];
+  // sprintf(stime," at t=%6.5f [%s]",time,"#omega_{p}^{-1}"); 
+  cout << Form("\n Time = %.6f (Niter = %i) --> dt = %.6f",rt,niter,dt) << endl;
+
+  att->close();
+  delete att;
+  att2->close();
+  delete att2;
+  delete root;
+
+  return dt;
 }
 
 //_______________________________________________________________________
@@ -2303,13 +2360,17 @@ TH1F* PData::GetH1SliceZ3D(const char *filename,const char *dataname,
   Float_t x3AvgFactor = GetNX(2)/dataDims[0];
   Float_t dx3   = GetDX(2) * x3AvgFactor;
   
-  TH1F *h1D = new TH1F(); 
-  h1D->SetBins(x1Dim,x1Min,x1Max);
-  for(UInt_t k=0;k<x1Dim;k++) { 
+  TH1F *h1D = new TH1F();
+  UInt_t x1DimAvg = x1Dim/Navg;
+  h1D->SetBins(x1DimAvg,x1Min,x1Max);
+  for(UInt_t k=0;k<x1Dim;k++) {
+    UInt_t kavg = k/Navg;
+    if(k%Navg) continue;
+
     Double_t content = x1Array[k];
     if(opt.Contains("avg")) content /= x3Dim * x2Dim;
     else if(opt.Contains("int")) content *= dx2 * dx3;
-    h1D->SetBinContent(k+1,content);
+    h1D->SetBinContent(kavg+1,content);
   }
   root->close();
   
@@ -2729,14 +2790,19 @@ TH2F* PData::GetH2SliceZX(const char *filename,const char *dataname, Int_t First
   UInt_t x3AvgFactor = GetNX(2)/dataDims[0];
   Double_t dx3 = GetDX(2) * x3AvgFactor;
 
-  TH2F *h2D = new TH2F(); 
-  h2D->SetBins(x1Dim,x1Min,x1Max,x2Dim,x2Min,x2Max); 
+  TH2F *h2D = new TH2F();
+  UInt_t x1DimAvg = x1Dim/Navg;
+  // cout << Form(" x1Dim = %i (x1DimAvg = %i)  x1Min = %.4f, x1Max = %.4f",x1Dim,x1DimAvg,x1Min,x1Max);
+  h2D->SetBins(x1DimAvg,x1Min,x1Max,x2Dim,x2Min,x2Max); 
   for(UInt_t j=0;j<x2Dim;j++) 
-    for(UInt_t k=0;k<x1Dim;k++) { 
+    for(UInt_t k=0;k<x1Dim;k++) {
+      UInt_t kavg = k/Navg;
+      if(k%Navg) continue;
+
       Double_t content = x2x1Array[j][k];
       if(opt.Contains("avg")) content /= x3Dim;
       else if(opt.Contains("int")) content *= dx3;
-      h2D->SetBinContent(k+1,j+1,content);
+      h2D->SetBinContent(kavg+1,j+1,content);
     }
     
   delete count;
@@ -2850,14 +2916,18 @@ TH2F* PData::GetH2SliceZY(const char *filename,const char *dataname, Int_t First
   UInt_t x2AvgFactor = GetNX(1)/dataDims[1];
   Double_t dx2   = GetDX(1) * x2AvgFactor;
   
-  TH2F *h2D = new TH2F(); 
-  h2D->SetBins(x1Dim,x1Min,x1Max,x3Dim,x3Min,x3Max); 
+  TH2F *h2D = new TH2F();
+  UInt_t x1DimAvg = x1Dim/Navg;
+  h2D->SetBins(x1DimAvg,x1Min,x1Max,x3Dim,x3Min,x3Max); 
   for(UInt_t j=0;j<x3Dim;j++) 
-    for(UInt_t k=0;k<x1Dim;k++) { 
+    for(UInt_t k=0;k<x1Dim;k++) {
+      UInt_t kavg = k/Navg;
+      if(k%Navg) continue;
+      
       Double_t content = x3x1Array[j][k];
       if(opt.Contains("avg")) content /= x2Dim;
       else if(opt.Contains("int")) content *= dx2;
-      h2D->SetBinContent(k+1,j+1,content);
+      h2D->SetBinContent(kavg+1,j+1,content);
     }
     
   delete count;
@@ -3338,17 +3408,17 @@ Double_t PData::Shift(TString option) {
       shiftx1 += GetPlasmaStart()*kp;
   }
 
-  Double_t realtime =  GetRealTime();
+  Double_t realtime  = GetRealTime();
   if(opt.Contains("comov")) {
     Double_t v = GetBeamVelocity();    
     if(v==0) v = 1.0; // If equals to 0 (default), then set to c.
     shiftx1 += v * realtime;
-  }   
+  }
 
-  Double_t x1max0 = pParam.x1Max;
   Double_t shiftcorr = 0.0;
-  // if(x1max0>-999.) 
-  //   shiftcorr = (GetXMax(0) - x1max0) - realtime;
+  if(pParam.x1Edge != -999.) {
+    shiftcorr = GetXMax(0) - pParam.x1Edge - realtime;
+  }
     
   return shiftx1 + shiftcorr;
 }

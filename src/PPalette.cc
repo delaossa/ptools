@@ -560,9 +560,9 @@ Int_t PPalette::SetPalette(const char * name)
     const Int_t NCont = 255;
 
     Double_t Stops[NRGBs] = { 0.0, 0.25,0.50,0.75,1.0};
-    Double_t Red[NRGBs]   = { 0.9, 0.3, 0.7, 1.0, 1.0};
-    Double_t Green[NRGBs] = { 0.9, 0.0, 0.0, 0.5, 1.0};
-    Double_t Blue[NRGBs]  = { 0.9, 0.8, 0.5, 0.0, 0.5};
+    Double_t Red[NRGBs]   = { 0.99, 0.10, 0.92, 0.97, 0.99};
+    Double_t Green[NRGBs] = { 0.99, 0.09, 0.34, 0.85, 0.98};
+    Double_t Blue[NRGBs]  = { 0.99, 0.42, 0.16, 0.19, 0.82};
     if(!fColors)
       this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
     else

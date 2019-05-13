@@ -102,7 +102,8 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t kp = pData->GetPlasmaK();
   Float_t skindepth = pData->GetPlasmaSkinDepth();
   Float_t E0 = pData->GetPlasmaE0();
-
+  Float_t denloc0 = pData->GetDenLoc(0);
+  
   // Some beam properties:
   // Float_t Ebeam = pData->GetBeamEnergy();
   // Float_t gamma = pData->GetBeamGamma();
@@ -334,7 +335,11 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     Int_t binx = hDen2D[0]->GetXaxis()->FindBin(0.);
     Int_t biny = hDen2D[0]->GetYaxis()->FindBin(yMax - ((yMax-yMin)/8.0));
     
-    Float_t localden = hDen2D[0]->GetBinContent(binx,biny);
+    // Float_t localden = hDen2D[0]->GetBinContent(binx,biny);
+    Float_t localden = 1.0;
+    if (denloc0>0) {
+      localden = denloc0;
+    }
     Float_t kfactor = TMath::Sqrt(localden);
 
     cout << Form(" - Local density = %.2f",localden) << endl;
@@ -662,18 +667,20 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   Float_t Base  = 1;
   Float_t baseden = Base;
   Float_t localden = baseden;
+  if (denloc0>0) {
+    localden = denloc0;
+  }
   
-  if(hDen2D[0]) {
-    
+  if(hDen2D[0]) {  
     // Local value of the density at \zeta = 0 and y = a quarter of the yRange.
     Int_t binx = hDen2D[0]->GetXaxis()->FindBin(0.);
     Int_t biny = hDen2D[0]->GetYaxis()->FindBin(yMax - ((yMax-yMin)/8.0));
-    localden = hDen2D[0]->GetBinContent(binx,biny);
-    
-    cout << Form(" Local density = %.4f n0",localden) << endl;
+    if (denloc0<0) 
+      localden = hDen2D[0]->GetBinContent(binx,biny);
   }
+  cout << Form(" Local density = %.4f n0",localden) << endl;
   
-  if(opt.Contains("lden"))
+  if(opt.Contains("lden") || (denloc0>0))
     baseden = localden;
   
   Float_t *Max = new Float_t[Nspecies];

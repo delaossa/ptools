@@ -71,6 +71,9 @@ struct pparam {
   Double_t EMin;
   Double_t EMax;
 
+  // Initial right edge of the simulation
+  Double_t x1Edge;
+  
   // Density ranges
   Double_t denMin;
   Double_t denMax;
@@ -122,7 +125,10 @@ public:
   string  GetPath() { return simPath; };
   Int_t   GetTime() {  return time; } ;
   virtual Double_t GetRealTimeFromFile(const char *filename);
+  virtual Double_t GetTimeStepFromFile(const char *filename);
   Double_t GetRealTime() { return rtime; };
+  Double_t GetDT() { return dt; } ;
+  Int_t    GetNiter() { return niter; } ;
   Bool_t  IsInit() { return Init; }
   Bool_t  Is3D() { return ThreeD; }
   Bool_t  IsCyl() { return Cyl; }
@@ -205,6 +211,8 @@ public:
   
   
   // Hyperslab access methods
+  Double_t  GetX1Min0() { return pParam.x1Min; }
+  Double_t  GetX1Max0() { return pParam.x1Max; }
   Double_t  GetX1Min() { return XMINR[0]; }
   Double_t  GetX1Max() { return XMAXR[0]; }
   Double_t  GetX2Min() { return XMINR[1]; }
@@ -212,8 +220,13 @@ public:
   Double_t  GetX3Min() { return XMINR[2]; }
   Double_t  GetX3Max() { return XMAXR[2]; }
 
-  Int_t  GetX1iMin() { return round((GetX1Min()-GetXMin(0))/GetDX(0)); }
-  Int_t  GetX2iMin() { return round((GetX2Min()-GetXMin(1))/GetDX(1)); }
+  Int_t  GetX1iMin() {
+    Int_t value = round((GetX1Min()-GetXMin(0))/GetDX(0));
+    if (value<0) value = 0;
+    return  value;
+  }
+  Int_t  GetX2iMin() { return round((GetX2Min()-GetXMin(1))/GetDX(1));
+  }
   Int_t  GetX3iMin() { return round((GetX3Min()-GetXMin(2))/GetDX(2)); }
 
   Int_t  GetX1iMax() { return round((GetX1Max()-GetXMin(0))/GetDX(0)); }
@@ -230,6 +243,8 @@ public:
   void  SetX2Max(Double_t x) { XMAXR[1] = x; }
   void  SetX3Min(Double_t x) { XMINR[2] = x; }
   void  SetX3Max(Double_t x) { XMAXR[2] = x; }
+
+  Double_t GetX1Edge() { return pParam.x1Edge; }
 
   // Density ranges
   Double_t  GetDenMin(Int_t i)  {
@@ -485,7 +500,9 @@ protected:
   static PData             *fgData;
 
   Int_t                       time;   // Current file time step.
+  Int_t                      niter;   // Number of iterations.
   Double_t                   rtime;   // Current time.
+  Double_t                      dt;   // time step
   Int_t                       NDIM;   // Dimension of the simulation.
   Int_t                        *NX;   // Number of cells in every dimension.
   Double_t                   *XMIN;   // Low edges of simulation box.
@@ -573,6 +590,8 @@ void PData::ResetParameters() {
   
   pParam.x1Min = pParam.x1Max  = pParam.x2Min = pParam.x2Max 
     = pParam.x3Min = pParam.x3Max = -999.;
+
+  pParam.x1Edge = -999.;
   
   // Default plasma density
   pParam.pDensity = 1e17;  // particles per cm3. 

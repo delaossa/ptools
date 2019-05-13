@@ -150,7 +150,8 @@ int main(int argc,char *argv[]) {
       if(!opt.Contains("comov"))
 	opt += "comov";
     }
-  
+
+    //cout << Form(" Navg = %i",Navg) << endl;
     pData->SetNavg(Navg);
   
     // Some plasma constants
@@ -1142,8 +1143,11 @@ int main(int argc,char *argv[]) {
 	  
 	  // PUnits::BestUnit bcurSUnit(hCur1D[i]->GetMaximum() * PConst::I0,"Current");
 	  // bcurSUnit.GetBestUnits(curUnit,curSUnit);
-	  PUnits::BestUnit bcurSUnit(maxCur * PConst::I0,"Current");
-	  bcurSUnit.GetBestUnits(curUnit,curSUnit);
+	  // PUnits::BestUnit bcurSUnit(maxCur * PConst::I0,"Current");
+	  // bcurSUnit.GetBestUnits(curUnit,curSUnit);
+	  curUnit = PUnits::kA;
+	  curSUnit = "kA";
+
 	  
 	  hCur1D[i]->Scale(PConst::I0 / curUnit);
 	  hCur1D[i]->GetYaxis()->SetTitle(Form("I [%s]",curSUnit.c_str()));

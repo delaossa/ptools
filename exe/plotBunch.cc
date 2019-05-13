@@ -337,8 +337,10 @@ int main(int argc,char *argv[]) {
   // ermsSUnit = "0.1 %";
 
   // Slice elative energy spread units  
-  ermssUnit = 0.1 * PUnits::perCent; 
-  ermssSUnit = "0.1%";
+  // ermssUnit = 0.1 * PUnits::perCent; 
+  // ermssSUnit = "0.1%";
+  ermssUnit = PUnits::perCent; 
+  ermssSUnit = "%";
 
   
   // Ez unit
