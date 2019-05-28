@@ -21,6 +21,7 @@ def parse_args():
     parser.add_argument('--logz', action='store_true', default=0, help='logaritmic z scale')
     parser.add_argument('--png', action='store_true', default=0, help='png ')
     parser.add_argument('--joint', action='store_true', default=0, help='joints the histograms')
+    parser.add_argument('--match', action='store_true', default=0, help='match plasma color')
     parser.add_argument('--hp', action='store_true', default=0, help='HiPACE simulation')
     parser.add_argument('opath', nargs='?', default=None, help='Output folder')
     
@@ -45,7 +46,6 @@ def DrawFrame() :
 
 def DrawPaletteFrame(histo,Ns=1,ip=0) :
     gPad.Update()
-
     
     y1 = gPad.GetBottomMargin()
     y2 = 1 - gPad.GetTopMargin()
@@ -84,7 +84,7 @@ def DrawPaletteFrame(histo,Ns=1,ip=0) :
     return pFrame
 
 def pcanvas(histos,args):
-    ypadsize = 500
+    ypadsize = 700
     ymarginsize = 200
     ysize = ypadsize + ymarginsize
     xsize = 1050
@@ -120,18 +120,15 @@ def pcanvas(histos,args):
     PGlobals.CanvasPartition(C,N,lMargin,rMargin,bMargin,tMargin,mMargin)
     basepad = C.cd(0)
 
-    print(' aspect ratio = ',ar0)
     pad = np.empty(N, dtype=object)
     for i in range(N) :
         ipad = N-1-i
         padname = 'pad_%i'%ipad
-        print('pad name = %s'%padname)
-        #pad.append(ROOT.gROOT.FindObject(padname))
         pad[i] = ROOT.gROOT.FindObject(padname)
         pad[i].cd()
         pad[i].SetTickx(1)
         pad[i].SetTicky(1)
-        if args.logz==True :
+        if args.logz and i==0 :
             pad[i].SetLogz(1)
 
         xFactor = pad[0].GetAbsWNDC()/pad[i].GetAbsWNDC()
@@ -162,7 +159,7 @@ def pcanvas(histos,args):
             hist.GetZaxis().SetLabelFont(fonttype)
             hist.GetZaxis().SetLabelSize(lzsize)
             hist.GetZaxis().SetTickLength(NS*ar*tylength)     
-            if args.logz :
+            if args.logz and i==0 :
 	        hist.GetZaxis().SetLabelOffset(-lyoffset * (250.0/ypadsize))
             else :
                 hist.GetZaxis().SetLabelOffset(lyoffset)
@@ -240,6 +237,9 @@ def main():
         
         if pData.GetDenMax(i) != -999. : 
 	    Max[i] = pData.GetDenMax(i)
+
+        if args.logz and Min[i]<0.0 :
+            Min[i] = 0.01
         
         if args.pden>0.0 :
             hDen2D[-1].Scale(args.pden)
@@ -267,35 +267,38 @@ def main():
     hK2D.Scale(1E9/ct.c)
     
     histos = []
-    histos.append([hDen2D[0],hDen2D[1]])
-    histos.append(hW2D)
+    if args.joint :
+        histos.append(hDen2D[0])
+    else :
+        histos.append([hDen2D[0],hDen2D[1]])
+
     histos.append(hK2D)
     
     C = pcanvas(histos,args)
 
-    pad = ROOT.gROOT.FindObject('pad_2')
+    pad = ROOT.gROOT.FindObject('pad_1')
     pad.cd()
 
     # Setup plasma palette
     exPlasma = TExec('exPlasma','plasmaPalette->cd();')
     plasmaPalette = ROOT.gROOT.FindObject('plasma')
 
-    baseden = 1.0
+    baseden = 0.5
     if args.pden>0.0 :
         baseden *= args.pden
 
     if args.logz :
         a = 1.0/(np.log(Max[0])-np.log(Min[0]))
         b = np.log(Min[0])
-        basePos = a*(np.log(baseden) - b)
+        basepos = a*(np.log(baseden) - b)
     else :
-        basePos = (1.0/(Max[0]-Min[0]))*(baseden - Min[0])
-    
-    Stops = np.array( [0.00, basePos, 1.00] )
+        basepos = (1.0/(Max[0]-Min[0]))*(baseden - Min[0])
+
+    Stops = np.array( [0.00, basepos, 1.00] )
     Red   = np.array( [0.99, 0.90, 0.00] )
     Green = np.array( [0.99, 0.90, 0.00] )
     Blue  = np.array( [0.99, 0.90, 0.00] )
-    NRGBs = 3
+    NRGBs = len(Stops)
     NCont = 99
     plasmaPalette.CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, 1.0)
     
@@ -316,10 +319,18 @@ def main():
     exBeam   = TExec('exBeam','beamPalette->cd();')
     beamPalette = ROOT.gROOT.FindObject('beam')
 
-    Stops = np.array( [0.00, 0.40, 0.50, 0.60, 1.00] )
-    Red   = np.array( [basecolor.GetRed(), 0.22, 0.39, 0.70, 1.00] )
-    Green = np.array( [basecolor.GetGreen(), 0.34, 0.05, 0.20, 1.00] )
-    Blue  = np.array( [basecolor.GetBlue(), 0.58, 0.33, 0.30, 0.20] )
+    if args.match :
+        Stops = np.array( [0.00, 0.40, 0.50, 0.60, 1.00] )
+        Red   = np.array( [basecolor.GetRed(), 0.22, 0.39, 0.70, 1.00] )
+        Green = np.array( [basecolor.GetGreen(), 0.34, 0.05, 0.20, 1.00] )
+        Blue  = np.array( [basecolor.GetBlue(), 0.58, 0.33, 0.30, 0.20] )
+    else :
+        Stops = np.array( [0.00, 0.20, 0.50, 1.00] )
+        Red   = np.array( [0.22, 0.39, 0.70, 1.00] )
+        Green = np.array( [0.34, 0.05, 0.20, 1.00] )
+        Blue  = np.array( [0.58, 0.33, 0.30, 0.20] )
+        
+        
     NRGBs = len(Stops)
     NCont = 99
     beamPalette.CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, 1.0)
@@ -433,33 +444,18 @@ def main():
 
 
     # -----------
-    pad = ROOT.gROOT.FindObject('pad_1')
+    # -----------
+    pad = ROOT.gROOT.FindObject('pad_0')
     pad.cd()
 
     exField = TExec('exField','fieldPalette->cd();')
     fieldPalette = ROOT.gROOT.FindObject('field')
 
-    hFrame2 = hW2D.Clone('hFrame')
-    hFrame2.Reset()
-    hFrame2.Draw('axis')
-
-    hW2D.GetZaxis().SetRangeUser(-50,50)
-    hW2D.GetZaxis().SetTitle('W_{x}[GV/m]')
-    exField.Draw()
-    hW2D.Draw('colz0 same')
-    p3Frame = DrawPaletteFrame(hW2D)
-
-    padFrame2 = DrawFrame()
-    
-    # -----------
-    pad = ROOT.gROOT.FindObject('pad_0')
-    pad.cd()
-
     hFrame3 = hK2D.Clone('hFrame3')
     hFrame3.Reset()
     hFrame3.Draw('axis')
 
-    # hK2D.GetZaxis().SetRangeUser(-60,60)
+    hK2D.GetZaxis().SetRangeUser(-60,60)
     hK2D.GetZaxis().SetTitle('g[MT/m]')
     exField.Draw()
     hK2D.Draw('colz0 same')
