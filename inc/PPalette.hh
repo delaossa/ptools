@@ -11,6 +11,12 @@ class PPalette : public TNamed
 public:
   
   PPalette(const char * name);
+  PPalette(const PPalette &pal) {
+    fNColors = pal.fNColors;
+    fColors = pal.fColors;
+    fAlpha = pal.fAlpha;
+  }
+  
   virtual ~PPalette();
   
   Int_t   CreateGradientColorTable(UInt_t Number, 
