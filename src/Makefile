@@ -13,7 +13,7 @@ LIBS          := $(ROOTLIBS) $(HDF5LIBS)
 
 SHLIBFILE    := lib$(LIB).$(DllSuf)
 
-RLIBDEP	      = libCore.so libCint.so libRIO.so libHist.so libTree.so libPhysics.so \
+RLIBDEP	      = libCore.so libCint.so libRIO.so libHist.so libTree.so \
 		libMathCore.so libhdf5_cpp.so
 
 ALLDEPEND     = $(addsuffix .d,$(MODULES))

@@ -11,4 +11,4 @@ include $(BASEDIR)/config/Makefile.arch
 
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBDIR   := $(shell root-config --libdir)
-ROOTLIBS     := -L$(ROOTLIBDIR) -lCore -lRIO -lHist -lGpad -lTree -lPhysics -lMathCore 
+ROOTLIBS     := -L$(ROOTLIBDIR) -lCore -lRIO -lHist -lGpad -lTree -lMathCore 
