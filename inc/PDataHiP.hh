@@ -56,14 +56,14 @@ public:
   } 
   
   TH2F*  GetWField2DSliceZX(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) 
-  { char nam[3];
+  { char nam[6];
     if(i==0) sprintf(nam,"ExmBy");
     else if(i==1) sprintf(nam,"EypBx");
     return GetH2SliceZX(GetWfieldFileName(i)->c_str(),nam,Firstx3Bin,Lastx3Bin,options); 
   } 
 
   TH2F*  GetWField(UInt_t i, const char *options="") 
-  { char nam[3]; 
+  { char nam[6]; 
     if(i==0) sprintf(nam,"ExmBy");
     else if(i==1) sprintf(nam,"EypBx");
     return GetH2(GetWfieldFileName(i)->c_str(),nam,options); 
@@ -84,7 +84,7 @@ public:
   } 
   
   TH2F*  GetWField2DSliceZY(UInt_t i, Int_t Firstx3Bin = -1, Int_t Lastx3Bin = 1, const char *options="avg" ) 
-  { char nam[3];
+  { char nam[6];
     if(i==0) sprintf(nam,"ExmBy");
     else if(i==1) sprintf(nam,"EypBx");
     return GetH2SliceZY(GetWfieldFileName(i)->c_str(),nam,Firstx3Bin,Lastx3Bin,options); 

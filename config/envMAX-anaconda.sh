@@ -7,7 +7,7 @@ export ROOTSYS=$CONDA_PREFIX
 export HDF5CPP=$CONDA_PREFIX
 
 # ptools environment:
-export PTOOLS=/data/netapp/fla/plasma/software-max/ptools_ana
+export PTOOLS=/data/netapp/fla/plasma/software-max/ptools-ana
 export DYLD_LIBRARY_PATH=$PTOOLS/lib:$DYLD_LIBRARY_PATH
 export PATH=$PTOOLS/bin:$PTOOLS/scripts:$PTOOLS/pymacros:$PATH
 export PYTHONPATH=$PTOOLS/pymacros:$PYTHONPATH
