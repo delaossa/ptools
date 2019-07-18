@@ -1589,7 +1589,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
 
   
-  TString drawopt = "colz same";
+  TString drawopt = "colz same0";
 
   // Actual Plotting!
   // ------------------------------------------------------------
@@ -2514,7 +2514,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hE2D[1]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);
   
     exField->Draw();
-    hE2D[1]->Draw("colz0 same");
+    hE2D[1]->Draw("colz0 same0");
 
     if(opt.Contains("bopar")) {
       
@@ -2657,7 +2657,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     hE2D[2]->GetZaxis()->SetTickLength(xFactor*tylength/yFactor);  
   
     exField->Draw();
-    hE2D[2]->Draw("colz0 same");
+    hE2D[2]->Draw("colz0 same0");
 
     if(opt.Contains("1dline")) {
       lineYzero->Draw();
@@ -3147,7 +3147,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
     exPot->Draw();
   
     hV2D->GetZaxis()->SetRangeUser(Vmin,Vmax);
-    hV2D->Draw("colz0 same");
+    hV2D->Draw("colz0 same0");
     
     if(opt.Contains("cont")) {
       for(Int_t i=0;i<graphsV2D.GetEntriesFast();i++) {
