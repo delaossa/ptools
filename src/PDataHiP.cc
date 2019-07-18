@@ -594,11 +594,11 @@ TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *datanameold,
   }
   root->close();
   
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
+  delete[] data;
   delete dataSet;
   delete root;
-  delete data;
   
   return h1D;
 }
@@ -743,11 +743,11 @@ TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *datanameold, Int_t
       h2D->SetBinContent(i+1,j+1,content);
     }
     
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
+  delete[] data;
   delete dataSet;
   delete root;
-  delete data;
   
   return h2D;
 }
@@ -879,11 +879,11 @@ TH2F* PDataHiP::GetH2SliceZY(const char *filename,const char *datanameold, Int_t
       h2D->SetBinContent(i+1,j+1,content);
     }
     
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
+  delete[] data;
   delete dataSet;
   delete root;
-  delete data;
   
   return h2D;
 }

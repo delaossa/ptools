@@ -2547,8 +2547,8 @@ int main(int argc,char *argv[]) {
       gP1->SetFillStyle(1001);
       gP1->SetFillColor(PGlobals::elecFill);
 
-      delete yarray;
-      delete xarray;
+      delete[] yarray;
+      delete[] xarray;
 
       // Ranges!!
       Double_t yMin =  999.9;
@@ -2714,15 +2714,15 @@ int main(int argc,char *argv[]) {
       } else {
 	if(opt.Contains("units"))
 	  sprintf(ctext,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
-      else
-	sprintf(ctext,"k_{p} #varepsilon_{n,x} = %5.2f",emitx);
+	else
+	  sprintf(ctext,"k_{p} #varepsilon_{n,x} = %5.2f",emitx);
 	
 	textInfo->AddText(ctext);
 	if(pData->Is3D()) {
 	  if(opt.Contains("units"))
 	    sprintf(ctext,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
-	else
-	  sprintf(ctext,"k_{p} #varepsilon_{n,y} = %5.2f",emity);
+	  else
+	    sprintf(ctext,"k_{p} #varepsilon_{n,y} = %5.2f",emity);
 	
 	  textInfo->AddText(ctext);
 	}
@@ -3056,7 +3056,7 @@ int main(int argc,char *argv[]) {
       // textLabel[0]->Draw();
 
       TBox *lFrame2 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			      gPad->GetUxmax(), gPad->GetUymax());
+			       gPad->GetUxmax(), gPad->GetUymax());
       lFrame2->SetFillStyle(0);
       lFrame2->SetLineColor(PGlobals::frameColor);
       lFrame2->SetLineWidth(PGlobals::frameWidth);
@@ -3275,7 +3275,7 @@ int main(int argc,char *argv[]) {
 	textInfoX2X1->Draw();
 
 	TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			      gPad->GetUxmax(), gPad->GetUymax());
+				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
 	lFrame->SetLineWidth(PGlobals::frameWidth);
@@ -3396,7 +3396,7 @@ int main(int argc,char *argv[]) {
 	textInfoX3X1->Draw();
 
 	TBox *lFrame2 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			      gPad->GetUxmax(), gPad->GetUymax());
+				 gPad->GetUxmax(), gPad->GetUymax());
 	lFrame2->SetFillStyle(0);
 	lFrame2->SetLineColor(PGlobals::frameColor);
 	lFrame2->SetLineWidth(PGlobals::frameWidth);
@@ -3930,7 +3930,7 @@ int main(int argc,char *argv[]) {
       textStatInt->Draw();
 
       TBox *lFrame3 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			      gPad->GetUxmax(), gPad->GetUymax());
+			       gPad->GetUxmax(), gPad->GetUymax());
       lFrame3->SetFillStyle(0);
       lFrame3->SetLineColor(PGlobals::frameColor);
       lFrame3->SetLineWidth(PGlobals::frameWidth);
@@ -4225,12 +4225,12 @@ int main(int argc,char *argv[]) {
 	textStatInt->SetTextColor(kGray+3);
 	textStatInt->SetTextFont(42);
 	
-	char text[64];
-	sprintf(text,Form("#LTx#GT_{rms} = %5.2f %s",xrms,tspaSUnit.c_str()));
+	char text[128];
+	sprintf(text,"#LTx#GT_{rms} = %5.2f %s",xrms,tspaSUnit.c_str());
 	textStatInt->AddText(text);
-	sprintf(text,Form("#LTp_{x}#GT_{rms} = %5.2f %s/c",yrms,teneSUnit.c_str()));
+	sprintf(text,"#LTp_{x}#GT_{rms} = %5.2f %s/c",yrms,teneSUnit.c_str());
 	textStatInt->AddText(text);
-	sprintf(text,Form("#varepsilon_{n} = %5.2f %s",emitx,emitSUnit.c_str()));
+	sprintf(text,"#varepsilon_{n} = %5.2f %s",emitx,emitSUnit.c_str());
 	textStatInt->AddText(text);
 	textStatInt->Draw();
 	
@@ -4320,13 +4320,13 @@ int main(int argc,char *argv[]) {
 	  textStat[k]->SetTextFont(42);
 	  
 	  char text[64];
-	  sprintf(text,Form("%5.2f %s < #zeta < %5.2f %s",sBinLim[k],spaSUnit.c_str(),sBinLim[k+1],spaSUnit.c_str()));
+	  sprintf(text,"%5.2f %s < #zeta < %5.2f %s",sBinLim[k],spaSUnit.c_str(),sBinLim[k+1],spaSUnit.c_str());
 	  textStat[k]->AddText(text);
-	  sprintf(text,Form("#LTx#GT_{rms} = %5.2f %s",sx_rms[k],tspaSUnit.c_str()));
+	  sprintf(text,"#LTx#GT_{rms} = %5.2f %s",sx_rms[k],tspaSUnit.c_str());
 	  textStat[k]->AddText(text);
-	  sprintf(text,Form("#LTp_{x}#GT_{rms} = %5.2f %s",spx_rms[k],teneSUnit.c_str()));
+	  sprintf(text,"#LTp_{x}#GT_{rms} = %5.2f %s",spx_rms[k],teneSUnit.c_str());
 	  textStat[k]->AddText(text);
-	  sprintf(text,Form("#varepsilon_{n,x} = %5.2f %s",semitx[k],emitSUnit.c_str()));
+	  sprintf(text,"#varepsilon_{n,x} = %5.2f %s",semitx[k],emitSUnit.c_str());
 	  textStat[k]->AddText(text);
 	  textStat[k]->Draw();
 	  
@@ -4383,25 +4383,25 @@ int main(int argc,char *argv[]) {
     }
     
     // Delete[] newly created vectors
-    delete sBinLim;
-    delete zbin;
-    delete sEmean;
-    delete sErms;
+    delete[] sBinLim;
+    delete[] zbin;
+    delete[] sEmean;
+    delete[] sErms;
 
-    delete sx_mean;
-    delete sx_rms;
-    delete spx_mean;
-    delete spx_rms;
-    delete semitx;
-    delete sbetax;
+    delete[] sx_mean;
+    delete[] sx_rms;
+    delete[] spx_mean;
+    delete[] spx_rms;
+    delete[] semitx;
+    delete[] sbetax;
 
     if(pData->Is3D()) {  
-      delete sy_mean;
-      delete sy_rms;
-      delete spy_mean;
-      delete spy_rms;
-      delete semity;
-      delete sbetay;
+      delete[] sy_mean;
+      delete[] sy_rms;
+      delete[] spy_mean;
+      delete[] spy_rms;
+      delete[] semity;
+      delete[] sbetay;
     }
 
     // end time looper
