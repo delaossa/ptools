@@ -580,7 +580,7 @@ int main(int argc,char *argv[]) {
   //  return 0;
 
   // Histograms
-  char hName[8];
+  char hName[64];
 
   sprintf(hName,"hX1");
   TH1F *hX1 = (TH1F*) gROOT->FindObject(hName);

@@ -1414,7 +1414,7 @@ int main(int argc,char *argv[]) {
 	hW2D[iw]->GetZaxis()->CenterTitle();
 	
 	// 1D histograms
-	char fname[5];
+	char fname[6];
 	if(iw==0)
 	  sprintf(fname,"ExmBy");
 	else
