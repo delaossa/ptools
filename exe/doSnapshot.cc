@@ -1050,7 +1050,6 @@ int main(int argc,char *argv[]) {
       propUnit = PUnits::mm;
       propSUnit = "mm";
 
-      
       Float_t Emax =  hE1D[0]->GetMaximum();
       if(Emax < 10E-3) Emax = 10E-3;
       if(pData->GetE1Max() != -999.0)
