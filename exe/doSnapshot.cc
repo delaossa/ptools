@@ -1053,6 +1053,8 @@ int main(int argc,char *argv[]) {
       
       Float_t Emax =  hE1D[0]->GetMaximum();
       if(Emax < 10E-3) Emax = 10E-3;
+      if(pData->GetE1Max() != -999.0)
+	Emax = pData->GetE1Max();
       PUnits::BestUnit beSUnit(E0 * Emax,"Efield");
       beSUnit.GetBestUnits(eUnit,eSUnit);
       cout << Form(" E0 = %.2f %s", E0 * Emax/eUnit, eSUnit.c_str()) << endl;
