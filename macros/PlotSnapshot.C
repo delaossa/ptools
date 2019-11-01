@@ -1593,7 +1593,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   // TString drawbaseopt = "axis";
   // TString drawopt = "colz2 same";
   TString drawbaseopt = "col";
-  TString drawopt = "colz same";
+  TString drawopt = "colz same0";
 
   // Actual Plotting!
   // ------------------------------------------------------------
@@ -3617,17 +3617,16 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
 
     if (pData->GetkMax() != -999.) {
       kmax = pData->GetkMax();
+      if(opt.Contains("units")) 
+	kmax *= E0 / skindepth / SLIGHT / 1e6;
     }
         
     if (pData->GetkMin() != 999.) {
       kmin = pData->GetkMin();
+      if(opt.Contains("units")) 
+	kmin *= E0 / skindepth / SLIGHT / 1e6;
     }
     
-    if(opt.Contains("units")) {
-      kmax *= E0 / skindepth / SLIGHT / 1e6;
-      kmin *= E0 / skindepth / SLIGHT / 1e6;
-    }
-
     hdW2D->GetZaxis()->SetRangeUser(kmin,kmax); 
     hdW2D->GetZaxis()->SetTitle("K_{x} [m#omega_{p}^{2}]");
     if(opt.Contains("units"))
