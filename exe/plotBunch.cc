@@ -2304,6 +2304,50 @@ int main(int argc,char *argv[]) {
       gEmityavgvsTime->Write(gName,TObject::kOverwrite);
       // ------
 
+      sprintf(gName,"gAmeanvsTime");     
+      TGraph *gAmeanvsTime = NULL;
+      gAmeanvsTime = (TGraph*) ifile->Get(gName);
+      if(gAmeanvsTime==NULL) {
+	gAmeanvsTime = new TGraph();
+	gAmeanvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gAmeanvsTime->SetLineWidth(3);
+	gAmeanvsTime->SetLineColor(PGlobals::fieldLine);
+	gAmeanvsTime->SetMarkerStyle(20);
+	gAmeanvsTime->SetMarkerSize(0.4);
+	gAmeanvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gAmeanvsTime->GetN(); 
+      }  
+
+      gAmeanvsTime->Set(nPoints+1);
+      gAmeanvsTime->SetPoint(nPoints,Time,
+			     TMath::Sqrt(x_mean*x_mean + y_mean*y_mean));
+      gAmeanvsTime->Write(gName,TObject::kOverwrite);
+
+      sprintf(gName,"gAmeanavgvsTime");     
+      TGraph *gAmeanavgvsTime = NULL;
+      gAmeanavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gAmeanavgvsTime==NULL) {
+	gAmeanavgvsTime = new TGraph();
+	gAmeanavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gAmeanavgvsTime->SetLineWidth(3);
+	gAmeanavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gAmeanavgvsTime->SetMarkerStyle(20);
+	gAmeanavgvsTime->SetMarkerSize(0.4);
+	gAmeanavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gAmeanavgvsTime->GetN(); 
+      }  
+
+      gAmeanavgvsTime->Set(nPoints+1);
+      gAmeanavgvsTime->SetPoint(nPoints,Time,TMath::Sqrt(xmeanavg*xmeanavg + ymeanavg*ymeanavg));
+      gAmeanavgvsTime->Write(gName,TObject::kOverwrite);
+
+      
       // Ez track addon (for hosing studies)
       if(opt.Contains("eztrack")) {
 	// Get 3D histogram in a zoomed area to save time
@@ -3663,7 +3707,7 @@ int main(int argc,char *argv[]) {
 	
 	hX3X2cl->GetZaxis()->SetTickLength(0.01);      
 
-	hX3X2cl->Draw("colz 0 same");
+	hX3X2cl->Draw("colz0 same0");
 
 	TLine lX3mean;
 	lX3mean.SetLineColor(kGray+2);
@@ -3850,7 +3894,7 @@ int main(int argc,char *argv[]) {
             
       hP2X2cl->GetZaxis()->SetTickLength(0.01);      
       
-      hP2X2cl->Draw("colz same");
+      hP2X2cl->Draw("colz same0");
 
       TLine lXmean(x_mean,hFrame[0]->GetYaxis()->GetXmin(),x_mean,hFrame[0]->GetYaxis()->GetXmax());
       lXmean.SetLineColor(kGray+2);
@@ -4031,7 +4075,7 @@ int main(int argc,char *argv[]) {
 	
 	hP3X3cl->GetZaxis()->SetTickLength(0.01);      
 	
-	hP3X3cl->Draw("colz same");
+	hP3X3cl->Draw("colz same0");
 	
 	TLine lYmean(y_mean,hFrame[0]->GetYaxis()->GetXmin(),y_mean,hFrame[0]->GetYaxis()->GetXmax());
 	lYmean.SetLineColor(kGray+2);

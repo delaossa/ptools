@@ -856,8 +856,8 @@ int main(int argc,char *argv[]) {
     if(opt.Contains("logz"))
       gPad->SetLogz(1);
 
-    Int_t linewidth = 5;
-    gPad->SetFrameLineWidth(linewidth);
+    gPad->SetFrameLineWidth(5);
+    Int_t linewidth = 3;
     Int_t color = kWhite;
     Int_t color2 = kWhite;
     if (opt.Contains("hzdr"))  {
@@ -865,12 +865,10 @@ int main(int argc,char *argv[]) {
       color2 = 46;
       linewidth = 3;
       gPad->SetFrameLineWidth(linewidth);
-      // gPad->SetFrameLineColor(kWhite);
     } else if (opt.Contains("ffwd"))  {
-      color  = kBlack;
+      color  = kWhite;
       color2 = kOrange-3;
       linewidth = 3;
-      gPad->SetFrameLineWidth(linewidth);
       // gPad->SetFrameLineColor(kWhite);
     }
 
@@ -907,16 +905,17 @@ int main(int argc,char *argv[]) {
     PPalette * specPalette = (PPalette*) gROOT->FindObject("spec");
     if(!specPalette) {
       specPalette = new PPalette("spec");
+      // specPalette->SetPalette(60);
+      // specPalette->Invert();
+      if (opt.Contains("hzdr")) 
+	specPalette->SetPalette("spectrum1");
+      else if (opt.Contains("ffwd")) 
+	// specPalette->SetPalette("screen");
+	specPalette->SetPalette(kBird);
+      else
+	specPalette->SetPalette("spectrum");
     }
-    // specPalette->SetPalette(60);
-    specPalette->SetPalette("spectrum");
-    // specPalette->Invert();
-    if (opt.Contains("hzdr")) 
-      specPalette->SetPalette("spectrum1");
-    else if (opt.Contains("ffwd")) 
-      specPalette->SetPalette("screen");
-    
-    
+    specPalette->cd();
     gPad->SetFrameFillColor(specPalette->GetColor(0));
     //    hEneVsDivjoint->SetMinimum(-1.0000);
     
@@ -1031,10 +1030,7 @@ int main(int argc,char *argv[]) {
 		      gPad->GetUxmax(), gPad->GetUymax());
     lFrame->SetFillStyle(0);
     lFrame->SetLineColor(color);
-    if (opt.Contains("hzdr") || opt.Contains("ffwd"))  
-      lFrame->SetLineWidth(linewidth);
-    else
-      lFrame->SetLineWidth(linewidth-3);
+    lFrame->SetLineWidth(linewidth-1);
       
     lFrame->Draw();
 

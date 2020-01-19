@@ -93,7 +93,7 @@ void PlotSnapshot( const TString &sim, Int_t timestep, UInt_t mask = 3, const TS
   if(opt.Contains("gridy")) {
     gStyle->SetPadGridY(1);
   }
-  gStyle->SetNumberContours(255);
+  // gStyle->SetNumberContours(100);
   gStyle->SetJoinLinePS(2);
 
   Int_t lwidth = 3;
