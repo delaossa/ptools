@@ -17,7 +17,8 @@ class WakeBlowout:
 
     def Ez(self, z, x) :
         # return 0
-        z0 = -np.pi/2
+        # z0 = -np.pi/2
+        z0 = 0
         if abs(x) < self.rb :
             return self.S * (z-z0) + self.Ez0
         else :
@@ -34,7 +35,8 @@ class WakeBlowout:
 
         
     def Kx(self, z, x) :
-        z0 = -np.pi/2
+        # z0 = -np.pi/2
+        z0 = 0
         return self.K + self.Sk * (z-z0)
         
     def Wx(self, z, x) :

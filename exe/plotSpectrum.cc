@@ -23,6 +23,7 @@
 #include <TLatex.h>
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PPalette.hh"
 #include "H5Cpp.h"
@@ -30,12 +31,21 @@
 using namespace std;
 using namespace H5;
 
+void redrawBorder()
+{
+   // this little macro redraws the axis tick marks and the pad border lines.
+   gPad->Update();
+   gPad->RedrawAxis();
+   TLine l;
+   l.DrawLine(gPad->GetUxmin(), gPad->GetUymax(), gPad->GetUxmax(), gPad->GetUymax());
+   l.DrawLine(gPad->GetUxmax(), gPad->GetUymin(), gPad->GetUxmax(), gPad->GetUymax());
+}
 
 int main(int argc,char *argv[]) {
   if(argc<=2) {
     printf("\n Usage: %s <simulation name> <-t(time)>\n",argv[0]);
     printf("      <-i(initial time)> <-f(final time)> <-s(time step)>\n");
-    printf("      <-cmax(value)> <-imax(value)> <-gmax(value)> <-dmin(value)> <-dmax(value)> \n");
+    printf("      <-cmax(value)> <-imax(value)> <-gmax(value)> <-dmin(value)> <-dmax(value)> <-smax(value)> \n");
     printf("      <--center> <--comov> <--units> <--logz> <--outl>\n");
     printf("      <--png> <--pdf> <--eps> \n");
     printf("      <--file> <--loop>\n");
@@ -56,9 +66,13 @@ int main(int argc,char *argv[]) {
 
   Float_t cMax = 0.0;
   Float_t iMax = -99999.;
+  Float_t gMin = -99999.;
   Float_t gMax = -99999.;
   Float_t dMin = -99999.;
   Float_t dMax = -99999.;
+  Float_t divMin = -99999.;
+  Float_t divMax = -99999.;
+  Float_t sMax = -99999.;
 
   // Interfacing command line:
   for(int l=1;l<argc;l++){
@@ -86,6 +100,14 @@ int main(int argc,char *argv[]) {
       opt += "split"; 
     } else if(arg.Contains("--spec")){
       opt += "spec"; 
+    } else if(arg.Contains("--nopal")){
+      opt += "nopal"; 
+    } else if(arg.Contains("--wpal")){
+      opt += "wpal"; 
+    } else if(arg.Contains("--hzdr")){
+      opt += "hzdr"; 
+    } else if(arg.Contains("--ffwd")){
+      opt += "ffwd"; 
     } else if(arg.Contains("--outl")){
       opt += "outl"; 
     } else if(arg.Contains("--loop")){
@@ -99,15 +121,6 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-t")) {
       char ss[2];
       sscanf(arg,"%2s%i",ss,&time);
-    } else if(arg.Contains("-i")) {
-      char ss[2];
-      sscanf(arg,"%2s%i",ss,&iStart);
-    } else if(arg.Contains("-f")) {
-      char ss[2];
-      sscanf(arg,"%2s%i",ss,&iEnd);
-    } else if(arg.Contains("-s")) {
-      char ss[2];
-      sscanf(arg,"%2s%i",ss,&iStep);
     } else if(arg.Contains("-pmin")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&Pmin);
@@ -120,6 +133,9 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-curmax")) {
       char ss[7];
       sscanf(arg,"%7s%f",ss,&iMax);
+    } else if(arg.Contains("-gmin")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&gMin);
     } else if(arg.Contains("-gmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&gMax);
@@ -129,6 +145,24 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-dmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&dMax);
+    } else if(arg.Contains("-divmin")) {
+      char ss[7];
+      sscanf(arg,"%7s%f",ss,&divMin);
+    } else if(arg.Contains("-divmax")) {
+      char ss[7];
+      sscanf(arg,"%7s%f",ss,&divMax);
+    } else if(arg.Contains("-smax")) {
+      char ss[5];
+      sscanf(arg,"%5s%f",ss,&sMax);
+    } else if(arg.Contains("-i")) {
+      char ss[2];
+      sscanf(arg,"%2s%i",ss,&iStart);
+    } else if(arg.Contains("-f")) {
+      char ss[2];
+      sscanf(arg,"%2s%i",ss,&iEnd);
+    } else if(arg.Contains("-s")) {
+      char ss[2];
+      sscanf(arg,"%2s%i",ss,&iStep);
     } else {
       sim = arg;
     }
@@ -141,12 +175,19 @@ int main(int argc,char *argv[]) {
     gStyle->SetPadGridY(1);
   }
 
-  gStyle->SetJoinLinePS(2);
+  gStyle->SetJoinLinePS(1);
   gStyle->SetPadRightMargin(0.20);
   //  gStyle->SetFrameLineWidth(3);
+  gStyle->SetLineWidth(2);
 
   // Load PData
   PData *pData = PData::Get(sim.Data());
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sim.Data());
+    if(!opt.Contains("comov"))
+      opt += "comov";
+  }
 
   if(iStart<0) iStart = time;
   if(iEnd<=iStart) iEnd = iStart;
@@ -154,8 +195,7 @@ int main(int argc,char *argv[]) {
   // Some plasma constants
   Float_t n0 = pData->GetPlasmaDensity();
   Float_t kp = pData->GetPlasmaK();
-  Float_t skindepth = 1.;
-  if(kp!=0.0) skindepth = 1/kp;
+  Float_t skindepth = pData->GetPlasmaSkinDepth();
   Float_t E0 = pData->GetPlasmaE0();
 
   // z start of the plasma in normalized units.
@@ -189,7 +229,7 @@ int main(int argc,char *argv[]) {
 
     cout << Form("\n Reading data arrays") << endl;
     
-    Int_t Nspecies = pData->NSpecies();
+    Int_t Nspecies = pData->NRawSpecies();
     Float_t **ene = new Float_t*[Nspecies];
     Float_t **x1 = new Float_t*[Nspecies];
     Float_t **q = new Float_t*[Nspecies];
@@ -199,9 +239,11 @@ int main(int argc,char *argv[]) {
     UInt_t *NP = new UInt_t[Nspecies];
     Float_t eneMin = 99999;
     Float_t eneMax = -99999;
-    Float_t divMin = 99999;
-    Float_t divMax = -99999;
-    
+    Float_t divmin = 99999;
+    Float_t divmax = -99999;
+
+    cout << Form("\n Number of RAW species: %i", Nspecies) << endl;
+
     for(Int_t i=0;i<Nspecies;i++) {
       ene[i] = NULL;
       x1[i] = NULL;
@@ -213,7 +255,7 @@ int main(int argc,char *argv[]) {
 
 
       NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&x1[i],"x1");
-      NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&ene[i],"ene");
+      // NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&ene[i],"ene");
       NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&q[i],"q");
 
       if(opt.Contains("spec")) {
@@ -221,21 +263,27 @@ int main(int argc,char *argv[]) {
 	pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&p2[i],"p2");
 	pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&p3[i],"p3");
       }
+
+      ene[i] = new Float_t[NP[i]];
+      
       // for(UInt_t j=0;j<1000;j++)
       // 	cout << Form(" %6f  %6f  %6f",x1[i][j],ene[i][j],q[i][j]) << endl;
     
       for(UInt_t j=0;j<NP[i];j++) {
+	ene[i][j] = TMath::Sqrt(p1[i][j]*p1[i][j] + p2[i][j]*p2[i][j] + p3[i][j]*p3[i][j]) - 1.0;
+	
       	if(ene[i][j]<eneMin) eneMin = ene[i][j];
       	if(ene[i][j]>eneMax) eneMax = ene[i][j];
 
 	//	Float_t div = TMath::Sqrt(p2[i][j]*p2[i][j]+p3[i][j]*p3[i][j])/p1[i][j];
-	Float_t div = p2[i][j]/p1[i][j];
-	if(div<divMin) divMin = div;
-      	if(div>divMax) divMax = div;
+	Float_t div = 1e3 * p2[i][j]/p1[i][j];
+	if(div<divmin) divmin = div;
+      	if(div>divmax) divmax = div;
 
       }
     }    
 
+    
     // Histogram limits
     Double_t X1MIN = pData->GetXMin(0) - shiftz;
     Double_t X1MAX = pData->GetXMax(0) - shiftz;
@@ -244,24 +292,25 @@ int main(int argc,char *argv[]) {
     Float_t x1Max = pData->GetX1Max() - shiftz;
     Int_t Nx1Bin  = pData->GetX1N();
     x1Min -= 0.2*(x1Max - x1Min);
-
+    
     // Adjust binning
     x1Min = floor((x1Min-X1MIN)/dx1) * dx1 + X1MIN;  
     x1Max = floor((x1Max-X1MIN)/dx1) * dx1 + X1MIN;
     Nx1Bin  = ceil ((x1Max - x1Min)/(dx1));
     
     Float_t eMin = eneMin - (eneMax-eneMin) * 0.1;
-    // if(eMin<0) eMin = 0.0;
-    eMin = 0.0;
+    if(gMin >= 0.0) eMin = gMin;
      
     Float_t eMax = eneMax + (eneMax-eneMin) * 0.1;
     if(gMax >= 0.0) eMax = gMax;
     
     Int_t NeBin  = Nx1Bin;
-    Double_t dene = (eMax-eMin)/NeBin;
-
+    Double_t de = (eMax-eMin)/NeBin;
+    Double_t dx = (x1Max-x1Min)/Nx1Bin;
+    //Int_t NdivBin = NeBin;
     Int_t NdivBin = 100;
-
+    
+    Float_t dxu(dx), deu(de);
     Float_t x1Minu(x1Min), x1Maxu(x1Max), eMinu(eMin), eMaxu(eMax);
     Double_t denUnit, propUnit, spaUnit, eneUnit, charUnit, curUnit;
     string denSUnit, propSUnit, spaSUnit, eneSUnit, charSUnit, curSUnit;
@@ -280,15 +329,20 @@ int main(int argc,char *argv[]) {
       
       x1Minu = x1Min * skindepth / spaUnit;
       x1Maxu = x1Max * skindepth / spaUnit;
+      dxu = dx * skindepth / spaUnit;
+      
       eMinu = eMin * PConst::ElectronMassE / eneUnit;
       eMaxu = eMax * PConst::ElectronMassE / eneUnit;
+      deu = de *  PConst::ElectronMassE / eneUnit;
+      
     }
 
     // Charge normalisation
-    Double_t dV =  pData->GetDX(0)*pData->GetDX(1)*pData->GetDX(2) * skindepth * skindepth * skindepth;
-    Double_t Q0 = fabs(n0 * dV);
+    Double_t dV =  pData->GetDX(0) * pData->GetDX(1) * pData->GetDX(2) * skindepth * skindepth * skindepth;
+    Double_t Q0 = fabs(n0 * dV * PConst::ElectronCharge);
     charUnit = PUnits::picocoulomb;
     charSUnit = "pC";
+    Double_t Q0u = Q0 / charUnit;
 
     // Current units
     curUnit = PUnits::kA;
@@ -307,6 +361,15 @@ int main(int argc,char *argv[]) {
     TGraph **gSpec = new TGraph*[Nspecies];   
     Float_t maxCur = -9999;
     Float_t maxEne = -9999;
+
+    Float_t diveMin = divmin - (divmax-divmin) * 0.1;
+    if(divMin != -99999.) diveMin = divMin;
+     
+    Float_t diveMax = divmax + (divmax-divmin) * 0.1;
+    if(divMax != -99999.) diveMax = divMax;
+
+    Double_t dvu = (diveMax-diveMin)/NdivBin;
+
     for(Int_t i=0;i<Nspecies;i++) {
     
       hEneVsZ[i] = NULL;
@@ -327,18 +390,23 @@ int main(int argc,char *argv[]) {
       hEneVsZ[i] = new TH2F(hName,"",Nx1Bin,x1Min,x1Max,NeBin,eMin,eMax);
       
       // 2D histogram: #gamma vs \zeta
-      divMax = 19.99;
-      divMin = -divMax;
       sprintf(hName,"EneVsDiv_%i",i);
       hEneVsDiv[i] = (TH2F*) gROOT->FindObject(hName);
       if(hEneVsDiv[i]) delete hEneVsDiv[i];
-      hEneVsDiv[i] = new TH2F(hName,"",NeBin,eMin,eMax,NdivBin,divMin,divMax);
+      hEneVsDiv[i] = new TH2F(hName,"",NeBin,eMin,eMax,NdivBin,diveMin,diveMax);
       
       for(UInt_t j=0;j<NP[i];j++) {
-	hEneVsZ[i]->Fill(x1[i][j]-shiftz,ene[i][j],-q[i][j]);
-	// Float_t div = TMath::Sqrt(p2[i][j]*p2[i][j]+p3[i][j]*p3[i][j])/p1[i][j];
-	Float_t div = p2[i][j]/p1[i][j];
-	hEneVsDiv[i]->Fill(ene[i][j]*0.511,1000*div,-q[i][j]);
+	Float_t zeta = x1[i][j]-shiftz;
+	Float_t ener = ene[i][j];
+	Float_t div  = 1000*(p2[i][j]/p1[i][j]);
+
+	// if (ener<eMin || ener>eMax)
+	//   continue;
+	if (div<diveMin || div>diveMax)
+	  continue;
+	
+	hEneVsZ[i]->Fill(zeta,ener,TMath::Abs(q[i][j]));
+	hEneVsDiv[i]->Fill(ener,div,TMath::Abs(q[i][j]));
       }
 
       // SI units
@@ -347,11 +415,13 @@ int main(int argc,char *argv[]) {
 	hEneVsZ[i]->GetXaxis()->SetTitle(Form("#zeta [%s]",spaSUnit.c_str()));   
 	hEneVsZ[i]->GetYaxis()->SetTitle(Form("Energy [%s]",eneSUnit.c_str()));   
 	hEneVsZ[i]->GetZaxis()->SetTitle(Form("Charge [%s]",charSUnit.c_str()));
-	//Double_t dx = dx1 * skindepth / spaUnit;
-	//Double_t de = dene * PConst::ElectronMassE / eneUnit;
-	//hEneVsZ[i]->Scale(((Q0/charUnit)/(dx*dene)) * );
-	hEneVsZ[i]->Scale(Q0*(-PConst::ElectronCharge)/charUnit);
-	//hEneVsZ[i]->ResetStats();
+	hEneVsZ[i]->Scale(Q0u/(deu*dxu));
+	hEneVsZ[i]->ResetStats();
+
+	hEneVsDiv[i]->SetBins(NeBin,eMinu,eMaxu,NdivBin,diveMin,diveMax);
+	hEneVsDiv[i]->Scale(Q0u/(deu*dvu));
+	hEneVsDiv[i]->ResetStats();
+	
       } else {
 	hEneVsZ[i]->GetXaxis()->SetTitle(Form("k_{p} #zeta"));   
 	hEneVsZ[i]->GetYaxis()->SetTitle(Form("#gamma"));   
@@ -362,15 +432,17 @@ int main(int argc,char *argv[]) {
 	hEneVsZ[i]->GetZaxis()->SetRangeUser(0.0,cMax);
       }
       
-      hCurr[i] = hEneVsZ[i]->ProjectionX(Form("hCurr_%1i",i),1,Nx1Bin);
+      //hCurr[i] = hEneVsZ[i]->ProjectionX(Form("hCurr_%1i",i),1,NeBin);
+      hCurr[i] = hEneVsZ[i]->ProjectionX(Form("hCurr_%1i",i));
       if(opt.Contains("units")) {
-	Double_t dt = dx1 * skindepth / PConst::c_light;
-	hCurr[i]->Scale((PUnits::picocoulomb/dt)/curUnit);
-	//hCurr[i]->ResetStats();
+	Double_t c = PConst::c_light / (spaUnit / PUnits::fs);
+	hCurr[i]->Scale((deu*c));
+	hCurr[i]->ResetStats();
       }
       if(hCurr[i]->GetMaximum()>maxCur && i<3) maxCur = hCurr[i]->GetMaximum();
 
-      hSpec[i] = hEneVsZ[i]->ProjectionY(Form("hSpec_%1i",i),1,NeBin);
+      // hSpec[i] = hEneVsZ[i]->ProjectionY(Form("hSpec_%1i",i),1,Nx1Bin);
+      hSpec[i] = hEneVsZ[i]->ProjectionY(Form("hSpec_%1i",i));
       if(hSpec[i]->GetMaximum()>maxEne) maxEne = hSpec[i]->GetMaximum();
       
       if(!hEneVsZjoint) {
@@ -429,47 +501,58 @@ int main(int argc,char *argv[]) {
     Int_t *colors = new Int_t[Nspecies];
     Int_t *fillstyle = new Int_t[Nspecies];
     Int_t *fillcolor = new Int_t[Nspecies];
-    for(Int_t i=0;i<Nspecies;i++) {
-      if(!hEneVsZ[i]) continue;
-      
-      if(i==0) {
-	exPal[i] = new TExec("exPlasma","plasmaPalette->cd();");
-	colors[i] = kGray;
-	fillstyle[i] = 0;
-	fillcolor[i] = TColor::GetColor(250,250,250);
-      } else if(i==1) {
-	exPal[i] = new TExec("exBeam","beamPalette->cd();");
-	//colors[i] = TColor::GetColor(69,108,155);
-	colors[i] = kGray+1;
-	fillstyle[i] = 1001;
-	fillcolor[i] = TColor::GetColor(230,230,230);
-      } else if(i==2) {
-	exPal[i] = new TExec(Form("exBeam%1i",i),Form("beam%1iPalette->cd();",i));  
-	colors[i] = TColor::GetColor(83,109,161); // Bluish
-	fillstyle[i] = 1001;
-	fillcolor[i] = PGlobals::elecFill;
-      } else {
-	exPal[i] = new TExec(Form("exBeam%1i",i),Form("beam%1iPalette->cd();",i));  
-	colors[i] = TColor::GetColor(231,99,51);
-      	fillstyle[i] = 1001;
-	fillcolor[i] = PGlobals::elecFill;
-      }
-      
-      Npal++;
-    }
 
+    if(Nspecies>1) {
+      for(Int_t i=0;i<Nspecies;i++) {
+	if(!hEneVsZ[i]) continue;
+	
+	if(i==0) {
+	  exPal[i] = new TExec("exPlasma","plasmaPalette->cd();");
+	  colors[i] = kGray;
+	  fillstyle[i] = 0;
+	  fillcolor[i] = TColor::GetColor(250,250,250);
+	} else if(i==1) {
+	  exPal[i] = new TExec("exBeam","beamPalette->cd();");
+	  //colors[i] = TColor::GetColor(69,108,155);
+	  colors[i] = kGray+1;
+	  fillstyle[i] = 1001;
+	  fillcolor[i] = TColor::GetColor(230,230,230);
+	} else if(i==2) {
+	  exPal[i] = new TExec(Form("exBeam%1i",i),Form("beam%1iPalette->cd();",i));  
+	  colors[i] = TColor::GetColor(83,109,161); // Bluish
+	  fillstyle[i] = 1001;
+	  fillcolor[i] = PGlobals::elecFill;
+	} else {
+	  exPal[i] = new TExec(Form("exBeam%1i",i),Form("beam%1iPalette->cd();",i));  
+	  colors[i] = TColor::GetColor(231,99,51);
+	  fillstyle[i] = 1001;
+	  fillcolor[i] = PGlobals::elecFill;
+	}
+	
+	Npal++;
+      }
+    } else {
+      exPal[0] = new TExec("exBeam","beamPalette->cd();");
+      colors[0] = kGray+1;
+      fillstyle[0] = 1001;
+      fillcolor[0] = TColor::GetColor(230,230,230); 
+    }
+    
     TPaletteAxis *palette = NULL;
         
     // Canvas setup
     Int_t sizex = 1024;
     Int_t sizey = 640;
     TCanvas *C = new TCanvas("C","Beams energy",sizex,sizey);
-    // C->SetFillStyle(4000);
+    C->SetFillStyle(4000);
     gPad->SetTickx(1);
     gPad->SetTicky(1);
-    if(opt.Contains("logz"))
+    if(opt.Contains("logz")) {
       gPad->SetLogz(1);
-
+      hEneVsZjoint->GetZaxis()->SetLabelOffset(-0.002);
+      hEneVsDivjoint->GetZaxis()->SetLabelOffset(-0.01);
+    }
+      
     gPad->SetFrameFillColor(beamPalette->GetColor(0));
 
     // Plot frame
@@ -544,7 +627,11 @@ int main(int argc,char *argv[]) {
 	  j++;
 	}
       } else {
-	exPal[1]->Draw();
+	if (Nspecies==1) 
+	  exPal[0]->Draw();
+	else if (Nspecies>1)
+	  exPal[1]->Draw();
+	
 
 	hEneVsZjoint->GetZaxis()->SetLabelFont(43);
 	hEneVsZjoint->GetZaxis()->SetLabelSize(32);
@@ -573,8 +660,8 @@ int main(int argc,char *argv[]) {
 	  pFrame->SetShadowColor(0);
 	  pFrame->Draw();
 	}
-      }
 
+      }
 
       // Plot 1D current
       Float_t yaxismin  =  gPad->GetUymin();
@@ -744,7 +831,7 @@ int main(int argc,char *argv[]) {
   
     // Print to a file
     // Output file
-    TString fOutName = Form("./%s/Plots/BeamsEnergy/BeamsEnergy-%s_%i",pData->GetPath().c_str(),pData->GetName(),time);
+    TString fOutName = Form("./%s/Plots/Spectrum/Phasespace-%s_%i",pData->GetPath().c_str(),pData->GetName(),time);
   
     PGlobals::imgconv(C,fOutName,opt);
     // ---------------------------------------------------------
@@ -754,30 +841,81 @@ int main(int argc,char *argv[]) {
     sizex = 1024;
     sizey = 320;
     TCanvas *C2 = new TCanvas("C2","Spectrum",sizex,sizey);
-    // C->SetFillStyle(4000);
-    gPad->SetRightMargin(0.05);
-    //   gPad->SetRightMargin(0.20);
-    gPad->SetBottomMargin(0.20);
+    C->SetFillStyle(4000);
+    gPad->SetFillStyle(4000);
+
+    if(opt.Contains("nopal"))
+      gPad->SetRightMargin(0.02);
+    else
+      gPad->SetRightMargin(0.14);
+      
+    gPad->SetLeftMargin(0.10);    
+    gPad->SetBottomMargin(0.25);
     gPad->SetTickx(1);
     gPad->SetTicky(1);
     if(opt.Contains("logz"))
       gPad->SetLogz(1);
-      
-    //  gPad->SetLogx(1);
+
+    gPad->SetFrameLineWidth(5);
+    Int_t linewidth = 3;
+    Int_t color = kWhite;
+    Int_t color2 = kWhite;
+    if (opt.Contains("hzdr"))  {
+      color  = kBlack;
+      color2 = 46;
+      linewidth = 3;
+      gPad->SetFrameLineWidth(linewidth);
+    } else if (opt.Contains("ffwd"))  {
+      color  = kWhite;
+      color2 = kOrange-3;
+      linewidth = 3;
+      // gPad->SetFrameLineColor(kWhite);
+    }
+
+ 
+    // gPad->SetLogx(1);
     // gPad->SetFrameLineWidth(3);
     // hEneVsDivjoint->GetXaxis()->SetMoreLogLabels(1);
-    // hEneVsDivjoint->GetXaxis()->SetNdivisions(510);
-    hEneVsDivjoint->GetXaxis()->SetAxisColor(0);
-    hEneVsDivjoint->GetYaxis()->SetAxisColor(0);
+    hEneVsDivjoint->GetXaxis()->SetNdivisions(510);
+    hEneVsDivjoint->GetXaxis()->SetAxisColor(color);
+    hEneVsDivjoint->GetYaxis()->SetAxisColor(color);
     hEneVsDivjoint->GetXaxis()->SetTickLength(0.03);
     
+    hEneVsDivjoint->GetXaxis()->CenterTitle();
+    hEneVsDivjoint->GetXaxis()->SetTitleOffset(1.0);
+    hEneVsDivjoint->GetXaxis()->SetTitleSize(32);
+    hEneVsDivjoint->GetXaxis()->SetTitle("Energy [MeV]");
+    hEneVsDivjoint->GetYaxis()->CenterTitle();
+    hEneVsDivjoint->GetYaxis()->SetTitleOffset(0.4);
+    hEneVsDivjoint->GetYaxis()->SetTitleSize(32);
+    hEneVsDivjoint->GetYaxis()->SetTitle("#theta [mrad]");
+    hEneVsDivjoint->GetZaxis()->CenterTitle();
+    hEneVsDivjoint->GetZaxis()->SetTitleOffset(0.5);
+    hEneVsDivjoint->GetZaxis()->SetTitle("pC/MeV/mrad");
+    hEneVsDivjoint->GetZaxis()->SetTitleSize(28);
+
+    UInt_t colorz = kBlack;
+    if (opt.Contains("wpal")) 
+      colorz = kWhite;
+    
+    hEneVsDivjoint->GetZaxis()->SetAxisColor(colorz);
+    hEneVsDivjoint->GetZaxis()->SetLabelColor(colorz);
+    hEneVsDivjoint->GetZaxis()->SetTitleColor(colorz);
+
     PPalette * specPalette = (PPalette*) gROOT->FindObject("spec");
     if(!specPalette) {
       specPalette = new PPalette("spec");
+      // specPalette->SetPalette(60);
+      // specPalette->Invert();
+      if (opt.Contains("hzdr")) 
+	specPalette->SetPalette("spectrum1");
+      else if (opt.Contains("ffwd")) 
+	// specPalette->SetPalette("screen");
+	specPalette->SetPalette(kBird);
+      else
+	specPalette->SetPalette("spectrum");
     }
-    //    specPalette->SetPalette(60);
-    specPalette->SetPalette("spectrum");
-
+    specPalette->cd();
     gPad->SetFrameFillColor(specPalette->GetColor(0));
     //    hEneVsDivjoint->SetMinimum(-1.0000);
     
@@ -787,41 +925,136 @@ int main(int argc,char *argv[]) {
       // hEneVsDivjoint->GetZaxis()->SetRangeUser(30,dMax);
       // hEneVsDivjoint->GetZaxis()->SetRangeUser(10,dMax);
     }
+    cout << Form(" Spectrum maximum = %f",hEneVsDivjoint->GetMaximum()) << endl;
+  
+    
     if(dMin >= 0.0) {
       hEneVsDivjoint->SetMinimum(dMin);
     }
-    
-    
-    hEneVsDivjoint->GetXaxis()->SetRangeUser(10.0,eMax);
-    hEneVsDivjoint->Draw("col 0");
+        
+    hEneVsDivjoint->GetXaxis()->SetRangeUser(0.0,eMax);
 
+    if(opt.Contains("nopal"))
+      hEneVsDivjoint->Draw("col 0");
+    else
+      hEneVsDivjoint->Draw("colz 0");
+      
+    // Save histograms
+    TString ofilename = Form("./%s/Plots/Spectrum/Spectrum-%s_%i.root",pData->GetPath().c_str(),pData->GetName(),time);
+    TFile *ofile = new TFile(ofilename,"RECREATE");
+    hEneVsDivjoint->Write("hSpectrum2D",TObject::kOverwrite);
+    ofile->Close();
+    // ----------------
+
+    gPad->Update();
+
+    y1 = gPad->GetBottomMargin();
+    y2 = 1 - gPad->GetTopMargin();
+    x2 = 1 - gPad->GetRightMargin();
+    TPave *pFrame = new TPave((x2 + 0.01),y1,(x2 + 0.03),y2,1,"NDCL");
+    pFrame->SetFillStyle(0);
+    pFrame->SetLineColor(colorz);
+    pFrame->SetShadowColor(0);
+
+    palette = (TPaletteAxis*) hEneVsDivjoint->GetListOfFunctions()->FindObject("palette");
+    if(palette) {
+      palette->SetY1NDC(y1);
+      palette->SetY2NDC(y2);
+      palette->SetX1NDC(x2 + 0.01);
+      palette->SetX2NDC(x2 + 0.03);
+      palette->SetBorderSize(2);
+      palette->SetLineColor(color);
+      
+      pFrame->Draw();
+    }
+      
     TH1D *hProj = NULL;
     if (opt.Contains("outl")) {
-      hProj = hEneVsDivjoint->ProjectionX("hEneProj");
-      hProj->SetLineWidth(3);
-      hProj->SetLineColor(kWhite);
+      hProj = hEneVsDivjoint->ProjectionX("hEneProj",1,hEneVsDivjoint->GetNbinsY());
+      hProj->Scale(dvu);
+      hProj->ResetStats();
+      hProj->SetLineWidth(linewidth);
+      hProj->SetLineColor(color2);
+      Float_t smax = hProj->GetMaximum();
+      if(sMax >= 0.0) 
+	smax = sMax;
+      cout << Form(" Maximum = %f",smax) << endl;
 
-      Float_t slope = (divMin+(divMax-divMin)/4.0 -divMin)/hProj->GetMaximum();
+      Float_t Peak = hProj->GetMaximum();
+      Float_t Emean = hProj->GetMean();
+      Float_t Erms  = hProj->GetRMS();
+      Float_t Qgauss = Peak * TMath::Sqrt(TMath::TwoPi()) * Erms ;
+      Float_t Qtotal = hProj->Integral("width");
+      
+      cout << Form(" Peak   = %f pC/MeV",Peak) << endl;
+      cout << Form(" Mean   = %f MeV",Emean) << endl;
+      cout << Form(" Rms    = %f MeV",Erms) << endl;
+      cout << Form(" Charge = %f pC",Qtotal) << endl;
+      cout << Form(" C (g)  = %f pC",Qgauss) << endl;
+      
+      Float_t axismax = diveMin+(diveMax-diveMin)/3.0;
+      Float_t slope = (axismax - diveMin)/smax;
       for(Int_t j=1;j<=hProj->GetNbinsX();j++) {
 	Float_t value = hProj->GetBinContent(j);
-	hProj->SetBinContent(j,slope*value+divMin);
+	hProj->SetBinContent(j,slope*value+diveMin);
       }
       
+      // Current axis
+      Float_t x1pos = eMax - (eMax-eMin) * 0.10;
+      TGaxis *axis = new TGaxis(x1pos,diveMin,x1pos,axismax,0.0,smax,203,"S+L");
+      axis->SetLineWidth(2);
+      axis->SetLineColor(color2);//PGlobals::elecLine);
+      axis->SetLabelColor(color2);//PGlobals::elecLine);
+      axis->SetLabelFont(PGlobals::fontType);
+      axis->SetLabelSize(PGlobals::labelSize-12);
+      axis->SetLabelOffset(0.005);
+      axis->SetTitleColor(color2);//PGlobals::elecLine);
+      axis->SetTitleFont(PGlobals::fontType);
+      axis->SetTitleSize(PGlobals::titleSize-18);
+      axis->SetTitleOffset(0.4);
+      axis->SetTickSize(0.03);
+      axis->ChangeLabel(1,-1,0.);
+      if(opt.Contains("units"))
+	axis->SetTitle(Form("pC/MeV"));
+      //axis->CenterTitle();
+      //axis->ChangeLabel(1,-1,-1,-1,-1,-1,"");
+      //axis->SetMaxDigits(2);
+      axis->Draw();
+      
+      hProj->GetXaxis()->SetRangeUser(eMinu,eMaxu);
       hProj->Draw("hist L same");
-
-      cout << Form(" Maximum = %f",hProj->GetMaximum()) << endl;
     }
 
-    
-    gPad->SetFrameLineWidth(5);
-    // gPad->SetFrameLineColor(0);
     gPad->Update();
-    gPad->RedrawAxis();
+    lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
+		      gPad->GetUxmax(), gPad->GetUymax());
+    lFrame->SetFillStyle(0);
+    lFrame->SetLineColor(color);
+    lFrame->SetLineWidth(linewidth-1);
       
+    lFrame->Draw();
+
+    xmin = eMinu;
+    xmax = eMaxu;
+    ymin = diveMin;
+    ymax = diveMax;
+    if(opt.Contains("units") && n0) 
+      sprintf(ctext,"z = %5.1f %s", Time * skindepth / propUnit, propSUnit.c_str());
+    else
+      sprintf(ctext,"k_{p}z = %5.1f",Time);
+    TLatex *texTime2 = new TLatex(xmax - (xmax-xmin)/20.,ymax - (ymax-ymin)/15.,ctext);
+    texTime2->SetTextFont(PGlobals::fontType);
+    texTime2->SetTextSize(PGlobals::titleSize-10);
+    texTime2->SetTextAlign(33);
+    texTime2->SetTextColor(color);
+    texTime2->Draw();
+    
+    gPad->RedrawAxis();
+    gPad->RedrawAxis("g");
     
     // Print to a file
     // Output file
-    fOutName = Form("./%s/Plots/BeamsEnergy/Spectrum-%s_%i",pData->GetPath().c_str(),pData->GetName(),time);
+    fOutName = Form("./%s/Plots/Spectrum/Spectrum-%s_%i",pData->GetPath().c_str(),pData->GetName(),time);
   
     PGlobals::imgconv(C2,fOutName,opt);
     // ---------------------------------------------------------

@@ -92,8 +92,8 @@ void PDataHiP::LoadFileNames(Int_t t) {
   
   time = t;
 
-  species.push_back("plasma");
-  species.push_back("beam");
+  // species.push_back("plasma");
+  // species.push_back("beam");
 
   // Time
   char stime[10];
@@ -114,13 +114,78 @@ void PDataHiP::LoadFileNames(Int_t t) {
     Init = kFALSE;
     return;
   }
+
+  // Detecting density species
+  for(UInt_t i=0;i<files.size();i++) {
+    
+    // density data: First extract number of density species
+    if((files[i].find("density") != string::npos) && (files[i].find(".h5") != string::npos)) {
+      
+      string s_beg = "density_";
+      string s_end = Form("_%s.",stime);
+      if(files[i].find("charge") != string::npos) 
+	s_end = Form("_charge_%s.",stime);
+      
+      string denname = between(files[i],s_beg,s_end);
+      species.push_back(denname);
+    }
+
+    // RAW data: First extract number of RAW species
+    if((files[i].find("raw") != string::npos) && (files[i].find(".h5") != string::npos)) {
+      string s_beg = "raw_";
+      string s_end = Form("_%s.",stime);
+      
+      string rawname = between(files[i],s_beg,s_end);
+      rawspecies.push_back(rawname);
+    }
+
+  }
+
+  // plasma species first
+  string pname = "plasma";
+  for(UInt_t i=0;i<species.size();i++) {
+    if(species[i] == pname)
+      if(i!=0 && species.size()>0) {
+	string temp = species[0];
+	species[0] = species[i];
+	species[i] = temp;
+	i--;
+	continue;
+      }
+    if(species[i].find("driver") != string::npos)
+      if(i!=1 && species.size()>1) {
+	string temp = species[1];
+	species[1] = species[i];
+	species[i] = temp;
+	i--;
+	continue;
+      }
+  }
   
+    // driver raw species first
+  pname = "driver";
+  for(UInt_t i=0;i<rawspecies.size();i++) {
+    if(rawspecies[i] == pname)
+      if(i!=0 && rawspecies.size()>0) {
+	string temp = rawspecies[0];
+	rawspecies[0] = rawspecies[i];
+	rawspecies[i] = temp;
+	i--;
+	continue;
+      }
+  }
+
   // Initialize the pointers to NULLS
   sCHG = new vector<string*>(NSpecies(),NULL);
+  sRAW = new vector<string*>(NRawSpecies(),NULL);
+  sTrack = new vector<string*>(NRawSpecies(),NULL);
   sEF  = new vector<string*>(3,NULL);
   sBF  = new vector<string*>(3,NULL);
   sWF  = new vector<string*>(2,NULL);
   sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
+  sEF_1RE  = new vector<string*>(3,NULL);
+  sBF_1RE  = new vector<string*>(3,NULL);
+  sA   = new vector<string*>(1,NULL);
 
   for(UInt_t i=0;i<3;i++) {
     sJ[i] = new vector<string*>(NSpecies(),NULL);    
@@ -133,7 +198,6 @@ void PDataHiP::LoadFileNames(Int_t t) {
     for(UInt_t j=0;j<NSpecies();j++) {
       string filename = between(files[i],simPath,".h5");
       if(filename.find(species[j]) != string::npos) {
-	
 	if( (filename.find("density") != string::npos) ) {
 	  sCHG->at(j) = new string(files[i]);
 	  continue;
@@ -149,17 +213,6 @@ void PDataHiP::LoadFileNames(Int_t t) {
       }
     }
 
-    // RAW data: First extract number of RAW species
-    if((files[i].find("raw") != string::npos) && (files[i].find(".h5") != string::npos)) {
-      string s_beg = "raw_";
-      string s_end = Form("_%s.h5",stime);
-      
-      string rawname = between(files[i],s_beg,s_end);
-      rawspecies.push_back(rawname);
-      // cout << Form(" Raw species name = %s",rawname.c_str()) << endl;
-    }
-    
-    
     // Get Electromagnetic fields files:
     for(UInt_t j=0;j<3;j++) {
       char eName[16];
@@ -188,34 +241,60 @@ void PDataHiP::LoadFileNames(Int_t t) {
 	sWF->at(j) = new string(files[i]);
       }
     }
-  }
-
-  sRAW = new vector<string*>(NRawSpecies(),NULL);
-  sTrack = new vector<string*>(NRawSpecies(),NULL);
   
-  // Put the driver first
-  for(UInt_t i=0;i<NRawSpecies();i++) {
-    if(rawspecies[i].find("driver") != string::npos)
-      if(i>0) {
-	string temp = rawspecies[0];
-	rawspecies[0] = rawspecies[i];
-	rawspecies[i] = temp;
-      }
-  }
-  
-  // Fishing just RAW data
-  for(UInt_t i=0;i<files.size();i++) {    
-    // Get raw species files:
-    for(UInt_t j=0;j<NRawSpecies();j++) {
-      if(files[i].find(rawspecies[j]) != string::npos) {
-	if((files[i].find("raw") != string::npos) && (files[i].find(".h5") != string::npos)) {
+    // Fishing RAW data
+    if((files[i].find("raw") != string::npos) && (files[i].find(".h5") != string::npos)) {
+      for(UInt_t j=0;j<NRawSpecies();j++) {
+	if(files[i].find(rawspecies[j]) != string::npos) {
 	  sRAW->at(j) = new string(files[i]);
 	}	
       }
     }
   }
+  
+  // for(UInt_t i=0;i<rawspecies.size();i++) {
+  //   cout << Form(" Raw species %i = %s file = %s", i, rawspecies[i].c_str(), sRAW->at(i)->c_str()) << endl;
+  // }
+  
+  //  ReadOutputSummary();
+  Bool_t found = kFALSE;
+  for(UInt_t i=0;i<species.size();i++) {
+    if(sCHG->at(i)) {
+      rtime = GetRealTimeFromFile(GetChargeFileName(i)->c_str());
+      GetBoxDimensionsFromFile(GetChargeFileName(i)->c_str());
+      found = kTRUE;
+      break;
+    }
+  }
 
-  ReadOutputSummary();
+  if(!found) {
+    for(UInt_t i=0;i<3;i++) { 
+      if(sEF->at(i)) {
+	rtime = GetRealTimeFromFile(GetEfieldFileName(i)->c_str());
+	GetBoxDimensionsFromFile(GetEfieldFileName(i)->c_str());
+	found = kTRUE;
+	break;
+      } else
+	continue;
+    }
+  }
+
+  if(!found) {
+    for(UInt_t i=0;i<rawspecies.size();i++) {
+      if(sRAW->at(i)) {
+	rtime = GetRealTimeFromFile(GetRawFileName(i)->c_str());
+	GetBoxDimensionsFromFile(GetRawFileName(i)->c_str());
+	found = kTRUE;
+	break;
+      }
+    }
+  }
+  
+  if(!found) {
+    cout << " File not found: exiting..." << endl;
+    return;
+  }
+  
   ThreeD = kTRUE;
   HiP = kTRUE;
 
@@ -238,6 +317,8 @@ void PDataHiP::LoadFileNames(Int_t t) {
       }
     }
   }
+
+  rtime += GetXMax(0)-GetXMin(0);
   
   // Defines the sub-range for the analysis.
   // Here at initialization, it is set to the whole simulation range.
@@ -485,12 +566,21 @@ TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *datanameold,
     for(UInt_t j=0;j<x2Dim;j++) {
       for(UInt_t k=0;k<x3Dim;k++) {
 	UInt_t index = (long)i*(long)x2Dim*(long)x3Dim + (long)j*(long)x3Dim + (long)k;
-		
-	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
+	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos) {
 	  x1Array[i] += -data[index];
-	else
-	  x1Array[i] +=  data[index]; 
+	  continue;
+	}
 	
+	Bool_t found = kFALSE;
+	for(UInt_t l=0;l<species.size();l++) 
+	  if(sdata.find(species[l]) != string::npos) { 
+	    x1Array[i] += -data[index];
+	    found = kTRUE;
+	    break;
+	  }
+	
+	if(!found) 
+	  x1Array[i] +=  data[index];			
       }
     }
   }
@@ -517,11 +607,11 @@ TH1F* PDataHiP::GetH1SliceZ3D(const char *filename,const char *datanameold,
   }
   root->close();
   
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
+  delete[] data;
   delete dataSet;
   delete root;
-  delete data;
   
   return h1D;
 }
@@ -619,10 +709,23 @@ TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *datanameold, Int_t
     for(UInt_t j=0;j<x2Dim;j++) {
       for(UInt_t k=0;k<x3Dim;k++) {
 	UInt_t index = (long)i*(long)x2Dim*(long)x3Dim + (long)j*(long)x3Dim + (long)k;
-	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos)
+	if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos) {
 	  x1x2Array[i][j] += -data[index];
-	else
-	  x1x2Array[i][j] +=  data[index]; 
+	  continue;
+	}
+
+	Bool_t found = kFALSE;
+	for(UInt_t l=0;l<species.size();l++) 
+	  if(sdata.find(species[l]) != string::npos) { 
+	    x1x2Array[i][j] += -data[index];
+	    found = kTRUE;
+	    break;
+	  }
+
+	if(!found) 
+	  x1x2Array[i][j] +=  data[index];
+	
+	
       }
     }
   }
@@ -653,11 +756,11 @@ TH2F* PDataHiP::GetH2SliceZX(const char *filename,const char *datanameold, Int_t
       h2D->SetBinContent(i+1,j+1,content);
     }
     
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
+  delete[] data;
   delete dataSet;
   delete root;
-  delete data;
   
   return h2D;
 }
@@ -789,11 +892,11 @@ TH2F* PDataHiP::GetH2SliceZY(const char *filename,const char *datanameold, Int_t
       h2D->SetBinContent(i+1,j+1,content);
     }
     
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
+  delete[] data;
   delete dataSet;
   delete root;
-  delete data;
   
   return h2D;
 }

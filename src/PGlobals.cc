@@ -288,6 +288,8 @@ void PGlobals::CanvasPartition(TCanvas *C, Int_t N,
     pad->SetBottomMargin(vmard);
     pad->SetTopMargin(vmaru);
     pad->Draw();
+
+    cout << Form(" Pad: %s created",name) << endl;
   }
     
   // cout << "Canvas partitioned" <<endl;

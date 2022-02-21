@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import h5py
-from vtk import *
+import vtk
 from ROOT import PData, PDataHiP, PGlobals
 import sys, argparse
 import numpy as np
+import time as clock
 
 
 # Command argument line parser 
@@ -17,10 +18,14 @@ parser.add_argument('-t', type=int, help='simulation time step')
 #parser.add_argument('-s', type=int, dest='tdelta', default=1,help='time delta (step between dumps)')
 parser.add_argument('-z', type=float, dest='zoom', default=1,help='zoom')
 parser.add_argument('-ar', type=float, dest='aratio', default=1,help='Aspect ratio trans/long')
+parser.add_argument('-br', type=float, dest='bright', default=0.5,help='Brightness')
+parser.add_argument('-ct', type=float, dest='contr', default=1.0,help='Contrast')
 parser.add_argument('-azi', type=float, dest='azimuth', default=0,help='azimuth')
 parser.add_argument('-ele', type=float, dest='elevation', default=0,help='elevation')
 parser.add_argument('-shift', type=float, dest='shiftz', default=0,help='shift of the focal point in z axis')
 parser.add_argument('-omega', type=float, dest='omega', default=0,help='laser to plasma frequency')
+parser.add_argument('-sd', type=float, dest='sampledist', default=1,help='Set sample distace (quality)')
+parser.add_argument('-so', type=int, dest='scalout', default=1,help='Scale the png output')
 parser.add_argument('--white', action='store_true', default=0,help='white background')
 parser.add_argument('--surf', action='store_true', default=0,help='draw surfaces')
 parser.add_argument('--log', action='store_true', default=0,help='log scale')
@@ -31,8 +36,9 @@ parser.add_argument('--lden', action='store_true', default=0,help='use local den
 parser.add_argument('--laser', action='store_true', default=0,help='show laser fields')
 parser.add_argument('--amod', action='store_true', default=0,help='show module of a')
 parser.add_argument('--txbck', action='store_true', default=0,help='textured background')
-parser.add_argument('--test', action='store_true', default=0,help='run a direct example')
 parser.add_argument('--nowin', action='store_true', default=0, help='no windows output (to run in batch)')
+parser.add_argument('--alpha', action='store_true', default=0, help='transparent background')
+parser.add_argument('--pdf', action='store_true', default=0, help='pdf output')
 parser.add_argument('--rot', action='store_true', default=0, help='makes a rotating sequence')
 
 try:
@@ -41,31 +47,29 @@ except:
     parser.print_help()
     sys.exit(0)
     
-if ('none' in args.sim) & (args.test == 0) :
+if ('none' in args.sim) :
     parser.print_help()
     sys.exit(0)
     
 # End of command line setup
 
+start_time = clock.time() 
+
 # Get data files
 hfl = []
-if args.test :
-    hfl.append(h5py.File('data/charge-plasma-000026.h5','r'))
-    hfl.append(h5py.File('data/charge-beam-driver-000026.h5','r'))
-    hfl.append(h5py.File('data/charge-He-electrons-000026.h5','r'))
-else :
-    pData = PData(args.sim)
-    if pData.isHiPACE() :
-        del(pData)
-        pData = PDataHiP(args.sim)
+
+pData = PData(args.sim)
+if pData.isHiPACE() :
+    del(pData)
+    pData = PDataHiP(args.sim)
     
-    pData.LoadFileNames(args.t)
-    for i in range(0,pData.NSpecies()) :
-        hfl.append(h5py.File(pData.GetChargeFileName(i).c_str(),'r'))
-        print('File %i = %s' % (i,pData.GetChargeFileName(i).c_str()))
+pData.LoadFileNames(args.t)
+for i in range(0,pData.NSpecies()) :
+    hfl.append(h5py.File(pData.GetChargeFileName(i).c_str(),'r'))
+    print('File %i = %s' % (i,pData.GetChargeFileName(i).c_str()))
         
-    if args.laser :
-        hfl.append(h5py.File(pData.GetEfieldFileName(1).c_str(),'r'))
+if args.laser :
+    hfl.append(h5py.File(pData.GetEfieldFileName(1).c_str(),'r'))
 
 nfiles = len(hfl)
 # -----------
@@ -137,7 +141,11 @@ else:
     fcolmap.close()
 
 # end of reading color maps
-    
+
+
+print('\nReading data files... ')
+tclock = clock.time()
+
 # Loop over the files
 stype = []
 opacity = []
@@ -378,11 +386,15 @@ for i, hf in enumerate(hfl):
 
 fcolmap.close()
 
+print('Done in %.3f s. ' % ((clock.time() - tclock)))
+tclock = clock.time()
+
+print('\nImporting PIC data to VTK')
 # Add data components as a 4th dimension 
 # npdatamulti = np.stack((npdata[:]),axis=3)
 # Alternative way compatible with earlier versions of numpy 
 npdatamulti = np.concatenate([aux[...,np.newaxis] for aux in npdata], axis=3)
-print('\nShape of the multi-component array: ', npdatamulti.shape,' Type: ',npdatamulti.dtype)
+print('Shape of the multi-component array: ', npdatamulti.shape,' Type: ',npdatamulti.dtype)
 
 # For VTK to be able to use the data, it must be stored as a VTKimage.
 # vtkImageImport imports raw data and stores it in the image.
@@ -401,20 +413,26 @@ dataImport.SetDataSpacing(udz,udx,udy)
 dataImport.SetDataOrigin(0.0,uaxxmin,uaxymin)
 dataImport.Update()
 
+print('Done in %.3f s. ' % ((clock.time() - tclock)))
+tclock = clock.time()
+
 mapper = vtk.vtkGPUVolumeRayCastMapper()
-#mapper.SetAutoAdjustSampleDistances(1)
-#mapper.SetSampleDistance(0.1)
-#mapper.SetBlendModeToMaximumIntensity();
+mapper.SetAutoAdjustSampleDistances(1)
+#mapper.SetSampleDistance(args.sampledist)
+#mapper.SetBlendModeToMaximumIntensity()
 
 # Add data to the mapper
 mapper.SetInputConnection(dataImport.GetOutputPort())
+
+# Brightness and contrast
+mapper.SetFinalColorLevel(1-args.bright)
+mapper.SetFinalColorWindow(args.contr)
 
 # The class vtkVolume is used to pair the previously declared volume
 # as well as the properties to be used when rendering that volume.
 volume = vtk.vtkVolume()
 volume.SetMapper(mapper)
 volume.SetProperty(volumeprop)
-
   
 planeClip = vtk.vtkPlane()
 planeClip.SetOrigin((axisz[0]+axisz[1])/2.0-axisz[0],0.0,0.0)
@@ -428,9 +446,11 @@ if args.white :
     renderer.SetBackground(1.0,1.0,1.0) # white
 else :
     renderer.SetBackground(0,0,0) # black
-# renderer.SetBackground(0.09,0.10,0.12) 
-# renderer.SetBackground(.1,.2,.3) # Background dark blue
-# renderer.SetBackground(0.1,0.1,0.1)
+    # renderer.SetBackground(0,0,0.1) # Dark blue 0
+    # renderer.SetBackground(0.09,0.10,0.12) 
+    # renderer.SetBackground(.1,.2,.3) # Background dark blue
+    # renderer.SetBackground(0.1,0.1,0.1)
+
 
 # Other colors 
 nc = vtk.vtkNamedColors()
@@ -442,7 +462,7 @@ light = vtk.vtkLight()
 light.SetColor(1.0, 0.0, 0.0)
 light.SwitchOn()
 light.SetIntensity(1)
-#renderer.AddLight(light)
+# renderer.AddLight(light)
 
 
 if args.txbck :
@@ -457,10 +477,10 @@ if args.axes :
     axes.SetTotalLength(6.28/3.0,6.28/3.0,6.28/3.0)
     # axes.SetShaftTypeToLine()
     axes.SetNormalizedShaftLength(1, 1, 1)
-    axes.SetNormalizedTipLength(0.08, 0.08, 0.08)
+    axes.SetNormalizedTipLength(0.16, 0.16, 0.16)
     axes.SetNormalizedLabelPosition(0.8, 0.8, 0.8)
     
-    propA = vtkTextProperty()
+    propA = vtk.vtkTextProperty()
     propA.SetFontFamilyToArial()
     propA.ItalicOff()
     propA.BoldOff()
@@ -511,14 +531,14 @@ if args.cbar :
     step = 1.0/nbar
     for i in range(0,len(npdata)):
         # Adding the scalar bar color palette
-        scalarBar.append(vtkScalarBarActor())
-        if 'e2' in hfl[i].filename :
-            scalarBar[i].SetTitle("a")
+        scalarBar.append(vtk.vtkScalarBarActor())
+        # if 'e2' in hfl[i].filename :
+        #     scalarBar[i].SetTitle("a")
+        # else :
+        if args.log :
+            scalarBar[i].SetTitle('log(n%1i/np)' % (i))
         else :
-            if args.log :
-                scalarBar[i].SetTitle("log(n/np)")
-            else :
-                scalarBar[i].SetTitle("n/np")
+            scalarBar[i].SetTitle('n%1i/np' % (i))
 
         scalarBar[i].SetLookupTable(color[i]);
         scalarBar[i].SetOrientationToHorizontal();
@@ -526,12 +546,12 @@ if args.cbar :
         scalarBar[i].SetPosition(i*step,0.02)
         scalarBar[i].SetPosition2(step,0.08)
         #print('%5.2f %5.2f' % (i*step,(i+1)*step-0.01) )
-        propT = vtkTextProperty()
+        propT = vtk.vtkTextProperty()
         propT.SetFontFamilyToArial()
         propT.ItalicOff()
         propT.BoldOn()
         propT.SetFontSize(28)
-        propL = vtkTextProperty()
+        propL = vtk.vtkTextProperty()
         propL.SetFontFamilyToArial()
         propL.ItalicOff()
         propL.BoldOff()
@@ -555,7 +575,10 @@ window = vtk.vtkRenderWindow()
 window.SetSize(1280, 800)
 if args.nowin :
     window.SetOffScreenRendering(1)
-
+  
+if args.alpha :
+    window.SetAlphaBitPlanes(1)
+    
 # add renderer
 window.AddRenderer(renderer)
 
@@ -577,45 +600,86 @@ camera.Azimuth(args.azimuth)
 camera.Elevation(args.elevation)
 #camera.ParallelProjectionOn()
 
-window.Render()
-
 if args.nowin == 0 :
     interactor.Initialize()
+    
+tclock = clock.time()
+print('\nRendering... ')
+window.Render()
+print('Done in %.3f s. ' % ((clock.time() - tclock)))
+
+if args.nowin == 0 :
     interactor.Start()
 
-window.Render()
+print('\nTotal time in %.3f s. ' % ((clock.time() - start_time)))
 
-# print('\nCamera position:    ', camera.GetPosition())
-# print('\nCamera focal point: ', camera.GetFocalPoint())
-    
-# Output file
-if args.test :
-    foutname = './snapshot3d.png' 
-else :
-    foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
-PGlobals.mkdir(foutname)
+if args.rot :
 
-# Write an EPS file.
-# exp = vtk.vtkGL2PSExporter()  # Not working with openGL2 yet
-#exp.SetRenderWindow(window)
-#exp.SetFileFormatToPDF()
-#exp.CompressOn()
-#exp.SetSortToBSP()
-#exp.SetFilePrefix("screenshot")
-#exp.DrawBackgroundOn()
-#exp.Write()
+    print('\n Creating rotating sequence:')
+    rotstep = 2.0
+    for angle in np.arange(0.0,360,rotstep) :
+        
+        camera.Azimuth(rotstep)
+        # camera.Elevation(rotstep)
+        window.Render()
 
-# Write to PNG file
-w2if = vtk.vtkWindowToImageFilter()
-w2if.SetInput(window)
-w2if.Update();
+        # Output file
+        dirseq = './%s/Plots/Snapshots3D/Snapshot3D-%i.seq/' % (pData.GetPath(),args.t)
+        PGlobals.mkdir(dirseq)
+        foutname = '%s/Snapshot3D-%.1f.png' % (dirseq,args.azimuth + angle)
+
+        # Write to PNG file
+        w2if = vtk.vtkWindowToImageFilter()
+        w2if.SetInput(window)
+        w2if.Update();
  
-writer = vtk.vtkPNGWriter()
-writer.SetFileName(foutname)
-writer.SetInputConnection(w2if.GetOutputPort())
-writer.Write()
+        writer = vtk.vtkPNGWriter()
+        writer.SetFileName(foutname)
+        writer.SetInputConnection(w2if.GetOutputPort())
+        writer.Write()
 
-print('\n%s has been created.' % (foutname) )
+        print('%s done.' % (foutname) )
+
+else :
+        
+    # Output file
+    foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i.png' % (pData.GetPath(),args.sim,args.t)
+    PGlobals.mkdir(foutname)
+
+    # Write to PNG file
+    window.SetBorders(0)
+    w2if = vtk.vtkWindowToImageFilter()
+    w2if.SetInput(window)
+    w2if.SetScale(args.scalout)
+    if args.alpha :
+        w2if.SetInputBufferTypeToRGBA()
+        w2if.ReadFrontBufferOff()
+        
+    w2if.Update();
+ 
+    writer = vtk.vtkPNGWriter()
+    writer.SetFileName(foutname)
+    writer.SetInputConnection(w2if.GetOutputPort())
+    writer.Write()
+
+    print('\n%s has been created.' % (foutname) )
+
+if args.pdf :
+    # Output file
+    foutname = './%s/Plots/Snapshots3D/Snapshot3D-%s_%i' % (pData.GetPath(),args.sim,args.t)
+    PGlobals.mkdir(foutname)
+
+    # Write a PDF of the scene
+    exp = vtk.vtkGL2PSExporter()  # Not working with openGL2 yet
+    exp.SetRenderWindow(window)
+    exp.SetFileFormatToPDF()
+    #exp.CompressOn()
+    #exp.SetSortToBSP()
+    exp.SetFilePrefix(foutname)
+    exp.DrawBackgroundOn()
+    exp.Write()
+
+
 
 # END
 

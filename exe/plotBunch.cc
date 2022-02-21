@@ -24,6 +24,7 @@
 #include "PData.hh"
 #include "PDataHiP.hh"
 #include "PGlobals.hh"
+#include "PUtils.hh"
 #include "PPalette.hh"
 #include "H5Cpp.h"
 
@@ -32,24 +33,6 @@ using namespace H5;
 
 void InitRange(const TString &, Double_t &, Double_t &, Int_t &, Double_t &, Double_t &);
 
-void FindLimits(TH1F *h,Double_t &xmin, Double_t &xmax, Double_t factor = 0.11) {
-  Double_t maxValue = h->GetBinContent(h->GetMaximumBin());
-  for(Int_t i=1;i<=h->GetNbinsX();i++) {
-    Double_t binValue = h->GetBinContent(i);
-    if(binValue>maxValue*factor) {
-      xmin = h->GetBinCenter(i);
-      break;
-    }
-  }
-  
-  for(Int_t i=h->GetNbinsX();i>0;i--) {
-    Double_t binValue = h->GetBinContent(i);
-    if(binValue>maxValue*factor) {
-      xmax = h->GetBinCenter(i);
-      break;
-    }
-  } 
-}
 
 int main(int argc,char *argv[]) {
   if(argc<=2) {
@@ -114,8 +97,7 @@ int main(int argc,char *argv[]) {
     if(l==1) {
       sim = arg;
       continue;
-    }
-    
+    }    
     if(arg.Contains("--pdf")) {
       opt += "pdf";
     } else if(arg.Contains("--eps")) {
@@ -152,6 +134,8 @@ int main(int argc,char *argv[]) {
       opt += "notext"; 
     } else if(arg.Contains("--noinfo")){
       opt += "noinfo"; 
+    } else if(arg.Contains("--noline")){
+      opt += "noline"; 
     } else if(arg.Contains("--avge")){
       opt += "avge"; 
     } else if(arg.Contains("--ecorr")){
@@ -226,6 +210,8 @@ int main(int argc,char *argv[]) {
     }
   }
 
+  TString simo = sim;
+  
   if(opt.Contains("eztrack") && !opt.Contains("loop")) {
     cout << Form(" WARNING: 'eztrack' option only works in loop mode: add --loop flag to the program") << endl;
   }
@@ -264,8 +250,8 @@ int main(int argc,char *argv[]) {
   //  opt += "comovcenter";
 
   // Units
-  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit,  betaUnit, ezUnit;
-  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit,  betaSUnit, ezSUnit;
+  Double_t chargeUnit,  denUnit,  spaUnit,  propUnit, tspaUnit,  eneUnit,  teneUnit,  curUnit,   emitUnit,   ermsUnit, ermssUnit,  betaUnit, gammaUnit, ezUnit;
+  string  chargeSUnit, denSUnit, spaSUnit, propSUnit, tspaSUnit, eneSUnit, teneSUnit, curSUnit,  emitSUnit,  ermsSUnit, ermssSUnit, betaSUnit, gammaSUnit, ezSUnit;
 
   if(opt.Contains("units") && n0) {
 
@@ -306,6 +292,8 @@ int main(int argc,char *argv[]) {
   tspaSUnit = "#mum";
   
   // Emittance units
+  // emitUnit = 0.1 * PUnits::um;
+  // emitSUnit = "#times 100 nm";
   emitUnit = PUnits::um;
   emitSUnit = "#mum";
   // emitUnit = 10 * PUnits::um;
@@ -316,15 +304,28 @@ int main(int argc,char *argv[]) {
   // emitSUnit = "10 nm";
 
   // beta units
-  betaUnit = PUnits::um;
-  betaSUnit = "#mum";
+  betaUnit = PUnits::mm;
+  betaSUnit = "mm";
+  
+  // gamma units
+  gammaUnit = 1/PUnits::m;
+  gammaSUnit = "m^{-1}";
   
   // Relative energy spread units
+  // ermsUnit = 0.1 * PUnits::perCent; 
+  // ermsSUnit = "0.1%";
   ermsUnit = PUnits::perCent; 
   ermsSUnit = "%";
   // ermsUnit = PUnits::perThousand; 
   // ermsSUnit = "0.1 %";
 
+  // Slice elative energy spread units  
+  // ermssUnit = 0.1 * PUnits::perCent; 
+  // ermssSUnit = "0.1%";
+  ermssUnit = PUnits::perCent; 
+  ermssSUnit = "%";
+
+  
   // Ez unit
   ezUnit = PUnits::GV/PUnits::meter;
   ezSUnit = "GV/m";
@@ -617,13 +618,13 @@ int main(int argc,char *argv[]) {
     Double_t x1min = -999;
     Double_t x1max = -999;
 
-    FindLimits(hScanX1,x1min,x1max,peakFactor);
+    PUtils::FindLimits(hScanX1,x1min,x1max,peakFactor);
     
     x1BinMin = x1min;
     x1BinMax = x1max;
       
     peakFactor = 0.1;
-    FindLimits(hScanX1,x1min,x1max,peakFactor);
+    PUtils::FindLimits(hScanX1,x1min,x1max,peakFactor);
     
     x1Min = x1min - rfactor*(x1max-x1min);
     x1Max = x1max + 2*rfactor*(x1max-x1min);
@@ -654,7 +655,7 @@ int main(int argc,char *argv[]) {
       Double_t x2min = -999;
       Double_t x2max = -999;
       
-      FindLimits(hScanX2,x2min,x2max,peakFactor);
+      PUtils::FindLimits(hScanX2,x2min,x2max,peakFactor);
       if( x2max-x2min < 0.1) {
 	x2min -= 0.1;
 	x2max += 0.1;
@@ -666,7 +667,7 @@ int main(int argc,char *argv[]) {
       Double_t x3min = -999;
       Double_t x3max = -999;
       if(Nvar==7) {
-	FindLimits(hScanX3,x3min,x3max,peakFactor);
+	PUtils::FindLimits(hScanX3,x3min,x3max,peakFactor);
 	x3Min = x3min - rfactor2*(x3max-x3min);
 	x3Max = x3max + rfactor2*(x3max-x3min);
       }
@@ -681,7 +682,7 @@ int main(int argc,char *argv[]) {
     } else {
       Double_t p2min = -999;
       Double_t p2max = -999;
-      FindLimits(hScanP2,p2min,p2max,peakFactor);
+      PUtils::FindLimits(hScanP2,p2min,p2max,peakFactor);
       p2Min = p2min - rfactor2*(p2max-p2min);
       p2Max = p2max + rfactor2*(p2max-p2min);
       if(p2Max<-p2Min) p2Max = -p2Min; 
@@ -689,7 +690,7 @@ int main(int argc,char *argv[]) {
       
       Double_t p3min = -999;
       Double_t p3max = -999;
-      FindLimits(hScanP3,p3min,p3max,peakFactor);
+      PUtils::FindLimits(hScanP3,p3min,p3max,peakFactor);
       p3Min = p3min - rfactor2*(p3max-p3min);
       p3Max = p3max + rfactor2*(p3max-p3min);
       if(p3Max<-p3Min) p3Max = -p3Min; 
@@ -705,6 +706,11 @@ int main(int argc,char *argv[]) {
     if(pData->Is3D()) {
       if(x3Min<X3MIN) x3Min = X3MIN;
       if(x3Max>X3MAX) x3Max = X3MAX;
+
+      if(fabs(x3Max)<fabs(x2Max)) {
+	x3Min = x2Min;
+	x3Max = x2Max;	
+      }
     }
 
     // Overrides auto z ranging if specified in command line
@@ -793,7 +799,7 @@ int main(int argc,char *argv[]) {
 
     hX1->SetFillStyle(1001);
     hX1->SetFillColor(PGlobals::elecFill);
-    hX1->SetLineWidth(2);
+    hX1->SetLineWidth(3);
     
     sprintf(hName,"hP1");
     TH1F *hP1 = (TH1F*) gROOT->FindObject(hName);
@@ -1048,7 +1054,7 @@ int main(int argc,char *argv[]) {
     Double_t pzmin = -999;
     for(Int_t i=1;i<=hP1->GetNbinsX();i++) {
       Double_t binValue = hP1->GetBinContent(i);
-      if(binValue>maxValue/2) {
+      if(binValue>maxValue/4.0) {
 	lBin = i;
 	pzmin = hP1->GetBinCenter(i);
 	break;
@@ -1059,7 +1065,7 @@ int main(int argc,char *argv[]) {
     Double_t pzmax = -999;
     for(Int_t i=hP1->GetNbinsX();i>0;i--) {
       Double_t binValue = hP1->GetBinContent(i);
-      if(binValue>maxValue/2) {
+      if(binValue>maxValue/4.0) {
 	rBin = i;
 	pzmax = hP1->GetBinCenter(i);
 	break;
@@ -1074,7 +1080,8 @@ int main(int argc,char *argv[]) {
     Double_t pzmeanFWHM = hP1cut->GetMean();
     Double_t pzrmsFWHM = hP1cut->GetRMS();
 
-
+    cout << Form(" Rel. energy spread (fwhm) = %f",pzrmsFWHM/pzmeanFWHM) << endl;
+    
     // Basically the same, but in longitudinal range
     hP1X1range->GetStats(stats);
 
@@ -1120,6 +1127,7 @@ int main(int argc,char *argv[]) {
     Double_t x_rms = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
     Double_t px_mean = stats[4]/stats[0];
     Double_t px_rms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+    Double_t xpx_rms = xyrms;
 
     Double_t beta = xrms2 / emit;
     Double_t gamma = yrms2 / emit;
@@ -1128,6 +1136,8 @@ int main(int argc,char *argv[]) {
     //    Double_t grel = hP1->GetMean() * eneUnit/PConst::ElectronMassE;
     Double_t grel = hP1->GetMean();
     Double_t betax = beta * grel;
+    Double_t gammax = gamma / grel;
+    Double_t alphax = alpha;
 
     Double_t factor =  beta*beta + 2 * beta * gamma + gamma*gamma - 4 * emit;
     if(factor<0.0) factor *= -1;
@@ -1168,10 +1178,11 @@ int main(int argc,char *argv[]) {
 
     Double_t grel_r = hP1range->GetMean();
     Double_t betax_r = beta * grel_r;
-
+    Double_t gammax_r = gamma / grel_r;
+    Double_t alphax_r = alpha;
 
     // P3X3 SPACE -----------------------
-    Double_t emity = 0, y_mean = 0, y_rms = 0, py_mean = 0, py_rms = 0, betay = 0;
+    Double_t emity = 0, y_mean = 0, y_rms = 0, py_mean = 0, py_rms = 0, ypy_rms = 0, betay = 0;
     Double_t emity_r = 0, y_mean_r = 0, y_rms_r = 0, py_mean_r = 0, py_rms_r = 0, betay_r = 0;
 
     TEllipse *ellipP3X3 = NULL;
@@ -1189,6 +1200,7 @@ int main(int argc,char *argv[]) {
       y_rms = (xrms2>0.0) ? TMath::Sqrt(xrms2) : 0.0 ;
       py_mean = stats[4]/stats[0];
       py_rms = (yrms2>0.0) ? TMath::Sqrt(yrms2) : 0.0 ;
+      ypy_rms = xyrms;
       
       beta = xrms2 / emit;
       gamma = yrms2 / emit;
@@ -1457,6 +1469,7 @@ int main(int argc,char *argv[]) {
       x_rms  *= skindepth / tspaUnit;
       px_mean *= PConst::ElectronMassE / teneUnit;
       px_rms  *= PConst::ElectronMassE / teneUnit;
+      xpx_rms *= (PConst::ElectronMassE / teneUnit) * (skindepth / tspaUnit);
 
       x2Min *= skindepth/tspaUnit;
       x2Max *= skindepth/tspaUnit;
@@ -1488,6 +1501,7 @@ int main(int argc,char *argv[]) {
 	y_rms  *= skindepth / tspaUnit;
 	py_mean *= PConst::ElectronMassE / teneUnit;
 	py_rms  *= PConst::ElectronMassE / teneUnit;      
+	ypy_rms  *= (PConst::ElectronMassE / teneUnit) * (skindepth / tspaUnit);      
 	
 	x3Min *= skindepth/tspaUnit;
 	x3Max *= skindepth/tspaUnit;
@@ -1532,13 +1546,26 @@ int main(int argc,char *argv[]) {
       emitx_r *= skindepth/emitUnit;
 
       betax *= skindepth;
+      betax_r *= skindepth;
       if(opt.Contains("best")) {
 	PUnits::BestUnit bbetaSUnit(betax,"Length");
 	bbetaSUnit.GetBestUnits(betaUnit,betaSUnit);
 	cout << bbetaSUnit << endl;
       }
       betax /= betaUnit;
-      betax_r *= skindepth/emitUnit;
+      betax_r /= betaUnit;
+
+      gammax *= kp;
+      gammax_r *= kp;
+
+      gammax /= gammaUnit;
+      gammax_r /= gammaUnit;      
+      alphax *= 1.;
+      alphax_r *= 1.;
+
+      cout << Form(" Emit = %f.3 %s  Beta = %f.3 %s  gamma = %f.3 %s  alpha = %f.3",emitx,emitSUnit.c_str(),betax,betaSUnit.c_str(),gammax,gammaSUnit.c_str(),alphax) << endl;
+      
+      cout << Form(" Emit = %f.3 %s  Beta = %f.3 %s  gamma = %f.3 %s  alpha = %f.3",emitx_r,emitSUnit.c_str(),betax_r,betaSUnit.c_str(),gammax_r,gammaSUnit.c_str(),alphax_r) << endl;
 
       if(pData->Is3D()) {
 	emity *= skindepth / emitUnit;
@@ -1601,30 +1628,45 @@ int main(int argc,char *argv[]) {
       erelMax = PUnits::perCent/ermsUnit;
       
       for(Int_t k=0;k<SNbin;k++)
-       	sErms[k]  *= PUnits::perCent/ermsUnit;
+       	sErms[k]  *= PUnits::perCent/ermssUnit;
       
     }
     // End of the users units module    
 
-    // Average emittance
+    // Sliced average quantities 
+    Double_t xmeanavg = 0;
+    Double_t xrmsavg = 0;
     Double_t emitxavg = 0;
+    Double_t sErmsavg = 0;
     
     // Extract from selected slices:
     Double_t norm = 0;
     for(Int_t i=0;i<SNbin;i++) {
       emitxavg += hP2X2sl[i]->GetEntries() * semitx[i];
+      xmeanavg += hP2X2sl[i]->GetEntries() * sx_mean[i];
+      xrmsavg  += hP2X2sl[i]->GetEntries() * sx_rms[i];
+      sErmsavg += hP2X2sl[i]->GetEntries() * sErms[i];
       norm += hP2X2sl[i]->GetEntries();
     }
     emitxavg /= norm;
+    xmeanavg /= norm;
+    xrmsavg /= norm;
+    sErmsavg /= norm;
     
+    Double_t ymeanavg = 0;
+    Double_t yrmsavg = 0;
     Double_t emityavg = 0;
     if(pData->Is3D()) {
       norm = 0;
       for(Int_t i=0;i<SNbin;i++) {
 	emityavg += hP3X3sl[i]->GetEntries() * semity[i];
+	ymeanavg += hP3X3sl[i]->GetEntries() * sy_mean[i];
+	yrmsavg  += hP3X3sl[i]->GetEntries() * sy_rms[i];
 	norm += hP3X3sl[i]->GetEntries();
       }
       emityavg /= norm;
+      ymeanavg /= norm;
+      yrmsavg /= norm;
     }
     
     if(opt.Contains("units")) {
@@ -1632,7 +1674,7 @@ int main(int argc,char *argv[]) {
       cout << Form("  Integrated charge (RAW) of specie %3i = %8f %s",index,Charge,chargeSUnit.c_str()) << endl;
       cout << Form("  Peak current = %6.3f %s",hX1->GetMaximum(),curSUnit.c_str()) << endl;
       cout << Form("  Total energy = %6.3f %s, rms = %3.1f %s",pzmean,eneSUnit.c_str(),(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str()) << endl;
-      cout << Form("  Corr. energy spread = %.3f \%/%s",zpzcorrrel,spaSUnit.c_str()) << endl;
+      cout << Form("  Corr. energy spread = %.3f %%/%s",zpzcorrrel,spaSUnit.c_str()) << endl;
       cout << Form("  Minimum energy = %.3f %s",MinP1 *  PConst::ElectronMassE / eneUnit,eneSUnit.c_str()) << endl;
       cout << Form("  Length = %6.3f %s (rms)",zrms,spaSUnit.c_str()) << endl;
       cout << Form("  Width x = %6.3f %s (rms)",x_rms,tspaSUnit.c_str()) << endl;
@@ -1647,7 +1689,7 @@ int main(int argc,char *argv[]) {
       cout << Form("\n 5. Saving results to file .. ") << endl;
   
       // OUTPUT ROOT FILE WITH THE PLOTS:
-      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s.root",sim.Data(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
+      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-Evolution-%s.root",simo.Data(),pData->GetRawSpeciesName(index).c_str(),simo.Data());
       TFile * ifile = (TFile*) gROOT->GetListOfFiles()->FindObject(filename);
       // if doesn't exist the directory should be created
       if (!ifile) {
@@ -1750,7 +1792,29 @@ int main(int argc,char *argv[]) {
       gPzcorrrelvsTime->SetPoint(nPoints,Time,zpzcorrrel);
       gPzcorrrelvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gErmsavgvsTime");     
+      TGraph *gErmsavgvsTime = NULL;
+      gErmsavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gErmsavgvsTime==NULL) {
+	gErmsavgvsTime = new TGraph();
+	gErmsavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gErmsavgvsTime->SetLineWidth(3);
+	gErmsavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gErmsavgvsTime->SetMarkerStyle(20);
+	gErmsavgvsTime->SetMarkerSize(0.4);
+	gErmsavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gErmsavgvsTime->GetN(); 
+      }  
 
+      gErmsavgvsTime->Set(nPoints+1);
+      gErmsavgvsTime->SetPoint(nPoints,Time,sErmsavg);
+      gErmsavgvsTime->Write(gName,TObject::kOverwrite);
+
+
+      
       sprintf(gName,"gZmeanvsTime");     
       TGraph *gZmeanvsTime = NULL;
       gZmeanvsTime = (TGraph*) ifile->Get(gName);
@@ -1835,7 +1899,26 @@ int main(int argc,char *argv[]) {
       gPxrmsvsTime->SetPoint(nPoints,Time,px_rms);
       gPxrmsvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gxPxrmsvsTime");     
+      TGraph *gxPxrmsvsTime = NULL;
+      gxPxrmsvsTime = (TGraph*) ifile->Get(gName);
+      if(gxPxrmsvsTime==NULL) {
+	gxPxrmsvsTime = new TGraph();
+	gxPxrmsvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gxPxrmsvsTime->SetLineWidth(3);
+	gxPxrmsvsTime->SetLineColor(PGlobals::fieldLine);
+	gxPxrmsvsTime->SetMarkerStyle(20);
+	gxPxrmsvsTime->SetMarkerSize(0.4);
+	gxPxrmsvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gxPxrmsvsTime->GetN(); 
+      }  
 
+      gxPxrmsvsTime->Set(nPoints+1);
+      gxPxrmsvsTime->SetPoint(nPoints,Time,xpx_rms);
+      gxPxrmsvsTime->Write(gName,TObject::kOverwrite);
 
       sprintf(gName,"gXmeanvsTime");     
       TGraph *gXmeanvsTime = NULL;
@@ -1858,6 +1941,28 @@ int main(int argc,char *argv[]) {
       gXmeanvsTime->SetPoint(nPoints,Time,x_mean);
       gXmeanvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gXmeanavgvsTime");     
+      TGraph *gXmeanavgvsTime = NULL;
+      gXmeanavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gXmeanavgvsTime==NULL) {
+	gXmeanavgvsTime = new TGraph();
+	gXmeanavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gXmeanavgvsTime->SetLineWidth(3);
+	gXmeanavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gXmeanavgvsTime->SetMarkerStyle(20);
+	gXmeanavgvsTime->SetMarkerSize(0.4);
+	gXmeanavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gXmeanavgvsTime->GetN(); 
+      }  
+
+      gXmeanavgvsTime->Set(nPoints+1);
+      gXmeanavgvsTime->SetPoint(nPoints,Time,xmeanavg);
+      gXmeanavgvsTime->Write(gName,TObject::kOverwrite);
+
+      
       sprintf(gName,"gXrmsvsTime");     
       TGraph *gXrmsvsTime = NULL;
       gXrmsvsTime = (TGraph*) ifile->Get(gName);
@@ -1878,6 +1983,28 @@ int main(int argc,char *argv[]) {
       gXrmsvsTime->Set(nPoints+1);
       gXrmsvsTime->SetPoint(nPoints,Time,x_rms);
       gXrmsvsTime->Write(gName,TObject::kOverwrite);
+
+      sprintf(gName,"gXrmsavgvsTime");     
+      TGraph *gXrmsavgvsTime = NULL;
+      gXrmsavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gXrmsavgvsTime==NULL) {
+	gXrmsavgvsTime = new TGraph();
+	gXrmsavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gXrmsavgvsTime->SetLineWidth(3);
+	gXrmsavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gXrmsavgvsTime->SetMarkerStyle(20);
+	gXrmsavgvsTime->SetMarkerSize(0.4);
+	gXrmsavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gXrmsavgvsTime->GetN(); 
+      }  
+
+      gXrmsavgvsTime->Set(nPoints+1);
+      gXrmsavgvsTime->SetPoint(nPoints,Time,xrmsavg);
+      gXrmsavgvsTime->Write(gName,TObject::kOverwrite);
+
 
       sprintf(gName,"gEmitxvsTime");     
       TGraph *gEmitxvsTime = NULL;
@@ -1986,6 +2113,26 @@ int main(int argc,char *argv[]) {
       gPyrmsvsTime->SetPoint(nPoints,Time,py_rms);
       gPyrmsvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gyPyrmsvsTime");     
+      TGraph *gyPyrmsvsTime = NULL;
+      gyPyrmsvsTime = (TGraph*) ifile->Get(gName);
+      if(gyPyrmsvsTime==NULL) {
+	gyPyrmsvsTime = new TGraph();
+	gyPyrmsvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gyPyrmsvsTime->SetLineWidth(3);
+	gyPyrmsvsTime->SetLineColor(PGlobals::fieldLine);
+	gyPyrmsvsTime->SetMarkerStyle(20);
+	gyPyrmsvsTime->SetMarkerSize(0.4);
+	gyPyrmsvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gyPyrmsvsTime->GetN(); 
+      }  
+
+      gyPyrmsvsTime->Set(nPoints+1);
+      gyPyrmsvsTime->SetPoint(nPoints,Time,ypy_rms);
+      gyPyrmsvsTime->Write(gName,TObject::kOverwrite);
 
       sprintf(gName,"gYmeanvsTime");     
       TGraph *gYmeanvsTime = NULL;
@@ -2008,6 +2155,28 @@ int main(int argc,char *argv[]) {
       gYmeanvsTime->SetPoint(nPoints,Time,y_mean);
       gYmeanvsTime->Write(gName,TObject::kOverwrite);
 
+      sprintf(gName,"gYmeanavgvsTime");     
+      TGraph *gYmeanavgvsTime = NULL;
+      gYmeanavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gYmeanavgvsTime==NULL) {
+	gYmeanavgvsTime = new TGraph();
+	gYmeanavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gYmeanavgvsTime->SetLineWidth(3);
+	gYmeanavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gYmeanavgvsTime->SetMarkerStyle(20);
+	gYmeanavgvsTime->SetMarkerSize(0.4);
+	gYmeanavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gYmeanavgvsTime->GetN(); 
+      }  
+
+      gYmeanavgvsTime->Set(nPoints+1);
+      gYmeanavgvsTime->SetPoint(nPoints,Time,ymeanavg);
+      gYmeanavgvsTime->Write(gName,TObject::kOverwrite);
+
+
       sprintf(gName,"gYrmsvsTime");     
       TGraph *gYrmsvsTime = NULL;
       gYrmsvsTime = (TGraph*) ifile->Get(gName);
@@ -2029,6 +2198,29 @@ int main(int argc,char *argv[]) {
       gYrmsvsTime->SetPoint(nPoints,Time,y_rms);
       gYrmsvsTime->Write(gName,TObject::kOverwrite);
 
+
+      sprintf(gName,"gYrmsavgvsTime");     
+      TGraph *gYrmsavgvsTime = NULL;
+      gYrmsavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gYrmsavgvsTime==NULL) {
+	gYrmsavgvsTime = new TGraph();
+	gYrmsavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gYrmsavgvsTime->SetLineWidth(3);
+	gYrmsavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gYrmsavgvsTime->SetMarkerStyle(20);
+	gYrmsavgvsTime->SetMarkerSize(0.4);
+	gYrmsavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gYrmsavgvsTime->GetN(); 
+      }  
+
+      gYrmsavgvsTime->Set(nPoints+1);
+      gYrmsavgvsTime->SetPoint(nPoints,Time,yrmsavg);
+      gYrmsavgvsTime->Write(gName,TObject::kOverwrite);
+
+      
       sprintf(gName,"gEmityvsTime");     
       TGraph *gEmityvsTime = NULL;
       gEmityvsTime = (TGraph*) ifile->Get(gName);
@@ -2095,6 +2287,50 @@ int main(int argc,char *argv[]) {
       gEmityavgvsTime->Write(gName,TObject::kOverwrite);
       // ------
 
+      sprintf(gName,"gAmeanvsTime");     
+      TGraph *gAmeanvsTime = NULL;
+      gAmeanvsTime = (TGraph*) ifile->Get(gName);
+      if(gAmeanvsTime==NULL) {
+	gAmeanvsTime = new TGraph();
+	gAmeanvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gAmeanvsTime->SetLineWidth(3);
+	gAmeanvsTime->SetLineColor(PGlobals::fieldLine);
+	gAmeanvsTime->SetMarkerStyle(20);
+	gAmeanvsTime->SetMarkerSize(0.4);
+	gAmeanvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gAmeanvsTime->GetN(); 
+      }  
+
+      gAmeanvsTime->Set(nPoints+1);
+      gAmeanvsTime->SetPoint(nPoints,Time,
+			     TMath::Sqrt(x_mean*x_mean + y_mean*y_mean));
+      gAmeanvsTime->Write(gName,TObject::kOverwrite);
+
+      sprintf(gName,"gAmeanavgvsTime");     
+      TGraph *gAmeanavgvsTime = NULL;
+      gAmeanavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gAmeanavgvsTime==NULL) {
+	gAmeanavgvsTime = new TGraph();
+	gAmeanavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gAmeanavgvsTime->SetLineWidth(3);
+	gAmeanavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gAmeanavgvsTime->SetMarkerStyle(20);
+	gAmeanavgvsTime->SetMarkerSize(0.4);
+	gAmeanavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gAmeanavgvsTime->GetN(); 
+      }  
+
+      gAmeanavgvsTime->Set(nPoints+1);
+      gAmeanavgvsTime->SetPoint(nPoints,Time,TMath::Sqrt(xmeanavg*xmeanavg + ymeanavg*ymeanavg));
+      gAmeanavgvsTime->Write(gName,TObject::kOverwrite);
+
+      
       // Ez track addon (for hosing studies)
       if(opt.Contains("eztrack")) {
 	// Get 3D histogram in a zoomed area to save time
@@ -2252,9 +2488,13 @@ int main(int argc,char *argv[]) {
     // -----------------------------------------------------------------------------------
 
     //    if(!opt.Contains("loop")) { 
-
     cout << Form("\n 6. Preparing the graphs and plotting .. ") << endl;
 
+    // Output file
+    TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s",
+			    simo.Data(),pData->GetRawSpeciesName(index).c_str(),
+			    pData->GetRawSpeciesName(index).c_str(),simo.Data());
+    
     // Centering in the x1 mean
     if(opt.Contains("zmean")) {
       hX1->SetBins(x1Nbin,x1Min-zmean,x1Max-zmean);
@@ -2334,8 +2574,8 @@ int main(int argc,char *argv[]) {
       gP1->SetFillStyle(1001);
       gP1->SetFillColor(PGlobals::elecFill);
 
-      delete yarray;
-      delete xarray;
+      delete[] yarray;
+      delete[] xarray;
 
       // Ranges!!
       Double_t yMin =  999.9;
@@ -2387,6 +2627,8 @@ int main(int argc,char *argv[]) {
       Int_t sizex = 800;
       Int_t sizey = 600;
 
+      Int_t framewidth = PGlobals::frameWidth + 2;
+      
       char cName[32];
       sprintf(cName,"C");     
       TCanvas *C = (TCanvas*) gROOT->FindObject(cName);
@@ -2404,7 +2646,7 @@ int main(int argc,char *argv[]) {
       }
 
       // Text objects
-      TPaveText *textTime =  new TPaveText(0.55,0.76,0.80,0.86,"NDC");
+      TPaveText *textTime =  new TPaveText(0.55,0.76,0.84,0.9,"NDC");
       PGlobals::SetPaveTextStyle(textTime,32);
       textTime->SetTextFont(43);
       textTime->SetTextSize(22);
@@ -2436,14 +2678,14 @@ int main(int argc,char *argv[]) {
 	sprintf(ctext,"Q = %5.2f n0#timeskp^{-3}", Charge);    
       textCharge->AddText(ctext);
 
-      TPaveText *textMom = new TPaveText(0.55,0.07,0.80,0.17,"NDC");
+      TPaveText *textMom = new TPaveText(0.55,0.07,0.84,0.17,"NDC");
       PGlobals::SetPaveTextStyle(textMom,32); 
       textMom->SetTextColor(kGray+3);
       textMom->SetTextFont(63);
       textMom->SetTextSize(22);
       if(opt.Contains("fwhm")) {
 	if(opt.Contains("units") && pData->GetPlasmaDensity())
-	  sprintf(ctext,"#LTp_{z}#GT = %5.3f %s/c", pzmeanFWHM, eneSUnit.c_str());
+	  sprintf(ctext,"#LTp_{z}#GT = %5.2f %s/c", pzmeanFWHM, eneSUnit.c_str());
 	else
 	  sprintf(ctext,"#LTp_{z}#GT = %5.2f mc", pzmeanFWHM);    
       } else {
@@ -2455,10 +2697,11 @@ int main(int argc,char *argv[]) {
       textMom->AddText(ctext);
 
 
-      TPaveText *textInfo = new TPaveText(0.55,0.35,0.80,0.75,"NDC");
+      TPaveText *textInfo = new TPaveText(0.55,0.25,0.84,0.75,"NDC");
       PGlobals::SetPaveTextStyle(textInfo,32); 
       textInfo->SetTextColor(kGray+2);
-      textInfo->SetTextFont(42);
+      textInfo->SetTextFont(43);
+      textInfo->SetTextSize(22);
       if(opt.Contains("units")) 
 	sprintf(ctext,"Q = %5.2f %s",Charge,chargeSUnit.c_str());
       else
@@ -2466,19 +2709,19 @@ int main(int argc,char *argv[]) {
       
       textInfo->AddText(ctext);
       if(opt.Contains("units")) 
-	sprintf(ctext,"#Delta#zeta = %5.2f %s",zrms,spaSUnit.c_str());
+	sprintf(ctext,"#sigma_{#zeta} = %5.2f %s",zrms,spaSUnit.c_str());
       else
 	sprintf(ctext,"k_{p} #Delta#zeta = %5.2f",zrms);
       
       textInfo->AddText(ctext);
 
       if(opt.Contains("ecorr")) {
-	sprintf(ctext,"#deltap_{z,corr} = %4.2f %/%s",zpzcorrrel,spaSUnit.c_str());
+	sprintf(ctext,"#deltap_{z,corr} = %4.2f %%/%s",zpzcorrrel,spaSUnit.c_str());
       } else {
 	if(opt.Contains("fwhm"))
-	  sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
+	  sprintf(ctext,"#sigma_{#gamma}/#LT#gamma#GT = %4.2f %s",(pzrmsFWHM/pzmeanFWHM)/ermsUnit,ermsSUnit.c_str());
 	else
-	  sprintf(ctext,"#Delta#gamma/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
+	  sprintf(ctext,"#sigma_{#gamma}/#LT#gamma#GT = %4.1f %s",(pzrms/pzmean)/ermsUnit,ermsSUnit.c_str());
       }
       textInfo->AddText(ctext);
       
@@ -2500,15 +2743,15 @@ int main(int argc,char *argv[]) {
       } else {
 	if(opt.Contains("units"))
 	  sprintf(ctext,"#varepsilon_{n,x} = %5.2f %s",emitx,emitSUnit.c_str());
-      else
-	sprintf(ctext,"k_{p} #varepsilon_{n,x} = %5.2f",emitx);
+	else
+	  sprintf(ctext,"k_{p} #varepsilon_{n,x} = %5.2f",emitx);
 	
 	textInfo->AddText(ctext);
 	if(pData->Is3D()) {
 	  if(opt.Contains("units"))
 	    sprintf(ctext,"#varepsilon_{n,y} = %5.2f %s",emity,emitSUnit.c_str());
-	else
-	  sprintf(ctext,"k_{p} #varepsilon_{n,y} = %5.2f",emity);
+	  else
+	    sprintf(ctext,"k_{p} #varepsilon_{n,y} = %5.2f",emity);
 	
 	  textInfo->AddText(ctext);
 	}
@@ -2521,24 +2764,24 @@ int main(int argc,char *argv[]) {
       TString sLabels[] = {"(b)","(a)"};
       TPaveText **textLabel = new TPaveText*[NPad];
 
-      Double_t lMargin = 0.15;
-      Double_t rMargin = 0.18;
+      Double_t lMargin = 0.12;
+      Double_t rMargin = 0.15;
       Double_t bMargin = 0.15;
       Double_t tMargin = 0.04;
       Double_t factor = 1.0;
-      Double_t gap = 0.028;
+      Double_t gap = 0.035;
       PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor,gap);
 
       // Define the frames for plotting
       Int_t fonttype = 43;
-      Int_t fontsize = 24;
-      Int_t tfontsize = 28;
+      Int_t fontsize = 28;
+      Int_t tfontsize = 30;
       Double_t txoffset = 2.0;
       Double_t lxoffset = 0.02;
-      Double_t tyoffset = 1.3;
+      Double_t tyoffset = 1.0;
       Double_t lyoffset = 0.01;
       Double_t tylength = 0.015;
-      Double_t txlength = 0.025;
+      Double_t txlength = 0.03;
       for(Int_t i=0;i<NPad;i++) {
 	char name[16];
 	sprintf(name,"pad_%i",i);
@@ -2578,9 +2821,15 @@ int main(int argc,char *argv[]) {
 	hFrame[i]->GetXaxis()->SetLabelSize(fontsize+2);
 	hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
 	hFrame[i]->GetXaxis()->CenterTitle();
-	hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
-      }
+	hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);     
+	hFrame[i]->GetXaxis()->SetNdivisions(510);
 
+	if(i!=0) {
+	  hFrame[i]->GetXaxis()->SetLabelSize(0);
+	  hFrame[i]->GetXaxis()->SetTitleSize(0);
+	}
+      }
+      
       C->cd(0);
       pad[1]->Draw();
       pad[1]->cd(); // <---------------------------------------------- Top Plot ---------
@@ -2614,26 +2863,24 @@ int main(int argc,char *argv[]) {
 
       hP1X1->Draw("colz 0 same");
       
-      gP1->SetLineWidth(2);
+      gP1->SetLineWidth(3);
       if(!opt.Contains("nospec")) {
 	gP1->Draw("F");
 	gP1->Draw("L");
       }
       
-      TLine lZmean(zmean,hP1X1->GetYaxis()->GetXmin(),zmean,hP1X1->GetYaxis()->GetXmax());
-      lZmean.SetLineColor(kGray+2);
-      lZmean.SetLineStyle(2);
-      lZmean.Draw();
-
       Float_t emean = pzmean;
       if(opt.Contains("fwhm"))
 	emean = pzmeanFWHM;
-      
+
+      TLine lZmean(zmean,hP1X1->GetYaxis()->GetXmin(),zmean,hP1X1->GetYaxis()->GetXmax());
+      lZmean.SetLineColor(kGray+2);
+      lZmean.SetLineStyle(2);
+     
       TLine lPmean(hP1X1->GetXaxis()->GetXmin(),emean,hP1X1->GetXaxis()->GetXmax(),emean);
       lPmean.SetLineColor(kGray+2);
       lPmean.SetLineStyle(2);
-      lPmean.Draw();
-
+     	
       // lines indicating the energy interval
       // TLine pzminline(hP1X1->GetXaxis()->GetXmin(),pzmin, ((xMax-xMin)/EneMax)*(EneMax/2) + xMin,pzmin);
       TLine pzminline(hP1X1->GetXaxis()->GetXmin(),pzmin,hP1X1->GetXaxis()->GetXmax(),pzmin);
@@ -2643,11 +2890,16 @@ int main(int argc,char *argv[]) {
       TLine pzmaxline(hP1X1->GetXaxis()->GetXmin(),pzmax,hP1X1->GetXaxis()->GetXmax(),pzmax);
       pzmaxline.SetLineColor(kGray+1);
       pzmaxline.SetLineStyle(3);
-      if(opt.Contains("fwhm")) {
-	pzmaxline.Draw();
-	pzminline.Draw();
-      }
-
+      
+      if(!opt.Contains("noline")) {
+	lZmean.Draw();
+	lPmean.Draw();
+	
+	if(opt.Contains("fwhm")) {
+	  pzmaxline.Draw();
+	  pzminline.Draw();
+	}
+      }    
       // hP1X1prof->SetMarkerStyle(1);
       // hP1X1prof->SetLineWidth(2);
       // hP1X1prof->Draw("zsame");
@@ -2707,11 +2959,11 @@ int main(int argc,char *argv[]) {
 			      gPad->GetUxmax(), gPad->GetUymax());
       lFrame->SetFillStyle(0);
       lFrame->SetLineColor(PGlobals::frameColor);
-      lFrame->SetLineWidth(PGlobals::frameWidth);
+      lFrame->SetLineWidth(framewidth);
+      // lFrame->SetLineWidth(4);
       lFrame->Draw();
       
       gPad->RedrawAxis(); 
-
 
       // Bottom plot -----------------------------------------
       C->cd(0);
@@ -2724,13 +2976,13 @@ int main(int argc,char *argv[]) {
       // }
 
       TLegend *Leg;
-      Leg=new TLegend(0.58,0.72,1 - 0.5*gPad->GetRightMargin() + 0.01,0.95);
+      Leg=new TLegend(0.6,0.6,1 - gPad->GetRightMargin() - 0.04 - 0.03 ,0.95);
 
       PGlobals::SetPaveStyle(Leg);
       Leg->SetTextAlign(12);
       Leg->SetTextColor(kGray+3);
       Leg->SetTextFont(43);
-      Leg->SetTextSize(16);
+      Leg->SetTextSize(20);
       Leg->SetLineColor(1);
       Leg->SetBorderSize(0);
       Leg->SetFillColor(0);
@@ -2742,7 +2994,7 @@ int main(int argc,char *argv[]) {
 	sprintf(sleg,"Current [%s]",curSUnit.c_str());
 	Leg->AddEntry(hX1  ,sleg,"L");	
 	//sprintf(sleg,"Energy spread [%s]",ermsUnit.c_str());
-	sprintf(sleg,"E. spread [%s]",ermsSUnit.c_str());
+	sprintf(sleg,"E. spread [%s]",ermssSUnit.c_str());
 	Leg->AddEntry(gErms,sleg,"PL");
 	//      sprintf(sleg,"Emittance [%s]",emitUnit.c_str());
 	sprintf(sleg,"Emitt. x [%s]",emitSUnit.c_str());
@@ -2765,20 +3017,22 @@ int main(int argc,char *argv[]) {
 	}
 	
       }
-      
+
       hFrame[0]->GetYaxis()->SetTitle("");
       cout << Form(" - Imax = %.2f",Imax) << endl;
-      hFrame[0]->GetYaxis()->SetRangeUser(0.0,yMax);
+      hFrame[0]->GetYaxis()->SetRangeUser(0.001,yMax);
       hFrame[0]->Draw("axis");
 
       if(opt.Contains("smooth"))
 	hX1->Smooth(3);
-      hX1->Draw("hist LF2 same");
+      hX1->Draw("hist LF same");
 
       TLine lZmean2(zmean,0.0,zmean,yMax);
       lZmean2.SetLineColor(kGray+2);
       lZmean2.SetLineStyle(2);
-      lZmean2.Draw();
+      if(!opt.Contains("noline")) {
+	lZmean2.Draw();
+      }
 
       Size_t markerSize = 1.0; 
       Width_t lineWidth  = 2.0;   
@@ -2790,19 +3044,6 @@ int main(int argc,char *argv[]) {
       gXrms->SetLineColor(kGray+1);
       gXrms->SetLineWidth(lineWidth);
       //gXrms->Draw("PL");
-
-      gErms->SetMarkerStyle(20);
-      gErms->SetMarkerSize(markerSize);
-      gErms->SetMarkerColor(kOrange+10);
-      gErms->SetLineColor(kOrange+10);
-      gErms->SetLineWidth(lineWidth);
-      gErms->Draw("PL");
-
-      if(opt.Contains("bw")) {
-	gErms->SetMarkerStyle(21);
-	gErms->SetMarkerSize(markerSize-0.2);
-      }
-
 
       if(pData->Is3D()) {
 	gEmity->SetMarkerStyle(20);
@@ -2819,7 +3060,19 @@ int main(int argc,char *argv[]) {
       gEmitx->SetLineWidth(lineWidth);
       gEmitx->SetLineColor(kGray+3);
       gEmitx->Draw("PL");
-   
+
+      gErms->SetMarkerStyle(20);
+      gErms->SetMarkerSize(markerSize);
+      gErms->SetMarkerColor(kOrange+10);
+      gErms->SetLineColor(kOrange+10);
+      gErms->SetLineWidth(lineWidth);
+      gErms->Draw("PL");
+
+      if(opt.Contains("bw")) {
+	gErms->SetMarkerStyle(21);
+	gErms->SetMarkerSize(markerSize-0.2);
+      }
+      
       Leg->Draw();
 
       gPad->Update();
@@ -2838,23 +3091,19 @@ int main(int argc,char *argv[]) {
       // textLabel[0]->Draw();
 
       TBox *lFrame2 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			      gPad->GetUxmax(), gPad->GetUymax());
+			       gPad->GetUxmax(), gPad->GetUymax());
       lFrame2->SetFillStyle(0);
       lFrame2->SetLineColor(PGlobals::frameColor);
-      lFrame2->SetLineWidth(PGlobals::frameWidth);
+      lFrame2->SetLineWidth(framewidth);
+      lFrame2->SetLineWidth(4);
       lFrame2->Draw();
 
       gPad->RedrawAxis(); 
-
-
 
       // Print to file --------------------------------------
 
       C->cd();
       
-      // Output file
-      TString fOutName = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data());
-
       TString fOutNamep1x1 = fOutName + Form("-%s_%i","p1x1",time);
       PGlobals::imgconv(C,fOutNamep1x1,opt);
 
@@ -2882,8 +3131,8 @@ int main(int argc,char *argv[]) {
 	C1->Clear();
 	
 	Int_t NPad1 = 2;
-	lMargin = 0.15;
-	rMargin = 0.18;
+	lMargin = 0.12;
+	rMargin = 0.15;
 	bMargin = 0.15;
 	tMargin = 0.04;
 	factor = 1.0;  
@@ -2945,7 +3194,14 @@ int main(int argc,char *argv[]) {
 	  hFrame[i]->GetXaxis()->SetLabelSize(fontsize+2);
 	  hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
 	  hFrame[i]->GetXaxis()->CenterTitle();
-	  hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+	  hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
+	  hFrame[i]->GetXaxis()->SetNdivisions(510);
+
+	  if(i!=0) {
+	    hFrame[i]->GetXaxis()->SetLabelSize(0);
+	    hFrame[i]->GetXaxis()->SetTitleSize(0);
+	  }
+
 	}
 
      
@@ -3027,11 +3283,11 @@ int main(int argc,char *argv[]) {
 	  
 	}
 
-	TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.40*yrange,
-						x1+0.20*xrange,y2-0.05*yrange,"NDC");
+	TPaveText *textInfoX2X1 = new TPaveText(x1+0.02*xrange,y2-0.50*yrange,
+						x1+0.20*xrange,y2-0.01*yrange,"NDC");
 	PGlobals::SetPaveTextStyle(textInfoX2X1,12); 
 	textInfoX2X1->SetTextColor(kGray+3);
-	textInfoX2X1->SetTextFont(42);
+	textInfoX2X1->SetTextFont(43);
 
 	char text[64];
 	if(opt.Contains("units")) {
@@ -3062,10 +3318,10 @@ int main(int argc,char *argv[]) {
 	textInfoX2X1->Draw();
 
 	TBox *lFrame = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			      gPad->GetUxmax(), gPad->GetUymax());
+				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
-	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->SetLineWidth(framewidth);
 	lFrame->Draw();
 	
 	gPad->RedrawAxis(); 
@@ -3183,10 +3439,10 @@ int main(int argc,char *argv[]) {
 	textInfoX3X1->Draw();
 
 	TBox *lFrame2 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			      gPad->GetUxmax(), gPad->GetUymax());
+				 gPad->GetUxmax(), gPad->GetUymax());
 	lFrame2->SetFillStyle(0);
 	lFrame2->SetLineColor(PGlobals::frameColor);
-	lFrame2->SetLineWidth(PGlobals::frameWidth);
+	lFrame2->SetLineWidth(framewidth);
 	lFrame2->Draw();
 
 	gPad->RedrawAxis(); 
@@ -3347,7 +3603,7 @@ int main(int argc,char *argv[]) {
 				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
-	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->SetLineWidth(framewidth);
 	lFrame->Draw();
 
 	gPad->RedrawAxis(); 
@@ -3450,7 +3706,7 @@ int main(int argc,char *argv[]) {
 	
 	hX3X2cl->GetZaxis()->SetTickLength(0.01);      
 
-	hX3X2cl->Draw("colz 0 same");
+	hX3X2cl->Draw("colz0 same0");
 
 	TLine lX3mean;
 	lX3mean.SetLineColor(kGray+2);
@@ -3494,7 +3750,7 @@ int main(int argc,char *argv[]) {
 	yrange = y2-y1; 
 	xrange = x2-x1; 
     
-	TPaveText *textStatX3X2 =  new TPaveText(x1+0.02*xrange,y2-0.40*yrange,x1+0.30*xrange,y2-0.05*yrange,"NDC");
+	TPaveText *textStatX3X2 =  new TPaveText(x1+0.02*xrange,y2-0.5*yrange,x1+0.30*xrange,y2-0.02*yrange,"NDC");
 	PGlobals::SetPaveTextStyle(textStatX3X2,12); 
 	textStatX3X2->SetTextColor(kGray+3);
 	textStatX3X2->SetTextFont(42);
@@ -3537,7 +3793,7 @@ int main(int argc,char *argv[]) {
 				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
-	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->SetLineWidth(framewidth);
 	lFrame->Draw();
 	
 	gPad->RedrawAxis(); 
@@ -3555,8 +3811,8 @@ int main(int argc,char *argv[]) {
 
 
       const Int_t NPad2 = 1;
-      lMargin = 0.15;
-      rMargin = 0.18;
+      lMargin = 0.12;
+      rMargin = 0.15;
       bMargin = 0.15;
       tMargin = 0.04;
       factor = 1.0;  
@@ -3637,7 +3893,7 @@ int main(int argc,char *argv[]) {
             
       hP2X2cl->GetZaxis()->SetTickLength(0.01);      
       
-      hP2X2cl->Draw("colz same");
+      hP2X2cl->Draw("colz same0");
 
       TLine lXmean(x_mean,hFrame[0]->GetYaxis()->GetXmin(),x_mean,hFrame[0]->GetYaxis()->GetXmax());
       lXmean.SetLineColor(kGray+2);
@@ -3680,23 +3936,34 @@ int main(int argc,char *argv[]) {
 	pFrame->Draw();
       }
 
-      TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.30,x1+0.20,y2-0.05,"NDC");
+      y1 = gPad->GetBottomMargin();
+      y2 = 1 - gPad->GetTopMargin();
+      x1 = gPad->GetLeftMargin();
+      x2 = 1 - gPad->GetRightMargin();
+      yrange = y2-y1; 
+      xrange = x2-x1; 
+
+      TPaveText *textStatInt = new TPaveText(x1+0.02*xrange,y2-0.5*yrange,x1+0.30*xrange,y2-0.02*yrange,"NDC");
       PGlobals::SetPaveTextStyle(textStatInt,12); 
       textStatInt->SetTextColor(kGray+3);
       textStatInt->SetTextFont(42);
-
+      
       char text[64];
       if(opt.Contains("units")) {
 	sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
 	textStatInt->AddText(text);
-	sprintf(text,"#Deltax = %5.2f %s",x_rms,tspaSUnit.c_str());
+	sprintf(text,"#sigma_{x} = %5.2f %s",x_rms,tspaSUnit.c_str());
 	textStatInt->AddText(text);
-	sprintf(text,"#Deltap_{x} = %5.2f %s",px_rms,teneSUnit.c_str());
+	sprintf(text,"#sigma_{p_{x}} = %5.2f %s/c",px_rms,teneSUnit.c_str());
 	textStatInt->AddText(text);
 	sprintf(text,"#varepsilon_{x} = %5.2f %s",emitx,emitSUnit.c_str());
 	textStatInt->AddText(text);
 	sprintf(text,"#beta_{x} = %5.2f %s",betax,betaSUnit.c_str());
 	textStatInt->AddText(text);
+	sprintf(text,"#gamma_{x} = %5.2f %s",gammax,gammaSUnit.c_str());
+	textStatInt->AddText(text);
+	sprintf(text,"#alpha_{x} = %5.2f",alphax);
+	textStatInt->AddText(text);	
       } else {
 	sprintf(text,"Q = %5.1f Q_{0}",Charge);
 	textStatInt->AddText(text);
@@ -3713,10 +3980,10 @@ int main(int argc,char *argv[]) {
       textStatInt->Draw();
 
       TBox *lFrame3 = new TBox(gPad->GetUxmin(), gPad->GetUymin(),
-			      gPad->GetUxmax(), gPad->GetUymax());
+			       gPad->GetUxmax(), gPad->GetUymax());
       lFrame3->SetFillStyle(0);
       lFrame3->SetLineColor(PGlobals::frameColor);
-      lFrame3->SetLineWidth(PGlobals::frameWidth);
+      lFrame3->SetLineWidth(framewidth);
       lFrame3->Draw();
       
       gPad->RedrawAxis(); 
@@ -3814,7 +4081,7 @@ int main(int argc,char *argv[]) {
 	
 	hP3X3cl->GetZaxis()->SetTickLength(0.01);      
 	
-	hP3X3cl->Draw("colz same");
+	hP3X3cl->Draw("colz same0");
 	
 	TLine lYmean(y_mean,hFrame[0]->GetYaxis()->GetXmin(),y_mean,hFrame[0]->GetYaxis()->GetXmax());
 	lYmean.SetLineColor(kGray+2);
@@ -3893,7 +4160,7 @@ int main(int argc,char *argv[]) {
 				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
-	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->SetLineWidth(framewidth);
 	lFrame->Draw();
 	
 	gPad->RedrawAxis(); 
@@ -3918,7 +4185,7 @@ int main(int argc,char *argv[]) {
 	Int_t ndiv = 4;
 	CA4->Divide(1,ndiv);
 	
-	TString fOutName2 = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s-slp2x2_%i",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
+	TString fOutName2 = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s-slp2x2_%i",simo.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),simo.Data(),time);
 	
 	CA4->Print(fOutName2 + ".ps[","Portrait");
 
@@ -4008,12 +4275,12 @@ int main(int argc,char *argv[]) {
 	textStatInt->SetTextColor(kGray+3);
 	textStatInt->SetTextFont(42);
 	
-	char text[64];
-	sprintf(text,Form("#LTx#GT_{rms} = %5.2f %s",xrms,tspaSUnit.c_str()));
+	char text[128];
+	sprintf(text,"#LTx#GT_{rms} = %5.2f %s",xrms,tspaSUnit.c_str());
 	textStatInt->AddText(text);
-	sprintf(text,Form("#LTp_{x}#GT_{rms} = %5.2f %s/c",yrms,teneSUnit.c_str()));
+	sprintf(text,"#LTp_{x}#GT_{rms} = %5.2f %s/c",yrms,teneSUnit.c_str());
 	textStatInt->AddText(text);
-	sprintf(text,Form("#varepsilon_{n} = %5.2f %s",emitx,emitSUnit.c_str()));
+	sprintf(text,"#varepsilon_{n} = %5.2f %s",emitx,emitSUnit.c_str());
 	textStatInt->AddText(text);
 	textStatInt->Draw();
 	
@@ -4103,13 +4370,13 @@ int main(int argc,char *argv[]) {
 	  textStat[k]->SetTextFont(42);
 	  
 	  char text[64];
-	  sprintf(text,Form("%5.2f %s < #zeta < %5.2f %s",sBinLim[k],spaSUnit.c_str(),sBinLim[k+1],spaSUnit.c_str()));
+	  sprintf(text,"%5.2f %s < #zeta < %5.2f %s",sBinLim[k],spaSUnit.c_str(),sBinLim[k+1],spaSUnit.c_str());
 	  textStat[k]->AddText(text);
-	  sprintf(text,Form("#LTx#GT_{rms} = %5.2f %s",sx_rms[k],tspaSUnit.c_str()));
+	  sprintf(text,"#LTx#GT_{rms} = %5.2f %s",sx_rms[k],tspaSUnit.c_str());
 	  textStat[k]->AddText(text);
-	  sprintf(text,Form("#LTp_{x}#GT_{rms} = %5.2f %s",spx_rms[k],teneSUnit.c_str()));
+	  sprintf(text,"#LTp_{x}#GT_{rms} = %5.2f %s",spx_rms[k],teneSUnit.c_str());
 	  textStat[k]->AddText(text);
-	  sprintf(text,Form("#varepsilon_{n,x} = %5.2f %s",semitx[k],emitSUnit.c_str()));
+	  sprintf(text,"#varepsilon_{n,x} = %5.2f %s",semitx[k],emitSUnit.c_str());
 	  textStat[k]->AddText(text);
 	  textStat[k]->Draw();
 	  
@@ -4128,10 +4395,10 @@ int main(int argc,char *argv[]) {
     }
     
     if(opt.Contains("file")) {
-      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s_%i.root",sim.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),sim.Data(),time);
+      TString filename = Form("./%s/Plots/Bunch/%s/Bunch-%s-%s_%i.root",simo.Data(),pData->GetRawSpeciesName(index).c_str(),pData->GetRawSpeciesName(index).c_str(),simo.Data(),time);
       TFile *ofile = new TFile(filename,"RECREATE");
 
-      hX1->SetLineWidth(1);
+      hX1->SetLineWidth(2);
       hX1->SetLineColor(1);
       hX1->SetFillStyle(0);
 
@@ -4166,25 +4433,25 @@ int main(int argc,char *argv[]) {
     }
     
     // Delete[] newly created vectors
-    delete sBinLim;
-    delete zbin;
-    delete sEmean;
-    delete sErms;
+    delete[] sBinLim;
+    delete[] zbin;
+    delete[] sEmean;
+    delete[] sErms;
 
-    delete sx_mean;
-    delete sx_rms;
-    delete spx_mean;
-    delete spx_rms;
-    delete semitx;
-    delete sbetax;
+    delete[] sx_mean;
+    delete[] sx_rms;
+    delete[] spx_mean;
+    delete[] spx_rms;
+    delete[] semitx;
+    delete[] sbetax;
 
     if(pData->Is3D()) {  
-      delete sy_mean;
-      delete sy_rms;
-      delete spy_mean;
-      delete spy_rms;
-      delete semity;
-      delete sbetay;
+      delete[] sy_mean;
+      delete[] sy_rms;
+      delete[] spy_mean;
+      delete[] spy_rms;
+      delete[] semity;
+      delete[] sbetay;
     }
 
     // end time looper

@@ -41,7 +41,7 @@ void plotLotov( const TString &options="" ){
   PGlobals::Initialize();
 
   // Palettes!
-  gROOT->Macro("PPalettes.C");
+  // gROOT->Macro("PPalettes.C");
   
   TString opt = options;
   
@@ -167,7 +167,7 @@ void plotLotov( const TString &options="" ){
   Double_t chi2 = fitSqrSqr->GetChisquare();
   Double_t NDF = fitSqrSqr->GetNDF();
   Double_t *par = fitSqrSqr->GetParameters();
-  Double_t *parErr = fitSqrSqr->GetParErrors();
+  const Double_t *parErr = fitSqrSqr->GetParErrors();
    
   cout << Form(" Sqrt fit :  %.2f/%.2f = %.2f",chi2,NDF,chi2/NDF) << endl;
 

@@ -12,14 +12,14 @@ PData * gData = NULL;
 
 //_______________________________________________________________________
 PData::PData(const char * name, const char * title) : TNamed(name,title) {
-  time = 0;
-  rtime = 0;
+  time = niter = 0;
+  rtime = dt = 0;
   simPath = name;
 
   species.clear(); 
   pspaces.clear();
 
-  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sEF_1RE = sBF_1RE = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -37,21 +37,21 @@ PData::PData(const char * name, const char * title) : TNamed(name,title) {
   Navg = 1;
 
   TString NAME = name;
-  if(NAME.Contains("cyl")) Cyl = kTRUE;
+  if(NAME.Contains("cyl") || NAME.Contains("q3D")) Cyl = kTRUE;
 
   gData = this;
 }
 
 //_______________________________________________________________________
 PData::PData(const char * name) : TNamed(name,name) {
-  time = 0;
-  rtime = 0;
+  time = niter = 0;
+  rtime = dt = 0;
   simPath = name;
 
   species.clear(); 
   pspaces.clear();
 
-  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sEF_1RE = sBF_1RE = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -69,21 +69,21 @@ PData::PData(const char * name) : TNamed(name,name) {
   Navg = 1;
 
   TString NAME = name;
-  if(NAME.Contains("cyl")) Cyl = kTRUE;
+  if(NAME.Contains("cyl") || NAME.Contains("q3D")) Cyl = kTRUE;
  
   gData = this;
 }
 
 //_______________________________________________________________________
 PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
-  time = 0;
-  rtime = 0;
+  time = niter = 0;
+  rtime = dt = 0;
   simPath = name;
 
   species.clear(); 
   pspaces.clear();
   
-  sCHG = sEF = sBF = sA = sRAW = sTrack = NULL;
+  sCHG = sEF = sBF = sEF_1RE = sBF_1RE = sA = sRAW = sTrack = NULL;
   sJ[0] = sJ[1] = sJ[2] = NULL;
   sPHA = NULL;
   NX = NULL; XMIN = XMAX = NULL;
@@ -103,7 +103,7 @@ PData::PData(const char* name, UInt_t t) : TNamed(name,name), time(t)  {
   Navg = 1;
 
   TString NAME = name;
-  if(NAME.Contains("cyl")) Cyl = kTRUE;
+  if(NAME.Contains("cyl") || NAME.Contains("q3D")) Cyl = kTRUE;
  
   LoadFileNames(time);
 }
@@ -225,6 +225,9 @@ void PData::ReadParameters(const char * pfile)
 	} else if(word.find("x1Max") != string::npos) {
 	  iss >> pParam.x1Max;
 	  cout << Form(" - x1Max            = %8.4f", pParam.x1Max) << endl;
+	} else if(word.find("x1Edge") != string::npos) {
+	  iss >> pParam.x1Edge;
+	  cout << Form(" - x1Edge           = %8.4f", pParam.x1Edge) << endl;
 	} else if(word.find("x2Min") != string::npos)
 	  iss >> pParam.x2Min;
 	else if(word.find("x2Max") != string::npos)
@@ -269,6 +272,12 @@ void PData::ReadParameters(const char * pfile)
 	} else if(word.find("aMin") != string::npos) {
 	  iss >> pParam.aMin;
 	  cout << Form(" - aMin             = %8.4f", pParam.aMin) << endl;
+	} else if(word.find("kMax") != string::npos) {
+	  iss >> pParam.kMax;
+	  cout << Form(" - kMax             = %8.4f", pParam.kMax) << endl;
+	} else if(word.find("kMin") != string::npos) {
+	  iss >> pParam.kMin;
+	  cout << Form(" - kMin             = %8.4f", pParam.kMin) << endl;
 	}
 	word.clear();
       }
@@ -323,8 +332,10 @@ void PData::LoadFileNames(Int_t t) {
   // The analisys macros always assume that the plasma specie is the first one of the list.
   // The electron bunch, for instance, uses to be the second.
   // We swap here the order (if necessary) to put the "plasma" species at first.
+  string pname = "plasma";
   for(UInt_t i=0;i<sptemp.size();i++) {
-    if(sptemp[i].find("plasma") != string::npos)
+    // if(sptemp[i].find("plasma") != string::npos)
+    if(sptemp[i] == pname)
       if(i!=0 && sptemp.size()>0) {
 	string temp = sptemp[0];
 	sptemp[0] = sptemp[i];
@@ -396,6 +407,8 @@ void PData::LoadFileNames(Int_t t) {
   sPHA = new vector<vector<string*> >(NSpecies(),vector<string*>(NPhaseSpaces(),NULL));
   sEF  = new vector<string*>(3,NULL);
   sBF  = new vector<string*>(3,NULL);
+  sEF_1RE  = new vector<string*>(3,NULL);
+  sBF_1RE  = new vector<string*>(3,NULL);
   sA   = new vector<string*>(1,NULL);
   sRAW = new vector<string*>(NRawSpecies(),NULL);
   sTrack = new vector<string*>(NRawSpecies(),NULL);
@@ -487,6 +500,22 @@ void PData::LoadFileNames(Int_t t) {
 	
 	continue;
       }
+
+      sprintf(eName,"e%1i_cyl_m",j+1);   
+      if( (files[i].find(eName) != string::npos) && (files[i].find("1-re") != string::npos) ){
+	sEF_1RE->at(j) = new string(files[i]);
+	
+	continue;
+      }
+
+      sprintf(eName,"b%1i_cyl_m",j+1);
+      if( (files[i].find(eName) != string::npos) &&  (files[i].find("1-re") != string::npos) ){
+	sBF_1RE->at(j) = new string(files[i]);
+	
+	continue;
+      }
+      
+      
     }
 
     // Get laser envelope
@@ -526,9 +555,11 @@ void PData::LoadFileNames(Int_t t) {
   if(species.size()) {
     if(sCHG->at(0)) {
       rtime = GetRealTimeFromFile(GetChargeFileName(0)->c_str());
+      dt = GetTimeStepFromFile(GetChargeFileName(0)->c_str());
       GetBoxDimensionsFromFile(GetChargeFileName(0)->c_str());
     } else if(sRAW->at(0)) {
       rtime = GetRealTimeFromFile(GetRawFileName(0)->c_str());
+      dt = GetTimeStepFromFile(GetRawFileName(0)->c_str());
       GetBoxDimensionsFromFile(GetRawFileName(0)->c_str());
     }
   } else {
@@ -538,6 +569,7 @@ void PData::LoadFileNames(Int_t t) {
     for(UInt_t i=0;i<3;i++) { 
       if(sEF->at(i)) {
 	rtime = GetRealTimeFromFile(GetEfieldFileName(i)->c_str());
+	dt = GetTimeStepFromFile(GetEfieldFileName(0)->c_str());
 	GetBoxDimensionsFromFile(GetEfieldFileName(i)->c_str());
 	break;
       } else
@@ -548,20 +580,30 @@ void PData::LoadFileNames(Int_t t) {
   }
 
   // Defines the sub-range for the analysis.
-  // Here at initialization, it is set to the whole simulation range.
-  Double_t shiftx1 = Shift("comov");  
+  Double_t shiftx1 = Shift("comov");
   
+  // Double_t dx1 = GetDX(0);  
+  // Double_t realx1Max = GetXMax(0);  
+  // if(pParam.x1Edge != -999.) {
+  //   Double_t diffx1 = (realx1Max-pParam.x1Edge)/dx1;
+  //   cout << Form("\n Diffx1 = %.6f",diffx1) << endl;
+  //   shiftx1 = diffx1 * dx1;
+  //   cout << Form("\n Shiftx1 = %.6f. dx1 = %.6f",shiftx1,dx1) << endl;    
+  // }
+   
   if(pParam.x1Min == -999.) {
     XMINR[0] = GetXMin(0);
-  } else {
+  } else {    
     XMINR[0] = pParam.x1Min + shiftx1;
     cout << Form(" x1Min = %f",XMINR[0]) << endl;
+    cout << Form(" x1Min (real) = %f",GetXMin(0)) << endl;
   }
   if(pParam.x1Max == -999.) {
     XMAXR[0] = GetXMax(0);
   } else {
     XMAXR[0] = pParam.x1Max + shiftx1;
     cout << Form(" x1Max = %f",XMAXR[0]) << endl;
+    cout << Form(" x1Max (real) = %f",GetXMax(0)) << endl;
   }
   if(pParam.x2Min == -999.) {
     XMINR[1] = GetXMin(1);
@@ -585,6 +627,11 @@ void PData::LoadFileNames(Int_t t) {
   }
   
   Init = kTRUE;
+
+  // cout << Form(" x1Min = %.4f, x1Max = %.4f : NBinsX  = %i",GetXMin(0),GetXMax(0),GetNX(0)) << endl;
+  // cout << Form(" x1Min = %.4f, x1Max = %.4f : NBinsX  = %i",GetX1Min(),GetX1Max(),GetX1N()) << endl;
+
+  
 }
 
 //_______________________________________________________________________
@@ -658,6 +705,17 @@ void PData::PrintData(Option_t *option) {
     if(sBF)
       if(sBF->at(ief))
 	cout << " - " << sBF->at(ief)->c_str() << endl;
+  }
+  cout << endl;
+
+  cout << "Data for Electromagnetic fields (mode 1 RE): " << endl;
+  for(UInt_t ief=0;ief<3;ief++) {
+    if(sEF_1RE) 
+      if(sEF_1RE->at(ief))
+	cout << " - " << sEF_1RE->at(ief)->c_str() << endl;
+    if(sBF_1RE)
+      if(sBF_1RE->at(ief))
+	cout << " - " << sBF_1RE->at(ief)->c_str() << endl;
   }
   cout << endl;
 
@@ -846,6 +904,18 @@ void PData::Clear(Option_t *option)
     sBF = NULL;
   }
 
+  if(sEF_1RE) {
+    FreeClear(*sEF_1RE);
+    delete sEF_1RE;
+    sEF_1RE = NULL;
+  }
+  
+  if(sBF_1RE) {
+    FreeClear(*sBF_1RE);
+    delete sBF_1RE;
+    sBF_1RE = NULL;
+  }
+
   if(sA) {
     FreeClear(*sA);
     delete sA;
@@ -970,6 +1040,42 @@ Double_t PData::GetRealTimeFromFile(const char *filename) {
 }
 
 //_______________________________________________________________________
+Double_t PData::GetTimeStepFromFile(const char *filename) {
+  
+  // Open input HDF5 file
+  H5File h5 = H5File(filename,H5F_ACC_RDONLY);
+  
+  // Open main group for data reading
+  Group *root = new Group(h5.openGroup("/"));
+  
+  // Get time info from its attributes
+  // ---------------------------------
+  Attribute *att = new Attribute(root->openAttribute("TIME"));
+  Double_t rt;
+  att->read(PredType::NATIVE_DOUBLE,&rt); 
+
+  Attribute *att2 = new Attribute(root->openAttribute("ITER"));
+  Int_t NT;
+  att2->read(PredType::NATIVE_INT,&NT); 
+
+  niter = NT;
+  dt = rt/NT;
+  
+  // Write time info to a string
+  // char stime[48];
+  // sprintf(stime," at t=%6.5f [%s]",time,"#omega_{p}^{-1}"); 
+  cout << Form("\n Time = %.6f (Niter = %i) --> dt = %.6f",rt,niter,dt) << endl;
+
+  att->close();
+  delete att;
+  att2->close();
+  delete att2;
+  delete root;
+
+  return dt;
+}
+
+//_______________________________________________________________________
 TH1F* PData::GetH1SliceZ(const char *filename,const char *dataname,Int_t Firstx2Bin, Int_t Lastx2Bin, const char *options) {
 
   // Options
@@ -1039,10 +1145,10 @@ TH1F* PData::GetH1SliceZ(const char *filename,const char *dataname,Int_t Firstx2
    
   for(UInt_t i=0;i<x1Dim;i++) {
     for(UInt_t j=0;j<x2DimSl;j++) {
-     
+
       if(opt.Contains("cyl") && (opt.Contains("sum") || opt.Contains("int") ) ) {
       	// For cylindrical coordinates, this is the radius in Osiris units:
-	x2 = x2binsize * (j-0.5) + x2Min;
+	x2 = fabs(x2binsize * (j+0.5) + x2Min);
       }
       
       if(sdata.find("charge") != string::npos || sdata.find("p1x1") != string::npos || sdata.find("p2x2") != string::npos) {
@@ -1073,10 +1179,10 @@ TH1F* PData::GetH1SliceZ(const char *filename,const char *dataname,Int_t Firstx2
     h1D->SetBinContent(iavg,content);
   }
   
-  delete x1Array;
-  delete count;
-  delete offset;
-  delete dataDims;
+  delete[] x1Array;
+  delete[] count;
+  delete[] offset;
+  delete[] dataDims;
   delete dataSet;
   delete root;
 
@@ -1104,7 +1210,7 @@ TH1F* PData::GetH1SliceX(const char *filename,const char *dataname,Int_t Firstx1
   DataSpace mem2(1,ax2Dims);
   ax2->read(ax2lims,PredType::NATIVE_DOUBLE,mem2,ax2->getSpace());
   ax2->close(); 
-  delete ax2Dims;
+  delete[] ax2Dims;
   delete ax2;
 
   // The "int" option integrates the in the range of bins specified by
@@ -1118,7 +1224,7 @@ TH1F* PData::GetH1SliceX(const char *filename,const char *dataname,Int_t Firstx1
     DataSpace mem1(1,ax1Dims);
     ax1->read(ax1lims,PredType::NATIVE_DOUBLE,mem1,ax1->getSpace());
     ax1->close(); 
-    delete ax1Dims;
+    delete[] ax1Dims;
     delete ax1;
   }
   axis->close();
@@ -1207,10 +1313,10 @@ TH1F* PData::GetH1SliceX(const char *filename,const char *dataname,Int_t Firstx1
   
   root->close();
   
-  delete x2Array;
-  delete count;
-  delete offset;
-  delete dataDims;
+  delete[] x2Array;
+  delete[] count;
+  delete[] offset;
+  delete[] dataDims;
   delete dataSet;
   delete root;
 
@@ -1411,12 +1517,12 @@ void PData::GetH1Raw(const char *filename,const char *dataname, TH1F *h1D, const
   }
 
   // Free memory:
-  delete weight;
+  delete[] weight;
   delete weightSet;
-  delete data;
-  delete offset;
-  delete count;
-  delete dataDims;
+  delete[] data;
+  delete[] offset;
+  delete[] count;
+  delete[] dataDims;
   delete dataSet;
   if(radius) delete radius;
   delete root;
@@ -1521,14 +1627,14 @@ void PData::GetH1RawCut(const char *filename,const char *dataname,
   }
 
   // Free memory:
-  delete weight;
+  delete[] weight;
   delete weightSet;
-  delete data;
-  delete offset;
-  delete count;
-  delete dataDims;
+  delete[] data;
+  delete[] offset;
+  delete[] count;
+  delete[] dataDims;
   delete dataSet;
-  delete cut;
+  delete[] cut;
   delete cutSet;
   if(radius) delete radius;
   delete root;
@@ -1651,16 +1757,16 @@ void PData::GetH1RawCut2(const char *filename,const char *dataname,
   }
 
   // Free memory:
-  delete weight;
+  delete[] weight;
   delete weightSet;
-  delete data;
-  delete offset;
-  delete count;
-  delete dataDims;
+  delete[] data;
+  delete[] offset;
+  delete[] count;
+  delete[] dataDims;
   delete dataSet;
-  delete cut1;
+  delete[] cut1;
   delete cutSet1;
-  delete cut2;
+  delete[] cut2;
   delete cutSet2;
   if(radius) delete radius;
   delete root;
@@ -1827,6 +1933,7 @@ TH2F* PData::GetH2(const char *filename,const char *dataname, const char *option
   
   UInt_t x2AvgFactor = GetNX(1)/dataDims[0];
   UInt_t x2Dim = GetX2N()/x2AvgFactor;
+  if (x2Dim>dataDims[0]) x2Dim = dataDims[0];
   Double_t x2Min = GetX2Min();
   Double_t x2Max = GetX2Max();
 
@@ -1886,7 +1993,7 @@ TH2F* PData::GetH2(const char *filename,const char *dataname, const char *option
   }
 
   // Free memory:
-  delete dataDims;
+  delete[] dataDims;
   delete dataSet;
   delete root;
  
@@ -1997,14 +2104,14 @@ void PData::GetH2Raw(const char *filename,const char *dataname1,const char *data
   }
 
   // Free memory:
-  delete weight;
+  delete[] weight;
   delete weightSet;
-  delete data2;
+  delete[] data2;
   delete dataSet2;
-  delete data1;
-  delete offset;
-  delete count;
-  delete dataDims;
+  delete[] data1;
+  delete[] offset;
+  delete[] count;
+  delete[] dataDims;
   delete dataSet;
   if(radius) delete radius;
   delete root;
@@ -2128,16 +2235,16 @@ void PData::GetH2RawCut(const char *filename,const char *dataname1,const char *d
   }
 
   // Free memory:
-  delete weight;
+  delete[] weight;
   delete weightSet;
-  delete data1;
-  delete data2;
-  delete offset;
-  delete count;
-  delete dataDims;
+  delete[] data1;
+  delete[] data2;
+  delete[] offset;
+  delete[] count;
+  delete[] dataDims;
   delete dataSet;
   delete dataSet2;
-  delete cut;
+  delete[] cut;
   delete cutSet;
   if(radius) delete radius;
   delete root;
@@ -2253,21 +2360,25 @@ TH1F* PData::GetH1SliceZ3D(const char *filename,const char *dataname,
   Float_t x3AvgFactor = GetNX(2)/dataDims[0];
   Float_t dx3   = GetDX(2) * x3AvgFactor;
   
-  TH1F *h1D = new TH1F(); 
-  h1D->SetBins(x1Dim,x1Min,x1Max);
-  for(UInt_t k=0;k<x1Dim;k++) { 
+  TH1F *h1D = new TH1F();
+  UInt_t x1DimAvg = x1Dim/Navg;
+  h1D->SetBins(x1DimAvg,x1Min,x1Max);
+  for(UInt_t k=0;k<x1Dim;k++) {
+    UInt_t kavg = k/Navg;
+    if(k%Navg) continue;
+
     Double_t content = x1Array[k];
     if(opt.Contains("avg")) content /= x3Dim * x2Dim;
     else if(opt.Contains("int")) content *= dx2 * dx3;
-    h1D->SetBinContent(k+1,content);
+    h1D->SetBinContent(kavg+1,content);
   }
   root->close();
   
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
   delete dataSet;
   delete root;
-  delete data;
+  delete[] data;
   
   return h1D;
 }
@@ -2384,11 +2495,11 @@ TH1F* PData::GetH1SliceX3D(const char *filename,const char *dataname,
   }
 			      root->close();
   
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
   delete dataSet;
   delete root;
-  delete data;
+  delete[] data;
   
   return h1D;
 }
@@ -2416,7 +2527,7 @@ TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname,
   DataSpace mem1(1,ax1Dims);
   ax1->read(ax1lims,PredType::NATIVE_DOUBLE,mem1,ax1->getSpace());
   ax1->close(); 
-  delete ax1Dims;
+  delete[] ax1Dims;
   delete ax1;
 
   Double_t ax2lims[2];
@@ -2426,7 +2537,7 @@ TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname,
   DataSpace mem2(1,ax2Dims);
   ax2->read(ax2lims,PredType::NATIVE_DOUBLE,mem2,ax2->getSpace());
   ax2->close();
-  delete ax2Dims;
+  delete[] ax2Dims;
   delete ax2;
 
   Double_t ax3lims[2];
@@ -2436,7 +2547,7 @@ TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname,
   DataSpace mem3(1,ax3Dims);
   ax3->read(ax3lims,PredType::NATIVE_DOUBLE,mem3,ax3->getSpace());
   ax3->close();
-  delete ax3Dims;
+  delete[] ax3Dims;
   delete ax3;
 
   axis->close();
@@ -2561,9 +2672,9 @@ TH1F* PData::GetH1CylSliceZ3D(const char *filename,const char *dataname,
   
   root->close();
   
-  delete count;
-  delete offset;
-  delete dataDims;
+  delete[] count;
+  delete[] offset;
+  delete[] dataDims;
   delete dataSet;
   delete root;
 
@@ -2679,21 +2790,26 @@ TH2F* PData::GetH2SliceZX(const char *filename,const char *dataname, Int_t First
   UInt_t x3AvgFactor = GetNX(2)/dataDims[0];
   Double_t dx3 = GetDX(2) * x3AvgFactor;
 
-  TH2F *h2D = new TH2F(); 
-  h2D->SetBins(x1Dim,x1Min,x1Max,x2Dim,x2Min,x2Max); 
+  TH2F *h2D = new TH2F();
+  UInt_t x1DimAvg = x1Dim/Navg;
+  // cout << Form(" x1Dim = %i (x1DimAvg = %i)  x1Min = %.4f, x1Max = %.4f",x1Dim,x1DimAvg,x1Min,x1Max);
+  h2D->SetBins(x1DimAvg,x1Min,x1Max,x2Dim,x2Min,x2Max); 
   for(UInt_t j=0;j<x2Dim;j++) 
-    for(UInt_t k=0;k<x1Dim;k++) { 
+    for(UInt_t k=0;k<x1Dim;k++) {
+      UInt_t kavg = k/Navg;
+      if(k%Navg) continue;
+
       Double_t content = x2x1Array[j][k];
       if(opt.Contains("avg")) content /= x3Dim;
       else if(opt.Contains("int")) content *= dx3;
-      h2D->SetBinContent(k+1,j+1,content);
+      h2D->SetBinContent(kavg+1,j+1,content);
     }
     
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
   delete dataSet;
   delete root;
-  delete data;
+  delete[] data;
   
   return h2D;
 
@@ -2800,21 +2916,25 @@ TH2F* PData::GetH2SliceZY(const char *filename,const char *dataname, Int_t First
   UInt_t x2AvgFactor = GetNX(1)/dataDims[1];
   Double_t dx2   = GetDX(1) * x2AvgFactor;
   
-  TH2F *h2D = new TH2F(); 
-  h2D->SetBins(x1Dim,x1Min,x1Max,x3Dim,x3Min,x3Max); 
+  TH2F *h2D = new TH2F();
+  UInt_t x1DimAvg = x1Dim/Navg;
+  h2D->SetBins(x1DimAvg,x1Min,x1Max,x3Dim,x3Min,x3Max); 
   for(UInt_t j=0;j<x3Dim;j++) 
-    for(UInt_t k=0;k<x1Dim;k++) { 
+    for(UInt_t k=0;k<x1Dim;k++) {
+      UInt_t kavg = k/Navg;
+      if(k%Navg) continue;
+      
       Double_t content = x3x1Array[j][k];
       if(opt.Contains("avg")) content /= x2Dim;
       else if(opt.Contains("int")) content *= dx2;
-      h2D->SetBinContent(k+1,j+1,content);
+      h2D->SetBinContent(kavg+1,j+1,content);
     }
     
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
   delete dataSet;
   delete root;
-  delete data;
+  delete[] data;
   
   return h2D;
 
@@ -2933,11 +3053,11 @@ TH2F* PData::GetH2SliceXY(const char *filename,const char *dataname, Int_t First
       h2D->SetBinContent(k+1,j+1,content);
     }
   
-  delete count;
-  delete offset;
+  delete[] count;
+  delete[] offset;
   delete dataSet;
   delete root;
-  delete data;
+  delete[] data;
   
   return h2D;
 
@@ -2964,7 +3084,7 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
   DataSpace mem1(1,ax1Dims);
   ax1->read(ax1lims,PredType::NATIVE_DOUBLE,mem1,ax1->getSpace());
   ax1->close(); 
-  delete ax1Dims;
+  delete[] ax1Dims;
   delete ax1;
 
   Double_t ax2lims[2];
@@ -2974,7 +3094,7 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
   DataSpace mem2(1,ax2Dims);
   ax2->read(ax2lims,PredType::NATIVE_DOUBLE,mem2,ax2->getSpace());
   ax2->close();
-  delete ax2Dims;
+  delete[] ax2Dims;
   delete ax2;
 
   Double_t ax3lims[2];
@@ -2984,7 +3104,7 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
   DataSpace mem3(1,ax3Dims);
   ax3->read(ax3lims,PredType::NATIVE_DOUBLE,mem3,ax3->getSpace());
   ax3->close();
-  delete ax3Dims;
+  delete[] ax3Dims;
   delete ax3;
 
   axis->close();
@@ -3084,9 +3204,9 @@ TH2F* PData::GetH2ZR(const char *filename,const char *dataname, const char *opti
   
   root->close();
   
-  delete count;
-  delete offset;
-  delete dataDims;
+  delete[] count;
+  delete[] offset;
+  delete[] dataDims;
   delete dataSet;
   delete root;
 
@@ -3188,9 +3308,9 @@ TH3F* PData::GetH3(const char *filename,const char *dataname, const char *option
     }
   }
   
-  delete count;
-  delete offset;
-  delete dataDims;
+  delete[] count;
+  delete[] offset;
+  delete[] dataDims;
   delete dataSet;
   delete root;
 
@@ -3264,9 +3384,9 @@ Float_t* PData::Get3Darray(const char *filename,const char *dataname, UInt_t dim
   
   root->close();
 
-  delete count;
-  delete offset;
-  delete dataDims;
+  delete[] count;
+  delete[] offset;
+  delete[] dataDims;
   delete dataSet;
   delete root;
 
@@ -3288,17 +3408,17 @@ Double_t PData::Shift(TString option) {
       shiftx1 += GetPlasmaStart()*kp;
   }
 
-  Double_t realtime =  GetRealTime();
+  Double_t realtime  = GetRealTime();
   if(opt.Contains("comov")) {
     Double_t v = GetBeamVelocity();    
     if(v==0) v = 1.0; // If equals to 0 (default), then set to c.
     shiftx1 += v * realtime;
-  }   
+  }
 
-  Double_t x1max0 = pParam.x1Max;
   Double_t shiftcorr = 0.0;
-  if(x1max0>-999.) 
-    shiftcorr = (GetXMax(0) - x1max0) - realtime;
+  if(pParam.x1Edge != -999.) {
+    shiftcorr = GetXMax(0) - pParam.x1Edge - realtime;
+  }
     
   return shiftx1 + shiftcorr;
 }

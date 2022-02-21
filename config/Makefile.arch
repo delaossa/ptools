@@ -400,8 +400,8 @@ ifeq ($(ARCH),macosx64)
 CXX           = g++
 CXXFLAGS      = $(OPT2) -pipe -Wall -Wno-unused-variable 
 LD            = g++
-LDFLAGS       = $(OPT2) -mmacosx-version-min=$(MACOSXTARGET)
-EXPLLINKLIBS  = $(ROOTLIBS) $(ROOTGLIBS)
+LDFLAGS       = $(OPT2) -mmacosx-version-min=$(MACOSXTARGET) -Wl,-rpath,$(CONDA_PREFIX)/lib
+EXPLLINKLIBS  = $(ROOTLIBS) $(ROOTGLIBS)s
 # The SOFLAGS will be used to create the .dylib,
 # the .so will be created separately
 ifeq ($(subst $(MACOSX_MINOR),,1234),1234)
@@ -409,7 +409,7 @@ DllSuf        = so
 else
 DllSuf        = dylib
 endif
-SOFLAGS       = -m64 -dynamiclib -single_module -install_name 
+SOFLAGS       = -m64 -dynamiclib -single_module -install_name
 endif
 
 ifeq ($(ARCH),win32)
