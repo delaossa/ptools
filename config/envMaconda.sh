@@ -9,7 +9,7 @@ export HDF5CPP=$CONDA_PREFIX
 
 # ptools environment:
 export PTOOLS=/Users/delaossa/local/ptools
-export DYLD_LIBRARY_PATH=$PTOOLS/lib:$DYLD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=$PTOOLS/lib
 export PATH=$PTOOLS/bin:$PTOOLS/scripts:$PTOOLS/pymacros:$PATH
 export PYTHONPATH=$PTOOLS/lib:$PYTHONPATH
 
