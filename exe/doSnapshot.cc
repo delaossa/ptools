@@ -1050,9 +1050,10 @@ int main(int argc,char *argv[]) {
       propUnit = PUnits::mm;
       propSUnit = "mm";
 
-      
       Float_t Emax =  hE1D[0]->GetMaximum();
       if(Emax < 10E-3) Emax = 10E-3;
+      if(pData->GetE1Max() != -999.0)
+	Emax = pData->GetE1Max();
       PUnits::BestUnit beSUnit(E0 * Emax,"Efield");
       beSUnit.GetBestUnits(eUnit,eSUnit);
       cout << Form(" E0 = %.2f %s", E0 * Emax/eUnit, eSUnit.c_str()) << endl;
@@ -1414,7 +1415,7 @@ int main(int argc,char *argv[]) {
 	hW2D[iw]->GetZaxis()->CenterTitle();
 	
 	// 1D histograms
-	char fname[5];
+	char fname[6];
 	if(iw==0)
 	  sprintf(fname,"ExmBy");
 	else

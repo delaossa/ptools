@@ -23,6 +23,7 @@
 #include <TLatex.h>
 
 #include "PData.hh"
+#include "PDataHiP.hh"
 #include "PGlobals.hh"
 #include "PPalette.hh"
 #include "H5Cpp.h"
@@ -69,6 +70,8 @@ int main(int argc,char *argv[]) {
   Float_t gMax = -99999.;
   Float_t dMin = -99999.;
   Float_t dMax = -99999.;
+  Float_t divMin = -99999.;
+  Float_t divMax = -99999.;
   Float_t sMax = -99999.;
 
   // Interfacing command line:
@@ -103,6 +106,8 @@ int main(int argc,char *argv[]) {
       opt += "wpal"; 
     } else if(arg.Contains("--hzdr")){
       opt += "hzdr"; 
+    } else if(arg.Contains("--ffwd")){
+      opt += "ffwd"; 
     } else if(arg.Contains("--outl")){
       opt += "outl"; 
     } else if(arg.Contains("--loop")){
@@ -140,6 +145,12 @@ int main(int argc,char *argv[]) {
     } else if(arg.Contains("-dmax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&dMax);
+    } else if(arg.Contains("-divmin")) {
+      char ss[7];
+      sscanf(arg,"%7s%f",ss,&divMin);
+    } else if(arg.Contains("-divmax")) {
+      char ss[7];
+      sscanf(arg,"%7s%f",ss,&divMax);
     } else if(arg.Contains("-smax")) {
       char ss[5];
       sscanf(arg,"%5s%f",ss,&sMax);
@@ -171,6 +182,12 @@ int main(int argc,char *argv[]) {
 
   // Load PData
   PData *pData = PData::Get(sim.Data());
+  if(pData->isHiPACE()) {
+    delete pData; pData = NULL;
+    pData = PDataHiP::Get(sim.Data());
+    if(!opt.Contains("comov"))
+      opt += "comov";
+  }
 
   if(iStart<0) iStart = time;
   if(iEnd<=iStart) iEnd = iStart;
@@ -212,7 +229,7 @@ int main(int argc,char *argv[]) {
 
     cout << Form("\n Reading data arrays") << endl;
     
-    Int_t Nspecies = pData->NSpecies();
+    Int_t Nspecies = pData->NRawSpecies();
     Float_t **ene = new Float_t*[Nspecies];
     Float_t **x1 = new Float_t*[Nspecies];
     Float_t **q = new Float_t*[Nspecies];
@@ -222,9 +239,11 @@ int main(int argc,char *argv[]) {
     UInt_t *NP = new UInt_t[Nspecies];
     Float_t eneMin = 99999;
     Float_t eneMax = -99999;
-    Float_t divMin = 99999;
-    Float_t divMax = -99999;
-    
+    Float_t divmin = 99999;
+    Float_t divmax = -99999;
+
+    cout << Form("\n Number of RAW species: %i", Nspecies) << endl;
+
     for(Int_t i=0;i<Nspecies;i++) {
       ene[i] = NULL;
       x1[i] = NULL;
@@ -236,7 +255,7 @@ int main(int argc,char *argv[]) {
 
 
       NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&x1[i],"x1");
-      NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&ene[i],"ene");
+      // NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&ene[i],"ene");
       NP[i] = pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&q[i],"q");
 
       if(opt.Contains("spec")) {
@@ -244,21 +263,27 @@ int main(int argc,char *argv[]) {
 	pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&p2[i],"p2");
 	pData->GetRawSingleArray(pData->GetRawFileName(i)->c_str(),&p3[i],"p3");
       }
+
+      ene[i] = new Float_t[NP[i]];
+      
       // for(UInt_t j=0;j<1000;j++)
       // 	cout << Form(" %6f  %6f  %6f",x1[i][j],ene[i][j],q[i][j]) << endl;
     
       for(UInt_t j=0;j<NP[i];j++) {
+	ene[i][j] = TMath::Sqrt(p1[i][j]*p1[i][j] + p2[i][j]*p2[i][j] + p3[i][j]*p3[i][j]) - 1.0;
+	
       	if(ene[i][j]<eneMin) eneMin = ene[i][j];
       	if(ene[i][j]>eneMax) eneMax = ene[i][j];
 
 	//	Float_t div = TMath::Sqrt(p2[i][j]*p2[i][j]+p3[i][j]*p3[i][j])/p1[i][j];
-	Float_t div = p2[i][j]/p1[i][j];
-	if(div<divMin) divMin = div;
-      	if(div>divMax) divMax = div;
+	Float_t div = 1e3 * p2[i][j]/p1[i][j];
+	if(div<divmin) divmin = div;
+      	if(div>divmax) divmax = div;
 
       }
     }    
 
+    
     // Histogram limits
     Double_t X1MIN = pData->GetXMin(0) - shiftz;
     Double_t X1MAX = pData->GetXMax(0) - shiftz;
@@ -267,15 +292,13 @@ int main(int argc,char *argv[]) {
     Float_t x1Max = pData->GetX1Max() - shiftz;
     Int_t Nx1Bin  = pData->GetX1N();
     x1Min -= 0.2*(x1Max - x1Min);
-
+    
     // Adjust binning
     x1Min = floor((x1Min-X1MIN)/dx1) * dx1 + X1MIN;  
     x1Max = floor((x1Max-X1MIN)/dx1) * dx1 + X1MIN;
     Nx1Bin  = ceil ((x1Max - x1Min)/(dx1));
     
     Float_t eMin = eneMin - (eneMax-eneMin) * 0.1;
-    // if(eMin<0) eMin = 0.0;
-    eMin = 0.0;
     if(gMin >= 0.0) eMin = gMin;
      
     Float_t eMax = eneMax + (eneMax-eneMin) * 0.1;
@@ -286,7 +309,7 @@ int main(int argc,char *argv[]) {
     Double_t dx = (x1Max-x1Min)/Nx1Bin;
     //Int_t NdivBin = NeBin;
     Int_t NdivBin = 100;
-
+    
     Float_t dxu(dx), deu(de);
     Float_t x1Minu(x1Min), x1Maxu(x1Max), eMinu(eMin), eMaxu(eMax);
     Double_t denUnit, propUnit, spaUnit, eneUnit, charUnit, curUnit;
@@ -339,10 +362,13 @@ int main(int argc,char *argv[]) {
     Float_t maxCur = -9999;
     Float_t maxEne = -9999;
 
-    //    divMax = 34.99;
-    divMax = 19.99;
-    divMin = -divMax;
-    Double_t dv = (divMax-divMin)/NdivBin;
+    Float_t diveMin = divmin - (divmax-divmin) * 0.1;
+    if(divMin != -99999.) diveMin = divMin;
+     
+    Float_t diveMax = divmax + (divmax-divmin) * 0.1;
+    if(divMax != -99999.) diveMax = divMax;
+
+    Double_t dvu = (diveMax-diveMin)/NdivBin;
 
     for(Int_t i=0;i<Nspecies;i++) {
     
@@ -367,7 +393,7 @@ int main(int argc,char *argv[]) {
       sprintf(hName,"EneVsDiv_%i",i);
       hEneVsDiv[i] = (TH2F*) gROOT->FindObject(hName);
       if(hEneVsDiv[i]) delete hEneVsDiv[i];
-      hEneVsDiv[i] = new TH2F(hName,"",NeBin,eMin,eMax,NdivBin,divMin,divMax);
+      hEneVsDiv[i] = new TH2F(hName,"",NeBin,eMin,eMax,NdivBin,diveMin,diveMax);
       
       for(UInt_t j=0;j<NP[i];j++) {
 	Float_t zeta = x1[i][j]-shiftz;
@@ -376,11 +402,11 @@ int main(int argc,char *argv[]) {
 
 	// if (ener<eMin || ener>eMax)
 	//   continue;
-	if (div<divMin || div>divMax)
+	if (div<diveMin || div>diveMax)
 	  continue;
 	
-	hEneVsZ[i]->Fill(zeta,ener,-q[i][j]);
-	hEneVsDiv[i]->Fill(ener,div,-q[i][j]);
+	hEneVsZ[i]->Fill(zeta,ener,TMath::Abs(q[i][j]));
+	hEneVsDiv[i]->Fill(ener,div,TMath::Abs(q[i][j]));
       }
 
       // SI units
@@ -392,8 +418,8 @@ int main(int argc,char *argv[]) {
 	hEneVsZ[i]->Scale(Q0u/(deu*dxu));
 	hEneVsZ[i]->ResetStats();
 
-	hEneVsDiv[i]->SetBins(NeBin,eMinu,eMaxu,NdivBin,divMin,divMax);
-	hEneVsDiv[i]->Scale(Q0u/(deu*dv));
+	hEneVsDiv[i]->SetBins(NeBin,eMinu,eMaxu,NdivBin,diveMin,diveMax);
+	hEneVsDiv[i]->Scale(Q0u/(deu*dvu));
 	hEneVsDiv[i]->ResetStats();
 	
       } else {
@@ -475,35 +501,43 @@ int main(int argc,char *argv[]) {
     Int_t *colors = new Int_t[Nspecies];
     Int_t *fillstyle = new Int_t[Nspecies];
     Int_t *fillcolor = new Int_t[Nspecies];
-    for(Int_t i=0;i<Nspecies;i++) {
-      if(!hEneVsZ[i]) continue;
-      
-      if(i==0) {
-	exPal[i] = new TExec("exPlasma","plasmaPalette->cd();");
-	colors[i] = kGray;
-	fillstyle[i] = 0;
-	fillcolor[i] = TColor::GetColor(250,250,250);
-      } else if(i==1) {
-	exPal[i] = new TExec("exBeam","beamPalette->cd();");
-	//colors[i] = TColor::GetColor(69,108,155);
-	colors[i] = kGray+1;
-	fillstyle[i] = 1001;
-	fillcolor[i] = TColor::GetColor(230,230,230);
-      } else if(i==2) {
-	exPal[i] = new TExec(Form("exBeam%1i",i),Form("beam%1iPalette->cd();",i));  
-	colors[i] = TColor::GetColor(83,109,161); // Bluish
-	fillstyle[i] = 1001;
-	fillcolor[i] = PGlobals::elecFill;
-      } else {
-	exPal[i] = new TExec(Form("exBeam%1i",i),Form("beam%1iPalette->cd();",i));  
-	colors[i] = TColor::GetColor(231,99,51);
-      	fillstyle[i] = 1001;
-	fillcolor[i] = PGlobals::elecFill;
-      }
-      
-      Npal++;
-    }
 
+    if(Nspecies>1) {
+      for(Int_t i=0;i<Nspecies;i++) {
+	if(!hEneVsZ[i]) continue;
+	
+	if(i==0) {
+	  exPal[i] = new TExec("exPlasma","plasmaPalette->cd();");
+	  colors[i] = kGray;
+	  fillstyle[i] = 0;
+	  fillcolor[i] = TColor::GetColor(250,250,250);
+	} else if(i==1) {
+	  exPal[i] = new TExec("exBeam","beamPalette->cd();");
+	  //colors[i] = TColor::GetColor(69,108,155);
+	  colors[i] = kGray+1;
+	  fillstyle[i] = 1001;
+	  fillcolor[i] = TColor::GetColor(230,230,230);
+	} else if(i==2) {
+	  exPal[i] = new TExec(Form("exBeam%1i",i),Form("beam%1iPalette->cd();",i));  
+	  colors[i] = TColor::GetColor(83,109,161); // Bluish
+	  fillstyle[i] = 1001;
+	  fillcolor[i] = PGlobals::elecFill;
+	} else {
+	  exPal[i] = new TExec(Form("exBeam%1i",i),Form("beam%1iPalette->cd();",i));  
+	  colors[i] = TColor::GetColor(231,99,51);
+	  fillstyle[i] = 1001;
+	  fillcolor[i] = PGlobals::elecFill;
+	}
+	
+	Npal++;
+      }
+    } else {
+      exPal[0] = new TExec("exBeam","beamPalette->cd();");
+      colors[0] = kGray+1;
+      fillstyle[0] = 1001;
+      fillcolor[0] = TColor::GetColor(230,230,230); 
+    }
+    
     TPaletteAxis *palette = NULL;
         
     // Canvas setup
@@ -513,9 +547,12 @@ int main(int argc,char *argv[]) {
     C->SetFillStyle(4000);
     gPad->SetTickx(1);
     gPad->SetTicky(1);
-    if(opt.Contains("logz"))
+    if(opt.Contains("logz")) {
       gPad->SetLogz(1);
-
+      hEneVsZjoint->GetZaxis()->SetLabelOffset(-0.002);
+      hEneVsDivjoint->GetZaxis()->SetLabelOffset(-0.01);
+    }
+      
     gPad->SetFrameFillColor(beamPalette->GetColor(0));
 
     // Plot frame
@@ -590,7 +627,11 @@ int main(int argc,char *argv[]) {
 	  j++;
 	}
       } else {
-	exPal[1]->Draw();
+	if (Nspecies==1) 
+	  exPal[0]->Draw();
+	else if (Nspecies>1)
+	  exPal[1]->Draw();
+	
 
 	hEneVsZjoint->GetZaxis()->SetLabelFont(43);
 	hEneVsZjoint->GetZaxis()->SetLabelSize(32);
@@ -619,8 +660,8 @@ int main(int argc,char *argv[]) {
 	  pFrame->SetShadowColor(0);
 	  pFrame->Draw();
 	}
-      }
 
+      }
 
       // Plot 1D current
       Float_t yaxismin  =  gPad->GetUymin();
@@ -815,17 +856,22 @@ int main(int argc,char *argv[]) {
     if(opt.Contains("logz"))
       gPad->SetLogz(1);
 
-    Int_t linewidth = 5;
-    gPad->SetFrameLineWidth(linewidth);
+    gPad->SetFrameLineWidth(5);
+    Int_t linewidth = 3;
     Int_t color = kWhite;
     Int_t color2 = kWhite;
     if (opt.Contains("hzdr"))  {
       color  = kBlack;
       color2 = 46;
-      linewidth = 2;
+      linewidth = 3;
       gPad->SetFrameLineWidth(linewidth);
+    } else if (opt.Contains("ffwd"))  {
+      color  = kWhite;
+      color2 = kOrange-3;
+      linewidth = 3;
       // gPad->SetFrameLineColor(kWhite);
     }
+
  
     // gPad->SetLogx(1);
     // gPad->SetFrameLineWidth(3);
@@ -859,15 +905,17 @@ int main(int argc,char *argv[]) {
     PPalette * specPalette = (PPalette*) gROOT->FindObject("spec");
     if(!specPalette) {
       specPalette = new PPalette("spec");
+      // specPalette->SetPalette(60);
+      // specPalette->Invert();
+      if (opt.Contains("hzdr")) 
+	specPalette->SetPalette("spectrum1");
+      else if (opt.Contains("ffwd")) 
+	// specPalette->SetPalette("screen");
+	specPalette->SetPalette(kBird);
+      else
+	specPalette->SetPalette("spectrum");
     }
-    // specPalette->SetPalette(60);
-    specPalette->SetPalette("spectrum");
-    // specPalette->Invert();
-    if (opt.Contains("hzdr")) 
-      specPalette->SetPalette("spectrum1");
-      
-    
-    
+    specPalette->cd();
     gPad->SetFrameFillColor(specPalette->GetColor(0));
     //    hEneVsDivjoint->SetMinimum(-1.0000);
     
@@ -883,8 +931,7 @@ int main(int argc,char *argv[]) {
     if(dMin >= 0.0) {
       hEneVsDivjoint->SetMinimum(dMin);
     }
-    
-    
+        
     hEneVsDivjoint->GetXaxis()->SetRangeUser(0.0,eMax);
 
     if(opt.Contains("nopal"))
@@ -924,10 +971,10 @@ int main(int argc,char *argv[]) {
     TH1D *hProj = NULL;
     if (opt.Contains("outl")) {
       hProj = hEneVsDivjoint->ProjectionX("hEneProj",1,hEneVsDivjoint->GetNbinsY());
-      hProj->Scale(dv);
-      hProj->SetLineWidth(3);
+      hProj->Scale(dvu);
+      hProj->ResetStats();
+      hProj->SetLineWidth(linewidth);
       hProj->SetLineColor(color2);
-
       Float_t smax = hProj->GetMaximum();
       if(sMax >= 0.0) 
 	smax = sMax;
@@ -937,22 +984,24 @@ int main(int argc,char *argv[]) {
       Float_t Emean = hProj->GetMean();
       Float_t Erms  = hProj->GetRMS();
       Float_t Qgauss = Peak * TMath::Sqrt(TMath::TwoPi()) * Erms ;
+      Float_t Qtotal = hProj->Integral("width");
       
       cout << Form(" Peak   = %f pC/MeV",Peak) << endl;
       cout << Form(" Mean   = %f MeV",Emean) << endl;
       cout << Form(" Rms    = %f MeV",Erms) << endl;
-      cout << Form(" Charge = %f pC",Qgauss) << endl;
+      cout << Form(" Charge = %f pC",Qtotal) << endl;
+      cout << Form(" C (g)  = %f pC",Qgauss) << endl;
       
-      Float_t axismax = divMin+(divMax-divMin)/3.0;
-      Float_t slope = (axismax - divMin)/smax;
+      Float_t axismax = diveMin+(diveMax-diveMin)/3.0;
+      Float_t slope = (axismax - diveMin)/smax;
       for(Int_t j=1;j<=hProj->GetNbinsX();j++) {
 	Float_t value = hProj->GetBinContent(j);
-	hProj->SetBinContent(j,slope*value+divMin);
+	hProj->SetBinContent(j,slope*value+diveMin);
       }
       
       // Current axis
       Float_t x1pos = eMax - (eMax-eMin) * 0.10;
-      TGaxis *axis = new TGaxis(x1pos,divMin,x1pos,axismax,0.0,smax,203,"S+L");
+      TGaxis *axis = new TGaxis(x1pos,diveMin,x1pos,axismax,0.0,smax,203,"S+L");
       axis->SetLineWidth(2);
       axis->SetLineColor(color2);//PGlobals::elecLine);
       axis->SetLabelColor(color2);//PGlobals::elecLine);
@@ -981,17 +1030,14 @@ int main(int argc,char *argv[]) {
 		      gPad->GetUxmax(), gPad->GetUymax());
     lFrame->SetFillStyle(0);
     lFrame->SetLineColor(color);
-    if (opt.Contains("hzdr"))  
-      lFrame->SetLineWidth(linewidth);
-    else
-      lFrame->SetLineWidth(linewidth-3);
+    lFrame->SetLineWidth(linewidth-1);
       
     lFrame->Draw();
 
     xmin = eMinu;
     xmax = eMaxu;
-    ymin = divMin;
-    ymax = divMax;
+    ymin = diveMin;
+    ymax = diveMax;
     if(opt.Contains("units") && n0) 
       sprintf(ctext,"z = %5.1f %s", Time * skindepth / propUnit, propSUnit.c_str());
     else

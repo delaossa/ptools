@@ -1,6 +1,6 @@
 include $(PTOOLS)/config/Makefile.common
 
-MODULES  = PGlobals PUnits PConst PFunctions PData PDataHiP PPalette
+MODULES  = PGlobals PUnits PConst PFunctions PUtils PData PDataHiP PPalette
 
 LIB      = ptools
 

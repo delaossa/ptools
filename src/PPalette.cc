@@ -569,6 +569,20 @@ Int_t PPalette::SetPalette(const char * name)
       this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
     return 1;
       
+  } else if(strcmp(name,"screen")==0) {
+    const Int_t NRGBs = 5;
+    const Int_t NCont = 255;
+
+    Double_t Stops[NRGBs] = { 0.0, 0.1,0.2,0.5,1.0};
+    Double_t Red[NRGBs]   = { 0.99, 0.74, 0.52, 0.40, 0.47};
+    Double_t Green[NRGBs] = { 0.99, 0.49, 0.08, 0.46, 0.92};
+    Double_t Blue[NRGBs]  = { 0.99, 0.85, 0.75, 0.98, 0.31};
+    if(!fColors)
+      this->CreateGradientColorTable(NRGBs, Stops, Red, Green, Blue, NCont, fAlpha);
+    else
+      this->ChangeGradientColorTable(NRGBs, Stops, Red, Green, Blue, fAlpha);
+    return 1;
+      
   } else if(strcmp(name,"lila")==0) {
     const Int_t NRGBs = 2;
     const Int_t NCont = 255;

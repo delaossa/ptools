@@ -24,6 +24,7 @@
 #include "PData.hh"
 #include "PDataHiP.hh"
 #include "PGlobals.hh"
+#include "PUtils.hh"
 #include "PPalette.hh"
 #include "H5Cpp.h"
 
@@ -32,24 +33,6 @@ using namespace H5;
 
 void InitRange(const TString &, Double_t &, Double_t &, Int_t &, Double_t &, Double_t &);
 
-void FindLimits(TH1F *h,Double_t &xmin, Double_t &xmax, Double_t factor = 0.11) {
-  Double_t maxValue = h->GetBinContent(h->GetMaximumBin());
-  for(Int_t i=1;i<=h->GetNbinsX();i++) {
-    Double_t binValue = h->GetBinContent(i);
-    if(binValue>maxValue*factor) {
-      xmin = h->GetBinCenter(i);
-      break;
-    }
-  }
-  
-  for(Int_t i=h->GetNbinsX();i>0;i--) {
-    Double_t binValue = h->GetBinContent(i);
-    if(binValue>maxValue*factor) {
-      xmax = h->GetBinCenter(i);
-      break;
-    }
-  } 
-}
 
 int main(int argc,char *argv[]) {
   if(argc<=2) {
@@ -635,13 +618,13 @@ int main(int argc,char *argv[]) {
     Double_t x1min = -999;
     Double_t x1max = -999;
 
-    FindLimits(hScanX1,x1min,x1max,peakFactor);
+    PUtils::FindLimits(hScanX1,x1min,x1max,peakFactor);
     
     x1BinMin = x1min;
     x1BinMax = x1max;
       
     peakFactor = 0.1;
-    FindLimits(hScanX1,x1min,x1max,peakFactor);
+    PUtils::FindLimits(hScanX1,x1min,x1max,peakFactor);
     
     x1Min = x1min - rfactor*(x1max-x1min);
     x1Max = x1max + 2*rfactor*(x1max-x1min);
@@ -672,7 +655,7 @@ int main(int argc,char *argv[]) {
       Double_t x2min = -999;
       Double_t x2max = -999;
       
-      FindLimits(hScanX2,x2min,x2max,peakFactor);
+      PUtils::FindLimits(hScanX2,x2min,x2max,peakFactor);
       if( x2max-x2min < 0.1) {
 	x2min -= 0.1;
 	x2max += 0.1;
@@ -684,7 +667,7 @@ int main(int argc,char *argv[]) {
       Double_t x3min = -999;
       Double_t x3max = -999;
       if(Nvar==7) {
-	FindLimits(hScanX3,x3min,x3max,peakFactor);
+	PUtils::FindLimits(hScanX3,x3min,x3max,peakFactor);
 	x3Min = x3min - rfactor2*(x3max-x3min);
 	x3Max = x3max + rfactor2*(x3max-x3min);
       }
@@ -699,7 +682,7 @@ int main(int argc,char *argv[]) {
     } else {
       Double_t p2min = -999;
       Double_t p2max = -999;
-      FindLimits(hScanP2,p2min,p2max,peakFactor);
+      PUtils::FindLimits(hScanP2,p2min,p2max,peakFactor);
       p2Min = p2min - rfactor2*(p2max-p2min);
       p2Max = p2max + rfactor2*(p2max-p2min);
       if(p2Max<-p2Min) p2Max = -p2Min; 
@@ -707,7 +690,7 @@ int main(int argc,char *argv[]) {
       
       Double_t p3min = -999;
       Double_t p3max = -999;
-      FindLimits(hScanP3,p3min,p3max,peakFactor);
+      PUtils::FindLimits(hScanP3,p3min,p3max,peakFactor);
       p3Min = p3min - rfactor2*(p3max-p3min);
       p3Max = p3max + rfactor2*(p3max-p3min);
       if(p3Max<-p3Min) p3Max = -p3Min; 
@@ -2304,6 +2287,50 @@ int main(int argc,char *argv[]) {
       gEmityavgvsTime->Write(gName,TObject::kOverwrite);
       // ------
 
+      sprintf(gName,"gAmeanvsTime");     
+      TGraph *gAmeanvsTime = NULL;
+      gAmeanvsTime = (TGraph*) ifile->Get(gName);
+      if(gAmeanvsTime==NULL) {
+	gAmeanvsTime = new TGraph();
+	gAmeanvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gAmeanvsTime->SetLineWidth(3);
+	gAmeanvsTime->SetLineColor(PGlobals::fieldLine);
+	gAmeanvsTime->SetMarkerStyle(20);
+	gAmeanvsTime->SetMarkerSize(0.4);
+	gAmeanvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gAmeanvsTime->GetN(); 
+      }  
+
+      gAmeanvsTime->Set(nPoints+1);
+      gAmeanvsTime->SetPoint(nPoints,Time,
+			     TMath::Sqrt(x_mean*x_mean + y_mean*y_mean));
+      gAmeanvsTime->Write(gName,TObject::kOverwrite);
+
+      sprintf(gName,"gAmeanavgvsTime");     
+      TGraph *gAmeanavgvsTime = NULL;
+      gAmeanavgvsTime = (TGraph*) ifile->Get(gName);
+      if(gAmeanavgvsTime==NULL) {
+	gAmeanavgvsTime = new TGraph();
+	gAmeanavgvsTime->SetName(gName);
+	nPoints = 0;
+	// Some cosmetics at creation time:
+	gAmeanavgvsTime->SetLineWidth(3);
+	gAmeanavgvsTime->SetLineColor(PGlobals::fieldLine);
+	gAmeanavgvsTime->SetMarkerStyle(20);
+	gAmeanavgvsTime->SetMarkerSize(0.4);
+	gAmeanavgvsTime->SetMarkerColor(PGlobals::fieldLine);	
+      } else {
+	nPoints = gAmeanavgvsTime->GetN(); 
+      }  
+
+      gAmeanavgvsTime->Set(nPoints+1);
+      gAmeanavgvsTime->SetPoint(nPoints,Time,TMath::Sqrt(xmeanavg*xmeanavg + ymeanavg*ymeanavg));
+      gAmeanavgvsTime->Write(gName,TObject::kOverwrite);
+
+      
       // Ez track addon (for hosing studies)
       if(opt.Contains("eztrack")) {
 	// Get 3D histogram in a zoomed area to save time
@@ -2600,6 +2627,8 @@ int main(int argc,char *argv[]) {
       Int_t sizex = 800;
       Int_t sizey = 600;
 
+      Int_t framewidth = PGlobals::frameWidth + 2;
+      
       char cName[32];
       sprintf(cName,"C");     
       TCanvas *C = (TCanvas*) gROOT->FindObject(cName);
@@ -2740,7 +2769,7 @@ int main(int argc,char *argv[]) {
       Double_t bMargin = 0.15;
       Double_t tMargin = 0.04;
       Double_t factor = 1.0;
-      Double_t gap = 0.028;
+      Double_t gap = 0.035;
       PGlobals::CanvasAsymPartition(C,NPad,lMargin,rMargin,bMargin,tMargin,factor,gap);
 
       // Define the frames for plotting
@@ -2792,8 +2821,13 @@ int main(int argc,char *argv[]) {
 	hFrame[i]->GetXaxis()->SetLabelSize(fontsize+2);
 	hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
 	hFrame[i]->GetXaxis()->CenterTitle();
-	hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+	hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);     
 	hFrame[i]->GetXaxis()->SetNdivisions(510);
+
+	if(i!=0) {
+	  hFrame[i]->GetXaxis()->SetLabelSize(0);
+	  hFrame[i]->GetXaxis()->SetTitleSize(0);
+	}
       }
       
       C->cd(0);
@@ -2829,7 +2863,7 @@ int main(int argc,char *argv[]) {
 
       hP1X1->Draw("colz 0 same");
       
-      gP1->SetLineWidth(2);
+      gP1->SetLineWidth(3);
       if(!opt.Contains("nospec")) {
 	gP1->Draw("F");
 	gP1->Draw("L");
@@ -2925,7 +2959,8 @@ int main(int argc,char *argv[]) {
 			      gPad->GetUxmax(), gPad->GetUymax());
       lFrame->SetFillStyle(0);
       lFrame->SetLineColor(PGlobals::frameColor);
-      lFrame->SetLineWidth(PGlobals::frameWidth);
+      lFrame->SetLineWidth(framewidth);
+      // lFrame->SetLineWidth(4);
       lFrame->Draw();
       
       gPad->RedrawAxis(); 
@@ -3059,7 +3094,8 @@ int main(int argc,char *argv[]) {
 			       gPad->GetUxmax(), gPad->GetUymax());
       lFrame2->SetFillStyle(0);
       lFrame2->SetLineColor(PGlobals::frameColor);
-      lFrame2->SetLineWidth(PGlobals::frameWidth);
+      lFrame2->SetLineWidth(framewidth);
+      lFrame2->SetLineWidth(4);
       lFrame2->Draw();
 
       gPad->RedrawAxis(); 
@@ -3095,8 +3131,8 @@ int main(int argc,char *argv[]) {
 	C1->Clear();
 	
 	Int_t NPad1 = 2;
-	lMargin = 0.15;
-	rMargin = 0.18;
+	lMargin = 0.12;
+	rMargin = 0.15;
 	bMargin = 0.15;
 	tMargin = 0.04;
 	factor = 1.0;  
@@ -3158,7 +3194,14 @@ int main(int argc,char *argv[]) {
 	  hFrame[i]->GetXaxis()->SetLabelSize(fontsize+2);
 	  hFrame[i]->GetXaxis()->SetLabelOffset(lxoffset);
 	  hFrame[i]->GetXaxis()->CenterTitle();
-	  hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);      
+	  hFrame[i]->GetXaxis()->SetTickLength(yFactor*txlength/xFactor);
+	  hFrame[i]->GetXaxis()->SetNdivisions(510);
+
+	  if(i!=0) {
+	    hFrame[i]->GetXaxis()->SetLabelSize(0);
+	    hFrame[i]->GetXaxis()->SetTitleSize(0);
+	  }
+
 	}
 
      
@@ -3278,7 +3321,7 @@ int main(int argc,char *argv[]) {
 				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
-	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->SetLineWidth(framewidth);
 	lFrame->Draw();
 	
 	gPad->RedrawAxis(); 
@@ -3399,7 +3442,7 @@ int main(int argc,char *argv[]) {
 				 gPad->GetUxmax(), gPad->GetUymax());
 	lFrame2->SetFillStyle(0);
 	lFrame2->SetLineColor(PGlobals::frameColor);
-	lFrame2->SetLineWidth(PGlobals::frameWidth);
+	lFrame2->SetLineWidth(framewidth);
 	lFrame2->Draw();
 
 	gPad->RedrawAxis(); 
@@ -3560,7 +3603,7 @@ int main(int argc,char *argv[]) {
 				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
-	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->SetLineWidth(framewidth);
 	lFrame->Draw();
 
 	gPad->RedrawAxis(); 
@@ -3663,7 +3706,7 @@ int main(int argc,char *argv[]) {
 	
 	hX3X2cl->GetZaxis()->SetTickLength(0.01);      
 
-	hX3X2cl->Draw("colz 0 same");
+	hX3X2cl->Draw("colz0 same0");
 
 	TLine lX3mean;
 	lX3mean.SetLineColor(kGray+2);
@@ -3707,7 +3750,7 @@ int main(int argc,char *argv[]) {
 	yrange = y2-y1; 
 	xrange = x2-x1; 
     
-	TPaveText *textStatX3X2 =  new TPaveText(x1+0.02*xrange,y2-0.40*yrange,x1+0.30*xrange,y2-0.05*yrange,"NDC");
+	TPaveText *textStatX3X2 =  new TPaveText(x1+0.02*xrange,y2-0.5*yrange,x1+0.30*xrange,y2-0.02*yrange,"NDC");
 	PGlobals::SetPaveTextStyle(textStatX3X2,12); 
 	textStatX3X2->SetTextColor(kGray+3);
 	textStatX3X2->SetTextFont(42);
@@ -3750,7 +3793,7 @@ int main(int argc,char *argv[]) {
 				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
-	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->SetLineWidth(framewidth);
 	lFrame->Draw();
 	
 	gPad->RedrawAxis(); 
@@ -3768,8 +3811,8 @@ int main(int argc,char *argv[]) {
 
 
       const Int_t NPad2 = 1;
-      lMargin = 0.15;
-      rMargin = 0.18;
+      lMargin = 0.12;
+      rMargin = 0.15;
       bMargin = 0.15;
       tMargin = 0.04;
       factor = 1.0;  
@@ -3850,7 +3893,7 @@ int main(int argc,char *argv[]) {
             
       hP2X2cl->GetZaxis()->SetTickLength(0.01);      
       
-      hP2X2cl->Draw("colz same");
+      hP2X2cl->Draw("colz same0");
 
       TLine lXmean(x_mean,hFrame[0]->GetYaxis()->GetXmin(),x_mean,hFrame[0]->GetYaxis()->GetXmax());
       lXmean.SetLineColor(kGray+2);
@@ -3893,11 +3936,18 @@ int main(int argc,char *argv[]) {
 	pFrame->Draw();
       }
 
-      TPaveText *textStatInt = new TPaveText(x1+0.02,y2-0.38,x1+0.28,y2-0.01,"NDC");
+      y1 = gPad->GetBottomMargin();
+      y2 = 1 - gPad->GetTopMargin();
+      x1 = gPad->GetLeftMargin();
+      x2 = 1 - gPad->GetRightMargin();
+      yrange = y2-y1; 
+      xrange = x2-x1; 
+
+      TPaveText *textStatInt = new TPaveText(x1+0.02*xrange,y2-0.5*yrange,x1+0.30*xrange,y2-0.02*yrange,"NDC");
       PGlobals::SetPaveTextStyle(textStatInt,12); 
       textStatInt->SetTextColor(kGray+3);
       textStatInt->SetTextFont(42);
-
+      
       char text[64];
       if(opt.Contains("units")) {
 	sprintf(text,"Q = %5.1f %s",Charge,chargeSUnit.c_str());
@@ -3933,7 +3983,7 @@ int main(int argc,char *argv[]) {
 			       gPad->GetUxmax(), gPad->GetUymax());
       lFrame3->SetFillStyle(0);
       lFrame3->SetLineColor(PGlobals::frameColor);
-      lFrame3->SetLineWidth(PGlobals::frameWidth);
+      lFrame3->SetLineWidth(framewidth);
       lFrame3->Draw();
       
       gPad->RedrawAxis(); 
@@ -4031,7 +4081,7 @@ int main(int argc,char *argv[]) {
 	
 	hP3X3cl->GetZaxis()->SetTickLength(0.01);      
 	
-	hP3X3cl->Draw("colz same");
+	hP3X3cl->Draw("colz same0");
 	
 	TLine lYmean(y_mean,hFrame[0]->GetYaxis()->GetXmin(),y_mean,hFrame[0]->GetYaxis()->GetXmax());
 	lYmean.SetLineColor(kGray+2);
@@ -4110,7 +4160,7 @@ int main(int argc,char *argv[]) {
 				gPad->GetUxmax(), gPad->GetUymax());
 	lFrame->SetFillStyle(0);
 	lFrame->SetLineColor(PGlobals::frameColor);
-	lFrame->SetLineWidth(PGlobals::frameWidth);
+	lFrame->SetLineWidth(framewidth);
 	lFrame->Draw();
 	
 	gPad->RedrawAxis(); 
